@@ -9,13 +9,13 @@
 
 #include <chrono>
 
-#include "divergence.hpp"
-#include "gradient.hpp"
-#include "transportCoefficients.hpp"
 #include "HancockStage.hpp"
 #include "quadraticSurface.hpp"
 #include "tensorVectorDotProduct.hpp"
 #include "TVDLimiter.hpp"
+#include "divergence.hpp"
+#include "gradient.hpp"
+#include "transportCoefficients.hpp"
 
 schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 		const abstractLimiter & limiter, const abstractFlowSolver & fsolver,

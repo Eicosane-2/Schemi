@@ -7,9 +7,9 @@
 
 #include "SLEMatrix.hpp"
 
+#include "vectorVectorDotProduct.hpp"
 #include "divergence.hpp"
 #include "gradient.hpp"
-#include "vectorVectorDotProduct.hpp"
 
 schemi::SLEMatrix::SLEMatrix(const std::string & stringIn) noexcept :
 		name(stringIn)

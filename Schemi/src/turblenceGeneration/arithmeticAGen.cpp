@@ -9,10 +9,10 @@
 
 #include <algorithm>
 
-#include "doubleDotProduct.hpp"
-#include "fieldProducts.hpp"
 #include "turbulentParametersKEPS.hpp"
 #include "vectorVectorDotProduct.hpp"
+#include "doubleDotProduct.hpp"
+#include "fieldProducts.hpp"
 
 schemi::arithmeticAGen::arithmeticAGen(const bool turb_in,
 		const turbulenceModelEnum tm_in) noexcept :

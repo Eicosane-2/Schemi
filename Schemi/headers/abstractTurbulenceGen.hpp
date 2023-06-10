@@ -14,8 +14,6 @@
 #include <memory>
 
 #include "turbulenceModelEnum.hpp"
-#include "bunchOfFields.hpp"
-#include "volumeField.hpp"
 #include "abstractMixtureThermodynamics.hpp"
 #include "abstractTurbulentParameters.hpp"
 #include "cubicCell.hpp"
@@ -23,6 +21,8 @@
 #include "scalar.hpp"
 #include "tensor.hpp"
 #include "vector.hpp"
+#include "bunchOfFields.hpp"
+#include "volumeField.hpp"
 
 namespace schemi
 {

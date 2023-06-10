@@ -9,11 +9,11 @@
 
 #include <chrono>
 
+#include "harmonicInterpolateScalar.hpp"
 #include "divergence.hpp"
 #include "fieldProducts.hpp"
 #include "gradient.hpp"
 #include "linearInterpolate.hpp"
-#include "harmonicInterpolateScalar.hpp"
 
 void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		const abstractMatrixSolver & msolver,

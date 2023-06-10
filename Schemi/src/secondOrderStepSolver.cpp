@@ -7,9 +7,9 @@
 
 #include "secondOrderStepSolver.hpp"
 
-#include "linearInterpolate.hpp"
 #include "Advection.hpp"
 #include "Diffusion.hpp"
+#include "linearInterpolate.hpp"
 
 schemi::secondOrderStepSolver::secondOrderStepSolver(
 		homogeneousPhase<cubicCell> & gasPhase_in,

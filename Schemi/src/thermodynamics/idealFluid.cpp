@@ -7,8 +7,8 @@
 
 #include "idealFluid.hpp"
 
-#include "intExpPow.hpp"
 #include "globalConstants.hpp"
+#include "intExpPow.hpp"
 
 schemi::scalar schemi::idealFluid::pFromUv(const scalar gamma1,
 		const scalar Uv) const noexcept

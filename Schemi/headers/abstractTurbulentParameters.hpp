@@ -14,13 +14,13 @@
 #include <utility>
 #include <fstream>
 
+#include "cubicCell.hpp"
+#include "scalar.hpp"
+#include "vector.hpp"
 #include "bunchOfFields.hpp"
 #include "field.hpp"
 #include "surfaceField.hpp"
 #include "volumeField.hpp"
-#include "cubicCell.hpp"
-#include "scalar.hpp"
-#include "vector.hpp"
 
 namespace schemi
 {

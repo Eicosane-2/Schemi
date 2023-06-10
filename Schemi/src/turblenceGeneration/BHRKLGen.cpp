@@ -9,8 +9,8 @@
 
 #include <algorithm>
 
-#include "doubleDotProduct.hpp"
 #include "turbulentParametersKL.hpp"
+#include "doubleDotProduct.hpp"
 
 schemi::BHRKLGen::BHRKLGen(const bool turb_in,
 		const turbulenceModelEnum tm_in) noexcept :

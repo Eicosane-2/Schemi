@@ -7,9 +7,9 @@
 
 #include "RedlichKwongFluid.hpp"
 
-#include "intExpPow.hpp"
 #include "cubicEquationSolver.hpp"
 #include "globalConstants.hpp"
+#include "intExpPow.hpp"
 
 schemi::scalar schemi::RedlichKwongFluid::pFromUv(const scalar R,
 		const scalar Cv, const scalar Uv, const scalar c, const scalar a,

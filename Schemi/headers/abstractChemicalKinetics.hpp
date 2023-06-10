@@ -12,9 +12,9 @@
 #include <vector>
 #include <utility>
 
-#include "homogeneousPhase.hpp"
 #include "cubicCell.hpp"
 #include "scalar.hpp"
+#include "homogeneousPhase.hpp"
 
 namespace schemi
 {

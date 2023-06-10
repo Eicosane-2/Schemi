@@ -11,12 +11,12 @@
 #include <filesystem>
 
 #include "gasModelEnum.hpp"
-#include "fieldProducts.hpp"
 #include "boundaryConditionFromString.hpp"
 #include "fabricFunctions.hpp"
 #include "mixtureIdeal.hpp"
 #include "mixtureRedlichKwong.hpp"
 #include "mixtureVanDerWaals.hpp"
+#include "fieldProducts.hpp"
 
 std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		schemi::enthalpyFlowEnum, bool> schemi::phaseInitialization(

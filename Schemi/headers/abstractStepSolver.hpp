@@ -13,8 +13,6 @@
 #include "boundaryConditionTypesEnum.hpp"
 #include "enthalpyFlowEnum.hpp"
 #include "timestepEnum.hpp"
-#include "homogeneousPhase.hpp"
-#include "volumeField.hpp"
 #include "abstractChemicalKinetics.hpp"
 #include "abstractFlowSolver.hpp"
 #include "abstractLimiter.hpp"
@@ -23,6 +21,8 @@
 #include "cubicCell.hpp"
 #include "MPIHandler.hpp"
 #include "scalar.hpp"
+#include "homogeneousPhase.hpp"
+#include "volumeField.hpp"
 
 namespace schemi
 {

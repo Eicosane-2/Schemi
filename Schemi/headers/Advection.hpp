@@ -10,7 +10,6 @@
 #ifndef ADVECTION_HPP_
 #define ADVECTION_HPP_
 
-#include "homogeneousPhase.hpp"
 #include "abstractFlowSolver.hpp"
 #include "abstractLimiter.hpp"
 #include "boundaryConditionValue.hpp"
@@ -18,6 +17,7 @@
 #include "MPIHandler.hpp"
 #include "scalar.hpp"
 #include "starFields.hpp"
+#include "homogeneousPhase.hpp"
 
 namespace schemi
 {

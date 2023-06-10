@@ -10,12 +10,12 @@
 #ifndef HANCOCKSTAGE_HPP_
 #define HANCOCKSTAGE_HPP_
 
-#include "homogeneousPhase.hpp"
-#include "surfaceField.hpp"
-#include "volumeField.hpp"
 #include "boundaryConditionValue.hpp"
 #include "MPIHandler.hpp"
 #include "quadraticSurface.hpp"
+#include "homogeneousPhase.hpp"
+#include "surfaceField.hpp"
+#include "volumeField.hpp"
 
 namespace schemi
 {

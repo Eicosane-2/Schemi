@@ -8,11 +8,11 @@
 #ifndef HARMONICINTERPOLATESCALAR_HPP_
 #define HARMONICINTERPOLATESCALAR_HPP_
 
-#include "surfaceField.hpp"
-#include "volumeField.hpp"
 #include "boundaryConditionValue.hpp"
 #include "globalConstants.hpp"
 #include "scalar.hpp"
+#include "surfaceField.hpp"
+#include "volumeField.hpp"
 
 namespace schemi
 {

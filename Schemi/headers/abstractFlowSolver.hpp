@@ -12,10 +12,10 @@
 
 #include <tuple>
 
-#include "homogeneousPhase.hpp"
 #include "conservativeFlows.hpp"
 #include "quadraticSurface.hpp"
 #include "starFields.hpp"
+#include "homogeneousPhase.hpp"
 
 namespace schemi
 {

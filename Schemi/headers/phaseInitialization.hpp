@@ -14,8 +14,8 @@
 #include <memory>
 
 #include "enthalpyFlowEnum.hpp"
-#include "homogeneousPhase.hpp"
 #include "MPIHandler.hpp"
+#include "homogeneousPhase.hpp"
 
 namespace schemi
 {

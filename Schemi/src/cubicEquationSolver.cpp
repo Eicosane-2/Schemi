@@ -9,10 +9,10 @@
 
 #include <cmath>
 
-#include "intExpPow.hpp"
 #include "exception.hpp"
 #include "globalConstants.hpp"
 #include "sign.hpp"
+#include "intExpPow.hpp"
 
 std::array<schemi::scalar, 3> schemi::cubicEquationSolver(const scalar Ain,
 		const scalar Bin, const scalar Cin, const scalar Din)

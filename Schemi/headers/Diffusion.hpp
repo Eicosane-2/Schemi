@@ -12,11 +12,11 @@
 
 #include "enthalpyFlowEnum.hpp"
 #include "timestepEnum.hpp"
-#include "homogeneousPhase.hpp"
 #include "abstractMatrixSolver.hpp"
 #include "cubicCell.hpp"
 #include "MPIHandler.hpp"
 #include "starFields.hpp"
+#include "homogeneousPhase.hpp"
 
 namespace schemi
 {

@@ -11,9 +11,9 @@
 #include <iostream>
 #include <cmath>
 #include "errorsEnum.hpp"
-#include "intExpPow.hpp"
 #include "exception.hpp"
 #include "vectorVectorDotProduct.hpp"
+#include "intExpPow.hpp"
 
 schemi::scalar schemi::abstractTurbulentParameters::Cmu() const noexcept
 {
