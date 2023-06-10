@@ -10,8 +10,8 @@
 #ifndef SURFACEFIELD_HPP_
 #define SURFACEFIELD_HPP_
 
-#include "field.hpp"
 #include "quadraticSurface.hpp"
+#include "field.hpp"
 
 namespace schemi
 {

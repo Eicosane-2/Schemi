@@ -10,8 +10,8 @@
 #ifndef VOLUMEFIELD_HPP_
 #define VOLUMEFIELD_HPP_
 
-#include "field.hpp"
 #include "cubicCell.hpp"
+#include "field.hpp"
 
 namespace schemi
 {

@@ -10,10 +10,10 @@
 #ifndef FIELDPRODUCTS_HPP_
 #define FIELDPRODUCTS_HPP_
 
-#include "doubleDotProduct.hpp"
 #include "dyadicProduct.hpp"
 #include "tensorVectorDotProduct.hpp"
 #include "vectorVectorDotProduct.hpp"
+#include "doubleDotProduct.hpp"
 
 namespace schemi
 {
