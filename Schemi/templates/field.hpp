@@ -144,15 +144,8 @@ struct field
 
 			fieldSize = meshReference.cellsSize();
 		}
-		//else if constexpr (std::is_same_v<typeOfEntity, quadraticSurface>)
-		//{
-		//	valueField = std::valarray<typeOfValue>(value,
-		//			meshReference.surfacesSize());
-		//
-		//	fieldSize = meshReference.surfacesSize();
-		//}
 		else
-			throw exception("Unknown type of field.",
+			throw exception("Field is not volumeField.",
 					errorsEnum::fieldInitializationError);
 	}
 
@@ -290,15 +283,8 @@ struct field
 
 			fieldSize = meshReference.cellsSize();
 		}
-		//else if constexpr (std::is_same_v<typeOfEntity, quadraticSurface>)
-		//{
-		//	valueField = std::valarray<typeOfValue>(value,
-		//			meshReference.surfacesSize());
-		//
-		//	fieldSize = meshReference.surfacesSize();
-		//}
 		else
-			throw exception("Unknown type of field.",
+			throw exception("Field is not volumeField.",
 					errorsEnum::fieldInitializationError);
 	}
 
