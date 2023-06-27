@@ -44,8 +44,11 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		std::replace(bndCon.begin(), bndCon.end(),
 				boundaryConditionType::calculated,
 				boundaryConditionType::calculatedCv);
-		CVOld = volumeField<scalar>(mesh_, 0, bndCon[0], 0, bndCon[1], 0,
-				bndCon[2], 0, bndCon[3], 0, bndCon[4], 0, bndCon[5], 0);
+		CVOld = volumeField<scalar>(mesh_, 0,
+				subPatchData<scalar> { bndCon[0] }, subPatchData<scalar> {
+						bndCon[1] }, subPatchData<scalar> { bndCon[2] },
+				subPatchData<scalar> { bndCon[3] }, subPatchData<scalar> {
+						bndCon[4] }, subPatchData<scalar> { bndCon[5] });
 	}
 	volumeField<scalar> CCVOld { mesh_, 0 };
 	volumeField<scalar> CCVNew { mesh_, 0 };
@@ -57,8 +60,11 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		std::replace(bndCon.begin(), bndCon.end(),
 				boundaryConditionType::calculated,
 				boundaryConditionType::calculatedNonidealityCorrectionPerDensity);
-		NonIdRho = volumeField<scalar>(mesh_, 0, bndCon[0], 0, bndCon[1], 0,
-				bndCon[2], 0, bndCon[3], 0, bndCon[4], 0, bndCon[5], 0);
+		NonIdRho = volumeField<scalar>(mesh_, 0, subPatchData<scalar> {
+				bndCon[0] }, subPatchData<scalar> { bndCon[1] },
+				subPatchData<scalar> { bndCon[2] }, subPatchData<scalar> {
+						bndCon[3] }, subPatchData<scalar> { bndCon[4] },
+				subPatchData<scalar> { bndCon[5] });
 	}
 
 	volumeField<scalar> CvM { mesh_, 0 };
@@ -67,8 +73,11 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		std::replace(bndCon.begin(), bndCon.end(),
 				boundaryConditionType::calculated,
 				boundaryConditionType::calculatedCvM);
-		CvM = volumeField<scalar>(mesh_, 0, bndCon[0], 0, bndCon[1], 0,
-				bndCon[2], 0, bndCon[3], 0, bndCon[4], 0, bndCon[5], 0);
+		CvM = volumeField<scalar>(mesh_, 0, subPatchData<scalar> { bndCon[0] },
+				subPatchData<scalar> { bndCon[1] }, subPatchData<scalar> {
+						bndCon[2] }, subPatchData<scalar> { bndCon[3] },
+				subPatchData<scalar> { bndCon[4] }, subPatchData<scalar> {
+						bndCon[5] });
 	}
 
 	volumeField<scalar> oldField { mesh_, 0 };
@@ -138,8 +147,11 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		std::replace(bndCon.begin(), bndCon.end(),
 				boundaryConditionType::calculated,
 				boundaryConditionType::calculatedAverageMolarMass);
-		avMolMass = volumeField<scalar>(mesh_, 0, bndCon[0], 0, bndCon[1], 0,
-				bndCon[2], 0, bndCon[3], 0, bndCon[4], 0, bndCon[5], 0);
+		avMolMass = volumeField<scalar>(mesh_, 0, subPatchData<scalar> {
+				bndCon[0] }, subPatchData<scalar> { bndCon[1] },
+				subPatchData<scalar> { bndCon[2] }, subPatchData<scalar> {
+						bndCon[3] }, subPatchData<scalar> { bndCon[4] },
+				subPatchData<scalar> { bndCon[5] });
 	}
 	avMolMass.ref_r() = gasPhase.density[0].ref()
 			/ gasPhase.concentration.v[0].ref();
@@ -381,9 +393,11 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		std::replace(bndCon.begin(), bndCon.end(),
 				boundaryConditionType::calculated,
 				boundaryConditionType::calculatedMolarFraction);
-		cellMolFrac[k - 1] = volumeField<scalar>(mesh_, 0, bndCon[0], 0,
-				bndCon[1], 0, bndCon[2], 0, bndCon[3], 0, bndCon[4], 0,
-				bndCon[5], 0);
+		cellMolFrac[k - 1] = volumeField<scalar>(mesh_, 0,
+				subPatchData<scalar> { bndCon[0] }, subPatchData<scalar> {
+						bndCon[1] }, subPatchData<scalar> { bndCon[2] },
+				subPatchData<scalar> { bndCon[3] }, subPatchData<scalar> {
+						bndCon[4] }, subPatchData<scalar> { bndCon[5] });
 
 		cellMolFrac[k - 1].ref_r() = gasPhase.concentration.v[k].ref()
 				/ gasPhase.concentration.v[0].ref();

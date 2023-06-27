@@ -37,10 +37,6 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	std::unique_ptr<abstractTurbulenceGen> turbulenceSources(
 			createTurbulenceModel(turbulenceONString, sourceTypeString));
 
-	std::vector<std::vector<std::string>> matrixOfSubstancesConditions(
-			numberOfComponents,
-			std::vector<std::string>(4 + 12 + numberOfZones));
-
 	transportCoefficients<cubicCell> tCoeffsPhase { meshReference };
 
 	bunchOfFields<cubicCell> cellFields { meshReference, numberOfComponents };
@@ -49,34 +45,50 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	/*Set boundary condition for transport coefficients.*/
 	auto bndConCom = commonConditions;
 
-	tCoeffsPhase.tD = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
-	tCoeffsPhase.tKappa = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
-	tCoeffsPhase.tLambda = volumeField<scalar>(meshReference, 0, bndConCom[0],
-			0, bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4],
-			0, bndConCom[5], 0);
-	tCoeffsPhase.k_D = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
-	tCoeffsPhase.eps_D = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
-	tCoeffsPhase.a_D = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
-	tCoeffsPhase.b_D = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
+	tCoeffsPhase.tD = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
+	tCoeffsPhase.tKappa = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
+	tCoeffsPhase.tLambda = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
+	tCoeffsPhase.k_D = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
+	tCoeffsPhase.eps_D = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
+	tCoeffsPhase.a_D = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
+	tCoeffsPhase.b_D = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
 
 	std::replace(bndConCom.begin(), bndConCom.end(),
 			boundaryConditionType::calculated,
 			boundaryConditionType::calculatedTurbulentViscosity);
-	tCoeffsPhase.tNu = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
+	tCoeffsPhase.tNu = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
 
 	std::ifstream transportCoefficientsFile { "./set/transportCoefficients.txt",
 			std::ios::in };
@@ -90,15 +102,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	std::replace(bndConCom.begin(), bndConCom.end(),
 			boundaryConditionType::calculated,
 			boundaryConditionType::freeBoundary);
-	tCoeffsPhase.pNu = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
-	tCoeffsPhase.pD = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
-	tCoeffsPhase.pKappa = volumeField<scalar>(meshReference, 0, bndConCom[0], 0,
-			bndConCom[1], 0, bndConCom[2], 0, bndConCom[3], 0, bndConCom[4], 0,
-			bndConCom[5], 0);
+	tCoeffsPhase.pNu = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
+	tCoeffsPhase.pD = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
+	tCoeffsPhase.pKappa = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
+					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
+			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
+					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
 	scalar physNu, physD, physKappa;
 	std::string implicitEnthalpyFlowFlagString, MolMassDiffusionFlagString;
 	transportCoefficientsFile >> skipBuffer >> physNu >> skipBuffer >> physD
@@ -129,6 +147,14 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				errorsEnum::initializationError);
 
 	/*Create mixture class and boundary conditions for basic quantities: concentrations, velocity, pressure, k, epsilon, a and b.*/
+	std::vector<std::array<std::vector<subPatchData<scalar>>, 6>> boundaryConditionsMatrix(
+			numberOfComponents);
+	for (auto & arr : boundaryConditionsMatrix)
+		arr.fill(std::vector<subPatchData<scalar>>(0));
+
+	std::vector<std::vector<std::string>> matrixOfSubstancesConditions(
+			numberOfComponents, std::vector<std::string>(4 + numberOfZones));
+
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
 		std::string substanceName { "./set/sub_" }, bufComponent(
@@ -148,29 +174,92 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				>> matrixOfSubstancesConditions[k][0] /*M*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][1] /*Cv*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][2] /*Tcrit*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][3] /*Pcrit*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][4] /*Boundary condition type: tail*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][5] /*Boundary condition value: tail*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][6] /*Boundary condition type: point*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][7] /*Boundary condition value: point*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][8] /*Boundary condition type: bottom*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][9] /*Boundary condition value: bottom*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][10] /*Boundary condition type: right*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][11] /*Boundary condition value: right*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][12] /*Boundary condition type: left*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][13] /*Boundary condition value: left*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][14] /*Boundary condition type: top*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][15]; /*Boundary condition value: top*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][3]; /*Pcrit*/
+
+		/*Read boundary*/
+		for (std::size_t boundaryI = 0;
+				boundaryI < boundaryConditionsMatrix[k].size(); ++boundaryI)
+		{
+			substanceConditionsFile >> skipBuffer;
+			std::string patchBoundary;
+			substanceConditionsFile >> patchBoundary;
+			if (patchBoundary != "subPatches")
+			{
+				const auto boundTp = boundaryConditionFromString(patchBoundary);
+
+				if (boundTp == boundaryConditionType::fixedValue)
+				{
+					scalar fv;
+					substanceConditionsFile >> fv;
+
+					boundaryConditionsMatrix[k][boundaryI].push_back( { boundTp,
+							fv });
+				}
+				else
+					boundaryConditionsMatrix[k][boundaryI].push_back(
+							{ boundTp });
+			}
+			else
+			{
+				std::size_t subPatchNumber;
+
+				substanceConditionsFile >> subPatchNumber;
+
+				if (subPatchNumber == 1)
+					throw exception("SubPatches must be more than one.",
+							errorsEnum::initializationError);
+
+				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
+				{
+					std::string subPatchBoundary;
+					substanceConditionsFile >> subPatchBoundary;
+
+					const auto boundTp = boundaryConditionFromString(
+							subPatchBoundary);
+
+					if (boundTp == boundaryConditionType::fixedValue)
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						substanceConditionsFile >> skipBuffer >> vb1 >> vb2
+								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						scalar fv;
+						substanceConditionsFile >> fv;
+
+						boundaryConditionsMatrix[k][boundaryI].push_back( {
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 }, fv });
+					}
+					else
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						substanceConditionsFile >> skipBuffer >> vb1 >> vb2
+								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						boundaryConditionsMatrix[k][boundaryI].push_back( {
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 } });
+					}
+				}
+			}
+		}
 
 		substanceConditionsFile >> skipBuffer;
+		if (skipBuffer != "#Values_in_zones")
+			throw exception("Wrong position in file.",
+					errorsEnum::initializationError);
 		for (std::size_t j = 0; j < numberOfZones; ++j)
-			substanceConditionsFile >> matrixOfSubstancesConditions[k][16 + j]; /*Values in zones*/
+			substanceConditionsFile >> matrixOfSubstancesConditions[k][4 + j]; /*Values in zones*/
 		substanceConditionsFile.close();
 	}
 
 	/*Convert strings to values.*/
-	std::valarray<std::valarray<scalar>> thermodynamicalProperties {
-			std::valarray<scalar>(numberOfComponents), 4 };
+	std::array<std::valarray<scalar>, 4> thermodynamicalProperties;
+	thermodynamicalProperties.fill(std::valarray<scalar>(numberOfComponents));
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
@@ -186,33 +275,25 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	for (std::size_t k = 1; k < cellFields.concentration.v.size(); ++k)
 	{
-		std::vector<boundaryConditionType> bndCon(6);
-		std::vector<std::vector<scalar>> bndVCon(6);
-
-		for (std::size_t j = 0; j < bndCon.size(); ++j)
-			boundaryConditionFromString(
-					matrixOfSubstancesConditions[k - 1][4 + 2 * j],
-					matrixOfSubstancesConditions[k - 1][5 + 2 * j], bndCon[j],
-					bndVCon[j]);
-
-		parallelism.correctBoundaryConditions(bndCon);
+		parallelism.correctBoundaryConditions(boundaryConditionsMatrix[k - 1]);
 
 		cellFields.concentration.v[k] = volumeField<scalar>(meshReference, 0,
-				bndCon[0], bndVCon[0], bndCon[1], bndVCon[1], bndCon[2],
-				bndVCon[2], bndCon[3], bndVCon[3], bndCon[4], bndVCon[4],
-				bndCon[5], bndVCon[5], parallelism.mpi_size);
+				boundaryConditionsMatrix[k - 1][0],
+				boundaryConditionsMatrix[k - 1][1],
+				boundaryConditionsMatrix[k - 1][2],
+				boundaryConditionsMatrix[k - 1][3],
+				boundaryConditionsMatrix[k - 1][4],
+				boundaryConditionsMatrix[k - 1][5]);
 
-		auto bndVConRho_k = bndVCon;
+		auto bndVConRho_k = boundaryConditionsMatrix[k - 1];
 
 		for (auto & b_s : bndVConRho_k)
 			for (auto & b_i : b_s)
-				b_i *= thermodynamicalProperties[0][k - 1];
+				b_i.fixVal *= thermodynamicalProperties[0][k - 1];
 
-		cellFields.density[k] = volumeField<scalar>(meshReference, 0, bndCon[0],
-				bndVConRho_k[0], bndCon[1], bndVConRho_k[1], bndCon[2],
-				bndVConRho_k[2], bndCon[3], bndVConRho_k[3], bndCon[4],
-				bndVConRho_k[4], bndCon[5], bndVConRho_k[5],
-				parallelism.mpi_size);
+		cellFields.density[k] = volumeField<scalar>(meshReference, 0,
+				bndVConRho_k[0], bndVConRho_k[1], bndVConRho_k[2],
+				bndVConRho_k[3], bndVConRho_k[4], bndVConRho_k[5]);
 	}
 	{
 		cellFields.concentration.v[0] = volumeField<scalar>(meshReference, 0);
@@ -224,8 +305,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				boundaryConditionType::calculatedDensity);
 
 		cellFields.density[0] = volumeField<scalar>(meshReference, 0,
-				bndConRho[0], 0, bndConRho[1], 0, bndConRho[2], 0, bndConRho[3],
-				0, bndConRho[4], 0, bndConRho[5], 0);
+				subPatchData<scalar> { bndConRho[0] }, subPatchData<scalar> {
+						bndConRho[1] }, subPatchData<scalar> { bndConRho[2] },
+				subPatchData<scalar> { bndConRho[3] }, subPatchData<scalar> {
+						bndConRho[4] }, subPatchData<scalar> { bndConRho[5] });
 	}
 
 	scalar R { 0 }, hPlanck { 0 };
@@ -284,7 +367,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	phase = std::make_unique<homogeneousPhase<cubicCell>>(cellFields,
 			tCoeffsPhase, mixture, turbulenceSources);
 
-	std::vector<std::string> velocityConditions(24 + 3 * numberOfZones);
+	std::array<std::vector<subPatchData<vector>>, 6> boundaryConditionsVelocity;
+	boundaryConditionsVelocity.fill(std::vector<subPatchData<vector>>(0));
+	std::vector<std::string> velocityConditions(3 * numberOfZones);
 	{
 		std::ifstream velocityConditionsFile { "./set/velocity.txt",
 				std::ios::in };
@@ -295,49 +380,100 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception("./set/velocity.txt not found.",
 					errorsEnum::initializationError);
 
-		velocityConditionsFile >> skipBuffer >> velocityConditions[0]
-				>> skipBuffer >> velocityConditions[1] >> velocityConditions[2]
-				>> velocityConditions[3] >> skipBuffer >> velocityConditions[4]
-				>> skipBuffer >> velocityConditions[5] >> velocityConditions[6]
-				>> velocityConditions[7] >> skipBuffer >> velocityConditions[8]
-				>> skipBuffer >> velocityConditions[9] >> velocityConditions[10]
-				>> velocityConditions[11] >> skipBuffer
-				>> velocityConditions[12] >> skipBuffer
-				>> velocityConditions[13] >> velocityConditions[14]
-				>> velocityConditions[15] >> skipBuffer
-				>> velocityConditions[16] >> skipBuffer
-				>> velocityConditions[17] >> velocityConditions[18]
-				>> velocityConditions[19] >> skipBuffer
-				>> velocityConditions[20] >> skipBuffer
-				>> velocityConditions[21] >> velocityConditions[22]
-				>> velocityConditions[23];
+		/*Read boundary*/
+		for (std::size_t boundaryI = 0;
+				boundaryI < boundaryConditionsVelocity.size(); ++boundaryI)
+		{
+			velocityConditionsFile >> skipBuffer;
+			std::string patchBoundary;
+			velocityConditionsFile >> patchBoundary;
+			if (patchBoundary != "subPatches")
+			{
+				const auto boundTp = boundaryConditionFromString(patchBoundary);
+
+				if (boundTp == boundaryConditionType::fixedValue)
+				{
+					scalar fv1, fv2, fv3;
+					velocityConditionsFile >> fv1 >> fv2 >> fv3;
+
+					boundaryConditionsVelocity[boundaryI].push_back( { boundTp,
+							vector { fv1, fv2, fv3 } });
+				}
+				else
+					boundaryConditionsVelocity[boundaryI].push_back(
+							{ boundTp });
+			}
+			else
+			{
+				std::size_t subPatchNumber;
+
+				velocityConditionsFile >> subPatchNumber;
+
+				if (subPatchNumber == 1)
+					throw exception("SubPatches must be more than one.",
+							errorsEnum::initializationError);
+
+				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
+				{
+					std::string subPatchBoundary;
+					velocityConditionsFile >> subPatchBoundary;
+
+					const auto boundTp = boundaryConditionFromString(
+							subPatchBoundary);
+
+					if (boundTp == boundaryConditionType::fixedValue)
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						velocityConditionsFile >> skipBuffer >> vb1 >> vb2
+								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						scalar fv1, fv2, fv3;
+						velocityConditionsFile >> fv1 >> fv2 >> fv3;
+
+						boundaryConditionsVelocity[boundaryI].push_back( {
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 }, vector { fv1, fv2, fv3 } });
+					}
+					else
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						velocityConditionsFile >> skipBuffer >> vb1 >> vb2
+								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						boundaryConditionsVelocity[boundaryI].push_back( {
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 } });
+					}
+				}
+			}
+		}
 
 		velocityConditionsFile >> skipBuffer;
+		if (skipBuffer != "#Values_in_zones")
+			throw exception("Wrong position in file.",
+					errorsEnum::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
-			velocityConditionsFile >> velocityConditions[24 + 3 * i]
-					>> velocityConditions[25 + 3 * i]
-					>> velocityConditions[26 + 3 * i];
+			velocityConditionsFile >> velocityConditions[3 * i]
+					>> velocityConditions[1 + 3 * i]
+					>> velocityConditions[2 + 3 * i];
 
 		velocityConditionsFile.close();
 
-		std::vector<boundaryConditionType> bndCon(6);
-		std::vector<std::vector<vector>> bndVCon(6);
-
-		for (std::size_t j = 0; j < bndCon.size(); ++j)
-			boundaryConditionFromString(velocityConditions[0 + 4 * j],
-					velocityConditions[1 + 4 * j],
-					velocityConditions[2 + 4 * j],
-					velocityConditions[3 + 4 * j], bndCon[j], bndVCon[j]);
-
-		parallelism.correctBoundaryConditions(bndCon);
+		parallelism.correctBoundaryConditions(boundaryConditionsVelocity);
 
 		phase->velocity = volumeField<vector>(meshReference, vector(0),
-				bndCon[0], bndVCon[0], bndCon[1], bndVCon[1], bndCon[2],
-				bndVCon[2], bndCon[3], bndVCon[3], bndCon[4], bndVCon[4],
-				bndCon[5], bndVCon[5], parallelism.mpi_size);
+				boundaryConditionsVelocity[0], boundaryConditionsVelocity[1],
+				boundaryConditionsVelocity[2], boundaryConditionsVelocity[3],
+				boundaryConditionsVelocity[4], boundaryConditionsVelocity[5]);
 	}
 
-	std::vector<std::string> pressureConditions(12 + numberOfZones);
+	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsPressure;
+	boundaryConditionsPressure.fill(std::vector<subPatchData<scalar>>(0));
+	std::vector<std::string> pressureConditions(numberOfZones);
 	{
 		std::ifstream pressureConditionsFile { "./set/pressure.txt",
 				std::ios::in };
@@ -348,38 +484,98 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception("./set/pressure.txt not found.",
 					errorsEnum::initializationError);
 
-		pressureConditionsFile >> skipBuffer >> pressureConditions[0]
-				>> skipBuffer >> pressureConditions[1] >> skipBuffer
-				>> pressureConditions[2] >> skipBuffer >> pressureConditions[3]
-				>> skipBuffer >> pressureConditions[4] >> skipBuffer
-				>> pressureConditions[5] >> skipBuffer >> pressureConditions[6]
-				>> skipBuffer >> pressureConditions[7] >> skipBuffer
-				>> pressureConditions[8] >> skipBuffer >> pressureConditions[9]
-				>> skipBuffer >> pressureConditions[10] >> skipBuffer
-				>> pressureConditions[11];
+		/*Read boundary*/
+		for (std::size_t boundaryI = 0;
+				boundaryI < boundaryConditionsPressure.size(); ++boundaryI)
+		{
+			pressureConditionsFile >> skipBuffer;
+			std::string patchBoundary;
+			pressureConditionsFile >> patchBoundary;
+			if (patchBoundary != "subPatches")
+			{
+				const auto boundTp = boundaryConditionFromString(patchBoundary);
+
+				if (boundTp == boundaryConditionType::fixedValue)
+				{
+					scalar fv;
+					pressureConditionsFile >> fv;
+
+					boundaryConditionsPressure[boundaryI].push_back( { boundTp,
+							fv });
+				}
+				else
+					boundaryConditionsPressure[boundaryI].push_back(
+							{ boundTp });
+			}
+			else
+			{
+				std::size_t subPatchNumber;
+
+				pressureConditionsFile >> subPatchNumber;
+
+				if (subPatchNumber == 1)
+					throw exception("SubPatches must be more than one.",
+							errorsEnum::initializationError);
+
+				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
+				{
+					std::string subPatchBoundary;
+					pressureConditionsFile >> subPatchBoundary;
+
+					const auto boundTp = boundaryConditionFromString(
+							subPatchBoundary);
+
+					if (boundTp == boundaryConditionType::fixedValue)
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						pressureConditionsFile >> skipBuffer >> vb1 >> vb2
+								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						scalar fv;
+						pressureConditionsFile >> fv;
+
+						boundaryConditionsPressure[boundaryI].push_back( {
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 }, fv });
+					}
+					else
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						pressureConditionsFile >> skipBuffer >> vb1 >> vb2
+								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						boundaryConditionsPressure[boundaryI].push_back( {
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 } });
+					}
+				}
+			}
+		}
 
 		pressureConditionsFile >> skipBuffer;
+		if (skipBuffer != "#Values_in_zones")
+			throw exception("Wrong position in file.",
+					errorsEnum::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
-			pressureConditionsFile >> pressureConditions[12 + i];
+			pressureConditionsFile >> pressureConditions[i];
 
 		pressureConditionsFile.close();
 
-		std::vector<boundaryConditionType> bndCon(6);
-		std::vector<std::vector<scalar>> bndVCon(6);
+		parallelism.correctBoundaryConditions(boundaryConditionsPressure);
 
-		for (std::size_t j = 0; j < bndCon.size(); ++j)
-			boundaryConditionFromString(pressureConditions[0 + 2 * j],
-					pressureConditions[1 + 2 * j], bndCon[j], bndVCon[j]);
-
-		parallelism.correctBoundaryConditions(bndCon);
-
-		phase->pressure = volumeField<scalar>(meshReference, 0, bndCon[0],
-				bndVCon[0], bndCon[1], bndVCon[1], bndCon[2], bndVCon[2],
-				bndCon[3], bndVCon[3], bndCon[4], bndVCon[4], bndCon[5],
-				bndVCon[5], parallelism.mpi_size);
+		phase->pressure = volumeField<scalar>(meshReference, 0,
+				boundaryConditionsPressure[0], boundaryConditionsPressure[1],
+				boundaryConditionsPressure[2], boundaryConditionsPressure[3],
+				boundaryConditionsPressure[4], boundaryConditionsPressure[5]);
 	}
 
-	std::vector<std::string> kTurbConditions(12 + numberOfZones);
+	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionskTurb;
+	boundaryConditionskTurb.fill(std::vector<subPatchData<scalar>>(0));
+	std::vector<std::string> kTurbConditions(numberOfZones);
 	{
 		std::ifstream kTurbConditionsFile { "./set/k.txt", std::ios::in };
 
@@ -389,37 +585,97 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception("./set/k.txt is opened.",
 					errorsEnum::initializationError);
 
-		kTurbConditionsFile >> skipBuffer >> kTurbConditions[0] >> skipBuffer
-				>> kTurbConditions[1] >> skipBuffer >> kTurbConditions[2]
-				>> skipBuffer >> kTurbConditions[3] >> skipBuffer
-				>> kTurbConditions[4] >> skipBuffer >> kTurbConditions[5]
-				>> skipBuffer >> kTurbConditions[6] >> skipBuffer
-				>> kTurbConditions[7] >> skipBuffer >> kTurbConditions[8]
-				>> skipBuffer >> kTurbConditions[9] >> skipBuffer
-				>> kTurbConditions[10] >> skipBuffer >> kTurbConditions[11];
+		/*Read boundary*/
+		for (std::size_t boundaryI = 0;
+				boundaryI < boundaryConditionskTurb.size(); ++boundaryI)
+		{
+			kTurbConditionsFile >> skipBuffer;
+			std::string patchBoundary;
+			kTurbConditionsFile >> patchBoundary;
+			if (patchBoundary != "subPatches")
+			{
+				const auto boundTp = boundaryConditionFromString(patchBoundary);
+
+				if (boundTp == boundaryConditionType::fixedValue)
+				{
+					scalar fv;
+					kTurbConditionsFile >> fv;
+
+					boundaryConditionskTurb[boundaryI].push_back(
+							{ boundTp, fv });
+				}
+				else
+					boundaryConditionskTurb[boundaryI].push_back( { boundTp });
+			}
+			else
+			{
+				std::size_t subPatchNumber;
+
+				kTurbConditionsFile >> subPatchNumber;
+
+				if (subPatchNumber == 1)
+					throw exception("SubPatches must be more than one.",
+							errorsEnum::initializationError);
+
+				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
+				{
+					std::string subPatchBoundary;
+					kTurbConditionsFile >> subPatchBoundary;
+
+					const auto boundTp = boundaryConditionFromString(
+							subPatchBoundary);
+
+					if (boundTp == boundaryConditionType::fixedValue)
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						kTurbConditionsFile >> skipBuffer >> vb1 >> vb2 >> vb3
+								>> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						scalar fv;
+						kTurbConditionsFile >> fv;
+
+						boundaryConditionskTurb[boundaryI].push_back( { boundTp,
+								vector { vb1, vb2, vb3 },
+								vector { ve1, ve2, ve3 }, fv });
+					}
+					else
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						kTurbConditionsFile >> skipBuffer >> vb1 >> vb2 >> vb3
+								>> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						boundaryConditionskTurb[boundaryI].push_back( { boundTp,
+								vector { vb1, vb2, vb3 },
+								vector { ve1, ve2, ve3 } });
+					}
+				}
+			}
+		}
 
 		kTurbConditionsFile >> skipBuffer;
+		if (skipBuffer != "#Values_in_zones")
+			throw exception("Wrong position in file.",
+					errorsEnum::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
-			kTurbConditionsFile >> kTurbConditions[12 + i];
+			kTurbConditionsFile >> kTurbConditions[i];
 
 		kTurbConditionsFile.close();
 
-		std::vector<boundaryConditionType> bndCon(6);
-		std::vector<std::vector<scalar>> bndVCon(6);
-
-		for (std::size_t j = 0; j < bndCon.size(); ++j)
-			boundaryConditionFromString(kTurbConditions[0 + 2 * j],
-					kTurbConditions[1 + 2 * j], bndCon[j], bndVCon[j]);
-
-		parallelism.correctBoundaryConditions(bndCon);
+		parallelism.correctBoundaryConditions(boundaryConditionskTurb);
 
 		phase->kTurb = volumeField<scalar>(meshReference, scalar { 0 },
-				bndCon[0], bndVCon[0], bndCon[1], bndVCon[1], bndCon[2],
-				bndVCon[2], bndCon[3], bndVCon[3], bndCon[4], bndVCon[4],
-				bndCon[5], bndVCon[5], parallelism.mpi_size);
+				boundaryConditionskTurb[0], boundaryConditionskTurb[1],
+				boundaryConditionskTurb[2], boundaryConditionskTurb[3],
+				boundaryConditionskTurb[4], boundaryConditionskTurb[5]);
 	}
 
-	std::vector<std::string> epsTurbConditions(12 + numberOfZones);
+	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsepsTurb;
+	boundaryConditionsepsTurb.fill(std::vector<subPatchData<scalar>>(0));
+	std::vector<std::string> epsTurbConditions(numberOfZones);
 	{
 		std::ifstream epsTurbConditionsFile { "./set/epsilon.txt", std::ios::in };
 
@@ -429,38 +685,98 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception("./set/epsilon.txt not found.",
 					errorsEnum::initializationError);
 
-		epsTurbConditionsFile >> skipBuffer >> epsTurbConditions[0]
-				>> skipBuffer >> epsTurbConditions[1] >> skipBuffer
-				>> epsTurbConditions[2] >> skipBuffer >> epsTurbConditions[3]
-				>> skipBuffer >> epsTurbConditions[4] >> skipBuffer
-				>> epsTurbConditions[5] >> skipBuffer >> epsTurbConditions[6]
-				>> skipBuffer >> epsTurbConditions[7] >> skipBuffer
-				>> epsTurbConditions[8] >> skipBuffer >> epsTurbConditions[9]
-				>> skipBuffer >> epsTurbConditions[10] >> skipBuffer
-				>> epsTurbConditions[11];
+		/*Read boundary*/
+		for (std::size_t boundaryI = 0;
+				boundaryI < boundaryConditionsepsTurb.size(); ++boundaryI)
+		{
+			epsTurbConditionsFile >> skipBuffer;
+			std::string patchBoundary;
+			epsTurbConditionsFile >> patchBoundary;
+			if (patchBoundary != "subPatches")
+			{
+				const auto boundTp = boundaryConditionFromString(patchBoundary);
+
+				if (boundTp == boundaryConditionType::fixedValue)
+				{
+					scalar fv;
+					epsTurbConditionsFile >> fv;
+
+					boundaryConditionsepsTurb[boundaryI].push_back( { boundTp,
+							fv });
+				}
+				else
+					boundaryConditionsepsTurb[boundaryI].push_back(
+							{ boundTp });
+			}
+			else
+			{
+				std::size_t subPatchNumber;
+
+				epsTurbConditionsFile >> subPatchNumber;
+
+				if (subPatchNumber == 1)
+					throw exception("SubPatches must be more than one.",
+							errorsEnum::initializationError);
+
+				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
+				{
+					std::string subPatchBoundary;
+					epsTurbConditionsFile >> subPatchBoundary;
+
+					const auto boundTp = boundaryConditionFromString(
+							subPatchBoundary);
+
+					if (boundTp == boundaryConditionType::fixedValue)
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						epsTurbConditionsFile >> skipBuffer >> vb1 >> vb2 >> vb3
+								>> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						scalar fv;
+						epsTurbConditionsFile >> fv;
+
+						boundaryConditionsepsTurb[boundaryI].push_back( {
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 }, fv });
+					}
+					else
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						epsTurbConditionsFile >> skipBuffer >> vb1 >> vb2 >> vb3
+								>> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						boundaryConditionsepsTurb[boundaryI].push_back( {
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 } });
+					}
+				}
+			}
+		}
 
 		epsTurbConditionsFile >> skipBuffer;
+		if (skipBuffer != "#Values_in_zones")
+			throw exception("Wrong position in file.",
+					errorsEnum::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
-			epsTurbConditionsFile >> epsTurbConditions[12 + i];
+			epsTurbConditionsFile >> epsTurbConditions[i];
 
 		epsTurbConditionsFile.close();
 
-		std::vector<boundaryConditionType> bndCon(6);
-		std::vector<std::vector<scalar>> bndVCon(6);
+		parallelism.correctBoundaryConditions(boundaryConditionsepsTurb);
 
-		for (std::size_t j = 0; j < bndCon.size(); ++j)
-			boundaryConditionFromString(epsTurbConditions[0 + 2 * j],
-					epsTurbConditions[1 + 2 * j], bndCon[j], bndVCon[j]);
-
-		parallelism.correctBoundaryConditions(bndCon);
-
-		phase->epsTurb = volumeField<scalar>(meshReference, 0, bndCon[0],
-				bndVCon[0], bndCon[1], bndVCon[1], bndCon[2], bndVCon[2],
-				bndCon[3], bndVCon[3], bndCon[4], bndVCon[4], bndCon[5],
-				bndVCon[5], parallelism.mpi_size);
+		phase->epsTurb = volumeField<scalar>(meshReference, 0,
+				boundaryConditionsepsTurb[0], boundaryConditionsepsTurb[1],
+				boundaryConditionsepsTurb[2], boundaryConditionsepsTurb[3],
+				boundaryConditionsepsTurb[4], boundaryConditionsepsTurb[5]);
 	}
 
-	std::vector<std::string> aTurbConditions(24 + 3 * numberOfZones);
+	std::array<std::vector<subPatchData<vector>>, 6> boundaryConditionsaTurb;
+	boundaryConditionsaTurb.fill(std::vector<subPatchData<vector>>(0));
+	std::vector<std::string> aTurbConditions(3 * numberOfZones);
 	{
 		std::ifstream aTurbConditionsFile { "./set/a.txt", std::ios::in };
 
@@ -470,45 +786,99 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception("./set/a.txt not found.",
 					errorsEnum::initializationError);
 
-		aTurbConditionsFile >> skipBuffer >> aTurbConditions[0] >> skipBuffer
-				>> aTurbConditions[1] >> aTurbConditions[2]
-				>> aTurbConditions[3] >> skipBuffer >> aTurbConditions[4]
-				>> skipBuffer >> aTurbConditions[5] >> aTurbConditions[6]
-				>> aTurbConditions[7] >> skipBuffer >> aTurbConditions[8]
-				>> skipBuffer >> aTurbConditions[9] >> aTurbConditions[10]
-				>> aTurbConditions[11] >> skipBuffer >> aTurbConditions[12]
-				>> skipBuffer >> aTurbConditions[13] >> aTurbConditions[14]
-				>> aTurbConditions[15] >> skipBuffer >> aTurbConditions[16]
-				>> skipBuffer >> aTurbConditions[17] >> aTurbConditions[18]
-				>> aTurbConditions[19] >> skipBuffer >> aTurbConditions[20]
-				>> skipBuffer >> aTurbConditions[21] >> aTurbConditions[22]
-				>> aTurbConditions[23];
+		/*Read boundary*/
+		for (std::size_t boundaryI = 0;
+				boundaryI < boundaryConditionsaTurb.size(); ++boundaryI)
+		{
+			aTurbConditionsFile >> skipBuffer;
+			std::string patchBoundary;
+			aTurbConditionsFile >> patchBoundary;
+			if (patchBoundary != "subPatches")
+			{
+				const auto boundTp = boundaryConditionFromString(patchBoundary);
+
+				if (boundTp == boundaryConditionType::fixedValue)
+				{
+					scalar fv1, fv2, fv3;
+					aTurbConditionsFile >> fv1 >> fv2 >> fv3;
+
+					boundaryConditionsaTurb[boundaryI].push_back( { boundTp,
+							vector { fv1, fv2, fv3 } });
+				}
+				else
+					boundaryConditionsaTurb[boundaryI].push_back( { boundTp });
+			}
+			else
+			{
+				std::size_t subPatchNumber;
+
+				aTurbConditionsFile >> subPatchNumber;
+
+				if (subPatchNumber == 1)
+					throw exception("SubPatches must be more than one.",
+							errorsEnum::initializationError);
+
+				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
+				{
+					std::string subPatchBoundary;
+					aTurbConditionsFile >> subPatchBoundary;
+
+					const auto boundTp = boundaryConditionFromString(
+							subPatchBoundary);
+
+					if (boundTp == boundaryConditionType::fixedValue)
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						aTurbConditionsFile >> skipBuffer >> vb1 >> vb2 >> vb3
+								>> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						scalar fv1, fv2, fv3;
+						aTurbConditionsFile >> fv1 >> fv2 >> fv3;
+
+						boundaryConditionsaTurb[boundaryI].push_back( { boundTp,
+								vector { vb1, vb2, vb3 },
+								vector { ve1, ve2, ve3 },
+								vector { fv1, fv2, fv3 } });
+					}
+					else
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						aTurbConditionsFile >> skipBuffer >> vb1 >> vb2 >> vb3
+								>> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						boundaryConditionsaTurb[boundaryI].push_back( { boundTp,
+								vector { vb1, vb2, vb3 },
+								vector { ve1, ve2, ve3 } });
+					}
+				}
+			}
+		}
 
 		aTurbConditionsFile >> skipBuffer;
+		if (skipBuffer != "#Values_in_zones")
+			throw exception("Wrong position in file.",
+					errorsEnum::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
-			aTurbConditionsFile >> aTurbConditions[24 + 3 * i]
-					>> aTurbConditions[25 + 3 * i]
-					>> aTurbConditions[26 + 3 * i];
+			aTurbConditionsFile >> aTurbConditions[3 * i]
+					>> aTurbConditions[1 + 3 * i] >> aTurbConditions[2 + 3 * i];
 
 		aTurbConditionsFile.close();
 
-		std::vector<boundaryConditionType> bndCon(6);
-		std::vector<std::vector<vector>> bndVCon(6);
-
-		for (std::size_t j = 0; j < bndCon.size(); ++j)
-			boundaryConditionFromString(aTurbConditions[0 + 4 * j],
-					aTurbConditions[1 + 2 * j], aTurbConditions[2 + 2 * j],
-					aTurbConditions[3 + 2 * j], bndCon[j], bndVCon[j]);
-
-		parallelism.correctBoundaryConditions(bndCon);
+		parallelism.correctBoundaryConditions(boundaryConditionsaTurb);
 
 		phase->aTurb = volumeField<vector>(meshReference, vector(0, 0, 0),
-				bndCon[0], bndVCon[0], bndCon[1], bndVCon[1], bndCon[2],
-				bndVCon[2], bndCon[3], bndVCon[3], bndCon[4], bndVCon[4],
-				bndCon[5], bndVCon[5], parallelism.mpi_size);
+				boundaryConditionsaTurb[0], boundaryConditionsaTurb[1],
+				boundaryConditionsaTurb[2], boundaryConditionsaTurb[3],
+				boundaryConditionsaTurb[4], boundaryConditionsaTurb[5]);
 	}
 
-	std::vector<std::string> bTurbConditions(12 + numberOfZones);
+	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsbTurb;
+	boundaryConditionsbTurb.fill(std::vector<subPatchData<scalar>>(0));
+	std::vector<std::string> bTurbConditions(numberOfZones);
 	{
 		std::ifstream bTurbConditionsFile { "./set/b.txt", std::ios::in };
 
@@ -518,93 +888,179 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception("./set/b.txt not found.",
 					errorsEnum::initializationError);
 
-		bTurbConditionsFile >> skipBuffer >> bTurbConditions[0] >> skipBuffer
-				>> bTurbConditions[1] >> skipBuffer >> bTurbConditions[2]
-				>> skipBuffer >> bTurbConditions[3] >> skipBuffer
-				>> bTurbConditions[4] >> skipBuffer >> bTurbConditions[5]
-				>> skipBuffer >> bTurbConditions[6] >> skipBuffer
-				>> bTurbConditions[7] >> skipBuffer >> bTurbConditions[8]
-				>> skipBuffer >> bTurbConditions[9] >> skipBuffer
-				>> bTurbConditions[10] >> skipBuffer >> bTurbConditions[11];
+		/*Read boundary*/
+		for (std::size_t boundaryI = 0;
+				boundaryI < boundaryConditionsbTurb.size(); ++boundaryI)
+		{
+			bTurbConditionsFile >> skipBuffer;
+			std::string patchBoundary;
+			bTurbConditionsFile >> patchBoundary;
+			if (patchBoundary != "subPatches")
+			{
+				const auto boundTp = boundaryConditionFromString(patchBoundary);
+
+				if (boundTp == boundaryConditionType::fixedValue)
+				{
+					scalar fv;
+					bTurbConditionsFile >> fv;
+
+					boundaryConditionsbTurb[boundaryI].push_back(
+							{ boundTp, fv });
+				}
+				else
+					boundaryConditionsbTurb[boundaryI].push_back( { boundTp });
+			}
+			else
+			{
+				std::size_t subPatchNumber;
+
+				bTurbConditionsFile >> subPatchNumber;
+
+				if (subPatchNumber == 1)
+					throw exception("SubPatches must be more than one.",
+							errorsEnum::initializationError);
+
+				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
+				{
+					std::string subPatchBoundary;
+					bTurbConditionsFile >> subPatchBoundary;
+
+					const auto boundTp = boundaryConditionFromString(
+							subPatchBoundary);
+
+					if (boundTp == boundaryConditionType::fixedValue)
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						bTurbConditionsFile >> skipBuffer >> vb1 >> vb2 >> vb3
+								>> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						scalar fv;
+						bTurbConditionsFile >> fv;
+
+						boundaryConditionsbTurb[boundaryI].push_back( { boundTp,
+								vector { vb1, vb2, vb3 },
+								vector { ve1, ve2, ve3 }, fv });
+					}
+					else
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						bTurbConditionsFile >> skipBuffer >> vb1 >> vb2 >> vb3
+								>> skipBuffer >> ve1 >> ve2 >> ve3
+								>> skipBuffer;
+
+						boundaryConditionsbTurb[boundaryI].push_back( { boundTp,
+								vector { vb1, vb2, vb3 },
+								vector { ve1, ve2, ve3 } });
+					}
+				}
+			}
+		}
 
 		bTurbConditionsFile >> skipBuffer;
+		if (skipBuffer != "#Values_in_zones")
+			throw exception("Wrong position in file.",
+					errorsEnum::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
-			bTurbConditionsFile >> bTurbConditions[12 + i];
+			bTurbConditionsFile >> bTurbConditions[i];
 
 		bTurbConditionsFile.close();
 
-		std::vector<boundaryConditionType> bndCon(6);
-		std::vector<std::vector<scalar>> bndVCon(6);
-
-		for (std::size_t j = 0; j < bndCon.size(); ++j)
-			boundaryConditionFromString(bTurbConditions[0 + 2 * j],
-					bTurbConditions[1 + 2 * j], bndCon[j], bndVCon[j]);
-
-		parallelism.correctBoundaryConditions(bndCon);
+		parallelism.correctBoundaryConditions(boundaryConditionsbTurb);
 
 		phase->bTurb = volumeField<scalar>(meshReference,
-				phase->turbulenceSources->turbPar->minb_value, bndCon[0],
-				bndVCon[0], bndCon[1], bndVCon[1], bndCon[2], bndVCon[2],
-				bndCon[3], bndVCon[3], bndCon[4], bndVCon[4], bndCon[5],
-				bndVCon[5], parallelism.mpi_size);
+				phase->turbulenceSources->turbPar->minb_value,
+				boundaryConditionsbTurb[0], boundaryConditionsbTurb[1],
+				boundaryConditionsbTurb[2], boundaryConditionsbTurb[3],
+				boundaryConditionsbTurb[4], boundaryConditionsbTurb[5]);
 	}
 
 	/*Creating other fields.*/
 	phase->momentum = volumeField<vector>(meshReference, vector(0),
-			commonConditions[0], vector(0), commonConditions[1], vector(0),
-			commonConditions[2], vector(0), commonConditions[3], vector(0),
-			commonConditions[4], vector(0), commonConditions[5], vector(0));
+			subPatchData<vector> { commonConditions[0] }, subPatchData<vector> {
+					commonConditions[1] }, subPatchData<vector> {
+					commonConditions[2] }, subPatchData<vector> {
+					commonConditions[3] }, subPatchData<vector> {
+					commonConditions[4] }, subPatchData<vector> {
+					commonConditions[5] });
 
 	phase->internalEnergy = volumeField<scalar>(meshReference, 0,
-			commonConditions[0], 0, commonConditions[1], 0, commonConditions[2],
-			0, commonConditions[3], 0, commonConditions[4], 0,
-			commonConditions[5], 0);
+			subPatchData<scalar> { commonConditions[0] }, subPatchData<scalar> {
+					commonConditions[1] }, subPatchData<scalar> {
+					commonConditions[2] }, subPatchData<scalar> {
+					commonConditions[3] }, subPatchData<scalar> {
+					commonConditions[4] }, subPatchData<scalar> {
+					commonConditions[5] });
 
 	phase->totalEnergy = volumeField<scalar>(meshReference, 0,
-			commonConditions[0], 0, commonConditions[1], 0, commonConditions[2],
-			0, commonConditions[3], 0, commonConditions[4], 0,
-			commonConditions[5], 0);
+			subPatchData<scalar> { commonConditions[0] }, subPatchData<scalar> {
+					commonConditions[1] }, subPatchData<scalar> {
+					commonConditions[2] }, subPatchData<scalar> {
+					commonConditions[3] }, subPatchData<scalar> {
+					commonConditions[4] }, subPatchData<scalar> {
+					commonConditions[5] });
 
 	{
 		auto bndCon = commonConditions;
 		std::replace(bndCon.begin(), bndCon.end(),
 				boundaryConditionType::calculated,
 				boundaryConditionType::calculatedTemperature);
-		phase->temperature = volumeField<scalar>(meshReference, 0, bndCon[0], 0,
-				bndCon[1], 0, bndCon[2], 0, bndCon[3], 0, bndCon[4], 0,
-				bndCon[5], 0);
+		phase->temperature = volumeField<scalar>(meshReference, 0,
+				subPatchData<scalar> { bndCon[0] }, subPatchData<scalar> {
+						bndCon[1] }, subPatchData<scalar> { bndCon[2] },
+				subPatchData<scalar> { bndCon[3] }, subPatchData<scalar> {
+						bndCon[4] }, subPatchData<scalar> { bndCon[5] });
 	}
 
-	phase->rhokTurb = volumeField<scalar>(meshReference, scalar { 0 },
-			commonConditions[0], scalar { 0 }, commonConditions[1],
-			scalar { 0 }, commonConditions[2], scalar { 0 },
-			commonConditions[3], scalar { 0 }, commonConditions[4],
-			scalar { 0 }, commonConditions[5], scalar { 0 });
+	phase->rhokTurb = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { commonConditions[0] }, subPatchData<scalar> {
+					commonConditions[1] }, subPatchData<scalar> {
+					commonConditions[2] }, subPatchData<scalar> {
+					commonConditions[3] }, subPatchData<scalar> {
+					commonConditions[4] }, subPatchData<scalar> {
+					commonConditions[5] });
 
 	phase->rhoepsTurb = volumeField<scalar>(meshReference, 0,
-			commonConditions[0], 0, commonConditions[1], 0, commonConditions[2],
-			0, commonConditions[3], 0, commonConditions[4], 0,
-			commonConditions[5], 0);
+			subPatchData<scalar> { commonConditions[0] }, subPatchData<scalar> {
+					commonConditions[1] }, subPatchData<scalar> {
+					commonConditions[2] }, subPatchData<scalar> {
+					commonConditions[3] }, subPatchData<scalar> {
+					commonConditions[4] }, subPatchData<scalar> {
+					commonConditions[5] });
 
 	phase->rhoaTurb = volumeField<vector>(meshReference, vector(0),
-			commonConditions[0], vector(0), commonConditions[1], vector(0),
-			commonConditions[2], vector(0), commonConditions[3], vector(0),
-			commonConditions[4], vector(0), commonConditions[5], vector(0));
+			subPatchData<vector> { commonConditions[0] }, subPatchData<vector> {
+					commonConditions[1] }, subPatchData<vector> {
+					commonConditions[2] }, subPatchData<vector> {
+					commonConditions[3] }, subPatchData<vector> {
+					commonConditions[4] }, subPatchData<vector> {
+					commonConditions[5] });
 
-	phase->rhobTurb = volumeField<scalar>(meshReference, 0, commonConditions[0],
-			0, commonConditions[1], 0, commonConditions[2], 0,
-			commonConditions[3], 0, commonConditions[4], 0, commonConditions[5],
-			0);
+	phase->rhobTurb = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { commonConditions[0] }, subPatchData<scalar> {
+					commonConditions[1] }, subPatchData<scalar> {
+					commonConditions[2] }, subPatchData<scalar> {
+					commonConditions[3] }, subPatchData<scalar> {
+					commonConditions[4] }, subPatchData<scalar> {
+					commonConditions[5] });
 
 	phase->HelmholtzEnergy = volumeField<scalar>(meshReference, 0,
-			commonConditions[0], 0, commonConditions[1], 0, commonConditions[2],
-			0, commonConditions[3], 0, commonConditions[4], 0,
-			commonConditions[5], 0);
+			subPatchData<scalar> { commonConditions[0] }, subPatchData<scalar> {
+					commonConditions[1] }, subPatchData<scalar> {
+					commonConditions[2] }, subPatchData<scalar> {
+					commonConditions[3] }, subPatchData<scalar> {
+					commonConditions[4] }, subPatchData<scalar> {
+					commonConditions[5] });
 
-	phase->entropy = volumeField<scalar>(meshReference, 0, commonConditions[0],
-			0, commonConditions[1], 0, commonConditions[2], 0,
-			commonConditions[3], 0, commonConditions[4], 0, commonConditions[5],
-			0);
+	phase->entropy = volumeField<scalar>(meshReference, 0,
+			subPatchData<scalar> { commonConditions[0] }, subPatchData<scalar> {
+					commonConditions[1] }, subPatchData<scalar> {
+					commonConditions[2] }, subPatchData<scalar> {
+					commonConditions[3] }, subPatchData<scalar> {
+					commonConditions[4] }, subPatchData<scalar> {
+					commonConditions[5] });
 
 	/*Reading vectors for zones determination.*/
 	std::valarray<vector> vectorsOfZones(numberOfZones * 2);
@@ -642,19 +1098,20 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 			for (std::size_t j = 0; j < numberOfZones; ++j)
 			{
-				if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+				if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
 						&& (radiusOfCell.v()[0]
 								< vectorsOfZones[2 * j + 1].v()[0])
-						&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+						&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
 						&& (radiusOfCell.v()[1]
 								< vectorsOfZones[2 * j + 1].v()[1])
-						&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+						&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
 						&& (radiusOfCell.v()[2]
-								<= vectorsOfZones[2 * j + 1].v()[2]))
+								< vectorsOfZones[2 * j + 1].v()[2]))
 				{
 					zoneFounded = true;
 					phase->concentration.v[k].ref_r()[i] = std::stod(
-							matrixOfSubstancesConditions[k - 1][16 + j]);
+							matrixOfSubstancesConditions[k - 1][4 + j]);
+					break;
 				}
 			}
 
@@ -673,18 +1130,19 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
 					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
 					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
 					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
 				phase->velocity.ref_r()[i] = vector(
-						std::stod(velocityConditions[24 + 3 * j]),
-						std::stod(velocityConditions[25 + 3 * j]),
-						std::stod(velocityConditions[26 + 3 * j]));
+						std::stod(velocityConditions[3 * j]),
+						std::stod(velocityConditions[1 + 3 * j]),
+						std::stod(velocityConditions[2 + 3 * j]));
+				break;
 			}
 		}
 
@@ -703,16 +1161,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
 					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
 					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
 					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
-				phase->pressure.ref_r()[i] = std::stod(
-						pressureConditions[12 + j]);
+				phase->pressure.ref_r()[i] = std::stod(pressureConditions[j]);
+				break;
 			}
 		}
 		if (!zoneFounded)
@@ -730,16 +1188,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
 					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
 					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
 					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
-				phase->kTurb.ref_r()[i] = scalar { std::stod(
-						kTurbConditions[12 + j]) };
+				phase->kTurb.ref_r()[i] = std::stod(kTurbConditions[j]);
+				break;
 			}
 		}
 		if (!zoneFounded)
@@ -757,16 +1215,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
 					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
 					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
 					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
-				phase->epsTurb.ref_r()[i] = std::stod(
-						epsTurbConditions[12 + j]);
+				phase->epsTurb.ref_r()[i] = std::stod(epsTurbConditions[j]);
+				break;
 			}
 		}
 		if (!zoneFounded)
@@ -784,18 +1242,19 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
 					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
 					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
 					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
 				phase->aTurb.ref_r()[i] = vector(
-						std::stod(aTurbConditions[24 + 3 * j]),
-						std::stod(aTurbConditions[25 + 3 * j]),
-						std::stod(aTurbConditions[26 + 3 * j]));
+						std::stod(aTurbConditions[3 * j]),
+						std::stod(aTurbConditions[1 + 3 * j]),
+						std::stod(aTurbConditions[2 + 3 * j]));
+				break;
 			}
 		}
 
@@ -814,15 +1273,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
 					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
 					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
 					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
-				phase->bTurb.ref_r()[i] = std::stod(bTurbConditions[12 + j]);
+				phase->bTurb.ref_r()[i] = std::stod(bTurbConditions[j]);
+				break;
 			}
 		}
 		if (!zoneFounded)

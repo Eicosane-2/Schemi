@@ -14,6 +14,7 @@
 #include "exception.hpp"
 #include "globalConstants.hpp"
 #include "mesh.hpp"
+#include "subPatchData.hpp"
 
 namespace schemi
 {
@@ -71,12 +72,12 @@ struct field
 	}
 
 	field(const mesh & meshIn, const typeOfValue & value,
-			const boundaryConditionType & b1, const typeOfValue & bv1,
-			const boundaryConditionType & b2, const typeOfValue & bv2,
-			const boundaryConditionType & b3, const typeOfValue & bv3,
-			const boundaryConditionType & b4, const typeOfValue & bv4,
-			const boundaryConditionType & b5, const typeOfValue & bv5,
-			const boundaryConditionType & b6, const typeOfValue & bv6) :
+			const subPatchData<typeOfValue> & bData1,
+			const subPatchData<typeOfValue> & bData2,
+			const subPatchData<typeOfValue> & bData3,
+			const subPatchData<typeOfValue> & bData4,
+			const subPatchData<typeOfValue> & bData5,
+			const subPatchData<typeOfValue> & bData6) :
 			valueField(0), boundaryConditionInfo(0), meshReference { meshIn }, fieldSize {
 					0 }
 	{
@@ -98,70 +99,63 @@ struct field
 			for (std::size_t j = prev; j < (prev + meshReference.tailNumber());
 					++j)
 			{
-				boundaryConditionInfo[j].first = b1;
-				boundaryConditionInfo[j].second = bv1;
+				boundaryConditionInfo[j].first = bData1.bType;
+				boundaryConditionInfo[j].second = bData1.fixVal;
 			}
 			prev += meshReference.tailNumber() + meshReference.innerNumber();
 
 			for (std::size_t j = prev; j < (prev + meshReference.pointNumber());
 					++j)
 			{
-				boundaryConditionInfo[j].first = b2;
-				boundaryConditionInfo[j].second = bv2;
+				boundaryConditionInfo[j].first = bData2.bType;
+				boundaryConditionInfo[j].second = bData2.fixVal;
 			}
 			prev += meshReference.pointNumber();
 
 			for (std::size_t j = prev;
 					j < (prev + meshReference.bottomNumber()); ++j)
 			{
-				boundaryConditionInfo[j].first = b3;
-				boundaryConditionInfo[j].second = bv3;
+				boundaryConditionInfo[j].first = bData3.bType;
+				boundaryConditionInfo[j].second = bData3.fixVal;
 			}
 			prev += meshReference.bottomNumber();
 
 			for (std::size_t j = prev; j < (prev + meshReference.rightNumber());
 					++j)
 			{
-				boundaryConditionInfo[j].first = b4;
-				boundaryConditionInfo[j].second = bv4;
+				boundaryConditionInfo[j].first = bData4.bType;
+				boundaryConditionInfo[j].second = bData4.fixVal;
 			}
 			prev += meshReference.rightNumber();
 
 			for (std::size_t j = prev; j < (prev + meshReference.leftNumber());
 					++j)
 			{
-				boundaryConditionInfo[j].first = b5;
-				boundaryConditionInfo[j].second = bv5;
+				boundaryConditionInfo[j].first = bData5.bType;
+				boundaryConditionInfo[j].second = bData5.fixVal;
 			}
 			prev += meshReference.leftNumber();
 
 			for (std::size_t j = prev; j < (prev + meshReference.topNumber());
 					++j)
 			{
-				boundaryConditionInfo[j].first = b6;
-				boundaryConditionInfo[j].second = bv6;
+				boundaryConditionInfo[j].first = bData6.bType;
+				boundaryConditionInfo[j].second = bData6.fixVal;
 			}
 
 			fieldSize = meshReference.cellsSize();
 		}
 		else
-			throw exception("Field is not volumeField.",
-					errorsEnum::fieldInitializationError);
+			staticNotVolumeField();
 	}
 
 	field(const mesh & meshIn, const typeOfValue & value,
-			const boundaryConditionType & b1,
-			const std::vector<typeOfValue> & bv1,
-			const boundaryConditionType & b2,
-			const std::vector<typeOfValue> & bv2,
-			const boundaryConditionType & b3,
-			const std::vector<typeOfValue> & bv3,
-			const boundaryConditionType & b4,
-			const std::vector<typeOfValue> & bv4,
-			const boundaryConditionType & b5,
-			const std::vector<typeOfValue> & bv5,
-			const boundaryConditionType & b6,
-			const std::vector<typeOfValue> & bv6, const std::size_t mpiSize) :
+			const std::vector<subPatchData<typeOfValue>> & bData1,
+			const std::vector<subPatchData<typeOfValue>> & bData2,
+			const std::vector<subPatchData<typeOfValue>> & bData3,
+			const std::vector<subPatchData<typeOfValue>> & bData4,
+			const std::vector<subPatchData<typeOfValue>> & bData5,
+			const std::vector<subPatchData<typeOfValue>> & bData6) :
 			valueField(0), boundaryConditionInfo(0), meshReference { meshIn }, fieldSize {
 					0 }
 	{
@@ -178,114 +172,207 @@ struct field
 							boundaryConditionType::innerSurface,
 							typeOfValue(0)));
 
-			const auto right0Index = meshReference.tailNumber()
-					+ meshReference.innerNumber() + meshReference.pointNumber()
-					+ meshReference.bottomNumber();
-			const auto left0Index = right0Index + meshReference.rightNumber();
-
-			const std::size_t tailOIndex = 0;
-			const auto point0Index = meshReference.tailNumber()
-					+ meshReference.innerNumber();
-
-			scalar YLength { 1. / stabilizator };
-			scalar XLengthLocal { 1. / stabilizator };
-
-			if (meshReference.taskDimension() != dimensionsEnum::task1D)
-			{
-				YLength = (meshReference.surfaces()[left0Index].rC()
-						- meshReference.surfaces()[right0Index].rC()).mag();
-				XLengthLocal = (meshReference.surfaces()[point0Index].rC()
-						- meshReference.surfaces()[tailOIndex].rC()).mag();
-			}
-
-			const auto XLength = XLengthLocal * mpiSize;
-
-			const auto YLengthPartitionTail = YLength / bv1.size();
-			const auto YLengthPartitionPoint = YLength / bv2.size();
-
-			const auto XLengthPartitionBottom = XLength / bv3.size();
-			const auto XLengthPartitionRight = XLength / bv4.size();
-			const auto XLengthPartitionLeft = XLength / bv5.size();
-			const auto XLengthPartitionTop = XLength / bv6.size();
-
 			std::size_t prev { 0 };
 
 			for (std::size_t j = prev; j < (prev + meshReference.tailNumber());
 					++j)
 			{
-				const std::size_t boundaryNumber =
-						static_cast<std::size_t>(meshReference.surfaces()[j].rC().v()[1]
-								/ YLengthPartitionTail);
+				const vector surfaceCoord = meshReference.surfaces()[j].rC();
 
-				boundaryConditionInfo[j].first = b1;
-				boundaryConditionInfo[j].second = bv1[boundaryNumber];
+				bool zoneFounded { false };
+
+				for (std::size_t zone = 0; zone < bData1.size(); ++zone)
+				{
+					if (true
+							&& (surfaceCoord.v()[1]
+									> bData1[zone].patchBeg.v()[1])
+							&& (surfaceCoord.v()[1]
+									< bData1[zone].patchEnd.v()[1])
+							&& (surfaceCoord.v()[2]
+									> bData1[zone].patchBeg.v()[2])
+							&& (surfaceCoord.v()[2]
+									< bData1[zone].patchEnd.v()[2]))
+					{
+						zoneFounded = true;
+						boundaryConditionInfo[j].first = bData1[zone].bType;
+						boundaryConditionInfo[j].second = bData1[zone].fixVal;
+						break;
+					}
+				}
+
+				if (!zoneFounded)
+					throw exception(
+							"Surface " + std::to_string(j)
+									+ " of a dropped out of all zones.",
+							errorsEnum::initializationError);
 			}
 			prev += meshReference.tailNumber() + meshReference.innerNumber();
 
 			for (std::size_t j = prev; j < (prev + meshReference.pointNumber());
 					++j)
 			{
-				const std::size_t boundaryNumber =
-						static_cast<std::size_t>(meshReference.surfaces()[j].rC().v()[1]
-								/ YLengthPartitionPoint);
+				const vector surfaceCoord = meshReference.surfaces()[j].rC();
 
-				boundaryConditionInfo[j].first = b2;
-				boundaryConditionInfo[j].second = bv2[boundaryNumber];
+				bool zoneFounded { false };
+
+				for (std::size_t zone = 0; zone < bData2.size(); ++zone)
+				{
+					if (true
+							&& (surfaceCoord.v()[1]
+									> bData2[zone].patchBeg.v()[1])
+							&& (surfaceCoord.v()[1]
+									< bData2[zone].patchEnd.v()[1])
+							&& (surfaceCoord.v()[2]
+									> bData2[zone].patchBeg.v()[2])
+							&& (surfaceCoord.v()[2]
+									< bData2[zone].patchEnd.v()[2]))
+					{
+						zoneFounded = true;
+						boundaryConditionInfo[j].first = bData2[zone].bType;
+						boundaryConditionInfo[j].second = bData2[zone].fixVal;
+						break;
+					}
+				}
+
+				if (!zoneFounded)
+					throw exception(
+							"Surface " + std::to_string(j)
+									+ " of a dropped out of all zones.",
+							errorsEnum::initializationError);
 			}
 			prev += meshReference.pointNumber();
 
 			for (std::size_t j = prev;
 					j < (prev + meshReference.bottomNumber()); ++j)
 			{
-				const std::size_t boundaryNumber =
-						static_cast<std::size_t>(meshReference.surfaces()[j].rC().v()[0]
-								/ XLengthPartitionBottom);
+				const vector surfaceCoord = meshReference.surfaces()[j].rC();
 
-				boundaryConditionInfo[j].first = b3;
-				boundaryConditionInfo[j].second = bv3[boundaryNumber];
+				bool zoneFounded { false };
+
+				for (std::size_t zone = 0; zone < bData3.size(); ++zone)
+				{
+					if ((surfaceCoord.v()[0] > bData3[zone].patchBeg.v()[0])
+							&& (surfaceCoord.v()[0]
+									< bData3[zone].patchEnd.v()[0])
+							&& (surfaceCoord.v()[1]
+									> bData3[zone].patchBeg.v()[1])
+							&& (surfaceCoord.v()[1]
+									< bData3[zone].patchEnd.v()[1]) && true)
+					{
+						zoneFounded = true;
+						boundaryConditionInfo[j].first = bData3[zone].bType;
+						boundaryConditionInfo[j].second = bData3[zone].fixVal;
+						break;
+					}
+				}
+
+				if (!zoneFounded)
+					throw exception(
+							"Surface " + std::to_string(j)
+									+ " of a dropped out of all zones.",
+							errorsEnum::initializationError);
 			}
 			prev += meshReference.bottomNumber();
 
 			for (std::size_t j = prev; j < (prev + meshReference.rightNumber());
 					++j)
 			{
-				const std::size_t boundaryNumber =
-						static_cast<std::size_t>(meshReference.surfaces()[j].rC().v()[0]
-								/ XLengthPartitionRight);
+				const vector surfaceCoord = meshReference.surfaces()[j].rC();
 
-				boundaryConditionInfo[j].first = b4;
-				boundaryConditionInfo[j].second = bv4[boundaryNumber];
+				bool zoneFounded { false };
+
+				for (std::size_t zone = 0; zone < bData4.size(); ++zone)
+				{
+					if ((surfaceCoord.v()[0] > bData4[zone].patchBeg.v()[0])
+							&& (surfaceCoord.v()[0]
+									< bData4[zone].patchEnd.v()[0]) && true
+							&& (surfaceCoord.v()[2]
+									> bData4[zone].patchBeg.v()[2])
+							&& (surfaceCoord.v()[2]
+									< bData4[zone].patchEnd.v()[2]))
+					{
+						zoneFounded = true;
+						boundaryConditionInfo[j].first = bData4[zone].bType;
+						boundaryConditionInfo[j].second = bData4[zone].fixVal;
+						break;
+					}
+				}
+
+				if (!zoneFounded)
+					throw exception(
+							"Surface " + std::to_string(j)
+									+ " of a dropped out of all zones.",
+							errorsEnum::initializationError);
 			}
 			prev += meshReference.rightNumber();
 
 			for (std::size_t j = prev; j < (prev + meshReference.leftNumber());
 					++j)
 			{
-				const std::size_t boundaryNumber =
-						static_cast<std::size_t>(meshReference.surfaces()[j].rC().v()[0]
-								/ XLengthPartitionLeft);
+				const vector surfaceCoord = meshReference.surfaces()[j].rC();
 
-				boundaryConditionInfo[j].first = b5;
-				boundaryConditionInfo[j].second = bv5[boundaryNumber];
+				bool zoneFounded { false };
+
+				for (std::size_t zone = 0; zone < bData5.size(); ++zone)
+				{
+					if ((surfaceCoord.v()[0] > bData5[zone].patchBeg.v()[0])
+							&& (surfaceCoord.v()[0]
+									< bData5[zone].patchEnd.v()[0]) && true
+							&& (surfaceCoord.v()[2]
+									> bData5[zone].patchBeg.v()[2])
+							&& (surfaceCoord.v()[2]
+									< bData5[zone].patchEnd.v()[2]))
+					{
+						zoneFounded = true;
+						boundaryConditionInfo[j].first = bData5[zone].bType;
+						boundaryConditionInfo[j].second = bData5[zone].fixVal;
+						break;
+					}
+				}
+
+				if (!zoneFounded)
+					throw exception(
+							"Surface " + std::to_string(j)
+									+ " of a dropped out of all zones.",
+							errorsEnum::initializationError);
 			}
 			prev += meshReference.leftNumber();
 
 			for (std::size_t j = prev; j < (prev + meshReference.topNumber());
 					++j)
 			{
-				const std::size_t boundaryNumber =
-						static_cast<std::size_t>(meshReference.surfaces()[j].rC().v()[0]
-								/ XLengthPartitionTop);
+				const vector surfaceCoord = meshReference.surfaces()[j].rC();
 
-				boundaryConditionInfo[j].first = b6;
-				boundaryConditionInfo[j].second = bv6[boundaryNumber];
+				bool zoneFounded { false };
+
+				for (std::size_t zone = 0; zone < bData6.size(); ++zone)
+				{
+					if ((surfaceCoord.v()[0] > bData6[zone].patchBeg.v()[0])
+							&& (surfaceCoord.v()[0]
+									< bData6[zone].patchEnd.v()[0])
+							&& (surfaceCoord.v()[1]
+									> bData6[zone].patchBeg.v()[1])
+							&& (surfaceCoord.v()[1]
+									< bData6[zone].patchEnd.v()[1]) && true)
+					{
+						zoneFounded = true;
+						boundaryConditionInfo[j].first = bData6[zone].bType;
+						boundaryConditionInfo[j].second = bData6[zone].fixVal;
+						break;
+					}
+				}
+
+				if (!zoneFounded)
+					throw exception(
+							"Surface " + std::to_string(j)
+									+ " of a dropped out of all zones.",
+							errorsEnum::initializationError);
 			}
 
 			fieldSize = meshReference.cellsSize();
 		}
 		else
-			throw exception("Field is not volumeField.",
-					errorsEnum::fieldInitializationError);
+			staticNotVolumeField();
 	}
 
 	field(const mesh & meshIn, const typeOfValue & value,
@@ -356,6 +443,12 @@ private:
 		if (!meshReference.is_initialized())
 			throw exception("Mesh has not yet been initialized.",
 					errorsEnum::fieldInitializationError);
+	}
+
+	template<bool flag = false>
+	constexpr void staticNotVolumeField()
+	{
+		static_assert(flag, "Field is not volumeField.");
 	}
 };
 }  // namespace schemi

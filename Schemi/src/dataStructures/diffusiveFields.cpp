@@ -33,8 +33,11 @@ schemi::diffusiveFields::diffusiveFields(const mesh & meshRef,
 			boundaryConditionType::calculated,
 			boundaryConditionType::calculatedMassFraction);
 	std::fill(massFraction.begin(), massFraction.end(),
-			volumeField<scalar>(meshRef, 0, bndCon[0], 0, bndCon[1], 0,
-					bndCon[2], 0, bndCon[3], 0, bndCon[4], 0, bndCon[5], 0));
+			volumeField<scalar>(meshRef, 0, subPatchData<scalar> { bndCon[0] },
+					subPatchData<scalar> { bndCon[1] }, subPatchData<scalar> {
+							bndCon[2] }, subPatchData<scalar> { bndCon[3] },
+					subPatchData<scalar> { bndCon[4] }, subPatchData<scalar> {
+							bndCon[5] }));
 
 	std::valarray<scalar> sumMassFrac(scalar(0), meshRef.cellsSize());
 	for (std::size_t k_ind = 0; k_ind < massFraction.size(); ++k_ind)

@@ -128,8 +128,25 @@ public:
 	void correctBoundaryValues(
 			[[maybe_unused]] surfaceField<tensor3> & corField) const noexcept;
 
+	template<typename T>
 	void correctBoundaryConditions(
-			[[maybe_unused]] std::vector<boundaryConditionType> & conditionsArray) const noexcept;
+			[[maybe_unused]] std::array<std::vector<subPatchData<T>>, 6> & conditionsArray) const noexcept
+	{
+#ifdef MPI_VERSION
+		if (mpi_rank != 0)
+		{
+			auto & conditionsArray_0 = conditionsArray[0];
+			for (auto & subp : conditionsArray_0)
+				subp.bType = boundaryConditionType::calculatedParallelBoundary;
+		}
+		if (mpi_rank != (mpi_size - 1))
+		{
+			auto & conditionsArray_1 = conditionsArray[1];
+			for (auto & subp : conditionsArray_1)
+				subp.bType = boundaryConditionType::calculatedParallelBoundary;
+		}
+#endif
+	}
 
 	template<typename typeOfValue>
 	void correctBoundaryConditions(

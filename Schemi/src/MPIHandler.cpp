@@ -693,17 +693,6 @@ void schemi::MPIHandler::correctBoundaryValues(
 #endif
 }
 
-void schemi::MPIHandler::correctBoundaryConditions(
-		[[maybe_unused]] std::vector<boundaryConditionType> & conditionsArray) const noexcept
-{
-#ifdef MPI_VERSION
-	if (mpi_rank != 0)
-		conditionsArray[0] = boundaryConditionType::calculatedParallelBoundary;
-	if (mpi_rank != (mpi_size - 1))
-		conditionsArray[1] = boundaryConditionType::calculatedParallelBoundary;
-#endif
-}
-
 void schemi::MPIHandler::gatherField(const volumeField<scalar> & inField,
 		std::valarray<scalar> & retField) noexcept
 {

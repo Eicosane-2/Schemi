@@ -17,6 +17,22 @@ namespace schemi
 template<typename T>
 struct subPatchData
 {
+	subPatchData() :
+			bType(boundaryConditionType::blank), fixVal(0)
+	{
+	}
+
+	subPatchData(boundaryConditionType boundType, T value = T { 0 }) :
+			bType(boundType), fixVal(value)
+	{
+	}
+
+	subPatchData(boundaryConditionType boundType, const vector & b,
+			const vector & e, T value = T { 0 }) :
+			bType(boundType), fixVal(value), patchBeg(b), patchEnd(e)
+	{
+	}
+
 	boundaryConditionType bType { boundaryConditionType::blank };
 
 	T fixVal { 0 };
