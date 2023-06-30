@@ -185,13 +185,13 @@ struct field
 				{
 					if (true
 							&& (surfaceCoord.v()[1]
-									> bData1[zone].patchBeg.v()[1])
+									>= bData1[zone].patchBeg.v()[1])
 							&& (surfaceCoord.v()[1]
-									< bData1[zone].patchEnd.v()[1])
+									<= bData1[zone].patchEnd.v()[1])
 							&& (surfaceCoord.v()[2]
-									> bData1[zone].patchBeg.v()[2])
+									>= bData1[zone].patchBeg.v()[2])
 							&& (surfaceCoord.v()[2]
-									< bData1[zone].patchEnd.v()[2]))
+									<= bData1[zone].patchEnd.v()[2]))
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData1[zone].bType;
@@ -219,13 +219,13 @@ struct field
 				{
 					if (true
 							&& (surfaceCoord.v()[1]
-									> bData2[zone].patchBeg.v()[1])
+									>= bData2[zone].patchBeg.v()[1])
 							&& (surfaceCoord.v()[1]
-									< bData2[zone].patchEnd.v()[1])
+									<= bData2[zone].patchEnd.v()[1])
 							&& (surfaceCoord.v()[2]
-									> bData2[zone].patchBeg.v()[2])
+									>= bData2[zone].patchBeg.v()[2])
 							&& (surfaceCoord.v()[2]
-									< bData2[zone].patchEnd.v()[2]))
+									<= bData2[zone].patchEnd.v()[2]))
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData2[zone].bType;
@@ -251,13 +251,13 @@ struct field
 
 				for (std::size_t zone = 0; zone < bData3.size(); ++zone)
 				{
-					if ((surfaceCoord.v()[0] > bData3[zone].patchBeg.v()[0])
+					if ((surfaceCoord.v()[0] >= bData3[zone].patchBeg.v()[0])
 							&& (surfaceCoord.v()[0]
-									< bData3[zone].patchEnd.v()[0])
+									<= bData3[zone].patchEnd.v()[0])
 							&& (surfaceCoord.v()[1]
-									> bData3[zone].patchBeg.v()[1])
+									>= bData3[zone].patchBeg.v()[1])
 							&& (surfaceCoord.v()[1]
-									< bData3[zone].patchEnd.v()[1]) && true)
+									<= bData3[zone].patchEnd.v()[1]) && true)
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData3[zone].bType;
@@ -283,13 +283,13 @@ struct field
 
 				for (std::size_t zone = 0; zone < bData4.size(); ++zone)
 				{
-					if ((surfaceCoord.v()[0] > bData4[zone].patchBeg.v()[0])
+					if ((surfaceCoord.v()[0] >= bData4[zone].patchBeg.v()[0])
 							&& (surfaceCoord.v()[0]
-									< bData4[zone].patchEnd.v()[0]) && true
+									<= bData4[zone].patchEnd.v()[0]) && true
 							&& (surfaceCoord.v()[2]
-									> bData4[zone].patchBeg.v()[2])
+									>= bData4[zone].patchBeg.v()[2])
 							&& (surfaceCoord.v()[2]
-									< bData4[zone].patchEnd.v()[2]))
+									<= bData4[zone].patchEnd.v()[2]))
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData4[zone].bType;
@@ -315,13 +315,13 @@ struct field
 
 				for (std::size_t zone = 0; zone < bData5.size(); ++zone)
 				{
-					if ((surfaceCoord.v()[0] > bData5[zone].patchBeg.v()[0])
+					if ((surfaceCoord.v()[0] >= bData5[zone].patchBeg.v()[0])
 							&& (surfaceCoord.v()[0]
-									< bData5[zone].patchEnd.v()[0]) && true
+									<= bData5[zone].patchEnd.v()[0]) && true
 							&& (surfaceCoord.v()[2]
-									> bData5[zone].patchBeg.v()[2])
+									>= bData5[zone].patchBeg.v()[2])
 							&& (surfaceCoord.v()[2]
-									< bData5[zone].patchEnd.v()[2]))
+									<= bData5[zone].patchEnd.v()[2]))
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData5[zone].bType;
@@ -347,13 +347,13 @@ struct field
 
 				for (std::size_t zone = 0; zone < bData6.size(); ++zone)
 				{
-					if ((surfaceCoord.v()[0] > bData6[zone].patchBeg.v()[0])
+					if ((surfaceCoord.v()[0] >= bData6[zone].patchBeg.v()[0])
 							&& (surfaceCoord.v()[0]
-									< bData6[zone].patchEnd.v()[0])
+									<= bData6[zone].patchEnd.v()[0])
 							&& (surfaceCoord.v()[1]
-									> bData6[zone].patchBeg.v()[1])
+									>= bData6[zone].patchBeg.v()[1])
 							&& (surfaceCoord.v()[1]
-									< bData6[zone].patchEnd.v()[1]) && true)
+									<= bData6[zone].patchEnd.v()[1]) && true)
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData6[zone].bType;

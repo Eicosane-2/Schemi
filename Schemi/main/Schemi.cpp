@@ -304,15 +304,15 @@ int main()
 
 				std::cout << "Time = " << Time << std::endl;
 				{
-					/*Recreation of Time.dat, if it exist.*/
-					std::string timeFileName("./result/Time.dat");
+					/*Recreation of Time.tsv, if it exist.*/
+					std::string timeFileName("./result/Time.tsv");
 					std::ofstream timeFile(timeFileName, std::ios::out);
 					timeFile.close();
 				}
 				if (dimensionsFlag == dimensionsEnum::task1D)
 				{
-					/*Recreation of timeWidth.dat, if it exist.*/
-					std::string timeWidthFileName("./result/timeWidth.dat");
+					/*Recreation of timeWidth.tsv, if it exist.*/
+					std::string timeWidthFileName("./result/timeWidth.tsv");
 					std::ofstream timeWidthFile(timeWidthFileName,
 							std::ios::out);
 					timeWidthFile << "Time" << '\t' << "Width" << std::endl;
@@ -332,10 +332,10 @@ int main()
 							std::string("<<result>> directory doesn't exist."),
 							errorsEnum::systemError);
 
-				std::string timeFileName("./result/Time.dat");
+				std::string timeFileName("./result/Time.tsv");
 				std::ifstream timeFile(timeFileName, std::ios::in);
 				if (!timeFile.is_open())
-					throw exception(std::string("Couldn't open Time.dat"),
+					throw exception(std::string("Couldn't open Time.tsv"),
 							errorsEnum::systemError);
 				timeFile.precision(ioPrecision);
 
@@ -358,12 +358,12 @@ int main()
 				if (lineNumber == 0)
 					throw exception(
 							std::string(
-									"Appropriate line wasn't found in Time.dat"),
+									"Appropriate line wasn't found in Time.tsv"),
 							errorsEnum::systemError);
 
 				if (lineNumber == 1)
 					throw exception(
-							std::string("Time.dat contains only one line."),
+							std::string("Time.tsv contains only one line."),
 							errorsEnum::systemError);
 
 				if (lineNumberEnd == lineNumber)
@@ -411,10 +411,10 @@ int main()
 
 				timeFile.close();
 
-				/*Recreation of Time.dat.*/
+				/*Recreation of Time.tsv.*/
 				std::ofstream timeFileNew(timeFileName, std::ios::out);
 				if (!timeFileNew.is_open())
-					throw exception(std::string("Couldn't open Time.dat"),
+					throw exception(std::string("Couldn't open Time.tsv"),
 							errorsEnum::systemError);
 				timeFileNew.precision(ioPrecision);
 
@@ -425,12 +425,12 @@ int main()
 
 				if (isLastOutput)
 				{
-					std::ifstream numberOfStepsFile("./timeOfCalculation.dat",
+					std::ifstream numberOfStepsFile("./timeOfCalculation.tsv",
 							std::ios::in);
 					if (!numberOfStepsFile.is_open())
 						throw exception(
 								std::string(
-										"Couldn't open timeOfCalculation.dat"),
+										"Couldn't open timeOfCalculation.tsv"),
 								errorsEnum::systemError);
 
 					while (!numberOfStepsFile.eof())
@@ -453,12 +453,12 @@ int main()
 
 				if (dimensionsFlag == dimensionsEnum::task1D)
 				{
-					std::string timeWidthFileName("./result/timeWidth.dat");
+					std::string timeWidthFileName("./result/timeWidth.tsv");
 					std::ifstream timeWidthFile(timeWidthFileName,
 							std::ios::in);
 					if (!timeWidthFile.is_open())
 						throw exception(
-								std::string("Couldn't open timeWidth.dat"),
+								std::string("Couldn't open timeWidth.tsv"),
 								errorsEnum::systemError);
 
 					lineNumber = 0;
@@ -508,12 +508,12 @@ int main()
 
 					timeWidthFile.close();
 
-					/*Recreation of timeWidth.dat.*/
+					/*Recreation of timeWidth.tsv.*/
 					std::ofstream timeWidthFileNew(timeWidthFileName,
 							std::ios::out);
 					if (!timeWidthFileNew.is_open())
 						throw exception(
-								std::string("Couldn't open timeWidth.dat"),
+								std::string("Couldn't open timeWidth.tsv"),
 								errorsEnum::systemError);
 					timeWidthFileNew.precision(ioPrecision);
 
@@ -905,7 +905,7 @@ int main()
 		MPI_Finalize();
 #endif
 
-		std::ofstream outputTimeExecutionFile { "timeOfCalculation.dat",
+		std::ofstream outputTimeExecutionFile { "timeOfCalculation.tsv",
 				std::ios::out };
 		outputTimeExecutionFile.precision(ioPrecision);
 		outputTimeExecutionFile << "Time of execution" << std::endl

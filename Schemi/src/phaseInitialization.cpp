@@ -1098,15 +1098,15 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 			for (std::size_t j = 0; j < numberOfZones; ++j)
 			{
-				if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
+				if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
 						&& (radiusOfCell.v()[0]
-								< vectorsOfZones[2 * j + 1].v()[0])
-						&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
+								<= vectorsOfZones[2 * j + 1].v()[0])
+						&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
 						&& (radiusOfCell.v()[1]
-								< vectorsOfZones[2 * j + 1].v()[1])
-						&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
+								<= vectorsOfZones[2 * j + 1].v()[1])
+						&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
 						&& (radiusOfCell.v()[2]
-								< vectorsOfZones[2 * j + 1].v()[2]))
+								<= vectorsOfZones[2 * j + 1].v()[2]))
 				{
 					zoneFounded = true;
 					phase->concentration.v[k].ref_r()[i] = std::stod(
@@ -1130,12 +1130,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
+			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
+					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
+					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
 				phase->velocity.ref_r()[i] = vector(
@@ -1161,12 +1161,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
+			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
+					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
+					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
 				phase->pressure.ref_r()[i] = std::stod(pressureConditions[j]);
@@ -1188,12 +1188,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
+			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
+					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
+					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
 				phase->kTurb.ref_r()[i] = std::stod(kTurbConditions[j]);
@@ -1215,12 +1215,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
+			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
+					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
+					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
 				phase->epsTurb.ref_r()[i] = std::stod(epsTurbConditions[j]);
@@ -1242,12 +1242,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
+			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
+					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
+					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
 				phase->aTurb.ref_r()[i] = vector(
@@ -1273,12 +1273,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] > vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] < vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] > vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] < vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] > vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] < vectorsOfZones[2 * j + 1].v()[2]))
+			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
+					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
+					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
+					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
+					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
+					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
 			{
 				zoneFounded = true;
 				phase->bTurb.ref_r()[i] = std::stod(bTurbConditions[j]);

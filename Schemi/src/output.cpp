@@ -28,10 +28,10 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 	std::string outputFileName { "./result/output_" };
 
-	std::string timeFileName { "./result/Time.dat" };
+	std::string timeFileName { "./result/Time.tsv" };
 
 	outputFileName.append(bufOutputN);
-	outputFileName.append(".dat");
+	outputFileName.append(".tsv");
 
 	std::ofstream outputFile { outputFileName, std::ios::out };
 	outputFile.precision(ioPrecision);
@@ -50,9 +50,9 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 				errorsEnum::systemError);
 
 	if (timeFile.is_open())
-		std::cout << "./result/Time.dat is opened." << std::endl;
+		std::cout << "./result/Time.tsv is opened." << std::endl;
 	else
-		throw exception("Couldn't open ./result/Time.dat.",
+		throw exception("Couldn't open ./result/Time.tsv.",
 				errorsEnum::systemError);
 
 	outputFile << "coordinate_x" << '\t';
@@ -313,15 +313,15 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 void schemi::output::mixedZoneWidth1D(const structForOutput & outputData,
 		const scalar Time)
 {
-	std::string timeWidthFileName { "./result/timeWidth.dat" };
+	std::string timeWidthFileName { "./result/timeWidth.tsv" };
 
 	std::ofstream timeWidthFile { timeWidthFileName, std::ios::app };
 	timeWidthFile.precision(ioPrecision);
 
 	if (timeWidthFile.is_open())
-		std::cout << "./result/timeWidth.dat is opened." << std::endl;
+		std::cout << "./result/timeWidth.tsv is opened." << std::endl;
 	else
-		throw exception("Couldn't create ./result/timeWidth.dat.",
+		throw exception("Couldn't create ./result/timeWidth.tsv.",
 				errorsEnum::systemError);
 
 	scalar rL { 0 }, rR { 0 };
