@@ -224,7 +224,7 @@ schemi::chemicalKineticsChlorumDissociation::chemicalKineticsChlorumDissociation
 
 	std::string skipBuffer;
 
-	std::ifstream chem { "./set/chemicalKinetics.txt", std::ios::in };
+	std::ifstream chem { "./set/chemicalKinetics.txt" };
 
 	if (chem.is_open())
 		std::cout << "./set/chemicalKinetics.txt is opened." << std::endl;

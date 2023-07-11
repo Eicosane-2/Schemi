@@ -280,8 +280,7 @@ std::unique_ptr<schemi::abstractTurbulenceGen> schemi::createTurbulenceModel(
 
 	/*Read turbulent parameters.*/
 	{
-		std::ifstream turbulentParametersFile { "./set/turbulentParameters.txt",
-				std::ios::in };
+		std::ifstream turbulentParametersFile { "./set/turbulentParameters.txt" };
 		if (turbulentParametersFile.is_open())
 			std::cout << "./set/turbulentParameters.txt is opened."
 					<< std::endl;

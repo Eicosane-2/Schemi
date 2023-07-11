@@ -90,8 +90,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
 					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
 
-	std::ifstream transportCoefficientsFile { "./set/transportCoefficients.txt",
-			std::ios::in };
+	std::ifstream transportCoefficientsFile { "./set/transportCoefficients.txt" };
 	if (transportCoefficientsFile.is_open())
 		std::cout << "./set/transportCoefficients.txt is opened." << std::endl;
 	else
@@ -162,7 +161,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		substanceName.append(bufComponent);
 		substanceName.append(".txt");
-		std::ifstream substanceConditionsFile { substanceName, std::ios::in };
+		std::ifstream substanceConditionsFile { substanceName };
 
 		if (substanceConditionsFile.is_open())
 			std::cout << substanceName << " is opened." << std::endl;
@@ -371,8 +370,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	boundaryConditionsVelocity.fill(std::vector<subPatchData<vector>>(0));
 	std::vector<std::string> velocityConditions(3 * numberOfZones);
 	{
-		std::ifstream velocityConditionsFile { "./set/velocity.txt",
-				std::ios::in };
+		std::ifstream velocityConditionsFile { "./set/velocity.txt" };
 
 		if (velocityConditionsFile.is_open())
 			std::cout << "./set/velocity.txt is opened." << std::endl;
@@ -475,8 +473,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	boundaryConditionsPressure.fill(std::vector<subPatchData<scalar>>(0));
 	std::vector<std::string> pressureConditions(numberOfZones);
 	{
-		std::ifstream pressureConditionsFile { "./set/pressure.txt",
-				std::ios::in };
+		std::ifstream pressureConditionsFile { "./set/pressure.txt" };
 
 		if (pressureConditionsFile.is_open())
 			std::cout << "./set/pressure.txt is opened." << std::endl;
@@ -577,7 +574,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	boundaryConditionskTurb.fill(std::vector<subPatchData<scalar>>(0));
 	std::vector<std::string> kTurbConditions(numberOfZones);
 	{
-		std::ifstream kTurbConditionsFile { "./set/k.txt", std::ios::in };
+		std::ifstream kTurbConditionsFile { "./set/k.txt" };
 
 		if (kTurbConditionsFile.is_open())
 			std::cout << "./set/k.txt is opened." << std::endl;
@@ -677,7 +674,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	boundaryConditionsepsTurb.fill(std::vector<subPatchData<scalar>>(0));
 	std::vector<std::string> epsTurbConditions(numberOfZones);
 	{
-		std::ifstream epsTurbConditionsFile { "./set/epsilon.txt", std::ios::in };
+		std::ifstream epsTurbConditionsFile { "./set/epsilon.txt" };
 
 		if (epsTurbConditionsFile.is_open())
 			std::cout << "./set/epsilon.txt is opened." << std::endl;
@@ -778,7 +775,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	boundaryConditionsaTurb.fill(std::vector<subPatchData<vector>>(0));
 	std::vector<std::string> aTurbConditions(3 * numberOfZones);
 	{
-		std::ifstream aTurbConditionsFile { "./set/a.txt", std::ios::in };
+		std::ifstream aTurbConditionsFile { "./set/a.txt" };
 
 		if (aTurbConditionsFile.is_open())
 			std::cout << "./set/a.txt is opened." << std::endl;
@@ -880,7 +877,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	boundaryConditionsbTurb.fill(std::vector<subPatchData<scalar>>(0));
 	std::vector<std::string> bTurbConditions(numberOfZones);
 	{
-		std::ifstream bTurbConditionsFile { "./set/b.txt", std::ios::in };
+		std::ifstream bTurbConditionsFile { "./set/b.txt" };
 
 		if (bTurbConditionsFile.is_open())
 			std::cout << "./set/b.txt is opened." << std::endl;
@@ -1065,8 +1062,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	/*Reading vectors for zones determination.*/
 	std::valarray<vector> vectorsOfZones(numberOfZones * 2);
 	{
-		std::ifstream coordinatesOfZonesFile("./set/coordinatesOfZones.txt",
-				std::ios::in);
+		std::ifstream coordinatesOfZonesFile("./set/coordinatesOfZones.txt");
 
 		if (coordinatesOfZonesFile.is_open())
 			std::cout << "./set/coordinatesOfZones.txt is opened." << std::endl;
@@ -1342,7 +1338,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				(parallelism.mpi_rank + 1) * meshReference.cellsSize());
 
 		{
-			std::ifstream input_aVector { fieldDataFileName_a, std::ios::in };
+			std::ifstream input_aVector { fieldDataFileName_a };
 			if (!input_aVector.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1370,7 +1366,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_bScalar { fieldDataFileName_b, std::ios::in };
+			std::ifstream input_bScalar { fieldDataFileName_b };
 			if (!input_bScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1394,8 +1390,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_epsilonScalar { fieldDataFileName_epsilon,
-					std::ios::in };
+			std::ifstream input_epsilonScalar { fieldDataFileName_epsilon };
 			if (!input_epsilonScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1419,7 +1414,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_kScalar { fieldDataFileName_k, std::ios::in };
+			std::ifstream input_kScalar { fieldDataFileName_k };
 			if (!input_kScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1443,8 +1438,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_pressureScalar { fieldDataFileName_pressure,
-					std::ios::in };
+			std::ifstream input_pressureScalar { fieldDataFileName_pressure };
 			if (!input_pressureScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1468,8 +1462,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_velocityVector { fieldDataFileName_velocity,
-					std::ios::in };
+			std::ifstream input_velocityVector { fieldDataFileName_velocity };
 			if (!input_velocityVector.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1499,7 +1492,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		for (std::size_t k = 0; k < fieldDataFileName_concentration.size(); ++k)
 		{
 			std::ifstream input_concentrationScalar {
-					fieldDataFileName_concentration[k], std::ios::in };
+					fieldDataFileName_concentration[k] };
 			if (!input_concentrationScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1525,7 +1518,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 #else
 		{
-			std::ifstream input_aVector { fieldDataFileName_a, std::ios::in };
+			std::ifstream input_aVector { fieldDataFileName_a };
 			if (!input_aVector.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1545,7 +1538,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_bScalar { fieldDataFileName_b, std::ios::in };
+			std::ifstream input_bScalar { fieldDataFileName_b };
 			if (!input_bScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1563,8 +1556,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_epsilonScalar { fieldDataFileName_epsilon,
-					std::ios::in };
+			std::ifstream input_epsilonScalar { fieldDataFileName_epsilon };
 			if (!input_epsilonScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1582,7 +1574,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_kScalar { fieldDataFileName_k, std::ios::in };
+			std::ifstream input_kScalar { fieldDataFileName_k };
 			if (!input_kScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1600,8 +1592,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_pressureScalar { fieldDataFileName_pressure,
-					std::ios::in };
+			std::ifstream input_pressureScalar { fieldDataFileName_pressure };
 			if (!input_pressureScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1619,8 +1610,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 
 		{
-			std::ifstream input_velocityVector { fieldDataFileName_velocity,
-					std::ios::in };
+			std::ifstream input_velocityVector { fieldDataFileName_velocity };
 			if (!input_velocityVector.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1643,7 +1633,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		for (std::size_t k = 0; k < fieldDataFileName_concentration.size(); ++k)
 		{
 			std::ifstream input_concentrationScalar {
-					fieldDataFileName_concentration[k], std::ios::in };
+					fieldDataFileName_concentration[k] };
 			if (!input_concentrationScalar.is_open())
 				throw exception(
 						std::string("Couldn't open output file for field data ")
@@ -1665,8 +1655,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	/*Additional peak of k and epsilon*/
 	{
-		std::ifstream turbPeakConditionsFile { "./set/turbPeak.txt",
-				std::ios::in };
+		std::ifstream turbPeakConditionsFile { "./set/turbPeak.txt" };
 
 		std::string profileType;
 

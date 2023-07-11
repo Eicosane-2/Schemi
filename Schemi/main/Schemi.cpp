@@ -81,7 +81,7 @@ int main()
 
 		/*Reading gravitational acceleration.*/
 		{
-			std::ifstream gFile { "./set/g.txt", std::ios::in };
+			std::ifstream gFile { "./set/g.txt" };
 			if (gFile.is_open())
 				std::cout << "./set/g.txt is opened." << std::endl;
 			else
@@ -95,7 +95,7 @@ int main()
 
 		/*Reading initial and boundary conditions.*/
 		{
-			std::ifstream mainParametersFile { "./set/main.txt", std::ios::in };
+			std::ifstream mainParametersFile { "./set/main.txt" };
 			if (mainParametersFile.is_open())
 				std::cout << "./set/main.txt is opened." << std::endl;
 			else
@@ -306,15 +306,14 @@ int main()
 				{
 					/*Recreation of Time.tsv, if it exist.*/
 					std::string timeFileName("./result/Time.tsv");
-					std::ofstream timeFile(timeFileName, std::ios::out);
+					std::ofstream timeFile(timeFileName);
 					timeFile.close();
 				}
 				if (dimensionsFlag == dimensionsEnum::task1D)
 				{
 					/*Recreation of timeWidth.tsv, if it exist.*/
 					std::string timeWidthFileName("./result/timeWidth.tsv");
-					std::ofstream timeWidthFile(timeWidthFileName,
-							std::ios::out);
+					std::ofstream timeWidthFile(timeWidthFileName);
 					timeWidthFile << "Time" << '\t' << "Width" << std::endl;
 					timeWidthFile.close();
 				}
@@ -333,7 +332,7 @@ int main()
 							errorsEnum::systemError);
 
 				std::string timeFileName("./result/Time.tsv");
-				std::ifstream timeFile(timeFileName, std::ios::in);
+				std::ifstream timeFile(timeFileName);
 				if (!timeFile.is_open())
 					throw exception(std::string("Couldn't open Time.tsv"),
 							errorsEnum::systemError);
@@ -412,7 +411,7 @@ int main()
 				timeFile.close();
 
 				/*Recreation of Time.tsv.*/
-				std::ofstream timeFileNew(timeFileName, std::ios::out);
+				std::ofstream timeFileNew(timeFileName);
 				if (!timeFileNew.is_open())
 					throw exception(std::string("Couldn't open Time.tsv"),
 							errorsEnum::systemError);
@@ -425,8 +424,7 @@ int main()
 
 				if (isLastOutput)
 				{
-					std::ifstream numberOfStepsFile("./timeOfCalculation.tsv",
-							std::ios::in);
+					std::ifstream numberOfStepsFile("./timeOfCalculation.tsv");
 					if (!numberOfStepsFile.is_open())
 						throw exception(
 								std::string(
@@ -454,8 +452,7 @@ int main()
 				if (dimensionsFlag == dimensionsEnum::task1D)
 				{
 					std::string timeWidthFileName("./result/timeWidth.tsv");
-					std::ifstream timeWidthFile(timeWidthFileName,
-							std::ios::in);
+					std::ifstream timeWidthFile(timeWidthFileName);
 					if (!timeWidthFile.is_open())
 						throw exception(
 								std::string("Couldn't open timeWidth.tsv"),
@@ -509,8 +506,7 @@ int main()
 					timeWidthFile.close();
 
 					/*Recreation of timeWidth.tsv.*/
-					std::ofstream timeWidthFileNew(timeWidthFileName,
-							std::ios::out);
+					std::ofstream timeWidthFileNew(timeWidthFileName);
 					if (!timeWidthFileNew.is_open())
 						throw exception(
 								std::string("Couldn't open timeWidth.tsv"),
@@ -653,7 +649,7 @@ int main()
 
 		chemicalReactionsEnum chemReactionFlag;
 		{
-			std::ifstream chem { "./set/chemicalKinetics.txt", std::ios::in };
+			std::ifstream chem { "./set/chemicalKinetics.txt" };
 
 			if (chem.is_open())
 				std::cout << "./set/chemicalKinetics.txt is opened."
@@ -905,8 +901,7 @@ int main()
 		MPI_Finalize();
 #endif
 
-		std::ofstream outputTimeExecutionFile { "timeOfCalculation.tsv",
-				std::ios::out };
+		std::ofstream outputTimeExecutionFile { "timeOfCalculation.tsv" };
 		outputTimeExecutionFile.precision(ioPrecision);
 		outputTimeExecutionFile << "Time of execution" << std::endl
 				<< std::chrono::duration_cast<std::chrono::milliseconds>(

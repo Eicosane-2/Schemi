@@ -33,7 +33,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	outputFileName.append(bufOutputN);
 	outputFileName.append(".tsv");
 
-	std::ofstream outputFile { outputFileName, std::ios::out };
+	std::ofstream outputFile { outputFileName };
 	outputFile.precision(ioPrecision);
 
 	std::ofstream timeFile { timeFileName, std::ios::app };
@@ -205,7 +205,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 	std::filesystem::create_directories(fieldDataDirectoryName);
 
-	std::ofstream output_aVector { fieldDataFileName_a, std::ios::out };
+	std::ofstream output_aVector { fieldDataFileName_a };
 	output_aVector.precision(ioPrecision);
 	if (!output_aVector.is_open())
 		throw exception(
@@ -220,7 +220,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 	output_aVector.close();
 
-	std::ofstream output_bScalar { fieldDataFileName_b, std::ios::out };
+	std::ofstream output_bScalar { fieldDataFileName_b };
 	output_bScalar.precision(ioPrecision);
 	if (!output_bScalar.is_open())
 		throw exception(
@@ -233,8 +233,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 	output_bScalar.close();
 
-	std::ofstream output_epsilonScalar { fieldDataFileName_epsilon,
-			std::ios::out };
+	std::ofstream output_epsilonScalar { fieldDataFileName_epsilon };
 	output_epsilonScalar.precision(ioPrecision);
 	if (!output_epsilonScalar.is_open())
 		throw exception(
@@ -247,7 +246,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 	output_epsilonScalar.close();
 
-	std::ofstream output_kScalar { fieldDataFileName_k, std::ios::out };
+	std::ofstream output_kScalar { fieldDataFileName_k };
 	output_kScalar.precision(ioPrecision);
 	if (!output_kScalar.is_open())
 		throw exception(
@@ -260,8 +259,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 	output_kScalar.close();
 
-	std::ofstream output_pressureScalar { fieldDataFileName_pressure,
-			std::ios::out };
+	std::ofstream output_pressureScalar { fieldDataFileName_pressure };
 	output_pressureScalar.precision(ioPrecision);
 	if (!output_pressureScalar.is_open())
 		throw exception(
@@ -274,8 +272,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 	output_pressureScalar.close();
 
-	std::ofstream output_velocityVector { fieldDataFileName_velocity,
-			std::ios::out };
+	std::ofstream output_velocityVector { fieldDataFileName_velocity };
 	output_velocityVector.precision(ioPrecision);
 	if (!output_velocityVector.is_open())
 		throw exception(
@@ -293,7 +290,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	for (std::size_t k = 0; k < fieldDataFileName_concentration.size(); ++k)
 	{
 		std::ofstream output_concentrationScalar {
-				fieldDataFileName_concentration[k], std::ios::out };
+				fieldDataFileName_concentration[k] };
 		output_concentrationScalar.precision(20);
 		if (!output_concentrationScalar.is_open())
 			throw exception(
