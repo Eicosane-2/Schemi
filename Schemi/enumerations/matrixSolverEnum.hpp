@@ -14,7 +14,12 @@ namespace schemi
 {
 enum class matrixSolverEnum
 {
-	GaussSeidel, Thomas, noSovler, explicitSolver, conjugateGradient
+	GaussSeidel,
+	Thomas,
+	noSovler,
+	explicitSolver,
+	conjugateGradient,
+	JacobiConjugateGradient
 };
 }  // namespace schemi
 

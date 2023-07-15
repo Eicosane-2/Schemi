@@ -16,12 +16,51 @@ schemi::SLEMatrix::SLEMatrix(const std::string & stringIn) noexcept :
 {
 }
 
+schemi::SLEMatrix::SLEMatrixStorage::SLEMatrixStorage() :
+		centralDiagonale(0), freeTerm(0), lowerTriangle(0), upperTriangle(0)
+{
+}
+
 schemi::SLEMatrix::SLEMatrixStorage::SLEMatrixStorage(
 		const mesh & meshRef) noexcept :
 		centralDiagonale(0., meshRef.cellsSize()), freeTerm(0.,
 				meshRef.cellsSize()), lowerTriangle(meshRef.cellsSize()), upperTriangle(
 				meshRef.cellsSize())
 {
+}
+
+void schemi::SLEMatrix::SLEMatrixStorage::transpose() noexcept
+{
+	std::vector<std::vector<std::pair<scalar, std::size_t>>> lowerTriangleNew(
+			lowerTriangle.size()), upperTriangleNew(upperTriangle.size());
+
+	for (std::size_t i = 0; i < centralDiagonale.size(); ++i)
+	{
+		for (std::size_t j = 0; j < lowerTriangle[i].size(); ++j)
+		{
+			const std::size_t jAbsOld = lowerTriangle[i][j].second;
+			const auto Avalue = lowerTriangle[i][j].first;
+
+			const std::size_t iNew = jAbsOld;
+			const std::size_t jNew = i;
+
+			upperTriangleNew[iNew].push_back( { Avalue, jNew });
+		}
+
+		for (std::size_t j = 0; j < upperTriangle[i].size(); ++j)
+		{
+			const std::size_t jAbsOld = upperTriangle[i][j].second;
+			const auto Avalue = upperTriangle[i][j].first;
+
+			const std::size_t iNew = jAbsOld;
+			const std::size_t jNew = i;
+
+			lowerTriangleNew[iNew].push_back( { Avalue, jNew });
+		}
+	}
+
+	lowerTriangle = lowerTriangleNew;
+	upperTriangle = upperTriangleNew;
 }
 
 void schemi::SLEMatrix::generateNabla(const volumeField<scalar> & vField,

@@ -8,7 +8,7 @@
 #include "chemicalKineticsNoReaction.hpp"
 
 schemi::chemicalKineticsNoReaction::chemicalKineticsNoReaction() noexcept :
-		abstractChemicalKinetics(false, 0)
+		abstractChemicalKinetics(false)
 {
 }
 

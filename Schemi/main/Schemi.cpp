@@ -678,8 +678,7 @@ int main()
 		}
 
 		std::unique_ptr<abstractChemicalKinetics> chmk(
-				createChemicalKinetics(*gasPhase, chemReactionFlag,
-						numberOfIterations));
+				createChemicalKinetics(*gasPhase, chemReactionFlag));
 
 		/*Write initial conditions.*/
 		{

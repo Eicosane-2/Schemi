@@ -28,50 +28,72 @@ class chemicalKineticsNO2Disproportionation: public abstractChemicalKinetics
 	scalar ΔU_298 = ΔН_298;
 	constexpr static scalar Δn = -1;
 
+	iterativeSolver itSolv;
+
 	class cellReactionMatrix
 	{
-		std::array<scalar, 4> matrixDiagonale { 0.0, 0.0, 0.0, 0.0 };
+		iterativeSolver solverFlag;
 
-		std::array<triangleList, 4> matrixLeftTriangle {
+		struct reactionMatrix
+		{
+			std::array<scalar, 4> Diagonale { 0.0, 0.0, 0.0, 0.0 };
 
-		triangleList(0),
+			std::array<triangleList, 4> LeftTriangle {
 
-		triangleList(1, std::make_pair(0.0, 0)),
+			triangleList(0),
 
-		triangleList { std::make_pair(0.0, 0), std::make_pair(0.0, 1) },
+			triangleList(1, std::make_pair(0.0, 0)),
 
-		triangleList { std::make_pair(0.0, 0), std::make_pair(0.0, 1),
-				std::make_pair(0.0, 2) }
+			triangleList { std::make_pair(0.0, 0), std::make_pair(0.0, 1) },
 
-		};
+			triangleList { std::make_pair(0.0, 0), std::make_pair(0.0, 1),
+					std::make_pair(0.0, 2) }
 
-		std::array<triangleList, 4> matrixRightTriangle {
+			};
 
-		triangleList { std::make_pair(0.0, 1), std::make_pair(0.0, 2),
-				std::make_pair(0.0, 3) },
+			std::array<triangleList, 4> RightTriangle {
 
-		triangleList { std::make_pair(0.0, 2), std::make_pair(0.0, 3) },
+			triangleList { std::make_pair(0.0, 1), std::make_pair(0.0, 2),
+					std::make_pair(0.0, 3) },
 
-		triangleList { std::make_pair(0.0, 3) },
+			triangleList { std::make_pair(0.0, 2), std::make_pair(0.0, 3) },
 
-		triangleList(0)
+			triangleList { std::make_pair(0.0, 3) },
 
-		};
+			triangleList(0)
 
-		std::array<scalar, 4> matrixFreeTerm { 0.0, 0.0, 0.0, 0.0 };
+			};
+
+			std::array<scalar, 4> FreeTerm { 0.0, 0.0, 0.0, 0.0 };
+
+			void transpose() noexcept;
+		} matrix;
 
 		void normalize(std::valarray<scalar> & res) const noexcept;
+
+		std::valarray<scalar> matrixDotProduct(const reactionMatrix & m,
+				const std::valarray<scalar> & v) const noexcept;
+
+		auto solveGS(const std::array<scalar, 4> & oldField,
+				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
+
+		auto solveCG(const std::array<scalar, 4> & oldField,
+				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
+
+		auto solveJCG(const std::array<scalar, 4> & oldField,
+				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
 	public:
 		cellReactionMatrix() noexcept;
 
 		cellReactionMatrix(const scalar timeStep, const scalar k_f,
 				const scalar k_b, const scalar C_NO2_0, const scalar C_H2O_0,
 				const scalar C_HNO2_0, const scalar C_HNO3_0,
-				const scalar rho_0,
-				const std::valarray<scalar> & molMass) noexcept;
+				const scalar rho_0, const std::valarray<scalar> & molMass,
+				const iterativeSolver solverType);
 
-		std::array<scalar, 4> solve(const std::array<scalar, 4> & oldField,
-				const std::size_t maxIterationNumber) const noexcept;
+		auto solve(const std::array<scalar, 4> & oldField,
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 4>;
 	};
 
 	std::vector<cellReactionMatrix> velocityCalculation(const scalar timestep,
@@ -81,8 +103,7 @@ class chemicalKineticsNO2Disproportionation: public abstractChemicalKinetics
 			homogeneousPhase<cubicCell> & phaseN) const noexcept;
 public:
 	chemicalKineticsNO2Disproportionation(
-			const homogeneousPhase<cubicCell> & phaseIn,
-			const std::size_t itNumber);
+			const homogeneousPhase<cubicCell> & phaseIn);
 
 	void solveChemicalKinetics(
 			homogeneousPhase<cubicCell> & phaseIn) const noexcept override;

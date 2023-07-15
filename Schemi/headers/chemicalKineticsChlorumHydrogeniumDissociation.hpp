@@ -31,37 +31,58 @@ class chemicalKineticsChlorumHydrogeniumDissociation: public abstractChemicalKin
 	scalar n_H2_backw { -1 };
 	scalar E_H2_backw { 0 };
 
+	iterativeSolver itSolv;
+
 	class cellReactionMatrix
 	{
-		std::array<scalar, 4> matrixDiagonale { 0.0, 0.0, 0.0, 0.0 };
+		iterativeSolver solverFlag;
 
-		std::array<triangleList, 4> matrixLeftTriangle {
+		struct reactionMatrix
+		{
+			std::array<scalar, 4> Diagonale { 0.0, 0.0, 0.0, 0.0 };
 
-		triangleList(0),
+			std::array<triangleList, 4> LeftTriangle {
 
-		triangleList(1, std::make_pair(0.0, 0)),
+			triangleList(0),
 
-		triangleList(0),
+			triangleList(1, std::make_pair(0.0, 0)),
 
-		triangleList(1, std::make_pair(0.0, 2))
+			triangleList(0),
 
-		};
+			triangleList(1, std::make_pair(0.0, 2))
 
-		std::array<triangleList, 4> matrixRightTriangle {
+			};
 
-		triangleList(1, std::make_pair(0.0, 1)),
+			std::array<triangleList, 4> RightTriangle {
 
-		triangleList(0),
+			triangleList(1, std::make_pair(0.0, 1)),
 
-		triangleList(1, std::make_pair(0.0, 3)),
+			triangleList(0),
 
-		triangleList(0)
+			triangleList(1, std::make_pair(0.0, 3)),
 
-		};
+			triangleList(0)
 
-		std::array<scalar, 4> matrixFreeTerm { 0.0, 0.0, 0.0, 0.0 };
+			};
+
+			std::array<scalar, 4> FreeTerm { 0.0, 0.0, 0.0, 0.0 };
+
+			void transpose() noexcept;
+		} matrix;
 
 		void normalize(std::valarray<scalar> & res) const noexcept;
+
+		std::valarray<scalar> matrixDotProduct(const reactionMatrix & m,
+				const std::valarray<scalar> & v) const noexcept;
+
+		auto solveGS(const std::array<scalar, 4> & oldField,
+				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
+
+		auto solveCG(const std::array<scalar, 4> & oldField,
+				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
+
+		auto solveJCG(const std::array<scalar, 4> & oldField,
+				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
 	public:
 		cellReactionMatrix() noexcept;
 
@@ -70,10 +91,12 @@ class chemicalKineticsChlorumHydrogeniumDissociation: public abstractChemicalKin
 				const scalar k_recomb_H2, const scalar C_Cl2_0,
 				const scalar C_Cl_0, const scalar C_H2_0, const scalar C_H_0,
 				const scalar M_0, const scalar rho_0,
-				const std::valarray<scalar> & molMass) noexcept;
+				const std::valarray<scalar> & molMass,
+				const iterativeSolver solverType);
 
-		std::array<scalar, 4> solve(const std::array<scalar, 4> & oldField,
-				const std::size_t maxIterationNumber) const noexcept;
+		auto solve(const std::array<scalar, 4> & oldField,
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 4>;
 	};
 
 	std::vector<cellReactionMatrix> velocityCalculation(const scalar timestep,
@@ -83,8 +106,7 @@ class chemicalKineticsChlorumHydrogeniumDissociation: public abstractChemicalKin
 			homogeneousPhase<cubicCell> & phaseN) const noexcept;
 public:
 	chemicalKineticsChlorumHydrogeniumDissociation(
-			const homogeneousPhase<cubicCell> & phaseIn,
-			const std::size_t itNumber);
+			const homogeneousPhase<cubicCell> & phaseIn);
 
 	void solveChemicalKinetics(
 			homogeneousPhase<cubicCell> & phaseIn) const noexcept override;

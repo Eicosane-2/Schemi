@@ -7,9 +7,9 @@
 
 #include "abstractChemicalKinetics.hpp"
 
-schemi::abstractChemicalKinetics::abstractChemicalKinetics(const bool flag,
-		const std::size_t number) noexcept :
-		maxIterationNumber(number), chemicalReaction(flag)
+schemi::abstractChemicalKinetics::abstractChemicalKinetics(
+		const bool flag) noexcept :
+		chemicalReaction(flag)
 {
 }
 

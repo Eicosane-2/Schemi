@@ -29,6 +29,7 @@
 #include "HLLCSolver.hpp"
 #include "HLLSolver.hpp"
 #include "HQUICKLimiter.hpp"
+#include "JacobiConjugateGradientSolver.hpp"
 #include "kEpsAGen.hpp"
 #include "KTSolver.hpp"
 #include "linearLimiter.hpp"
@@ -125,8 +126,10 @@ std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 		matrixSolverFlag = matrixSolverEnum::explicitSolver;
 	else if (name == "conjugateGradient")
 		matrixSolverFlag = matrixSolverEnum::conjugateGradient;
+	else if (name == "JacobiConjugateGradient")
+		matrixSolverFlag = matrixSolverEnum::JacobiConjugateGradient;
 	else
-		throw exception("Unknown or unappropriate matrix solver flag.",
+		throw exception("Unknown or inappropriate matrix solver flag.",
 				errorsEnum::initializationError);
 
 	switch (matrixSolverFlag)
@@ -136,6 +139,13 @@ std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 				std::make_unique<conjugateGradientSovler>(iter,
 						matrixSolverFlag),
 				std::make_unique<conjugateGradientSovler>(iter,
+						matrixSolverFlag));
+		break;
+	case matrixSolverEnum::JacobiConjugateGradient:
+		return std::make_pair(
+				std::make_unique<JacobiConjugateGradientSolver>(iter,
+						matrixSolverFlag),
+				std::make_unique<JacobiConjugateGradientSolver>(iter,
 						matrixSolverFlag));
 		break;
 	case matrixSolverEnum::Thomas:
@@ -299,26 +309,22 @@ std::unique_ptr<schemi::abstractTurbulenceGen> schemi::createTurbulenceModel(
 
 std::unique_ptr<schemi::abstractChemicalKinetics> schemi::createChemicalKinetics(
 		const homogeneousPhase<cubicCell> & phaseIn,
-		const chemicalReactionsEnum chemReactFlag,
-		const std::size_t numberOfIterations)
+		const chemicalReactionsEnum chemReactFlag)
 {
 	switch (chemReactFlag)
 	{
 	case chemicalReactionsEnum::Cl2Dissociation:
-		return std::make_unique<chemicalKineticsChlorumDissociation>(phaseIn,
-				numberOfIterations);
+		return std::make_unique<chemicalKineticsChlorumDissociation>(phaseIn);
 		break;
 	case chemicalReactionsEnum::Cl2H2Dissociation:
 		return std::make_unique<chemicalKineticsChlorumHydrogeniumDissociation>(
-				phaseIn, numberOfIterations);
+				phaseIn);
 		break;
 	case chemicalReactionsEnum::H2Cl2Combustion:
-		return std::make_unique<chemicalKineticsH2Cl2Combustion>(phaseIn,
-				numberOfIterations);
+		return std::make_unique<chemicalKineticsH2Cl2Combustion>(phaseIn);
 		break;
 	case chemicalReactionsEnum::NO2Disproportionation:
-		return std::make_unique<chemicalKineticsNO2Disproportionation>(phaseIn,
-				numberOfIterations);
+		return std::make_unique<chemicalKineticsNO2Disproportionation>(phaseIn);
 		break;
 	case chemicalReactionsEnum::noReaction:
 	default:

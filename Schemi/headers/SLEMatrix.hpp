@@ -35,7 +35,11 @@ public:
 		std::vector<std::vector<std::pair<scalar, std::size_t>>> lowerTriangle,
 				upperTriangle;
 
+		SLEMatrixStorage();
+
 		explicit SLEMatrixStorage(const mesh & meshRef) noexcept;
+
+		void transpose() noexcept;
 	};
 
 	const std::string name;

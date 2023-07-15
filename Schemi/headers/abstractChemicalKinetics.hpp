@@ -21,13 +21,19 @@ namespace schemi
 class abstractChemicalKinetics
 {
 protected:
-	constexpr static scalar convergenceTolerance { 1E-12 };
-	const std::size_t maxIterationNumber;
 	typedef std::vector<std::pair<scalar, std::size_t>> triangleList;
+
+	constexpr static scalar convergenceTolerance { 1E-12 };
+	std::size_t maxIterationNumber { 0 };
+
+	enum class iterativeSolver
+	{
+		noSolver, GaussSeidel, ConjugateGradient, JacobiConjugateGradient
+	};
 public:
 	const bool chemicalReaction;
 
-	abstractChemicalKinetics(const bool flag, const std::size_t number) noexcept;
+	abstractChemicalKinetics(const bool flag) noexcept;
 
 	virtual ~abstractChemicalKinetics() noexcept =0;
 
