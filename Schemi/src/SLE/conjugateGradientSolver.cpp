@@ -35,8 +35,10 @@ std::valarray<schemi::scalar> schemi::conjugateGradientSovler::algorithm(
 	{
 		nIterations++;
 
-		const scalar diff { relativeIterationDifference(oldFieldValues,
-				newFieldValues) };
+		//const scalar diff { relativeIterationDifference(oldFieldValues,
+		//		newFieldValues) };
+
+		const scalar diff { rf_n.max() };
 
 		if ((diff < convergenceTolerance) && (nIterations > 1))
 		{
@@ -63,10 +65,9 @@ std::valarray<schemi::scalar> schemi::conjugateGradientSovler::algorithm(
 			newFieldValues += alpha * df_n;
 
 			const std::valarray<scalar> rf_n1 = rf_n - alpha * (matrix & df_n);
-			const std::valarray<scalar> rs_n1 = rs_n - alpha * (matrixT & df_n);
+			const std::valarray<scalar> rs_n1 = rs_n - alpha * (matrixT & ds_n);
 
-			const scalar beta = (rs_n1 * rf_n1).sum()
-					/ ((rs_n * rf_n).sum() + stabilizator);
+			const scalar beta = (rs_n1 * rf_n1).sum() / ((rs_n * rf_n).sum());
 
 			const std::valarray<scalar> df_n1 = rf_n1 + beta * df_n;
 			const std::valarray<scalar> ds_n1 = rs_n1 + beta * ds_n;

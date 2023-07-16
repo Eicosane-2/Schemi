@@ -114,6 +114,100 @@ std::valarray<schemi::scalar> schemi::chemicalKineticsChlorumDissociation::cellR
 	return result;
 }
 
+auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJ(
+		const std::array<scalar, 2> & oldField,
+		const std::size_t maxIterationNumber) const noexcept -> std::array<
+scalar, 2>
+{
+	std::valarray<scalar> oldIteration { oldField[0], oldField[1] };
+
+	std::valarray<scalar> newIteration(oldIteration);
+
+	std::size_t nIterations { 0 };
+
+	while (true)
+	{
+		nIterations++;
+
+		for (std::size_t i = 0; i < oldIteration.size(); ++i)
+		{
+			const scalar aii { 1. / matrix.Diagonale[i] };
+
+			const scalar bi { matrix.FreeTerm[i] };
+
+			scalar rowSum { 0 };
+
+			for (std::size_t j = 0; j < matrix.LeftTriangle[i].size(); ++j)
+				rowSum -= matrix.LeftTriangle[i][j].first
+						* oldIteration[matrix.LeftTriangle[i][j].second];
+
+			for (std::size_t j = 0; j < matrix.RightTriangle[i].size(); ++j)
+				rowSum -= matrix.RightTriangle[i][j].first
+						* oldIteration[matrix.RightTriangle[i][j].second];
+
+			newIteration[i] = (bi + rowSum) * aii;
+		}
+
+		for (std::size_t i = oldIteration.size() - 1;; --i)
+		{
+			const scalar aii { 1. / matrix.Diagonale[i] };
+
+			const scalar bi { matrix.FreeTerm[i] };
+
+			scalar rowSum { 0 };
+
+			if (matrix.LeftTriangle[i].size() != 0)
+				for (std::size_t j = matrix.LeftTriangle[i].size() - 1;; --j)
+				{
+					rowSum -= matrix.LeftTriangle[i][j].first
+							* oldIteration[matrix.LeftTriangle[i][j].second];
+
+					if (j == 0)
+						break;
+				}
+
+			if (matrix.RightTriangle[i].size() != 0)
+				for (std::size_t j = matrix.RightTriangle[i].size() - 1;; --j)
+				{
+					rowSum -= matrix.RightTriangle[i][j].first
+							* oldIteration[matrix.RightTriangle[i][j].second];
+
+					if (j == 0)
+						break;
+				}
+
+			newIteration[i] = (bi + rowSum) * aii;
+
+			if (i == 0)
+				break;
+		}
+
+		const scalar diff { 100.
+				* std::abs(
+						(newIteration - oldIteration)
+								/ (std::abs(newIteration) + stabilizator)).max() };
+
+		if (diff < convergenceTolerance)
+		{
+			normalize(newIteration);
+			return
+			{	newIteration[0], newIteration[1]};
+		}
+		else if (nIterations >= maxIterationNumber)
+		{
+			std::clog
+					<< "Jacobi algorithm for Cl2 dissociation did not converged. Difference is: "
+					<< diff << std::endl;
+
+			normalize(newIteration);
+			return
+			{	newIteration[0], newIteration[1]};
+		}
+		else
+			oldIteration = newIteration;
+	}
+}
+
 auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveGS(
 		const std::array<scalar, 2> & oldField,
 		const std::size_t maxIterationNumber) const noexcept -> std::array<
@@ -231,10 +325,12 @@ scalar, 2>
 	{
 		nIterations++;
 
-		const scalar diff { 100.
-				* std::abs(
-						(newIteration - oldIteration)
-								/ (std::abs(newIteration) + stabilizator)).max() };
+		//const scalar diff { 100.
+		//		* std::abs(
+		//				(newIteration - oldIteration)
+		//						/ (std::abs(newIteration) + stabilizator)).max() };
+
+		const scalar diff { rf_n.max() };
 
 		if ((diff < convergenceTolerance) && (nIterations > 1))
 		{
@@ -290,8 +386,8 @@ scalar, 2>
 
 	reactionMatrix JacobiPreconditioner;
 
-	JacobiPreconditioner.Diagonale = { (matrix.Diagonale[0]),
-			(matrix.Diagonale[1]) };
+	JacobiPreconditioner.Diagonale = { 1. / (matrix.Diagonale[0]), 1.
+			/ (matrix.Diagonale[1]) };
 
 	std::valarray<scalar> oldIteration { oldField[0], oldField[1] };
 
@@ -313,10 +409,12 @@ scalar, 2>
 	{
 		nIterations++;
 
-		const scalar diff { 100.
-				* std::abs(
-						(newIteration - oldIteration)
-								/ (std::abs(newIteration) + stabilizator)).max() };
+		//const scalar diff { 100.
+		//		* std::abs(
+		//				(newIteration - oldIteration)
+		//						/ (std::abs(newIteration) + stabilizator)).max() };
+
+		const scalar diff { rf_n.max() };
 
 		if ((diff < convergenceTolerance) && (nIterations > 1))
 		{
@@ -386,6 +484,9 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solve(
 	case iterativeSolver::JacobiConjugateGradient:
 		return solveJCG(oldField, maxIterationNumber);
 		break;
+	case iterativeSolver::Jacobi:
+		return solveJ(oldField, maxIterationNumber);
+		break;
 	default:
 		throw exception("Unknown chemical iterative solver type.",
 				errorsEnum::initializationError);
@@ -448,8 +549,8 @@ void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
 
 		auto [newCl2, newCl] = vC[i].solve(oldMassFraction, maxIterationNumber);
 
-		newCl2 = std::max(0., newCl2);
-		newCl = std::max(0., newCl);
+		newCl2 = std::max(static_cast<scalar>(0.), newCl2);
+		newCl = std::max(static_cast<scalar>(0.), newCl);
 
 		const auto sumFrac = newCl2 + newCl;
 		newCl2 /= sumFrac;
@@ -511,6 +612,8 @@ schemi::chemicalKineticsChlorumDissociation::chemicalKineticsChlorumDissociation
 		itSolv = iterativeSolver::ConjugateGradient;
 	else if (solverName == "Jacobi_Conjugate_Gradient")
 		itSolv = iterativeSolver::JacobiConjugateGradient;
+	else if (solverName == "Jacobi")
+		itSolv = iterativeSolver::Jacobi;
 	else
 		throw exception("Unknown type of chemical iterative solver.",
 				errorsEnum::initializationError);

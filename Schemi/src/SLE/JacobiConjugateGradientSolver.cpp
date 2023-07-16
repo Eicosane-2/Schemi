@@ -18,6 +18,8 @@ std::valarray<schemi::scalar> schemi::JacobiConjugateGradientSolver::algorithm(
 {
 	SLEMatrix::SLEMatrixStorage JacobiPreconditioner = matrix;
 
+	//JacobiPreconditioner.centralDiagonale = 1. / matrix.centralDiagonale;
+
 	JacobiPreconditioner.freeTerm = 0.0;
 
 	for (auto & i_row : JacobiPreconditioner.lowerTriangle)
@@ -46,8 +48,10 @@ std::valarray<schemi::scalar> schemi::JacobiConjugateGradientSolver::algorithm(
 	{
 		nIterations++;
 
-		const scalar diff { relativeIterationDifference(oldFieldValues,
-				newFieldValues) };
+		//const scalar diff { relativeIterationDifference(oldFieldValues,
+		//		newFieldValues) };
+
+		const scalar diff { rf_n.max() };
 
 		if ((diff < convergenceTolerance) && (nIterations > 1))
 		{

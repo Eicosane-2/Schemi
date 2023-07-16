@@ -59,6 +59,9 @@ class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
 		std::valarray<scalar> matrixDotProduct(const reactionMatrix & m,
 				const std::valarray<scalar> & v) const noexcept;
 
+		auto solveJ(const std::array<scalar, 2> & oldField,
+				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 2>;
+
 		auto solveGS(const std::array<scalar, 2> & oldField,
 				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 2>;
 

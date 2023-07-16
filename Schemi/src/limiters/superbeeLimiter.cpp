@@ -19,7 +19,7 @@ schemi::scalar schemi::superbeeLimiter::superbeeLimiterCalculation(
 	else if (r <= 1.)
 		superbee = r;
 	else
-		superbee = std::min(std::min(r, 2.), xiR);
+		superbee = std::min(std::min(r, static_cast<scalar>(2.)), xiR);
 
 	return superbee;
 }
@@ -36,7 +36,7 @@ schemi::scalar schemi::superbeeLimiter::superbeeLimiterCalculation(
 	else if (r <= 1.)
 		superbee = r;
 	else
-		superbee = std::min(r, 2.);
+		superbee = std::min(r, static_cast<scalar>(2.));
 
 	return superbee;
 }

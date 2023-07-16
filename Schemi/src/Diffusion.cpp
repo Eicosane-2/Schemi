@@ -1124,7 +1124,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 				gasPhase.turbulenceSources->turbulence,
 				gasPhase.turbulenceSources->model);
 
-		const auto diffuse_dt = 0.5 * timestepCoeffs.second
+		const scalar diffuse_dt = 0.5 * timestepCoeffs.second
 				/ (linearInterpolate(maxVal).ref() * minimalLengthScale.ref()
 						* minimalLengthScale.ref()).min();
 

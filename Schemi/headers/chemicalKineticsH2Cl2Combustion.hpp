@@ -102,6 +102,9 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 		std::valarray<scalar> matrixDotProduct(const reactionMatrix & m,
 				const std::valarray<scalar> & v) const noexcept;
 
+		auto solveJ(const std::array<scalar, 5> & oldField,
+				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 5>;
+
 		auto solveGS(const std::array<scalar, 5> & oldField,
 				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 5>;
 

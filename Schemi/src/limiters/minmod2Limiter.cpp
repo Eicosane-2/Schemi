@@ -15,7 +15,8 @@ schemi::scalar schemi::minmod2Limiter::minmod2LimiterCalculation(const scalar r,
 	if (r <= 0.)
 		minmod2 = 0;
 	else
-		minmod2 = std::min(1., std::min(4 * r / (1 + r), 2 * xiR));
+		minmod2 = std::min(static_cast<scalar>(1.),
+				std::min(4 * r / (1 + r), 2 * xiR));
 
 	return minmod2;
 }
@@ -28,7 +29,7 @@ schemi::scalar schemi::minmod2Limiter::minmod2LimiterCalculation(
 	if (r <= 0.)
 		minmod2 = 0;
 	else
-		minmod2 = std::min(1., (4 * r / (1 + r)));
+		minmod2 = std::min(static_cast<scalar>(1.), (4 * r / (1 + r)));
 
 	return minmod2;
 }

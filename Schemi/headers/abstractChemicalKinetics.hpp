@@ -28,7 +28,11 @@ protected:
 
 	enum class iterativeSolver
 	{
-		noSolver, GaussSeidel, ConjugateGradient, JacobiConjugateGradient
+		noSolver,
+		GaussSeidel,
+		ConjugateGradient,
+		JacobiConjugateGradient,
+		Jacobi
 	};
 public:
 	const bool chemicalReaction;

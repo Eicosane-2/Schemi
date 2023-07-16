@@ -397,7 +397,8 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 							/ sonicSpeedNeighbour[i]) / minMachNumber;
 
 			const auto phi = std::sin(
-					std::min(1., relMachNum) * Pi_number * 0.5);
+					std::min(static_cast<scalar>(1.), relMachNum) * Pi_number
+							* 0.5);
 
 			const scalar SOwner_corr { phi * SOwner };
 			const scalar SNeighbour_corr { phi * SNeighbour };

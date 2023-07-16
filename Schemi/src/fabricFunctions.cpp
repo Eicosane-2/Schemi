@@ -30,6 +30,7 @@
 #include "HLLSolver.hpp"
 #include "HQUICKLimiter.hpp"
 #include "JacobiConjugateGradientSolver.hpp"
+#include "JacobiSolver.hpp"
 #include "kEpsAGen.hpp"
 #include "KTSolver.hpp"
 #include "linearLimiter.hpp"
@@ -128,6 +129,8 @@ std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 		matrixSolverFlag = matrixSolverEnum::conjugateGradient;
 	else if (name == "JacobiConjugateGradient")
 		matrixSolverFlag = matrixSolverEnum::JacobiConjugateGradient;
+	else if (name == "Jacobi")
+		matrixSolverFlag = matrixSolverEnum::Jacobi;
 	else
 		throw exception("Unknown or inappropriate matrix solver flag.",
 				errorsEnum::initializationError);
@@ -158,6 +161,11 @@ std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 		return std::make_pair(
 				std::make_unique<noMatrixSolver>(matrixSolverFlag),
 				std::make_unique<noMatrixSolver>(matrixSolverFlag));
+		break;
+	case matrixSolverEnum::Jacobi:
+		return std::make_pair(
+				std::make_unique<JacobiSolver>(iter, matrixSolverEnum::Jacobi),
+				std::make_unique<JacobiSolver>(iter, matrixSolverEnum::Jacobi));
 		break;
 	default:
 		return std::make_pair(

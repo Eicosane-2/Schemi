@@ -17,7 +17,7 @@ schemi::scalar schemi::minmodLimiter::minmodLimiterCalculation(const scalar r,
 	else if (r <= 1.)
 		minmod = r;
 	else
-		minmod = std::min(1., xiR);
+		minmod = std::min(static_cast<scalar>(1.), xiR);
 
 	return minmod;
 }
