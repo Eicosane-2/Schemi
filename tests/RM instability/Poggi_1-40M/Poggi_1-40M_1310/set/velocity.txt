@@ -1,0 +1,16 @@
+#Tail_boundary_condition
+freeBoundary
+#Point_boundary_condition
+slip
+#Bottom_boundary_condition
+blank
+#Right_boundary_condition
+blank
+#Left_boundary_condition
+blank
+#Top_boundary_condition
+blank
+#Values_in_zones
+88.63 0.0 0.0
+0.0 0.0 0.0
+0.0 0.0 0.0

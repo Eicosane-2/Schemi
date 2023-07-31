@@ -1,0 +1,17 @@
+#Tail_boundary_condition
+slip
+#Point_boundary_condition
+slip
+#Bottom_boundary_condition
+blank
+#Right_boundary_condition
+subPatches 2
+fixedValue ( 0.0 0.0 0.0 )( 1.25 0.0 1.0 ) 0.0 15.0 0.0
+fixedValue ( 1.25 0.0 0.0 )( 2.5 0.0 1.0 ) 0.0 9.0 0.0
+#Left_boundary_condition
+freeBoundary
+#Top_boundary_condition
+blank
+#Values_in_zones
+0.0 15.0 0.0
+0.0 9.0 0.0

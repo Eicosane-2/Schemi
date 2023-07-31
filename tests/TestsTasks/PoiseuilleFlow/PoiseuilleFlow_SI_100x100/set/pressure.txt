@@ -1,0 +1,14 @@
+#Tail_boundary_condition
+fixedValue 101325
+#Point_boundary_condition
+freeBoundary
+#Bottom_boundary_condition
+blank
+#Right_boundary_condition
+slip
+#Left_boundary_condition
+slip
+#Top_boundary_condition
+blank
+#Values_in_zones
+101317
