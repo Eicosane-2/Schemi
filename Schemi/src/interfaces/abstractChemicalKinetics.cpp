@@ -7,9 +7,9 @@
 
 #include "abstractChemicalKinetics.hpp"
 
-schemi::abstractChemicalKinetics::abstractChemicalKinetics(
-		const bool flag) noexcept :
-		chemicalReaction(flag)
+schemi::abstractChemicalKinetics::abstractChemicalKinetics(const bool flag,
+		const scalar mt) noexcept :
+		minTimestep(mt), chemicalReaction(flag)
 {
 }
 

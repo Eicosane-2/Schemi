@@ -317,22 +317,25 @@ std::unique_ptr<schemi::abstractTurbulenceGen> schemi::createTurbulenceModel(
 
 std::unique_ptr<schemi::abstractChemicalKinetics> schemi::createChemicalKinetics(
 		const homogeneousPhase<cubicCell> & phaseIn,
-		const chemicalReactionsEnum chemReactFlag)
+		const chemicalReactionsEnum chemReactFlag, const scalar minimalTimestep)
 {
 	switch (chemReactFlag)
 	{
 	case chemicalReactionsEnum::Cl2Dissociation:
-		return std::make_unique<chemicalKineticsChlorumDissociation>(phaseIn);
+		return std::make_unique<chemicalKineticsChlorumDissociation>(phaseIn,
+				minimalTimestep);
 		break;
 	case chemicalReactionsEnum::Cl2H2Dissociation:
 		return std::make_unique<chemicalKineticsChlorumHydrogeniumDissociation>(
-				phaseIn);
+				phaseIn, minimalTimestep);
 		break;
 	case chemicalReactionsEnum::H2Cl2Combustion:
-		return std::make_unique<chemicalKineticsH2Cl2Combustion>(phaseIn);
+		return std::make_unique<chemicalKineticsH2Cl2Combustion>(phaseIn,
+				minimalTimestep);
 		break;
 	case chemicalReactionsEnum::NO2Disproportionation:
-		return std::make_unique<chemicalKineticsNO2Disproportionation>(phaseIn);
+		return std::make_unique<chemicalKineticsNO2Disproportionation>(phaseIn,
+				minimalTimestep);
 		break;
 	case chemicalReactionsEnum::noReaction:
 	default:

@@ -8,11 +8,11 @@
 #include "chemicalKineticsNoReaction.hpp"
 
 schemi::chemicalKineticsNoReaction::chemicalKineticsNoReaction() noexcept :
-		abstractChemicalKinetics(false)
+		abstractChemicalKinetics(false, 0.0)
 {
 }
 
 void schemi::chemicalKineticsNoReaction::solveChemicalKinetics(
-		homogeneousPhase<cubicCell>&) const noexcept
+		homogeneousPhase<cubicCell>&) const
 {
 }

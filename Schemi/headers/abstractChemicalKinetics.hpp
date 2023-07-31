@@ -23,8 +23,10 @@ class abstractChemicalKinetics
 protected:
 	typedef std::vector<std::pair<scalar, std::size_t>> triangleList;
 
-	constexpr static scalar convergenceTolerance { 1E-12 };
+	constexpr static scalar convergenceTolerance { 1E-10 };
+	constexpr static scalar massFracTolerance { 1E-2 };
 	std::size_t maxIterationNumber { 0 };
+	const scalar minTimestep { 0 };
 
 	enum class iterativeSolver
 	{
@@ -32,17 +34,37 @@ protected:
 		GaussSeidel,
 		ConjugateGradient,
 		JacobiConjugateGradient,
-		Jacobi
+		Jacobi,
+		GaussElimination
 	};
+
+	struct cellReactingFields
+	{
+		scalar internalEnergy;
+
+		scalar temperature;
+
+		std::valarray<scalar> concentration;
+
+		std::valarray<scalar> density;
+
+		cellReactingFields(scalar internalEnergy_in, scalar temperature_in,
+				std::valarray<scalar> concentration_in,
+				std::valarray<scalar> density_in) noexcept :
+				internalEnergy(internalEnergy_in), temperature(temperature_in), concentration(
+						concentration_in), density(density_in)
+		{
+		}
+	};
+
 public:
 	const bool chemicalReaction;
 
-	abstractChemicalKinetics(const bool flag) noexcept;
+	abstractChemicalKinetics(const bool flag, const scalar mt) noexcept;
 
 	virtual ~abstractChemicalKinetics() noexcept =0;
 
-	virtual void solveChemicalKinetics(
-			homogeneousPhase<cubicCell>&) const noexcept =0;
+	virtual void solveChemicalKinetics(homogeneousPhase<cubicCell>&) const =0;
 };
 }  // namespace schemi
 

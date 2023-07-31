@@ -63,32 +63,32 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 
 			std::array<triangleList, 5> LeftTriangle {
 
-			triangleList(0),
+			triangleList(0), // A1
 
-			triangleList(1, std::make_pair(0.0, 0)),
+			triangleList(1, std::make_pair(0.0, 0)), // A2
 
-			triangleList(1, std::make_pair(0.0, 1)),
-
-			triangleList { std::make_pair(0.0, 0), std::make_pair(0.0, 1),
-					std::make_pair(0.0, 2) },
+			triangleList(1, std::make_pair(0.0, 1)), // A3
 
 			triangleList { std::make_pair(0.0, 0), std::make_pair(0.0, 1),
-					std::make_pair(0.0, 2), std::make_pair(0.0, 3) }
+					std::make_pair(0.0, 2) }, // A4
+
+					triangleList { std::make_pair(0.0, 0), std::make_pair(0.0,
+							1), std::make_pair(0.0, 2), std::make_pair(0.0, 3) } // A5
 
 			};
 
 			std::array<triangleList, 5> RightTriangle {
 
-			triangleList { std::make_pair(0.0, 1), std::make_pair(0.0, 3) },
+			triangleList { std::make_pair(0.0, 1), std::make_pair(0.0, 3) }, // A1
 
-			triangleList { std::make_pair(0.0, 2), std::make_pair(0.0, 3),
-					std::make_pair(0.0, 4) },
+					triangleList { std::make_pair(0.0, 2), std::make_pair(0.0,
+							3), std::make_pair(0.0, 4) }, // A2
 
-			triangleList(1, std::make_pair(0.0, 3)),
+					triangleList(1, std::make_pair(0.0, 3)), // A3
 
-			triangleList(1, std::make_pair(0.0, 4)),
+					triangleList(1, std::make_pair(0.0, 4)), // A4
 
-			triangleList(0)
+					triangleList(0) // A5
 
 			};
 
@@ -103,16 +103,22 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 				const std::valarray<scalar> & v) const noexcept;
 
 		auto solveJ(const std::array<scalar, 5> & oldField,
-				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 5>;
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 5>;
 
 		auto solveGS(const std::array<scalar, 5> & oldField,
-				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 5>;
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 5>;
 
 		auto solveCG(const std::array<scalar, 5> & oldField,
-				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 5>;
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 5>;
 
 		auto solveJCG(const std::array<scalar, 5> & oldField,
-				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 5>;
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 5>;
+
+		auto solveGE() const -> std::array<scalar, 5>;
 	public:
 		cellReactionMatrix() noexcept;
 
@@ -123,7 +129,7 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 				const scalar k_diss_HCl, const scalar C_Cl2_0,
 				const scalar C_Cl_0, const scalar C_H2_0, const scalar C_H_0,
 				const scalar C_HCl_0, const scalar M_0, const scalar rho_0,
-				const std::valarray<scalar> & molMass,
+				const std::array<scalar, 5> & molMass,
 				const iterativeSolver solverType);
 
 		auto solve(const std::array<scalar, 5> & oldField,
@@ -131,17 +137,18 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 						std::array<scalar, 5>;
 	};
 
-	std::vector<cellReactionMatrix> velocityCalculation(const scalar timestep,
-			const homogeneousPhase<cubicCell> & phase) const noexcept;
+	cellReactionMatrix velocityCalculation(const scalar timestep,
+			const scalar T, const std::array<scalar, 6> & concentrations,
+			const std::array<scalar, 5> & molarMasses, const scalar rho,
+			const scalar R) const noexcept;
 
-	void timeStepIntegration(
-			homogeneousPhase<cubicCell> & phaseN) const noexcept;
+	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
 public:
-	chemicalKineticsH2Cl2Combustion(
-			const homogeneousPhase<cubicCell> & phaseIn);
+	chemicalKineticsH2Cl2Combustion(const homogeneousPhase<cubicCell> & phaseIn,
+			const scalar mt);
 
-	void solveChemicalKinetics(
-			homogeneousPhase<cubicCell> & phaseIn) const noexcept override;
+	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
+			override;
 };
 }  // namespace schemi
 

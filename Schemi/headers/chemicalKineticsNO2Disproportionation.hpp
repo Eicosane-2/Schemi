@@ -75,23 +75,29 @@ class chemicalKineticsNO2Disproportionation: public abstractChemicalKinetics
 				const std::valarray<scalar> & v) const noexcept;
 
 		auto solveJ(const std::array<scalar, 4> & oldField,
-				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 4>;
 
 		auto solveGS(const std::array<scalar, 4> & oldField,
-				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 4>;
 
 		auto solveCG(const std::array<scalar, 4> & oldField,
-				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 4>;
 
 		auto solveJCG(const std::array<scalar, 4> & oldField,
-				const std::size_t maxIterationNumber) const noexcept -> std::array<scalar, 4>;
+				const std::size_t maxIterationNumber) const ->
+						std::array<scalar, 4>;
+
+		auto solveGE() const -> std::array<scalar, 4>;
 	public:
 		cellReactionMatrix() noexcept;
 
 		cellReactionMatrix(const scalar timeStep, const scalar k_f,
 				const scalar k_b, const scalar C_NO2_0, const scalar C_H2O_0,
 				const scalar C_HNO2_0, const scalar C_HNO3_0,
-				const scalar rho_0, const std::valarray<scalar> & molMass,
+				const scalar rho_0, const std::array<scalar, 4> & molMass,
 				const iterativeSolver solverType);
 
 		auto solve(const std::array<scalar, 4> & oldField,
@@ -99,17 +105,18 @@ class chemicalKineticsNO2Disproportionation: public abstractChemicalKinetics
 						std::array<scalar, 4>;
 	};
 
-	std::vector<cellReactionMatrix> velocityCalculation(const scalar timestep,
-			const homogeneousPhase<cubicCell> & phase) const noexcept;
+	cellReactionMatrix velocityCalculation(const scalar timestep,
+			const scalar T, const std::array<scalar, 5> & concentrations,
+			const std::array<scalar, 4> & molarMasses, const scalar rho,
+			const scalar R) const noexcept;
 
-	void timeStepIntegration(
-			homogeneousPhase<cubicCell> & phaseN) const noexcept;
+	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
 public:
 	chemicalKineticsNO2Disproportionation(
-			const homogeneousPhase<cubicCell> & phaseIn);
+			const homogeneousPhase<cubicCell> & phaseIn, const scalar mt);
 
-	void solveChemicalKinetics(
-			homogeneousPhase<cubicCell> & phaseIn) const noexcept override;
+	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
+			override;
 };
 }  // namespace schemi
 

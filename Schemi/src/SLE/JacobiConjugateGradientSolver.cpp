@@ -18,7 +18,7 @@ std::valarray<schemi::scalar> schemi::JacobiConjugateGradientSolver::algorithm(
 {
 	SLEMatrix::SLEMatrixStorage JacobiPreconditioner = matrix;
 
-	//JacobiPreconditioner.centralDiagonale = 1. / matrix.centralDiagonale;
+	JacobiPreconditioner.centralDiagonale = 1. / matrix.centralDiagonale;
 
 	JacobiPreconditioner.freeTerm = 0.0;
 

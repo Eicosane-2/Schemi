@@ -34,7 +34,8 @@ std::unique_ptr<abstractTurbulenceGen> createTurbulenceModel(
 
 std::unique_ptr<abstractChemicalKinetics> createChemicalKinetics(
 		const homogeneousPhase<cubicCell> & phaseIn,
-		const chemicalReactionsEnum chemReactFlag);
+		const chemicalReactionsEnum chemReactFlag,
+		const scalar minimalTimestep);
 }  // namespace schemi
 
 #endif /* FABRICFUNCTIONS_HPP_ */
