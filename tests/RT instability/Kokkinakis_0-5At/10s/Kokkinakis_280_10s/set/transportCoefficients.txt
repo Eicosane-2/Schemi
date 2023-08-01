@@ -1,0 +1,10 @@
+#Viscosity_coefficient
+2E-10
+#Diffusion_coefficient
+2E-10
+#Heat_conduction_coefficient
+2E-7
+#Flag_for_enthalpy_flow_solution
+explicit
+#Flag_for_molar_mass_diffusion_correction
+on

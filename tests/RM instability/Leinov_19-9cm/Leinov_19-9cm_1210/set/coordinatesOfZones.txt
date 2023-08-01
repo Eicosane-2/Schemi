@@ -1,0 +1,12 @@
+#Beginning_of_zone_1
+0.0 0.0 0.0
+#Ending_of_zone_1
+1.0085 0.4 0.4
+#Beginning_of_zone_2
+1.0085 0.0 0.0
+#Ending_of_zone_2
+1.011 0.4 0.4
+#Beginning_of_zone_3
+1.011 0.0 0.0
+#Ending_of_zone_3
+1.21 0.4 0.4

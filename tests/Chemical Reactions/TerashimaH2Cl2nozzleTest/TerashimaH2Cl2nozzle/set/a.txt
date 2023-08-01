@@ -1,0 +1,22 @@
+#Tail_boundary_condition
+subPatches 7
+slip ( 0 0 0 )( 0 0.003 1 )
+freeBoundary ( 0 0.003 0 )( 0 0.0035 1 )
+slip ( 0 0.0035 0 )( 0 0.004 1 )
+freeBoundary ( 0 0.004 0 )( 0 0.008 1 )
+slip ( 0 0.008 0 )( 0 0.0085 1 )
+freeBoundary ( 0 0.0085 0 )( 0 0.009 1 )
+slip ( 0 0.009 0 )( 0 0.012 1 )
+#Point_boundary_condition
+freeBoundary
+#Bottom_boundary_condition
+blank
+#Right_boundary_condition
+slip
+#Left_boundary_condition
+slip
+#Top_boundary_condition
+blank
+#Values_in_zones
+0.0 0.0 0.0
+0.0 0.0 0.0

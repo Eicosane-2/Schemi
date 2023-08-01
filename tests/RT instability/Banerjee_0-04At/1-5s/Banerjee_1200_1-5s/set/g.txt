@@ -1,0 +1,6 @@
+#Free_fall_acceleration_flag
+on
+#Free_fall_acceleration_vector_components
+-9.80655 0 0
+#Acceleration_growth
+0 0 0

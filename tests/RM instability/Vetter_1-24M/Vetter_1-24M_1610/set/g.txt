@@ -1,0 +1,6 @@
+#Acceleration_flag
+off
+#Acceleration_vector_components
+9.80655 0 0
+#Acceleration_growth
+0 0 0
