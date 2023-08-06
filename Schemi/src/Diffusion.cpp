@@ -1139,6 +1139,6 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 				errorsEnum::negativeTemperatureError);
 
 	const auto DiffusionEndTime { std::chrono::high_resolution_clock::now() };
-	timeForDiffusion += std::chrono::duration_cast<std::chrono::milliseconds>(
-			DiffusionEndTime - DiffusionStartTime).count();
+	timeForDiffusion += std::chrono::duration_cast < std::chrono::milliseconds
+			> (DiffusionEndTime - DiffusionStartTime).count();
 }

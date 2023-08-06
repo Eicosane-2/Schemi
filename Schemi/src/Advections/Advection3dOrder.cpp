@@ -464,13 +464,13 @@ schemi::starFields schemi::Advection3dOrder(
 			}
 	}
 	const auto TVDEndTime = std::chrono::high_resolution_clock::now();
-	timeForTVD += std::chrono::duration_cast<std::chrono::milliseconds>(
-			TVDEndTime - TVDStartTime).count();
+	timeForTVD += std::chrono::duration_cast < std::chrono::milliseconds
+			> (TVDEndTime - TVDStartTime).count();
 
 	const auto HancockStartTime = std::chrono::high_resolution_clock::now();
 	const auto HancockEndTime = std::chrono::high_resolution_clock::now();
-	timeForHancock += std::chrono::duration_cast<std::chrono::milliseconds>(
-			HancockEndTime - HancockStartTime).count();
+	timeForHancock += std::chrono::duration_cast < std::chrono::milliseconds
+			> (HancockEndTime - HancockStartTime).count();
 
 	/*Update parallel boundary conditions*/
 	parallelism.correctBoundaryValues(surfaceOwnerSide);
@@ -619,9 +619,9 @@ schemi::starFields schemi::Advection3dOrder(
 
 	const auto FlowCalculationEndTime =
 			std::chrono::high_resolution_clock::now();
-	timeForFlowCalculation += std::chrono::duration_cast<
-			std::chrono::milliseconds>(
-			FlowCalculationEndTime - FlowCalculationStartTime).count();
+	timeForFlowCalculation += std::chrono::duration_cast
+			< std::chrono::milliseconds
+			> (FlowCalculationEndTime - FlowCalculationStartTime).count();
 
 	/*Time integration.*/
 	const auto TimeIntegrationStartTime =
@@ -787,9 +787,9 @@ schemi::starFields schemi::Advection3dOrder(
 	}
 	const auto TimeIntegrationEndTime =
 			std::chrono::high_resolution_clock::now();
-	timeForTimeIntegration += std::chrono::duration_cast<
-			std::chrono::milliseconds>(
-			TimeIntegrationEndTime - TimeIntegrationStartTime).count();
+	timeForTimeIntegration += std::chrono::duration_cast
+			< std::chrono::milliseconds
+			> (TimeIntegrationEndTime - TimeIntegrationStartTime).count();
 
 	return star;
 }
