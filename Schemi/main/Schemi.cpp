@@ -903,10 +903,10 @@ int main()
 		std::ofstream outputTimeExecutionFile { "timeOfCalculation.tsv" };
 		outputTimeExecutionFile.precision(ioPrecision);
 		outputTimeExecutionFile << "Time of execution" << std::endl
-				<< std::chrono::duration_cast<std::chrono::milliseconds>(
-						std::chrono::high_resolution_clock::now() - startTime).count()
-				<< std::endl << "Number of steps" << std::endl << nsteps
-				<< std::endl;
+				<< std::chrono::duration_cast < std::chrono::milliseconds
+				> (std::chrono::high_resolution_clock::now() - startTime).count()
+						<< std::endl << "Number of steps" << std::endl << nsteps
+						<< std::endl;
 		outputTimeExecutionFile << "Time of TVD stage work:" << std::endl
 				<< timeForTVD << std::endl;
 		outputTimeExecutionFile << "Time of Hancock stage work:" << std::endl

@@ -438,15 +438,15 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 		}
 	}
 	const auto TVDEndTime = std::chrono::high_resolution_clock::now();
-	timeForTVD += std::chrono::duration_cast<std::chrono::milliseconds>(
-			TVDEndTime - TVDStartTime).count();
+	timeForTVD += std::chrono::duration_cast < std::chrono::milliseconds
+			> (TVDEndTime - TVDStartTime).count();
 
 	const auto HancockStartTime = std::chrono::high_resolution_clock::now();
 	HancockStage(surfaceOwnerSide, surfaceNeighbourSide,
 			boundaryConditionValueCalc, parallelism);
 	const auto HancockEndTime = std::chrono::high_resolution_clock::now();
-	timeForHancock += std::chrono::duration_cast<std::chrono::milliseconds>(
-			HancockEndTime - HancockStartTime).count();
+	timeForHancock += std::chrono::duration_cast < std::chrono::milliseconds
+			> (HancockEndTime - HancockStartTime).count();
 
 	/*Numerical fluxes.*/
 	const auto FlowCalculationStartTime =
@@ -458,9 +458,9 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 
 	const auto FlowCalculationEndTime =
 			std::chrono::high_resolution_clock::now();
-	timeForFlowCalculation += std::chrono::duration_cast<
-			std::chrono::milliseconds>(
-			FlowCalculationEndTime - FlowCalculationStartTime).count();
+	timeForFlowCalculation += std::chrono::duration_cast
+			< std::chrono::milliseconds
+			> (FlowCalculationEndTime - FlowCalculationStartTime).count();
 
 	/*Time integration.*/
 	const auto TimeIntegrationStartTime =
@@ -578,9 +578,9 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 	}
 	const auto TimeIntegrationEndTime =
 			std::chrono::high_resolution_clock::now();
-	timeForTimeIntegration += std::chrono::duration_cast<
-			std::chrono::milliseconds>(
-			TimeIntegrationEndTime - TimeIntegrationStartTime).count();
+	timeForTimeIntegration += std::chrono::duration_cast
+			< std::chrono::milliseconds
+			> (TimeIntegrationEndTime - TimeIntegrationStartTime).count();
 
 	return star;
 }
