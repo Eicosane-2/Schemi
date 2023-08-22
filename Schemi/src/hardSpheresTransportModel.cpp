@@ -12,25 +12,29 @@
 schemi::scalar schemi::hardSpheresTransportModel::muHardSph(const scalar M,
 		const scalar T, const scalar sigma) const noexcept
 {
-	return muConst()
-			+ 2.6693E-6 * std::sqrt(1E3) * std::sqrt(M * T)
-					/ pow<scalar, 2>(sigma);
+	const auto calcVal = 2.6693E-6 * std::sqrt(1E3) * std::sqrt(M * T)
+			/ pow<scalar, 2>(sigma);
+
+	return muConst() + calcVal;
 }
 
 schemi::scalar schemi::hardSpheresTransportModel::DHardSph(const scalar M,
 		const scalar T, const scalar p, const scalar sigma) const noexcept
 {
-	return DConst()
-			+ 2.6280E-7 / std::sqrt(1E3) * std::sqrt(pow<scalar, 3>(T) / M)
-					/ (p / 101325. * pow<scalar, 2>(sigma));
+	const auto calcVal = 2.6280E-7 / std::sqrt(1E3)
+			* std::sqrt(pow<scalar, 3>(T) / M)
+			/ (p / 101325. * pow<scalar, 2>(sigma));
+
+	return DConst() + calcVal;
 }
 
 schemi::scalar schemi::hardSpheresTransportModel::kappaHardSph(const scalar M,
 		const scalar T, const scalar sigma) const noexcept
 {
-	return kappaConst()
-			+ 4.184 * 1.9891E-2 / std::sqrt(1E3) * std::sqrt(T / M)
-					/ pow<scalar, 2>(sigma);
+	const auto calcVal = 4.184 * 1.9891E-2 / std::sqrt(1E3) * std::sqrt(T / M)
+			/ pow<scalar, 2>(sigma);
+
+	return kappaConst() + calcVal;
 }
 
 schemi::hardSpheresTransportModel::hardSpheresTransportModel(const scalar mu_in,
