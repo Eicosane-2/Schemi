@@ -9,14 +9,7 @@
 #Kinetic_diametr_(A)
 3.2
 #Tail_boundary_condition
-subPatches 7
-slip ( 0 0 0 )( 0 0.003 1 )
-fixedValue ( 0 0.003 0 )( 0 0.0035 1 ) 1E-9
-slip ( 0 0.0035 0 )( 0 0.004 1 )
-fixedValue ( 0 0.004 0 )( 0 0.008 1 ) 802
-slip ( 0 0.008 0 )( 0 0.0085 1 )
-fixedValue ( 0 0.0085 0 )( 0 0.009 1 ) 1E-9
-slip ( 0 0.009 0 )( 0 0.012 1 )
+fixedValue 802
 #Point_boundary_condition
 freeBoundary
 #Bottom_boundary_condition
