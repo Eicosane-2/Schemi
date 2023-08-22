@@ -12,7 +12,7 @@
 
 namespace schemi
 {
-enum class enthalpyFlowEnum
+enum class enthalpyFlow
 {
 	explicitSolve, implicitSolve, noSolve
 };

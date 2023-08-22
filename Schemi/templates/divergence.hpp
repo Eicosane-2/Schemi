@@ -42,7 +42,7 @@ volumeField<returnTypeDivergence<Type>> divergence(
 				normalVector = mesh.surfaces()[surfaceIndex].N() * (-1);
 			else
 				throw exception("Couldn't choose normal's orientation.",
-						errorsEnum::systemError);
+						errors::systemError);
 
 			cellDivValue += (interpolatedField.ref()[surfaceIndex]
 					& normalVector) * mesh.surfaces()[surfaceIndex].S();
@@ -78,7 +78,7 @@ volumeField<returnTypeDivergence<Type>> divergence(
 				normalVector = mesh.surfaces()[surfaceIndex].N() * (-1);
 			else
 				throw exception("Couldn't choose normal's orientation.",
-						errorsEnum::systemError);
+						errors::systemError);
 
 			cellDivValue += (inField.ref()[surfaceIndex] & normalVector)
 					* mesh.surfaces()[surfaceIndex].S();

@@ -16,6 +16,7 @@
 #include "abstractLimiter.hpp"
 #include "abstractMatrixSolver.hpp"
 #include "abstractTurbulenceGen.hpp"
+#include "transportModelEnum.hpp"
 
 namespace schemi
 {
@@ -34,8 +35,12 @@ std::unique_ptr<abstractTurbulenceGen> createTurbulenceModel(
 
 std::unique_ptr<abstractChemicalKinetics> createChemicalKinetics(
 		const homogeneousPhase<cubicCell> & phaseIn,
-		const chemicalReactionsEnum chemReactFlag,
-		const scalar minimalTimestep);
+		const chemicalReactions chemReactFlag, const scalar minimalTimestep);
+
+std::unique_ptr<abstractTransportModel> createTransportModel(
+		const std::vector<std::vector<std::string>> & matrixOfSubstancesConditions,
+		const scalar constNu, const scalar constD, const scalar constKappa,
+		const transportModel model);
 }  // namespace schemi
 
 #endif /* FABRICFUNCTIONS_HPP_ */

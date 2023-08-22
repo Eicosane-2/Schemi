@@ -28,9 +28,9 @@ R_SI { 8.31446261815324 },
 PlanckConstant_SI { 6.626E-34 },
 
 /*std::numeric_limits<scalar>::min() in denominator can lead to infinity.*/
-stabilizator { 5 * std::numeric_limits < scalar > ::epsilon() },
+stabilizator { 5 * std::numeric_limits<scalar>::epsilon() },
 
-veryBig { 1E-3 * std::numeric_limits < scalar > ::max() },
+veryBig { 1E-3 * std::numeric_limits<scalar>::max() },
 
 #if ( defined(__GNUG__) ) && ( !defined(__ICC) )
 		Pi_number { std::acos(-1.0) }, e_number { std::exp(1.0) },

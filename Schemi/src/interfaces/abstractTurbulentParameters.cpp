@@ -276,7 +276,7 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 	else
 		throw exception(
 				"Wrong type of thetaB function. Must be <<sqrt>> or <<cbrt>> or <<gradMav>> or <<wD>> or <<gradMavGradRho>> or <<no>>.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 }
 
 schemi::scalar schemi::abstractTurbulentParameters::thetaS(

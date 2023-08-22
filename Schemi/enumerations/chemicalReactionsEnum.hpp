@@ -10,7 +10,7 @@
 
 namespace schemi
 {
-enum class chemicalReactionsEnum
+enum class chemicalReactions
 {
 	noReaction,
 	Cl2Dissociation,

@@ -17,7 +17,7 @@ namespace schemi
 class noMatrixSolver: public abstractMatrixSolver
 {
 public:
-	explicit noMatrixSolver(const matrixSolverEnum type_in) noexcept;
+	explicit noMatrixSolver(const matrixSolver type_in) noexcept;
 
 	std::valarray<scalar> solve(const std::valarray<scalar> & oldField,
 			const SLEMatrix&) const noexcept;

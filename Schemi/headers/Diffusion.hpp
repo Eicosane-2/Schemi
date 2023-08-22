@@ -27,10 +27,10 @@ void Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		const std::pair<scalar, scalar> & timestepCoeffs,
 		scalar & timeForDiffusion,
 		const std::vector<boundaryConditionType> & commonConditions,
-		const starFields & star, const enthalpyFlowEnum enthalpySolverFlag,
+		const starFields & star, const enthalpyFlow enthalpySolverFlag,
 		const bool linearRec, const boundaryConditionValue & bncCalc,
 		const volumeField<scalar> & minimalLengthScale,
-		const MPIHandler & parallelism, const timestepEnum sourceTimeFlag,
+		const MPIHandler & parallelism, const timestep sourceTimeFlag,
 		const bool molMassDiffusionFlag);
 }  // namespace schemi
 

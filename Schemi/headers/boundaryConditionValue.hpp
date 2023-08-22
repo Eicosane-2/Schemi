@@ -51,12 +51,12 @@ public:
 		case boundaryConditionType::innerSurface:
 			throw exception(
 					"<<innerSurface>> is incorrect variant for returning boundary condition value.",
-					errorsEnum::boundaryConditionError);
+					errors::boundaryConditionError);
 			break;
 		case boundaryConditionType::calculated:
 			throw exception(
 					"<<calculated>> is incorrect variant for returning boundary condition value.",
-					errorsEnum::boundaryConditionError);
+					errors::boundaryConditionError);
 			break;
 		case boundaryConditionType::calculatedTurbulentViscosity:
 		{
@@ -251,7 +251,7 @@ public:
 			break;
 		default:
 			throw exception("Unknown type of boundary condition.",
-					errorsEnum::boundaryConditionError);
+					errors::boundaryConditionError);
 			break;
 		}
 
@@ -282,12 +282,12 @@ public:
 		case boundaryConditionType::innerSurface:
 			throw exception(
 					"<<innerSurface>> is incorrect variant for returning boundary condition value.",
-					errorsEnum::boundaryConditionError);
+					errors::boundaryConditionError);
 			break;
 		case boundaryConditionType::calculated:
 			throw exception(
 					"<<calculated>> is incorrect variant for returning boundary condition value.",
-					errorsEnum::boundaryConditionError);
+					errors::boundaryConditionError);
 			break;
 		case boundaryConditionType::calculatedTurbulentViscosity:
 		{
@@ -482,7 +482,7 @@ public:
 			break;
 		default:
 			throw exception("Unknown type of boundary condition.",
-					errorsEnum::boundaryConditionError);
+					errors::boundaryConditionError);
 			break;
 		}
 

@@ -11,14 +11,12 @@
 #define MIXTUREREDLICHKWONG_HPP_
 
 #include "abstractMixtureThermodynamics.hpp"
-#include "fractionCalculation.hpp"
 #include "RedlichKwongFluid.hpp"
 
 namespace schemi
 {
 class mixtureRedlichKwong: private RedlichKwongFluid,
-		public abstractMixtureThermodynamics,
-		public fractionCalculation
+		public abstractMixtureThermodynamics
 {
 	const std::valarray<scalar> M, CvArr, molecMass, Tcrit, Pcrit;
 	std::valarray<scalar> Vcrit /*per mole*/;

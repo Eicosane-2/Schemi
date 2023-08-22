@@ -12,7 +12,7 @@
 
 namespace schemi
 {
-enum class matrixSolverEnum
+enum class matrixSolver
 {
 	GaussSeidel,
 	Thomas,

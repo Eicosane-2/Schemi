@@ -9,7 +9,7 @@
 
 schemi::starFields::starFields(const mesh & meshRef,
 		const std::size_t numberOfcomponents) :
-		c { numberOfcomponents + 1, surfaceField<scalar>(meshRef, 0) },
+		c { meshRef, numberOfcomponents },
 
 		rho { meshRef, 0 },
 

@@ -10,6 +10,9 @@
 #ifndef TRANSPORTCOEFFICIENTS_HPP_
 #define TRANSPORTCOEFFICIENTS_HPP_
 
+#include <iostream>
+#include <random>
+
 #include "turbulenceModelEnum.hpp"
 #include "abstractTurbulentParameters.hpp"
 
@@ -27,9 +30,10 @@ struct transportCoefficients
 	field<scalar, typeOfEntity> a_D;
 	field<scalar, typeOfEntity> b_D;
 
-	field<scalar, typeOfEntity> pNu;
-	field<scalar, typeOfEntity> pD;
-	field<scalar, typeOfEntity> pKappa;
+	field<scalar, typeOfEntity> physMu;
+	field<std::valarray<std::valarray<scalar>>, typeOfEntity> physDm;
+	field<std::valarray<scalar>, typeOfEntity> physDs;
+	field<scalar, typeOfEntity> physKappa;
 
 	explicit transportCoefficients(const mesh & meshRef) noexcept :
 			tNu { meshRef, 0 },
@@ -48,25 +52,26 @@ struct transportCoefficients
 
 			b_D { meshRef, 0 },
 
-			pNu { meshRef, 0 },
+			physMu { meshRef, 0 },
 
-			pD { meshRef, 0 },
+			physDm { meshRef, std::valarray<std::valarray<scalar>>(0) },
 
-			pKappa { meshRef, 0 }
+			physDs { meshRef, std::valarray<scalar>(0) },
+
+			physKappa { meshRef, 0 }
 	{
 	}
 
-	void recalculateCoefficients(const field<scalar, typeOfEntity> & kField,
+	void calculateCoefficients(const field<scalar, typeOfEntity> & kField,
 			const field<scalar, typeOfEntity> & epsField,
 			const abstractTurbulentParameters & tp) noexcept
 	{
 		tNu.ref_r() = tp.calculateNut(kField.ref(), epsField.ref());
 
-		recalculateCoefficients(tp);
+		calculateCoefficients(tp);
 	}
 
-	void recalculateCoefficients(
-			const abstractTurbulentParameters & tp) noexcept
+	void calculateCoefficients(const abstractTurbulentParameters & tp) noexcept
 	{
 		tD.ref_r() = tNu.ref() / tp.sigmaSc();
 		tKappa.ref_r() = tNu.ref() / tp.sigmaT();
@@ -100,33 +105,66 @@ struct transportCoefficients
 		a_D.ref_r() = val;
 		b_D.ref_r() = val;
 
-		pNu.ref_r() = val;
-		pD.ref_r() = val;
-		pKappa.ref_r() = val;
+		physMu.ref_r() = val;
+		for (auto & dm_i : physDm.ref_r())
+			for (std::size_t k1 = 0; k1 < dm_i.size(); ++k1)
+				for (std::size_t k2 = 0; k2 < dm_i[k1].size(); ++k2)
+				{
+					if (k1 == k2)
+						continue;
+
+					dm_i[k1][k2] = val;
+				}
+		physDs.ref_r() = std::valarray<scalar>(val, physDs.ref()[0].size);
+		physKappa.ref_r() = val;
 
 		return *this;
 	}
+
+	void calculateCoefficients(const abstractTransportModel & model,
+			const std::valarray<scalar> & M,
+			const field<scalar, typeOfEntity> & temperature,
+			const field<scalar, typeOfEntity> & pressure,
+			const concentrationsPack<typeOfEntity> & concentrations) noexcept
+	{
+		physMu = model.calculateMu(M, temperature, concentrations);
+		physDm = model.calculateDm(M, temperature, pressure, concentrations);
+		physDs = model.calculateDs(M, temperature, pressure, concentrations);
+		physKappa = model.calculateKappa(M, temperature, concentrations);
+	}
 };
 
-template<typename typeOfEnity>
-struct effectiveTransportCoefficients: transportCoefficients<typeOfEnity>
+template<typename typeOfEntity>
+struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 {
-	field<scalar, typeOfEnity> mu;
-	std::vector<field<scalar, typeOfEnity>> mD;
-	field<scalar, typeOfEnity> rhoD;
-	field<scalar, typeOfEnity> kappa;
-	field<scalar, typeOfEnity> rhoDk;
-	field<scalar, typeOfEnity> rhoDeps;
-	field<scalar, typeOfEnity> rhoDa;
-	field<scalar, typeOfEnity> rhoDb;
+	std::random_device rdev;
+	std::mt19937 twister;
+	std::uniform_int_distribution<std::size_t> distr;
+
+	field<scalar, typeOfEntity> mu;
+	field<std::valarray<vector>, typeOfEntity> DFlux;
+	std::vector<field<scalar, typeOfEntity>> rhoD;
+	field<scalar, typeOfEntity> kappa;
+	field<scalar, typeOfEntity> rhoDk;
+	field<scalar, typeOfEntity> rhoDeps;
+	field<scalar, typeOfEntity> rhoDa;
+	field<scalar, typeOfEntity> rhoDb;
 
 	effectiveTransportCoefficients(const mesh & meshRef,
 			const std::size_t compt) noexcept :
-			transportCoefficients<typeOfEnity>(meshRef), mu { meshRef, 0 },
+			transportCoefficients<typeOfEntity>(meshRef),
 
-			mD { compt, field<scalar, typeOfEnity>(meshRef, 0) },
+			rdev(),
 
-			rhoD { meshRef, 0 },
+			twister(rdev()),
+
+			distr(1, compt),
+
+			mu { meshRef, 0 },
+
+			DFlux(meshRef, std::valarray<vector>(vector(0.), compt)),
+
+			rhoD(compt, field<scalar, typeOfEntity>(meshRef, 0.)),
 
 			kappa { meshRef, 0 },
 
@@ -140,14 +178,19 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEnity>
 	{
 	}
 
-	field<scalar, typeOfEnity> maxValue(const bool turbulenceFlag,
-			const turbulenceModelEnum sourceFlag) const noexcept
+	field<scalar, typeOfEntity> maxValue(const bool turbulenceFlag,
+			const turbulenceModel sourceFlag) const noexcept
 	{
-		auto maxFieldVal = this->pNu;
+		auto maxFieldVal = this->physKappa;
 
 		for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
+		{
+			const auto D = this->physDs.ref()[i];
+
+			maxFieldVal.ref_r()[i] = std::max(maxFieldVal.ref()[i], D.max());
 			maxFieldVal.ref_r()[i] = std::max(maxFieldVal.ref()[i],
-					this->pD.ref()[i]);
+					this->physMu.ref()[i]);
+		}
 
 		if (turbulenceFlag)
 		{
@@ -167,16 +210,16 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEnity>
 				maxFieldVal.ref_r()[i] = std::max(maxFieldVal.ref()[i],
 						this->eps_D.ref()[i]);
 
-			if ((sourceFlag == turbulenceModelEnum::BHRSource)
-					|| (sourceFlag == turbulenceModelEnum::BHRKLSource)
-					|| (sourceFlag == turbulenceModelEnum::kEpsASource))
+			if ((sourceFlag == turbulenceModel::BHRSource)
+					|| (sourceFlag == turbulenceModel::BHRKLSource)
+					|| (sourceFlag == turbulenceModel::kEpsASource))
 			{
 				for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
 					maxFieldVal.ref_r()[i] = std::max(maxFieldVal.ref()[i],
 							this->a_D.ref()[i]);
 
-				if ((sourceFlag == turbulenceModelEnum::BHRSource)
-						|| (sourceFlag == turbulenceModelEnum::BHRKLSource))
+				if ((sourceFlag == turbulenceModel::BHRSource)
+						|| (sourceFlag == turbulenceModel::BHRKLSource))
 					for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
 						maxFieldVal.ref_r()[i] = std::max(maxFieldVal.ref()[i],
 								this->b_D.ref()[i]);
@@ -184,6 +227,213 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEnity>
 		}
 
 		return maxFieldVal;
+	}
+
+	void calculateEffectiveCoefficients(const field<scalar, typeOfEntity> & rho,
+			const abstractTurbulenceGen & t,
+			const field<scalar, typeOfEntity> & conc,
+			const field<scalar, typeOfEntity> & Cv) noexcept
+	{
+		if (t.turbulence)
+		{
+			mu.ref_r() = this->physMu.ref() + rho.ref() * this->tNu.ref();
+
+			for (std::size_t k = 0; k < rhoD.size(); ++k)
+				for (std::size_t i = 0; i < rho.size(); ++i)
+					rhoD[k].ref_r()[i] = rho.ref()[i]
+							* (this->tD.ref()[i] + this->physDs.ref()[i][k]);
+
+			kappa.ref_r() = this->physKappa.ref()
+					+ rho.ref() * this->tLambda.ref()
+					+ conc.ref() * Cv.ref() * this->tKappa.ref();
+
+			rhoDk.ref_r() = this->physMu.ref() + rho.ref() * this->k_D.ref();
+			rhoDeps.ref_r() = this->physMu.ref() + rho.ref() * this->k_D.ref();
+			if ((t.model == turbulenceModel::BHRSource)
+					|| (t.model == turbulenceModel::BHRKLSource)
+					|| (t.model == turbulenceModel::kEpsASource))
+			{
+				rhoDa.ref_r() = this->physMu.ref()
+						+ rho.ref() * this->k_D.ref();
+				rhoDb.ref_r() = this->physMu.ref()
+						+ rho.ref() * this->k_D.ref();
+			}
+		}
+		else
+		{
+			mu.ref_r() = this->physMu.ref();
+
+			for (std::size_t k = 0; k < rhoD.size(); ++k)
+				for (std::size_t i = 0; i < rho.size(); ++i)
+					rhoD[k].ref_r()[i] = rho.ref()[i]
+							* this->physDs.ref()[i][k];
+
+			kappa.ref_r() = this->physKappa.ref();
+		}
+	}
+
+	void caclulateDFluxes(
+			const std::vector<field<vector, typeOfEntity>> & gradX,
+			const std::valarray<scalar> & M,
+			const concentrationsPack<typeOfEntity> N, const bool turb)
+	{
+		const std::size_t Ncomp = M.size(), Ncomp1 = Ncomp + 1;
+
+		const std::size_t replaceIndex = distr(twister);
+
+		if (!turb)
+			for (std::size_t i = 0; i < DFlux.size(); ++i)
+			{
+				for (std::size_t f = 0; f < vector::vsize; ++f)
+				{
+					std::valarray<std::valarray<scalar>> cellDFluxesMatrix(
+							std::valarray<scalar>(0., Ncomp), Ncomp);
+					std::valarray<scalar> freeTerm(0., Ncomp);
+
+					for (std::size_t k = 0; k < Ncomp; ++k)
+						freeTerm[k] = -gradX[k].ref()[i].v()[f];
+
+					for (std::size_t k1 = 1; k1 < Ncomp1; ++k1)
+						if (k1 != replaceIndex)
+							for (std::size_t k2 = 1; k2 < Ncomp1; ++k2)
+							{
+								if (k1 == k2)
+									continue;
+
+								const auto & N1 = N.v[k1].ref()[i];
+								const auto & N2 = N.v[k2].ref()[i];
+								const auto & N0 = N.v[0].ref()[i];
+
+								const scalar Aij =
+										N1 * N2
+												/ (N0 * N0
+														* this->physDm.ref()[i][k1
+																- 1][k2 - 1]);
+
+								cellDFluxesMatrix[k1 - 1][k2 - 1] = -Aij;
+								cellDFluxesMatrix[k1 - 1][k1 - 1] += Aij;
+							}
+						else
+						{
+							freeTerm[k1 - 1] = 0;
+
+							for (std::size_t k2 = 1; k2 < Ncomp1; ++k2)
+								cellDFluxesMatrix[k1 - 1][k2 - 1] =
+										N.v[k2].ref()[i] * M[k2 - 1];
+						}
+
+					std::valarray<scalar> c(Ncomp);
+					for (std::size_t k = 1; k < Ncomp1; ++k)
+						c[k - 1] = N.v[k].ref()[i];
+
+					const std::valarray<scalar> resFlows =
+							GaussEliminationSolver(cellDFluxesMatrix, freeTerm)
+									* M * c;
+
+					for (std::size_t k = 0; k < Ncomp; ++k)
+						DFlux.ref_r()[i][k].v_r()[f] = resFlows[k];
+				}
+			}
+		else
+			for (std::size_t i = 0; i < DFlux.size(); ++i)
+			{
+				for (std::size_t f = 0; f < vector::vsize; ++f)
+				{
+					std::valarray<std::valarray<scalar>> cellDFluxesMatrix(
+							std::valarray<scalar>(0., Ncomp), Ncomp);
+					std::valarray<scalar> freeTerm(0., Ncomp);
+
+					for (std::size_t k = 0; k < Ncomp; ++k)
+						freeTerm[k] = -gradX[k].ref()[i].v()[f];
+
+					for (std::size_t k1 = 1; k1 < Ncomp1; ++k1)
+						if (k1 != replaceIndex)
+							for (std::size_t k2 = 1; k2 < Ncomp1; ++k2)
+							{
+								if (k1 == k2)
+									continue;
+
+								const auto & N1 = N.v[k1].ref()[i];
+								const auto & N2 = N.v[k2].ref()[i];
+								const auto & N0 = N.v[0].ref()[i];
+
+								const scalar Aij =
+										N1 * N2
+												/ (N0 * N0
+														* (this->physDm.ref()[i][k1
+																- 1][k2 - 1]
+																+ this->tD.ref()[i]));
+
+								cellDFluxesMatrix[k1 - 1][k2 - 1] = -Aij;
+								cellDFluxesMatrix[k1 - 1][k1 - 1] += Aij;
+							}
+						else
+						{
+							freeTerm[k1 - 1] = 0;
+
+							for (std::size_t k2 = 1; k2 < Ncomp1; ++k2)
+								cellDFluxesMatrix[k1 - 1][k2 - 1] =
+										N.v[k2].ref()[i] * M[k2 - 1];
+						}
+
+					std::valarray<scalar> c(Ncomp);
+					for (std::size_t k = 1; k < Ncomp1; ++k)
+						c[k - 1] = N.v[k].ref()[i];
+
+					const std::valarray<scalar> resFlows =
+							GaussEliminationSolver(cellDFluxesMatrix, freeTerm)
+									* M * c;
+
+					for (std::size_t k = 0; k < Ncomp; ++k)
+						DFlux.ref_r()[i][k].v_r()[f] = resFlows[k];
+				}
+			}
+	}
+private:
+	std::valarray<scalar> GaussEliminationSolver(
+			std::valarray<std::valarray<scalar>> A,
+			std::valarray<scalar> b) const
+	{
+		const std::size_t N = b.size();
+
+		for (std::size_t k = 0; k < N - 1; ++k)
+			for (std::size_t i = k + 1; i < N; ++i)
+			{
+				const auto ratio = A[i][k] / A[k][k];
+
+				for (std::size_t j = 0; j < N; ++j)
+					A[i][j] = A[i][j] - ratio * A[k][j];
+
+				b[i] = b[i] - ratio * b[k];
+			}
+
+		std::valarray<scalar> phi(b.size());
+
+		phi[N - 1] = b[N - 1] / A[N - 1][N - 1];
+
+		for (std::size_t i = N - 2;; --i)
+		{
+			scalar term = 0.0;
+
+			for (std::size_t j = i + 1; j < N; ++j)
+				term += A[i][j] * phi[j];
+
+			phi[i] = (b[i] - term) / A[i][i];
+
+			if (i == 0)
+				break;
+		}
+
+		normalize(phi);
+
+		return phi;
+	}
+
+	void normalize(std::valarray<scalar> & res) const noexcept
+	{
+		for (auto & i : res)
+			if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
+				i = 0;
 	}
 };
 }  // namespace schemi

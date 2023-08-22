@@ -56,7 +56,7 @@ int main()
 		if (parallelism.mpi_size <= 1)
 			throw exception(
 					"Program's work with number of nodes less than 2 has not been tested.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 #endif
 
 		vector systemSize;
@@ -73,8 +73,8 @@ int main()
 				linearFlagString, thirdOrderString, readFromOutput;
 		bool diffusionFlag, gravitationFlag, linearFlag;
 		vector g { 0 }, gDelta { 0 };
-		dimensionsEnum dimensionsFlag;
-		timestepEnum sourceTimeFlag;
+		dimensions dimensionsFlag;
+		timestep sourceTimeFlag;
 		std::pair<bool, scalar> constTimeStep { false, 0. };
 
 		std::string skipBuffer;
@@ -86,7 +86,7 @@ int main()
 				std::cout << "./set/g.txt is opened." << std::endl;
 			else
 				throw exception("./set/g.txt not found.",
-						errorsEnum::initializationError);
+						errors::initializationError);
 
 			gFile >> skipBuffer >> gravitationONString >> skipBuffer
 					>> g.v_r()[0] >> g.v_r()[1] >> g.v_r()[2] >> skipBuffer
@@ -100,7 +100,7 @@ int main()
 				std::cout << "./set/main.txt is opened." << std::endl;
 			else
 				throw exception("./set/main.txt not found.",
-						errorsEnum::initializationError);
+						errors::initializationError);
 
 			mainParametersFile
 
@@ -162,7 +162,7 @@ int main()
 			linearFlag = false;
 		else
 			throw exception("Unknown reconstruction flag.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		frequencyOfOutputWidth = std::min(frequencyOfOutput, std::size_t(1000));
 
@@ -180,7 +180,7 @@ int main()
 
 			if (((eqCount != 1) && (comCount != 1)) || (eqFind > comFind))
 				throw exception("Wrong format of time-step parameters settings",
-						errorsEnum::initializationError);
+						errors::initializationError);
 
 			std::string sourceTimeFlagType;
 			auto eqIt = sourceTimeFlagString.begin();
@@ -225,25 +225,24 @@ int main()
 			{
 				std::cout << "Courant time-step on." << std::endl;
 
-				sourceTimeFlag = timestepEnum::CourantTimeStep;
+				sourceTimeFlag = timestep::CourantTimeStep;
 			}
 			else if (sourceTimeFlagType == "Courant-Source")
 			{
 				std::cout << "Courant and source time-step on." << std::endl;
 
-				sourceTimeFlag = timestepEnum::CourantAndSourceTimeStep;
+				sourceTimeFlag = timestep::CourantAndSourceTimeStep;
 			}
 			else if (sourceTimeFlagType == "Courant-Source-Diffusion")
 			{
 				std::cout << "Courant, source and diffusion time-step on."
 						<< std::endl;
 
-				sourceTimeFlag =
-						timestepEnum::CourantAndSourceAndDiffusionTimeStep;
+				sourceTimeFlag = timestep::CourantAndSourceAndDiffusionTimeStep;
 			}
 			else
 				throw exception("Unknown source time-step flag.",
-						errorsEnum::initializationError);
+						errors::initializationError);
 		}
 
 		if (gravitationONString == "on")
@@ -252,7 +251,7 @@ int main()
 			gravitationFlag = false;
 		else
 			throw exception("Unknown gravitation flag.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		if (diffusionONString == "on")
 			diffusionFlag = true;
@@ -260,7 +259,7 @@ int main()
 			diffusionFlag = false;
 		else
 			throw exception("Unknown diffusion flag.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		std::unique_ptr<abstractLimiter> limiter(
 				createLimiter(typeOfTVDLimeterString));
@@ -272,14 +271,14 @@ int main()
 				createFlowSolver(flowSolwerString));
 
 		if (dimensionsOfTask == "1D")
-			dimensionsFlag = dimensionsEnum::task1D;
+			dimensionsFlag = dimensions::task1D;
 		else if (dimensionsOfTask == "2D")
-			dimensionsFlag = dimensionsEnum::task2D;
+			dimensionsFlag = dimensions::task2D;
 		else if (dimensionsOfTask == "3D")
-			dimensionsFlag = dimensionsEnum::task3D;
+			dimensionsFlag = dimensions::task3D;
 		else
 			throw exception("Unknown dimensions flag.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		bool thirdOrder;
 		if (thirdOrderString == "SecondOrder")
@@ -288,7 +287,7 @@ int main()
 			thirdOrder = true;
 		else
 			throw exception("Unknown gas dynamics approximation order.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		std::size_t readDataPoint;
 		if ((readFromOutput == "no") || (readFromOutput == "0"))
@@ -309,7 +308,7 @@ int main()
 					std::ofstream timeFile(timeFileName);
 					timeFile.close();
 				}
-				if (dimensionsFlag == dimensionsEnum::task1D)
+				if (dimensionsFlag == dimensions::task1D)
 				{
 					/*Recreation of timeWidth.tsv, if it exist.*/
 					std::string timeWidthFileName("./result/timeWidth.tsv");
@@ -329,13 +328,13 @@ int main()
 				if (!std::filesystem::exists(resultFileName))
 					throw exception(
 							std::string("<<result>> directory doesn't exist."),
-							errorsEnum::systemError);
+							errors::systemError);
 
 				std::string timeFileName("./result/Time.tsv");
 				std::ifstream timeFile(timeFileName);
 				if (!timeFile.is_open())
 					throw exception(std::string("Couldn't open Time.tsv"),
-							errorsEnum::systemError);
+							errors::systemError);
 				timeFile.precision(ioPrecision);
 
 				std::string timeString;
@@ -358,12 +357,12 @@ int main()
 					throw exception(
 							std::string(
 									"Appropriate line wasn't found in Time.tsv"),
-							errorsEnum::systemError);
+							errors::systemError);
 
 				if (lineNumber == 1)
 					throw exception(
 							std::string("Time.tsv contains only one line."),
-							errorsEnum::systemError);
+							errors::systemError);
 
 				if (lineNumberEnd == lineNumber)
 					isLastOutput = true;
@@ -394,13 +393,13 @@ int main()
 				if (remainingTime <= 0)
 					throw exception(
 							"Time of calculation lesser or equal than time of executed calculation.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 
 				if (nouts != readDataPoint)
 					throw exception(
 							std::string(
 									"Number of output does not concur with <<readDataPoint>>."),
-							errorsEnum::systemError);
+							errors::systemError);
 
 				std::vector<std::string> savedStrings(lineNumber);
 				timeFile.clear();
@@ -414,7 +413,7 @@ int main()
 				std::ofstream timeFileNew(timeFileName);
 				if (!timeFileNew.is_open())
 					throw exception(std::string("Couldn't open Time.tsv"),
-							errorsEnum::systemError);
+							errors::systemError);
 				timeFileNew.precision(ioPrecision);
 
 				for (std::size_t str_i = 0; str_i < lineNumber; ++str_i)
@@ -429,7 +428,7 @@ int main()
 						throw exception(
 								std::string(
 										"Couldn't open timeOfCalculation.tsv"),
-								errorsEnum::systemError);
+								errors::systemError);
 
 					while (!numberOfStepsFile.eof())
 					{
@@ -449,14 +448,14 @@ int main()
 				else
 					nsteps = nouts * frequencyOfOutput;
 
-				if (dimensionsFlag == dimensionsEnum::task1D)
+				if (dimensionsFlag == dimensions::task1D)
 				{
 					std::string timeWidthFileName("./result/timeWidth.tsv");
 					std::ifstream timeWidthFile(timeWidthFileName);
 					if (!timeWidthFile.is_open())
 						throw exception(
 								std::string("Couldn't open timeWidth.tsv"),
-								errorsEnum::systemError);
+								errors::systemError);
 
 					lineNumber = 0;
 					std::string widthData;
@@ -510,7 +509,7 @@ int main()
 					if (!timeWidthFileNew.is_open())
 						throw exception(
 								std::string("Couldn't open timeWidth.tsv"),
-								errorsEnum::systemError);
+								errors::systemError);
 					timeWidthFileNew.precision(ioPrecision);
 
 					for (std::size_t str_i = 0; str_i < lineNumber; ++str_i)
@@ -557,15 +556,15 @@ int main()
 		{
 			switch (dimensionsFlag)
 			{
-			case dimensionsEnum::task3D:
+			case dimensions::task3D:
 				commonConditions[2] = boundaryConditionType::calculated;
 				commonConditions[5] = boundaryConditionType::calculated;
 				[[fallthrough]];
-			case dimensionsEnum::task2D:
+			case dimensions::task2D:
 				commonConditions[3] = boundaryConditionType::calculated;
 				commonConditions[4] = boundaryConditionType::calculated;
 				[[fallthrough]];
-			case dimensionsEnum::task1D:
+			case dimensions::task1D:
 			default:
 				commonConditions[0] = boundaryConditionType::calculated;
 				commonConditions[1] = boundaryConditionType::calculated;
@@ -581,16 +580,16 @@ int main()
 
 			switch (dimensionsFlag)
 			{
-			case dimensionsEnum::task3D:
+			case dimensions::task3D:
 				meshObjPointer->threeDParallelepiped(parallelNodeSystemSize,
 						numberOfCells_x, numberOfCells_y, numberOfCells_z,
 						commonConditions);
 				break;
-			case dimensionsEnum::task2D:
+			case dimensions::task2D:
 				meshObjPointer->twoDParallelepiped(parallelNodeSystemSize,
 						numberOfCells_x, numberOfCells_y, commonConditions);
 				break;
-			case dimensionsEnum::task1D:
+			case dimensions::task1D:
 			default:
 				meshObjPointer->oneDParallelepiped(parallelNodeSystemSize,
 						numberOfCells_x, commonConditions);
@@ -606,7 +605,7 @@ int main()
 		/*Check number of components.*/
 		if (numberOfComponents > 9)
 			throw exception("More than 9 components.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		/*Creating fields.*/
 		auto [gasPhase, enthalpyFlowFlag, molMassDiffusionFlag] =
@@ -647,7 +646,7 @@ int main()
 		else
 			mesh.setTimestep(constTimeStep.second);
 
-		chemicalReactionsEnum chemReactionFlag;
+		chemicalReactions chemReactionFlag;
 		{
 			std::ifstream chem { "./set/chemicalKinetics.txt" };
 
@@ -656,25 +655,25 @@ int main()
 						<< std::endl;
 			else
 				throw exception("./set/chemicalKinetics.txt not found.",
-						errorsEnum::initializationError);
+						errors::initializationError);
 
 			std::string reactionName;
 
 			chem >> skipBuffer >> reactionName;
 
 			if (reactionName == "no")
-				chemReactionFlag = chemicalReactionsEnum::noReaction;
+				chemReactionFlag = chemicalReactions::noReaction;
 			else if (reactionName == "Cl2")
-				chemReactionFlag = chemicalReactionsEnum::Cl2Dissociation;
+				chemReactionFlag = chemicalReactions::Cl2Dissociation;
 			else if (reactionName == "Cl2H2")
-				chemReactionFlag = chemicalReactionsEnum::Cl2H2Dissociation;
+				chemReactionFlag = chemicalReactions::Cl2H2Dissociation;
 			else if (reactionName == "H2Cl2Combustion")
-				chemReactionFlag = chemicalReactionsEnum::H2Cl2Combustion;
+				chemReactionFlag = chemicalReactions::H2Cl2Combustion;
 			else if (reactionName == "NO2Disproportionation")
-				chemReactionFlag = chemicalReactionsEnum::NO2Disproportionation;
+				chemReactionFlag = chemicalReactions::NO2Disproportionation;
 			else
 				throw exception("Unknown chemical reaction model.",
-						errorsEnum::initializationError);
+						errors::initializationError);
 		}
 
 		std::unique_ptr<abstractChemicalKinetics> chmk(
@@ -695,7 +694,7 @@ int main()
 				{
 					output::dataOutput(outputData, nouts, Time);
 
-					if (dimensionsFlag == dimensionsEnum::task1D)
+					if (dimensionsFlag == dimensions::task1D)
 						output::mixedZoneWidth1D(outputData, Time);
 				}
 			}
@@ -795,7 +794,7 @@ int main()
 				const scalar maxSignalSpeed { signalSpeed.max() };
 
 				mesh.setTimestep(Courant / maxSignalSpeed);
-				if (sourceTimeFlag != timestepEnum::CourantTimeStep)
+				if (sourceTimeFlag != timestep::CourantTimeStep)
 					mesh.setTimestep(
 							std::min(mesh.timestep(), mesh.timestepSource()));
 				mesh.setTimestep(std::max(mesh.timestep(), minTime));
@@ -870,7 +869,7 @@ int main()
 			}
 			if (((nsteps == (noutsW * frequencyOfOutputWidth))
 					|| (Time == timeOfCalculation))
-					&& (dimensionsFlag == dimensionsEnum::task1D))
+					&& (dimensionsFlag == dimensions::task1D))
 			{
 				std::cout << "Time = " << Time << std::endl;
 				std::cout << "Time-step = " << mesh.timestep() << std::endl;
@@ -903,10 +902,10 @@ int main()
 		std::ofstream outputTimeExecutionFile { "timeOfCalculation.tsv" };
 		outputTimeExecutionFile.precision(ioPrecision);
 		outputTimeExecutionFile << "Time of execution" << std::endl
-				<< std::chrono::duration_cast < std::chrono::milliseconds
-				> (std::chrono::high_resolution_clock::now() - startTime).count()
-						<< std::endl << "Number of steps" << std::endl << nsteps
-						<< std::endl;
+				<< std::chrono::duration_cast<std::chrono::milliseconds>(
+						std::chrono::high_resolution_clock::now() - startTime).count()
+				<< std::endl << "Number of steps" << std::endl << nsteps
+				<< std::endl;
 		outputTimeExecutionFile << "Time of TVD stage work:" << std::endl
 				<< timeForTVD << std::endl;
 		outputTimeExecutionFile << "Time of Hancock stage work:" << std::endl

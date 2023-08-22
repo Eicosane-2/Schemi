@@ -22,8 +22,8 @@ schemi::boundaryConditionType schemi::boundaryConditionFromString(
 		return boundaryConditionType::fixedValue;
 	else if (boundaryConditionString == "innerSurface")
 		throw exception("<<innerSurface>> can not be boundary surface type.",
-				errorsEnum::boundaryConditionError);
+				errors::boundaryConditionError);
 	else
 		throw exception("Unknown type of boundary condition",
-				errorsEnum::boundaryConditionError);
+				errors::boundaryConditionError);
 }

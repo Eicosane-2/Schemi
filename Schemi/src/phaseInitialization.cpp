@@ -19,7 +19,7 @@
 #include "fieldProducts.hpp"
 
 std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
-		schemi::enthalpyFlowEnum, bool> schemi::phaseInitialization(
+		schemi::enthalpyFlow, bool> schemi::phaseInitialization(
 		std::size_t numberOfComponents, std::size_t numberOfZones,
 		const mesh & meshReference,
 		const std::vector<boundaryConditionType> & commonConditions,
@@ -29,7 +29,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		const std::string & equationOfState, const std::size_t readDataPoint)
 {
 	std::unique_ptr<homogeneousPhase<cubicCell>> phase { nullptr };
-	enthalpyFlowEnum enthalpyFlowFlag;
+	enthalpyFlow enthalpyFlowFlag;
 	bool molMassDiffusionFlag;
 
 	std::string skipBuffer;
@@ -45,42 +45,6 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	/*Set boundary condition for transport coefficients.*/
 	auto bndConCom = commonConditions;
 
-	tCoeffsPhase.tD = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	tCoeffsPhase.tKappa = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	tCoeffsPhase.tLambda = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	tCoeffsPhase.k_D = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	tCoeffsPhase.eps_D = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	tCoeffsPhase.a_D = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	tCoeffsPhase.b_D = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-
 	std::replace(bndConCom.begin(), bndConCom.end(),
 			boundaryConditionType::calculated,
 			boundaryConditionType::calculatedTurbulentViscosity);
@@ -95,47 +59,35 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		std::cout << "./set/transportCoefficients.txt is opened." << std::endl;
 	else
 		throw exception("./set/transportCoefficients.txt not found.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
-	bndConCom = commonConditions;
-	std::replace(bndConCom.begin(), bndConCom.end(),
-			boundaryConditionType::calculated,
-			boundaryConditionType::freeBoundary);
-	tCoeffsPhase.pNu = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	tCoeffsPhase.pD = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	tCoeffsPhase.pKappa = volumeField<scalar>(meshReference, 0,
-			subPatchData<scalar> { bndConCom[0] }, subPatchData<scalar> {
-					bndConCom[1] }, subPatchData<scalar> { bndConCom[2] },
-			subPatchData<scalar> { bndConCom[3] }, subPatchData<scalar> {
-					bndConCom[4] }, subPatchData<scalar> { bndConCom[5] });
-	scalar physNu, physD, physKappa;
+	std::string transportModelTypeString;
+	scalar cNu, cD, cKappa;
 	std::string implicitEnthalpyFlowFlagString, MolMassDiffusionFlagString;
-	transportCoefficientsFile >> skipBuffer >> physNu >> skipBuffer >> physD
-			>> skipBuffer >> physKappa >> skipBuffer
-			>> implicitEnthalpyFlowFlagString >> skipBuffer
+	transportCoefficientsFile >> skipBuffer >> transportModelTypeString
+			>> skipBuffer >> cNu >> skipBuffer >> cD >> skipBuffer >> cKappa
+			>> skipBuffer >> implicitEnthalpyFlowFlagString >> skipBuffer
 			>> MolMassDiffusionFlagString;
-	tCoeffsPhase.pNu.ref_r() = physNu;
-	tCoeffsPhase.pD.ref_r() = physD;
-	tCoeffsPhase.pKappa.ref_r() = physKappa;
 	transportCoefficientsFile.close();
 
+	transportModel transpModel;
+	if (transportModelTypeString == "constant")
+		transpModel = transportModel::constant;
+	else if (transportModelTypeString == "hardSpheres")
+		transpModel = transportModel::hardSpheres;
+	else
+		throw exception("Unknown flag for transport model.",
+				errors::initializationError);
+
 	if (implicitEnthalpyFlowFlagString == "implicit")
-		enthalpyFlowFlag = enthalpyFlowEnum::implicitSolve;
+		enthalpyFlowFlag = enthalpyFlow::implicitSolve;
 	else if (implicitEnthalpyFlowFlagString == "explicit")
-		enthalpyFlowFlag = enthalpyFlowEnum::explicitSolve;
+		enthalpyFlowFlag = enthalpyFlow::explicitSolve;
 	else if (implicitEnthalpyFlowFlagString == "no")
-		enthalpyFlowFlag = enthalpyFlowEnum::noSolve;
+		enthalpyFlowFlag = enthalpyFlow::noSolve;
 	else
 		throw exception("Unknown flag for enthalpy flow calculation.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	if (MolMassDiffusionFlagString == "on")
 		molMassDiffusionFlag = true;
@@ -143,7 +95,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		molMassDiffusionFlag = false;
 	else
 		throw exception("Unknown flag for molar mass diffusion correction.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	/*Create mixture class and boundary conditions for basic quantities: concentrations, velocity, pressure, k, epsilon, a and b.*/
 	std::vector<std::array<std::vector<subPatchData<scalar>>, 6>> boundaryConditionsMatrix(
@@ -152,7 +104,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		arr.fill(std::vector<subPatchData<scalar>>(0));
 
 	std::vector<std::vector<std::string>> matrixOfSubstancesConditions(
-			numberOfComponents, std::vector<std::string>(4 + numberOfZones));
+			numberOfComponents, std::vector<std::string>(5 + numberOfZones));
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
@@ -167,13 +119,14 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << substanceName << " is opened." << std::endl;
 		else
 			throw exception(substanceName + " not found.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		substanceConditionsFile >> skipBuffer
 				>> matrixOfSubstancesConditions[k][0] /*M*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][1] /*Cv*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][2] /*Tcrit*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][3]; /*Pcrit*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][3] /*Pcrit*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][4]; /*Molecular diameter*/
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -206,7 +159,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -250,9 +203,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		substanceConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 		for (std::size_t j = 0; j < numberOfZones; ++j)
-			substanceConditionsFile >> matrixOfSubstancesConditions[k][4 + j]; /*Values in zones*/
+			substanceConditionsFile >> matrixOfSubstancesConditions[k][5 + j]; /*Values in zones*/
 		substanceConditionsFile.close();
 	}
 
@@ -328,33 +281,33 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	}
 	else
 		throw exception("Unknown type of universal gas constant.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	{
-		gasModelEnum gasModelFlag;
+		gasModel gasModelFlag;
 		if (equationOfState == "vanDerWaals")
-			gasModelFlag = gasModelEnum::vanDerWaals;
+			gasModelFlag = gasModel::vanDerWaals;
 		else if (equationOfState == "ideal")
-			gasModelFlag = gasModelEnum::ideal;
+			gasModelFlag = gasModel::ideal;
 		else if (equationOfState == "RedlichKwong")
-			gasModelFlag = gasModelEnum::RedlichKwong;
+			gasModelFlag = gasModel::RedlichKwong;
 		else
 			throw exception("Unknown type of equation of state.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		switch (gasModelFlag)
 		{
-		case gasModelEnum::vanDerWaals:
+		case gasModel::vanDerWaals:
 			mixture = std::make_unique<mixtureVanDerWaals>(R, hPlanck,
 					thermodynamicalProperties[0], thermodynamicalProperties[1],
 					thermodynamicalProperties[2], thermodynamicalProperties[3]);
 			break;
-		case gasModelEnum::RedlichKwong:
+		case gasModel::RedlichKwong:
 			mixture = std::make_unique<mixtureRedlichKwong>(R, hPlanck,
 					thermodynamicalProperties[0], thermodynamicalProperties[1],
 					thermodynamicalProperties[2], thermodynamicalProperties[3]);
 			break;
-		case gasModelEnum::ideal:
+		case gasModel::ideal:
 		default:
 			mixture = std::make_unique<mixtureIdeal>(R, hPlanck,
 					thermodynamicalProperties[0], thermodynamicalProperties[1],
@@ -363,8 +316,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		}
 	}
 
+	std::unique_ptr<abstractTransportModel> transportModel(
+			createTransportModel(matrixOfSubstancesConditions, cNu, cD, cKappa,
+					transpModel));
+
 	phase = std::make_unique<homogeneousPhase<cubicCell>>(cellFields,
-			tCoeffsPhase, mixture, turbulenceSources);
+			tCoeffsPhase, mixture, turbulenceSources, transportModel);
 
 	std::array<std::vector<subPatchData<vector>>, 6> boundaryConditionsVelocity;
 	boundaryConditionsVelocity.fill(std::vector<subPatchData<vector>>(0));
@@ -376,7 +333,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "./set/velocity.txt is opened." << std::endl;
 		else
 			throw exception("./set/velocity.txt not found.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -409,7 +366,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -453,7 +410,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		velocityConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			velocityConditionsFile >> velocityConditions[3 * i]
 					>> velocityConditions[1 + 3 * i]
@@ -479,7 +436,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "./set/pressure.txt is opened." << std::endl;
 		else
 			throw exception("./set/pressure.txt not found.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -512,7 +469,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -556,7 +513,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		pressureConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			pressureConditionsFile >> pressureConditions[i];
 
@@ -580,7 +537,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "./set/k.txt is opened." << std::endl;
 		else
 			throw exception("./set/k.txt is opened.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -612,7 +569,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -656,7 +613,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		kTurbConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			kTurbConditionsFile >> kTurbConditions[i];
 
@@ -680,7 +637,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "./set/epsilon.txt is opened." << std::endl;
 		else
 			throw exception("./set/epsilon.txt not found.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -713,7 +670,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -757,7 +714,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		epsTurbConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			epsTurbConditionsFile >> epsTurbConditions[i];
 
@@ -781,7 +738,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "./set/a.txt is opened." << std::endl;
 		else
 			throw exception("./set/a.txt not found.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -813,7 +770,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -858,7 +815,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		aTurbConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			aTurbConditionsFile >> aTurbConditions[3 * i]
 					>> aTurbConditions[1 + 3 * i] >> aTurbConditions[2 + 3 * i];
@@ -883,7 +840,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "./set/b.txt is opened." << std::endl;
 		else
 			throw exception("./set/b.txt not found.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -915,7 +872,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -959,7 +916,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		bTurbConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			bTurbConditionsFile >> bTurbConditions[i];
 
@@ -1068,7 +1025,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "./set/coordinatesOfZones.txt is opened." << std::endl;
 		else
 			throw exception("./set/coordinatesOfZones.txt not found.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 		{
@@ -1106,7 +1063,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					zoneFounded = true;
 					phase->concentration.v[k].ref_r()[i] = std::stod(
-							matrixOfSubstancesConditions[k - 1][4 + j]);
+							matrixOfSubstancesConditions[k - 1][5 + j]);
 					break;
 				}
 			}
@@ -1115,7 +1072,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						"Cell " + std::to_string(i) + " of " + std::to_string(k)
 								+ " component concentration dropped out of all zones.",
-						errorsEnum::initializationError);
+						errors::initializationError);
 		}
 
 	/*Set initial conditions for velocity.*/
@@ -1146,7 +1103,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of velocity dropped out of all zones.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 	}
 
 	/*Set initial conditions for pressure.*/
@@ -1173,7 +1130,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of pressure dropped out of all zones.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 	}
 
 	/*Set initial conditions for k.*/
@@ -1200,7 +1157,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of k dropped out of all zones.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 	}
 
 	/*Set initial conditions for epsilon.*/
@@ -1227,7 +1184,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of epsilon dropped out of all zones.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 	}
 
 	/*Set initial conditions for a.*/
@@ -1258,7 +1215,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of a dropped out of all zones.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 	}
 
 	/*Set initial conditions for b.*/
@@ -1285,7 +1242,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of b dropped out of all zones.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 	}
 
 	if (readDataPoint)
@@ -1296,7 +1253,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (lengthOfNumber < length_of_noutput)
 			throw exception(
 					"Output number length larger than specified number of digits.",
-					errorsEnum::tooBigOutputNumberError);
+					errors::tooBigOutputNumberError);
 
 		std::string bufOutputN(lengthOfNumber - length_of_noutput, '0');
 
@@ -1309,7 +1266,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					std::string("Directory ") + fieldDataDirectoryName
 							+ std::string(" doesn't exits."),
-					errorsEnum::systemError);
+					errors::systemError);
 
 		fieldDataDirectoryName.append("/");
 
@@ -1343,7 +1300,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_a)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_aVector.precision(ioPrecision);
 
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
@@ -1371,7 +1328,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_b)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_bScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1395,7 +1352,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_epsilon)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_epsilonScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1419,7 +1376,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_k)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_kScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1443,7 +1400,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_pressure)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_pressureScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1467,7 +1424,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_velocity)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_velocityVector.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1498,7 +1455,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						std::string("Couldn't open output file for field data ")
 								+ std::string(
 										fieldDataFileName_concentration[k])
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_concentrationScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1523,7 +1480,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_a)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_aVector.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1543,7 +1500,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_b)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_bScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1561,7 +1518,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_epsilon)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_epsilonScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1579,7 +1536,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_k)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_kScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1597,7 +1554,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_pressure)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_pressureScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1615,7 +1572,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_velocity)
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_velocityVector.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1639,7 +1596,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						std::string("Couldn't open output file for field data ")
 								+ std::string(
 										fieldDataFileName_concentration[k])
-								+ std::string("."), errorsEnum::systemError);
+								+ std::string("."), errors::systemError);
 			input_concentrationScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1665,7 +1622,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "./set/turbPeak.txt is opened." << std::endl;
 		else
 			throw exception("./set/turbPeak.txt not found.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 
 		turbPeakConditionsFile >> skipBuffer >> profileType >> skipBuffer
 				>> kMax >> skipBuffer >> epsMax >> skipBuffer >> xCenter
@@ -1716,7 +1673,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		else if (profileType != "no")
 			throw exception(
 					"Wrong parameter of peak, must be <<linear>> or <<no>>.",
-					errorsEnum::initializationError);
+					errors::initializationError);
 	}
 	/**/
 
@@ -1761,7 +1718,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	phase->rhobTurb.ref_r() = phase->density[0].ref() * phase->bTurb.ref();
 
-	phase->recalculateCoefficients(phase->kTurb, phase->epsTurb,
+	phase->calculateCoefficients(phase->kTurb, phase->epsTurb,
 			*phase->turbulenceSources->turbPar);
 
 	/*Set turbulent quantities to zero, if it is non-turbulent task.*/

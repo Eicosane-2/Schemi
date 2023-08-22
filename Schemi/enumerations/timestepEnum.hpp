@@ -10,7 +10,7 @@
 #ifndef TIMESTEPENUM_HPP_
 #define TIMESTEPENUM_HPP_
 
-enum class timestepEnum
+enum class timestep
 {
 	CourantTimeStep,
 	CourantAndSourceTimeStep,

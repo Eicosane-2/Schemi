@@ -66,7 +66,7 @@ class mesh
 
 	bool initialized = false;
 
-	dimensionsEnum taskDim = dimensionsEnum::task1D;
+	dimensions taskDim = dimensions::task1D;
 
 	std::array<std::size_t, 3> n_cells { 0, 0, 0 };
 
@@ -122,7 +122,7 @@ public:
 
 	std::size_t surfacesSize() const noexcept;
 
-	dimensionsEnum taskDimension() const noexcept;
+	dimensions taskDimension() const noexcept;
 
 	const std::array<std::size_t, 3>& nCells() const noexcept;
 

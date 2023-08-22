@@ -32,12 +32,14 @@ schemi::starFields schemi::Advection3dOrder(
 	homogeneousPhase<quadraticSurface> surfaceOwnerSide { bunchOfFields<
 			quadraticSurface>(gasPhase),
 			transportCoefficients<quadraticSurface>(mesh),
-			gasPhase.phaseThermodynamics, gasPhase.turbulenceSources };
+			gasPhase.phaseThermodynamics, gasPhase.turbulenceSources,
+			gasPhase.transportModel };
 
 	homogeneousPhase<quadraticSurface> surfaceNeighbourSide { bunchOfFields<
 			quadraticSurface>(gasPhase),
 			transportCoefficients<quadraticSurface>(mesh),
-			gasPhase.phaseThermodynamics, gasPhase.turbulenceSources };
+			gasPhase.phaseThermodynamics, gasPhase.turbulenceSources,
+			gasPhase.transportModel };
 
 	/*Creating limited gradients.*/
 	std::vector<volumeField<std::vector<vector>> > concentrationTVDGradient {
@@ -112,12 +114,11 @@ schemi::starFields schemi::Advection3dOrder(
 			epsilonTVDGradient = thirdOrderAveraging(surfaceepsilonGradient,
 					limiter);
 
-			if ((gasPhase.turbulenceSources->model
-					== turbulenceModelEnum::BHRSource)
+			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
 					|| (gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::BHRKLSource)
+							== turbulenceModel::BHRKLSource)
 					|| (gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::kEpsASource))
+							== turbulenceModel::kEpsASource))
 			{
 				const auto aGradient = grad(gasPhase.aTurb,
 						boundaryConditionValueCalc);
@@ -128,9 +129,9 @@ schemi::starFields schemi::Advection3dOrder(
 				aTVDGradient = thirdOrderAveraging(surfaceaGradient, limiter);
 
 				if ((gasPhase.turbulenceSources->model
-						== turbulenceModelEnum::BHRSource)
+						== turbulenceModel::BHRSource)
 						|| (gasPhase.turbulenceSources->model
-								== turbulenceModelEnum::BHRKLSource))
+								== turbulenceModel::BHRKLSource))
 				{
 					const auto bGradient = grad(gasPhase.bTurb,
 							boundaryConditionValueCalc);
@@ -188,19 +189,19 @@ schemi::starFields schemi::Advection3dOrder(
 							& deltaVector) + gasPhase.epsTurb.ref()[i];
 
 					if ((gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::BHRSource)
+							== turbulenceModel::BHRSource)
 							|| (gasPhase.turbulenceSources->model
-									== turbulenceModelEnum::BHRKLSource)
+									== turbulenceModel::BHRKLSource)
 							|| (gasPhase.turbulenceSources->model
-									== turbulenceModelEnum::kEpsASource))
+									== turbulenceModel::kEpsASource))
 					{
 						reconstructedaValue = (aTVDGradient.ref()[i][j]
 								& deltaVector) + gasPhase.aTurb.ref()[i];
 
 						if ((gasPhase.turbulenceSources->model
-								== turbulenceModelEnum::BHRSource)
+								== turbulenceModel::BHRSource)
 								|| (gasPhase.turbulenceSources->model
-										== turbulenceModelEnum::BHRKLSource))
+										== turbulenceModel::BHRKLSource))
 							reconstructedbValue = (bTVDGradient.ref()[i][j]
 									& deltaVector) + gasPhase.bTurb.ref()[i];
 					}
@@ -228,19 +229,19 @@ schemi::starFields schemi::Advection3dOrder(
 								reconstructedEpsilon;
 
 						if ((gasPhase.turbulenceSources->model
-								== turbulenceModelEnum::BHRSource)
+								== turbulenceModel::BHRSource)
 								|| (gasPhase.turbulenceSources->model
-										== turbulenceModelEnum::BHRKLSource)
+										== turbulenceModel::BHRKLSource)
 								|| (gasPhase.turbulenceSources->model
-										== turbulenceModelEnum::kEpsASource))
+										== turbulenceModel::kEpsASource))
 						{
 							surfaceOwnerSide.aTurb.ref_r()[surfaceIndex] =
 									reconstructedaValue;
 
 							if ((gasPhase.turbulenceSources->model
-									== turbulenceModelEnum::BHRSource)
+									== turbulenceModel::BHRSource)
 									|| (gasPhase.turbulenceSources->model
-											== turbulenceModelEnum::BHRKLSource))
+											== turbulenceModel::BHRKLSource))
 								surfaceOwnerSide.bTurb.ref_r()[surfaceIndex] =
 										reconstructedbValue;
 						}
@@ -268,19 +269,19 @@ schemi::starFields schemi::Advection3dOrder(
 								reconstructedEpsilon;
 
 						if ((gasPhase.turbulenceSources->model
-								== turbulenceModelEnum::BHRSource)
+								== turbulenceModel::BHRSource)
 								|| (gasPhase.turbulenceSources->model
-										== turbulenceModelEnum::BHRKLSource)
+										== turbulenceModel::BHRKLSource)
 								|| (gasPhase.turbulenceSources->model
-										== turbulenceModelEnum::kEpsASource))
+										== turbulenceModel::kEpsASource))
 						{
 							surfaceNeighbourSide.aTurb.ref_r()[surfaceIndex] =
 									reconstructedaValue;
 
 							if ((gasPhase.turbulenceSources->model
-									== turbulenceModelEnum::BHRSource)
+									== turbulenceModel::BHRSource)
 									|| (gasPhase.turbulenceSources->model
-											== turbulenceModelEnum::BHRKLSource))
+											== turbulenceModel::BHRKLSource))
 								surfaceNeighbourSide.bTurb.ref_r()[surfaceIndex] =
 										reconstructedbValue;
 						}
@@ -288,7 +289,7 @@ schemi::starFields schemi::Advection3dOrder(
 				}
 				else
 					throw exception("Couldn't choose side to add",
-							errorsEnum::systemError);
+							errors::systemError);
 			}
 		}
 
@@ -317,21 +318,20 @@ schemi::starFields schemi::Advection3dOrder(
 			surfaceOwnerSide.rhoepsTurb.ref_r() = surfaceOwnerSide.epsTurb.ref()
 					* surfaceOwnerSide.density[0].ref();
 
-			if ((gasPhase.turbulenceSources->model
-					== turbulenceModelEnum::BHRSource)
+			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
 					|| (gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::BHRKLSource)
+							== turbulenceModel::BHRKLSource)
 					|| (gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::kEpsASource))
+							== turbulenceModel::kEpsASource))
 			{
 				surfaceOwnerSide.rhoaTurb.ref_r() =
 						astProduct(surfaceOwnerSide.aTurb,
 								surfaceOwnerSide.density[0]).ref();
 
 				if ((gasPhase.turbulenceSources->model
-						== turbulenceModelEnum::BHRSource)
+						== turbulenceModel::BHRSource)
 						|| (gasPhase.turbulenceSources->model
-								== turbulenceModelEnum::BHRKLSource))
+								== turbulenceModel::BHRKLSource))
 					surfaceOwnerSide.rhobTurb.ref_r() =
 							surfaceOwnerSide.bTurb.ref()
 									* surfaceOwnerSide.density[0].ref();
@@ -407,20 +407,20 @@ schemi::starFields schemi::Advection3dOrder(
 									* surfaceNeighbourSide.density[0].ref()[i];
 
 					if ((gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::BHRSource)
+							== turbulenceModel::BHRSource)
 							|| (gasPhase.turbulenceSources->model
-									== turbulenceModelEnum::BHRKLSource)
+									== turbulenceModel::BHRKLSource)
 							|| (gasPhase.turbulenceSources->model
-									== turbulenceModelEnum::kEpsASource))
+									== turbulenceModel::kEpsASource))
 					{
 						surfaceNeighbourSide.rhoaTurb.ref_r()[i] =
 								surfaceNeighbourSide.aTurb.ref()[i]
 										* surfaceNeighbourSide.density[0].ref()[i];
 
 						if ((gasPhase.turbulenceSources->model
-								== turbulenceModelEnum::BHRSource)
+								== turbulenceModel::BHRSource)
 								|| (gasPhase.turbulenceSources->model
-										== turbulenceModelEnum::BHRKLSource))
+										== turbulenceModel::BHRKLSource))
 							surfaceNeighbourSide.rhobTurb.ref_r()[i] =
 									surfaceNeighbourSide.bTurb.ref()[i]
 											* surfaceNeighbourSide.density[0].ref()[i];
@@ -464,13 +464,13 @@ schemi::starFields schemi::Advection3dOrder(
 			}
 	}
 	const auto TVDEndTime = std::chrono::high_resolution_clock::now();
-	timeForTVD += std::chrono::duration_cast < std::chrono::milliseconds
-			> (TVDEndTime - TVDStartTime).count();
+	timeForTVD += std::chrono::duration_cast<std::chrono::milliseconds>(
+			TVDEndTime - TVDStartTime).count();
 
 	const auto HancockStartTime = std::chrono::high_resolution_clock::now();
 	const auto HancockEndTime = std::chrono::high_resolution_clock::now();
-	timeForHancock += std::chrono::duration_cast < std::chrono::milliseconds
-			> (HancockEndTime - HancockStartTime).count();
+	timeForHancock += std::chrono::duration_cast<std::chrono::milliseconds>(
+			HancockEndTime - HancockStartTime).count();
 
 	/*Update parallel boundary conditions*/
 	parallelism.correctBoundaryValues(surfaceOwnerSide);
@@ -539,11 +539,11 @@ schemi::starFields schemi::Advection3dOrder(
 								* surfaceNeighbourSide.epsTurb.ref()[i];
 
 				if ((surfaceNeighbourSide.turbulenceSources->model
-						== turbulenceModelEnum::BHRSource)
+						== turbulenceModel::BHRSource)
 						|| (surfaceNeighbourSide.turbulenceSources->model
-								== turbulenceModelEnum::BHRKLSource)
+								== turbulenceModel::BHRKLSource)
 						|| (surfaceNeighbourSide.turbulenceSources->model
-								== turbulenceModelEnum::kEpsASource))
+								== turbulenceModel::kEpsASource))
 				{
 					surfaceNeighbourSide.aTurb.ref_r()[i] =
 							boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -556,9 +556,9 @@ schemi::starFields schemi::Advection3dOrder(
 									* surfaceNeighbourSide.density[0].ref()[i];
 
 					if ((surfaceNeighbourSide.turbulenceSources->model
-							== turbulenceModelEnum::BHRSource)
+							== turbulenceModel::BHRSource)
 							|| (surfaceNeighbourSide.turbulenceSources->model
-									== turbulenceModelEnum::BHRKLSource))
+									== turbulenceModel::BHRKLSource))
 					{
 						surfaceNeighbourSide.bTurb.ref_r()[i] =
 								boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -619,9 +619,9 @@ schemi::starFields schemi::Advection3dOrder(
 
 	const auto FlowCalculationEndTime =
 			std::chrono::high_resolution_clock::now();
-	timeForFlowCalculation += std::chrono::duration_cast
-			< std::chrono::milliseconds
-			> (FlowCalculationEndTime - FlowCalculationStartTime).count();
+	timeForFlowCalculation += std::chrono::duration_cast<
+			std::chrono::milliseconds>(
+			FlowCalculationEndTime - FlowCalculationStartTime).count();
 
 	/*Time integration.*/
 	const auto TimeIntegrationStartTime =
@@ -695,20 +695,19 @@ schemi::starFields schemi::Advection3dOrder(
 								return value < gasPhase.turbulenceSources->turbPar->mineps();
 							}, gasPhase.turbulenceSources->turbPar->mineps());
 
-			if ((gasPhase.turbulenceSources->model
-					== turbulenceModelEnum::BHRSource)
+			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
 					|| (gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::BHRKLSource)
+							== turbulenceModel::BHRKLSource)
 					|| (gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::kEpsASource))
+							== turbulenceModel::kEpsASource))
 			{
 				gasPhase.rhoaTurb.ref_r() -= astProduct(
 						divergence(NumFluxFlows.rhoaTurb), timestep).ref();
 
 				if ((gasPhase.turbulenceSources->model
-						== turbulenceModelEnum::BHRSource)
+						== turbulenceModel::BHRSource)
 						|| (gasPhase.turbulenceSources->model
-								== turbulenceModelEnum::BHRKLSource))
+								== turbulenceModel::BHRKLSource))
 				{
 					gasPhase.rhobTurb.ref_r() -= divergence(
 							NumFluxFlows.rhobTurb).ref() * timestep;
@@ -766,20 +765,19 @@ schemi::starFields schemi::Advection3dOrder(
 			gasPhase.epsTurb.ref_r() = gasPhase.rhoepsTurb.ref()
 					/ gasPhase.density[0].ref();
 
-			if ((gasPhase.turbulenceSources->model
-					== turbulenceModelEnum::BHRSource)
+			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
 					|| (gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::BHRKLSource)
+							== turbulenceModel::BHRKLSource)
 					|| (gasPhase.turbulenceSources->model
-							== turbulenceModelEnum::kEpsASource))
+							== turbulenceModel::kEpsASource))
 			{
 				gasPhase.aTurb.ref_r() = division(gasPhase.rhoaTurb,
 						gasPhase.density[0]).ref();
 
 				if ((gasPhase.turbulenceSources->model
-						== turbulenceModelEnum::BHRSource)
+						== turbulenceModel::BHRSource)
 						|| (gasPhase.turbulenceSources->model
-								== turbulenceModelEnum::BHRKLSource))
+								== turbulenceModel::BHRKLSource))
 					gasPhase.bTurb.ref_r() = gasPhase.rhobTurb.ref()
 							/ gasPhase.density[0].ref();
 			}
@@ -787,9 +785,9 @@ schemi::starFields schemi::Advection3dOrder(
 	}
 	const auto TimeIntegrationEndTime =
 			std::chrono::high_resolution_clock::now();
-	timeForTimeIntegration += std::chrono::duration_cast
-			< std::chrono::milliseconds
-			> (TimeIntegrationEndTime - TimeIntegrationStartTime).count();
+	timeForTimeIntegration += std::chrono::duration_cast<
+			std::chrono::milliseconds>(
+			TimeIntegrationEndTime - TimeIntegrationStartTime).count();
 
 	return star;
 }

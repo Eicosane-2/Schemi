@@ -66,8 +66,7 @@ const schemi::volumeField<schemi::scalar>& schemi::MPIHandler::Vol() const
 	if (parallCellVolume)
 		return *parallCellVolume;
 	else
-		throw exception("Nullptr in parallCellVolume.",
-				errorsEnum::systemError);
+		throw exception("Nullptr in parallCellVolume.", errors::systemError);
 }
 
 const schemi::surfaceField<schemi::vector>& schemi::MPIHandler::cSdR() const
@@ -75,8 +74,7 @@ const schemi::surfaceField<schemi::vector>& schemi::MPIHandler::cSdR() const
 	if (ownerSurfaceDeltaR)
 		return *ownerSurfaceDeltaR;
 	else
-		throw exception("Nullptr in ownerSurfaceDeltaR.",
-				errorsEnum::systemError);
+		throw exception("Nullptr in ownerSurfaceDeltaR.", errors::systemError);
 }
 
 schemi::MPIHandler::MPIHandler(std::size_t mpi_rank_in,
@@ -142,7 +140,7 @@ void schemi::MPIHandler::initialiseBuffersSize(
 
 			if (gathBufSize / mpi_size != localCellSize[0])
 				throw exception("Noneven number of cells in nodes.",
-						errorsEnum::MPIError);
+						errors::MPIError);
 
 			gathBuf.reset(new mpi_scalar[gathBufSize]);
 		}
@@ -160,8 +158,7 @@ void schemi::MPIHandler::initialiseBuffersSize(
 		gathBufSize = gathBufSizeArr[0];
 	}
 	else
-		throw exception("Arrays were already initialized.",
-				errorsEnum::MPIError);
+		throw exception("Arrays were already initialized.", errors::MPIError);
 #endif
 }
 

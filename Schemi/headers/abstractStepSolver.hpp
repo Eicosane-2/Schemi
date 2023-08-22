@@ -46,11 +46,11 @@ protected:
 	const std::pair<scalar, scalar> timestepCoeffs;
 	scalar & timeForDiffusion;
 	const std::vector<boundaryConditionType> & commonConditions;
-	const enthalpyFlowEnum & enthalpyFlowFlag;
+	const enthalpyFlow & enthalpyFlowFlag;
 	const bool & linearFlag;
 	const boundaryConditionValue & bncCalc;
 	const volumeField<scalar> & minimalLengthScale;
-	const timestepEnum & sourceTimeFlag;
+	const timestep & sourceTimeFlag;
 	const bool & molMassDiffusionFlag;
 	const abstractChemicalKinetics & chemKin;
 public:
@@ -68,11 +68,11 @@ public:
 			const std::pair<scalar, scalar> & timestepCoeffs_in,
 			scalar & timeForDiffusion_in,
 			const std::vector<boundaryConditionType> & commonConditions_in,
-			const enthalpyFlowEnum & enthalpyFlowFlag_in,
+			const enthalpyFlow & enthalpyFlowFlag_in,
 			const bool & linearFlag_in,
 			const boundaryConditionValue & bncCalc_in,
 			const volumeField<scalar> & minimalLengthScale_in,
-			const timestepEnum & sourceTimeFlag_in,
+			const timestep & sourceTimeFlag_in,
 			const bool & molMassDiffusionFlag_in,
 			const abstractChemicalKinetics & chemKin_in) noexcept;
 

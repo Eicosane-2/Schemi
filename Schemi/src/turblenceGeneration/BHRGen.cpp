@@ -12,8 +12,7 @@
 #include "turbulentParametersKEPS.hpp"
 #include "doubleDotProduct.hpp"
 
-schemi::BHRGen::BHRGen(const bool turb_in,
-		const turbulenceModelEnum tm_in) noexcept :
+schemi::BHRGen::BHRGen(const bool turb_in, const turbulenceModel tm_in) noexcept :
 		abstractTurbulenceGen(turb_in, tm_in)
 {
 	turbPar = std::make_unique<turbulentParametersKEPS>();

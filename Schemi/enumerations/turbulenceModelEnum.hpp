@@ -12,7 +12,7 @@
 
 namespace schemi
 {
-enum class turbulenceModelEnum
+enum class turbulenceModel
 {
 	BHRSource,
 	zeroSource,

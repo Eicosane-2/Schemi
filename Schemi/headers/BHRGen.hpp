@@ -17,7 +17,7 @@ namespace schemi
 class BHRGen: public abstractTurbulenceGen
 {
 public:
-	BHRGen(const bool turb_in, const turbulenceModelEnum tm_in) noexcept;
+	BHRGen(const bool turb_in, const turbulenceModel tm_in) noexcept;
 
 	std::tuple<volumeField<scalar>, volumeField<scalar>, volumeField<vector>,
 			volumeField<scalar>> calculate(scalar & sourceTimestep,

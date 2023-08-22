@@ -12,7 +12,7 @@
 
 namespace schemi
 {
-enum class errorsEnum
+enum class errors
 {
 	noErrors,
 	RiemannSolverError,

@@ -8,7 +8,7 @@
 #include "exception.hpp"
 
 schemi::exception::exception(const std::string & in_string,
-		const errorsEnum in_errType) noexcept :
+		const errors in_errType) noexcept :
 		ex_txt(in_string), errType(in_errType)
 {
 }

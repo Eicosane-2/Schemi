@@ -283,7 +283,7 @@ auto schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::solveJ(
 
 			throw exception(
 					"Jacobi algorithm for H2 + Cl2 combustion did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -380,7 +380,7 @@ auto schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::solveGS(
 
 			throw exception(
 					"Gauss-Seidel algorithm for H2 + Cl2 combustion did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -439,7 +439,7 @@ auto schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::solveCG(
 
 			throw exception(
 					"Conjugate gradient algorithm for H2 + Cl2 combustion did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -529,7 +529,7 @@ auto schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::solveJCG(
 
 			throw exception(
 					"Jacobi preconditioned conjugate gradient algorithm for H2 + Cl2 combustion did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -670,7 +670,7 @@ auto schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::solve(
 		break;
 	default:
 		throw exception("Unknown chemical iterative solver type.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 		break;
 	}
 }
@@ -804,7 +804,7 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 												std::abs(
 														sumFracNew
 																- sumFracOld))
-										+ '.', errorsEnum::systemError);
+										+ '.', errors::systemError);
 
 					newCl2 /= sumFracNew;
 					newCl /= sumFracNew;
@@ -865,7 +865,7 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 					if (newValues.temperature < 0)
 						throw exception(
 								"Negative temperature after chemical reaction.",
-								errorsEnum::systemError);
+								errors::negativeTemperatureError);
 
 					for (std::size_t k = 0; k < newValues.density.size(); ++k)
 						newValues.density[k] = newValues.concentration[k + 1]
@@ -884,7 +884,7 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 
 				if (subTimeStep < minTimestep)
 					throw exception("Timestep become too small.",
-							errorsEnum::systemError);
+							errors::systemError);
 			}
 		}
 
@@ -903,7 +903,7 @@ schemi::chemicalKineticsH2Cl2Combustion::chemicalKineticsH2Cl2Combustion(
 {
 	if (phaseIn.concentration.v.size() < 6)
 		throw exception("Wrong number of substances.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	std::string skipBuffer;
 
@@ -913,7 +913,7 @@ schemi::chemicalKineticsH2Cl2Combustion::chemicalKineticsH2Cl2Combustion(
 		std::cout << "./set/chemicalKinetics.txt is opened." << std::endl;
 	else
 		throw exception("./set/chemicalKinetics.txt not found.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	chem >> skipBuffer >> skipBuffer;
 
@@ -967,7 +967,7 @@ schemi::chemicalKineticsH2Cl2Combustion::chemicalKineticsH2Cl2Combustion(
 		itSolv = iterativeSolver::GaussElimination;
 	else
 		throw exception("Unknown type of chemical iterative solver.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	chem >> skipBuffer >> maxIterationNumber;
 

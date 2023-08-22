@@ -32,7 +32,7 @@ public:
 	virtual ~abstractTurbulenceGen() noexcept =0;
 
 	abstractTurbulenceGen(const bool turb_in,
-			const turbulenceModelEnum tm_in) noexcept;
+			const turbulenceModel tm_in) noexcept;
 
 	virtual std::tuple<volumeField<scalar>, volumeField<scalar>,
 			volumeField<vector>, volumeField<scalar>> calculate(
@@ -53,7 +53,7 @@ public:
 			const volumeField<scalar>& /*nu_t*/) const noexcept =0;
 
 	const bool turbulence;
-	const turbulenceModelEnum model;
+	const turbulenceModel model;
 
 	std::unique_ptr<abstractTurbulentParameters> turbPar = nullptr;
 };

@@ -20,7 +20,7 @@ class ThomasSolver: public abstractMatrixSolver
 			const SLEMatrix::SLEMatrixStorage & matrix,
 			const std::string&) const noexcept;
 public:
-	explicit ThomasSolver(const matrixSolverEnum type_in) noexcept;
+	explicit ThomasSolver(const matrixSolver type_in) noexcept;
 
 	std::valarray<scalar> solve(const std::valarray<scalar> & oldField,
 			const SLEMatrix & matrix) const noexcept override;

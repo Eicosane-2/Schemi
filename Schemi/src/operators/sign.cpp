@@ -21,5 +21,5 @@ int schemi::sign(const scalar inValue)
 	else
 		throw exception(
 				std::string("Signum. Unknown value: ")
-						+ std::to_string(inValue), errorsEnum::NaNError);
+						+ std::to_string(inValue), errors::NaNError);
 }

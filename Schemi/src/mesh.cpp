@@ -77,7 +77,7 @@ schemi::mesh* schemi::mesh::instance()
 	}
 	else
 		throw exception("Mesh object should be created only once.",
-				errorsEnum::meshGenerationError);
+				errors::meshGenerationError);
 }
 
 bool schemi::mesh::is_initialized() const noexcept
@@ -170,7 +170,7 @@ std::size_t schemi::mesh::surfacesSize() const noexcept
 	return surfacesNumber;
 }
 
-schemi::dimensionsEnum schemi::mesh::taskDimension() const noexcept
+schemi::dimensions schemi::mesh::taskDimension() const noexcept
 {
 	return taskDim;
 }
@@ -205,7 +205,7 @@ void schemi::mesh::oneDParallelepiped(
 		const std::size_t N_x,
 		const std::vector<boundaryConditionType> & commonConditions)
 {
-	taskDim = dimensionsEnum::task1D;
+	taskDim = dimensions::task1D;
 
 	n_cells = { N_x, 1, 1 };
 
@@ -267,7 +267,7 @@ void schemi::mesh::oneDParallelepiped(
 	}
 	else
 		throw exception("Tail surface must be marked <<calculated>>.",
-				errorsEnum::meshGenerationError);
+				errors::meshGenerationError);
 
 	/*Add inner surfaces*/
 	for (std::size_t i = 1; i < N_x; ++i)
@@ -325,7 +325,7 @@ void schemi::mesh::oneDParallelepiped(
 	}
 	else
 		throw exception("Point surface must be marked <<calculated>>.",
-				errorsEnum::meshGenerationError);
+				errors::meshGenerationError);
 
 	/*Set surfaces of cell*/
 	for (std::size_t i = 0; i < cellsA.size(); ++i)
@@ -407,7 +407,7 @@ void schemi::mesh::twoDParallelepiped(
 		const std::size_t N_x, const std::size_t N_y,
 		const std::vector<boundaryConditionType> & commonConditions)
 {
-	taskDim = dimensionsEnum::task2D;
+	taskDim = dimensions::task2D;
 
 	n_cells = { N_x, N_y, 1 };
 
@@ -487,7 +487,7 @@ void schemi::mesh::twoDParallelepiped(
 		}
 		else
 			throw exception("Tail surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Add forward inner surfaces*/
@@ -604,7 +604,7 @@ void schemi::mesh::twoDParallelepiped(
 		}
 		else
 			throw exception("Point surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Add right surface*/
@@ -638,7 +638,7 @@ void schemi::mesh::twoDParallelepiped(
 		}
 		else
 			throw exception("Right surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Add left surface*/
@@ -675,7 +675,7 @@ void schemi::mesh::twoDParallelepiped(
 		}
 		else
 			throw exception("Left surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Set surfaces of cell*/
@@ -1014,7 +1014,7 @@ void schemi::mesh::threeDParallelepiped(
 		const std::size_t N_x, const std::size_t N_y, const std::size_t N_z,
 		const std::vector<boundaryConditionType> & commonConditions)
 {
-	taskDim = dimensionsEnum::task3D;
+	taskDim = dimensions::task3D;
 
 	n_cells = { N_x, N_y, N_z };
 
@@ -1101,7 +1101,7 @@ void schemi::mesh::threeDParallelepiped(
 		}
 		else
 			throw exception("Tail surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Add forward inner surfaces*/
@@ -1262,7 +1262,7 @@ void schemi::mesh::threeDParallelepiped(
 		}
 		else
 			throw exception("Point surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Add bottom surface*/
@@ -1299,7 +1299,7 @@ void schemi::mesh::threeDParallelepiped(
 		}
 		else
 			throw exception("Bottom surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Add right surface*/
@@ -1336,7 +1336,7 @@ void schemi::mesh::threeDParallelepiped(
 		}
 		else
 			throw exception("Right surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Add left surface*/
@@ -1374,7 +1374,7 @@ void schemi::mesh::threeDParallelepiped(
 		}
 		else
 			throw exception("Left surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Add top surface*/
@@ -1412,7 +1412,7 @@ void schemi::mesh::threeDParallelepiped(
 		}
 		else
 			throw exception("Top surface must be marked <<calculated>>.",
-					errorsEnum::meshGenerationError);
+					errors::meshGenerationError);
 	}
 
 	/*Set surfaces of cell*/

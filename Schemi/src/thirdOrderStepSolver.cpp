@@ -25,10 +25,10 @@ schemi::thirdOrderStepSolver::thirdOrderStepSolver(
 		const std::pair<scalar, scalar> & timestepCoeffs_in,
 		scalar & timeForDiffusion_in,
 		const std::vector<boundaryConditionType> & commonConditions_in,
-		const enthalpyFlowEnum & enthalpyFlowFlag_in,
-		const bool & linearFlag_in, const boundaryConditionValue & bncCalc_in,
+		const enthalpyFlow & enthalpyFlowFlag_in, const bool & linearFlag_in,
+		const boundaryConditionValue & bncCalc_in,
 		const volumeField<scalar> & minimalLengthScale_in,
-		const timestepEnum & sourceTimeFlag_in,
+		const timestep & sourceTimeFlag_in,
 		const bool & molMassDiffusionFlag_in,
 		const abstractChemicalKinetics & chemKin_in) noexcept :
 		abstractStepSolver(gasPhase_in, limiter_in, fsolver_in,
@@ -80,13 +80,13 @@ void schemi::thirdOrderStepSolver::calculateStep()
 
 	if (diffusionFlag)
 	{
-		star.c[0].ref_r() = 0;
-		for (std::size_t k = 1; k < star.c.size(); ++k)
+		star.c.v[0].ref_r() = 0;
+		for (std::size_t k = 1; k < star.c.v.size(); ++k)
 		{
-			star.c[k] = linearInterpolate(gasPhase.concentration.v[k],
+			star.c.v[k] = linearInterpolate(gasPhase.concentration.v[k],
 					boundaryConditionValueCalc);
 
-			star.c[0].ref_r() += star.c[k].ref();
+			star.c.v[0].ref_r() += star.c.v[k].ref();
 		}
 
 		star.rho = linearInterpolate(gasPhase.density[0],

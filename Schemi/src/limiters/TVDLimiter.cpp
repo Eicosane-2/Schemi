@@ -85,7 +85,7 @@ schemi::volumeField<schemi::vector> schemi::TVDLimiter(
 				> mesh.surfacesOfCells()[i].size())
 			throw exception(
 					"Number of surfaces somehow lesser than number of neighbour cells.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 		vector min(neighbourGradientsOfSurfaces[0]), max(
 				neighbourGradientsOfSurfaces[0]);
@@ -211,7 +211,7 @@ schemi::volumeField<schemi::tensor> schemi::TVDLimiter(
 				> mesh.surfacesOfCells()[i].size())
 			throw exception(
 					"Number of surfaces somehow lesser than number of neighbour cells.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 		tensor min(neighbourGradientsOfSurfaces[0]), max(
 				neighbourGradientsOfSurfaces[0]);
@@ -412,7 +412,7 @@ schemi::volumeField<schemi::tensor3> schemi::TVDLimiter(
 				> mesh.surfacesOfCells()[i].size())
 			throw exception(
 					"Number of surfaces somehow lesser than number of neighbour cells.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 		tensor3 min(neighbourGradientsOfSurfaces[0]), max(
 				neighbourGradientsOfSurfaces[0]);

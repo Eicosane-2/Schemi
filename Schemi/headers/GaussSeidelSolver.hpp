@@ -21,7 +21,7 @@ class GaussSeidelSolver: public abstractMatrixSolver
 			const std::string & name) const noexcept;
 public:
 	GaussSeidelSolver(const std::size_t maxIteration,
-			const matrixSolverEnum type_in) noexcept;
+			const matrixSolver type_in) noexcept;
 
 	std::valarray<scalar> solve(const std::valarray<scalar> & oldField,
 			const SLEMatrix & matrix) const noexcept override;

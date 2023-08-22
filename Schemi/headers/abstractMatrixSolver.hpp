@@ -36,7 +36,7 @@ public:
 	virtual ~abstractMatrixSolver() noexcept =0;
 
 	abstractMatrixSolver(const std::size_t maxIt_in,
-			const matrixSolverEnum type_in) noexcept;
+			const matrixSolver type_in) noexcept;
 
 	virtual std::valarray<scalar> solve(
 			const std::valarray<scalar>& /*oldField*/,
@@ -50,7 +50,7 @@ public:
 			const std::valarray<tensor>& /*oldField*/,
 			const SLEMatrix& /*matrix*/) const noexcept =0;
 
-	const matrixSolverEnum solverType;
+	const matrixSolver solverType;
 };
 }  // namespace schemi
 

@@ -17,7 +17,7 @@ namespace schemi
 class kEpsAGen: public abstractTurbulenceGen
 {
 public:
-	kEpsAGen(const bool turb_in, const turbulenceModelEnum tm_in) noexcept;
+	kEpsAGen(const bool turb_in, const turbulenceModel tm_in) noexcept;
 
 	std::tuple<volumeField<scalar>, volumeField<scalar>, volumeField<vector>,
 			volumeField<scalar>> calculate(scalar & sourceTimestep,

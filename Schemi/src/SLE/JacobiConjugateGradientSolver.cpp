@@ -99,7 +99,7 @@ std::valarray<schemi::scalar> schemi::JacobiConjugateGradientSolver::algorithm(
 }
 
 schemi::JacobiConjugateGradientSolver::JacobiConjugateGradientSolver(
-		const std::size_t maxIteration, const matrixSolverEnum type_in) noexcept :
+		const std::size_t maxIteration, const matrixSolver type_in) noexcept :
 		abstractMatrixSolver(maxIteration, type_in)
 {
 }

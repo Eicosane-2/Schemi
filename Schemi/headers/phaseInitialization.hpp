@@ -19,7 +19,7 @@
 
 namespace schemi
 {
-std::tuple<std::unique_ptr<homogeneousPhase<cubicCell>>, enthalpyFlowEnum, bool> phaseInitialization(
+std::tuple<std::unique_ptr<homogeneousPhase<cubicCell>>, enthalpyFlow, bool> phaseInitialization(
 		std::size_t numberOfComponents, std::size_t numberOfZones,
 		const mesh & meshReference,
 		const std::vector<boundaryConditionType> & commonConditions,

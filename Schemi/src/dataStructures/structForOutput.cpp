@@ -333,11 +333,11 @@ void schemi::structForOutput::collectParallelData(
 #ifdef MPI_VERSION
 		switch (meshRef.taskDimension())
 		{
-		case dimensionsEnum::task3D:
-		case dimensionsEnum::task2D:
+		case dimensions::task3D:
+		case dimensions::task2D:
 			rearrange();
 			break;
-		case dimensionsEnum::task1D:
+		case dimensions::task1D:
 		default:
 			break;
 		}

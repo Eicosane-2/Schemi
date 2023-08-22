@@ -7,7 +7,7 @@
 
 #include "noMatrixSolver.hpp"
 
-schemi::noMatrixSolver::noMatrixSolver(const matrixSolverEnum type_in) noexcept :
+schemi::noMatrixSolver::noMatrixSolver(const matrixSolver type_in) noexcept :
 		abstractMatrixSolver(0, type_in)
 {
 }

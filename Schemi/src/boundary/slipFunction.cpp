@@ -41,7 +41,7 @@ schemi::tensor3 schemi::slipFunction([[maybe_unused]] const tensor3 & inTensor,
 {
 	throw exception(
 			"<<slipFunction>> is not implemented for a third rank tensor (tensor3).",
-			errorsEnum::boundaryConditionError);
+			errors::boundaryConditionError);
 
 	return tensor3(0);
 }

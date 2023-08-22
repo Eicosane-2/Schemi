@@ -11,14 +11,11 @@
 #define MIXTUREIDEAL_HPP_
 
 #include "abstractMixtureThermodynamics.hpp"
-#include "fractionCalculation.hpp"
 #include "idealFluid.hpp"
 
 namespace schemi
 {
-class mixtureIdeal: private idealFluid,
-		public abstractMixtureThermodynamics,
-		public fractionCalculation
+class mixtureIdeal: private idealFluid, public abstractMixtureThermodynamics
 {
 	const std::valarray<scalar> M, CvArr, molecMass;
 public:
