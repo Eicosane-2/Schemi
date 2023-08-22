@@ -6,6 +6,8 @@
 416.9
 #Critical_pressure_(Pa)
 7.9773E6
+#Kinetic_diametr_(A)
+3.2
 #Tail_boundary_condition
 subPatches 7
 slip ( 0 0 0 )( 0 0.003 1 )

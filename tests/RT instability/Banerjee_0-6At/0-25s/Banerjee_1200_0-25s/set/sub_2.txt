@@ -6,6 +6,8 @@
 13.385
 #Critical_pressure_(Pa)
 558791
+#Kinetic_diametr_(A)
+2.729516
 #Tail_boundary_condition
 slip
 #Point_boundary_condition
