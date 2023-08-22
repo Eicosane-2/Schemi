@@ -6,6 +6,8 @@
 1
 #Critical_pressure_(Pa)
 1
+#Kinetic_diametr_(A)
+1
 #Tail_boundary_condition
 slip
 #Point_boundary_condition

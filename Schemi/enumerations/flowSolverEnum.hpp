@@ -12,7 +12,7 @@
 
 namespace schemi
 {
-enum class flowSolverEnum
+enum class flowSolver
 {
 	HLL, HLLCF, HLLC, HLLCLM, KT, HLLC2p, Richtmyer
 };

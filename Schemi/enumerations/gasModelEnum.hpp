@@ -12,7 +12,7 @@
 
 namespace schemi
 {
-enum class gasModelEnum
+enum class gasModel
 {
 	ideal, vanDerWaals, RedlichKwong
 };

@@ -29,7 +29,7 @@ void schemi::abstractMatrixSolver::normalize(
 }
 
 schemi::abstractMatrixSolver::abstractMatrixSolver(const std::size_t maxIt_in,
-		const matrixSolverEnum type_in) noexcept :
+		const matrixSolver type_in) noexcept :
 		maxIterationNumber(maxIt_in), solverType(type_in)
 {
 }

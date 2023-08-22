@@ -42,7 +42,7 @@ volumeField<returnTypeGradient<Type>> grad(const volumeField<Type> & inField,
 				normalVector = mesh.surfaces()[surfaceIndex].N() * (-1);
 			else
 				throw exception("Couldn't choose normal's orientation.",
-						errorsEnum::systemError);
+						errors::systemError);
 
 			cellGradValue += (interpolatedField.ref()[surfaceIndex]
 					* normalVector) * mesh.surfaces()[surfaceIndex].S();
@@ -77,7 +77,7 @@ volumeField<returnTypeGradient<Type>> grad(const surfaceField<Type> & inField)
 				normalVector = mesh.surfaces()[surfaceIndex].N() * (-1);
 			else
 				throw exception("Couldn't choose normal's orientation.",
-						errorsEnum::systemError);
+						errors::systemError);
 
 			cellGradValue += (inField.ref()[surfaceIndex] * normalVector)
 					* mesh.surfaces()[surfaceIndex].S();

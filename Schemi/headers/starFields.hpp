@@ -12,13 +12,14 @@
 
 #include <vector>
 
+#include "concentrationsPack.hpp"
 #include "surfaceField.hpp"
 
 namespace schemi
 {
 struct starFields
 {
-	std::vector<surfaceField<scalar>> c;
+	concentrationsPack<quadraticSurface> c;
 	surfaceField<scalar> rho;
 	surfaceField<vector> v;
 	surfaceField<scalar> p;

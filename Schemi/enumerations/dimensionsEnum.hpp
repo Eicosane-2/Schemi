@@ -12,7 +12,7 @@
 
 namespace schemi
 {
-enum class dimensionsEnum
+enum class dimensions
 {
 	task1D, task2D, task3D
 };

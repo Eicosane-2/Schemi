@@ -6,6 +6,8 @@
 131.523
 #Critical_pressure_(Pa)
 4.108E6
+#Kinetic_diametr_(A)
+3.604
 #Tail_boundary_condition
 freeBoundary
 #Point_boundary_condition

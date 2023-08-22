@@ -28,7 +28,7 @@ struct field
 		if ((f.boundCond().size() != boundaryConditionInfo.size())
 				&& (boundaryConditionInfo.size() != 0))
 			throw exception("Fields have different boundary condition size.",
-					errorsEnum::fieldInitializationError);
+					errors::fieldInitializationError);
 
 		valueField = f.ref();
 		boundaryConditionInfo = f.boundCond();
@@ -68,7 +68,7 @@ struct field
 		}
 		else
 			throw exception("Unknown type of field.",
-					errorsEnum::fieldInitializationError);
+					errors::fieldInitializationError);
 	}
 
 	field(const mesh & meshIn, const typeOfValue & value,
@@ -204,7 +204,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 			}
 			prev += meshReference.tailNumber() + meshReference.innerNumber();
 
@@ -238,7 +238,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 			}
 			prev += meshReference.pointNumber();
 
@@ -270,7 +270,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 			}
 			prev += meshReference.bottomNumber();
 
@@ -302,7 +302,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 			}
 			prev += meshReference.rightNumber();
 
@@ -334,7 +334,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 			}
 			prev += meshReference.leftNumber();
 
@@ -366,7 +366,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errorsEnum::initializationError);
+							errors::initializationError);
 			}
 
 			fieldSize = meshReference.cellsSize();
@@ -398,7 +398,7 @@ struct field
 		}
 		else
 			throw exception("Unknown type of field.",
-					errorsEnum::fieldInitializationError);
+					errors::fieldInitializationError);
 
 		boundaryConditionInfo = boundCondtIn;
 	}
@@ -442,7 +442,7 @@ private:
 	{
 		if (!meshReference.is_initialized())
 			throw exception("Mesh has not yet been initialized.",
-					errorsEnum::fieldInitializationError);
+					errors::fieldInitializationError);
 	}
 
 	template<bool flag = false>

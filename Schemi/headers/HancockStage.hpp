@@ -54,7 +54,7 @@ volumeField<T> HancockDivergence(
 			else
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
-						errorsEnum::systemError);
+						errors::systemError);
 		}
 		divTVHancock.ref_r()[i] /= mesh.cells()[i].V();
 	}
@@ -87,7 +87,7 @@ void HancockTimeIntegration(const volumeField<T> & flowDivergence,
 			else
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
-						errorsEnum::systemError);
+						errors::systemError);
 		}
 	}
 }

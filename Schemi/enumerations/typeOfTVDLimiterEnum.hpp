@@ -12,7 +12,7 @@
 
 namespace schemi
 {
-enum class typeOfTVDLimiterEnum
+enum class typeOfTVDLimiter
 {
 	zero,
 	minmod,

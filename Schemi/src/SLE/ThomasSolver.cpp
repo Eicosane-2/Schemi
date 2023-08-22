@@ -51,7 +51,7 @@ std::valarray<schemi::scalar> schemi::ThomasSolver::algorithm(
 	return newFieldValue;
 }
 
-schemi::ThomasSolver::ThomasSolver(const matrixSolverEnum type_in) noexcept :
+schemi::ThomasSolver::ThomasSolver(const matrixSolver type_in) noexcept :
 		abstractMatrixSolver(0, type_in)
 {
 }

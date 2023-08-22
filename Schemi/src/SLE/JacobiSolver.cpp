@@ -101,7 +101,7 @@ std::valarray<schemi::scalar> schemi::JacobiSolver::algorithm(
 }
 
 schemi::JacobiSolver::JacobiSolver(const std::size_t maxIteration,
-		const matrixSolverEnum type_in) noexcept :
+		const matrixSolver type_in) noexcept :
 		abstractMatrixSolver(maxIteration, type_in)
 {
 }

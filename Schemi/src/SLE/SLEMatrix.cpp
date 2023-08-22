@@ -111,7 +111,7 @@ void schemi::SLEMatrix::generateNabla(const volumeField<scalar> & vField,
 				}
 				else
 					throw exception("Couldn't choose oIndex.",
-							errorsEnum::systemError);
+							errors::systemError);
 
 				if ((outerNormale & additionalField.ref()[surfaceIndex]) > 0)
 				{
@@ -202,7 +202,7 @@ void schemi::SLEMatrix::generateLaplacian(const volumeField<scalar> & vField,
 				}
 				else
 					throw exception("Couldn't choose oIndex.",
-							errorsEnum::systemError);
+							errors::systemError);
 
 				const vector deltaR(
 						mesh.cells()[oIndex].rC() - mesh.cells()[i].rC());
@@ -308,7 +308,7 @@ void schemi::SLEMatrix::generateLaplacian2TO(const volumeField<scalar> & vField,
 				}
 				else
 					throw exception("Couldn't choose oIndex.",
-							errorsEnum::systemError);
+							errors::systemError);
 
 				const vector deltaR(
 						mesh.cells()[oIndex].rC() - mesh.cells()[i].rC());
@@ -432,7 +432,7 @@ void schemi::SLEMatrix::generateLaplacian(const volumeField<vector> & vField,
 				}
 				else
 					throw exception("Couldn't choose oIndex.",
-							errorsEnum::systemError);
+							errors::systemError);
 
 				const vector deltaR(
 						mesh.cells()[oIndex].rC() - mesh.cells()[i].rC());
@@ -588,7 +588,7 @@ void schemi::SLEMatrix::generateLaplacian2TO(const volumeField<vector> & vField,
 				}
 				else
 					throw exception("Couldn't choose oIndex.",
-							errorsEnum::systemError);
+							errors::systemError);
 
 				const vector deltaR(
 						mesh.cells()[oIndex].rC() - mesh.cells()[i].rC());
@@ -781,7 +781,7 @@ void schemi::SLEMatrix::generateLaplacian(const volumeField<tensor> & vField,
 				}
 				else
 					throw exception("Couldn't choose oIndex.",
-							errorsEnum::systemError);
+							errors::systemError);
 
 				const vector deltaR(
 						mesh.cells()[oIndex].rC() - mesh.cells()[i].rC());
@@ -1057,7 +1057,7 @@ void schemi::SLEMatrix::generateLaplacian2TO(const volumeField<tensor> & vField,
 				}
 				else
 					throw exception("Couldn't choose oIndex.",
-							errorsEnum::systemError);
+							errors::systemError);
 
 				const vector deltaR(
 						mesh.cells()[oIndex].rC() - mesh.cells()[i].rC());

@@ -13,11 +13,12 @@
 #include <valarray>
 #include <vector>
 
+#include "fractionCalculation.hpp"
 #include "scalar.hpp"
 
 namespace schemi
 {
-class abstractMixtureThermodynamics
+class abstractMixtureThermodynamics: public fractionCalculation
 {
 protected:
 	const scalar R, kB, hPlanck;

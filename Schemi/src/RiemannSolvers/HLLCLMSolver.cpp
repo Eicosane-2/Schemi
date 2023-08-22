@@ -22,7 +22,7 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 	starFields starValues(mesh,
 			surfaceOwnerSide.phaseThermodynamics->Mv().size());
 
-	errorsEnum errValue { errorsEnum::noErrors };
+	errors errValue { errors::noErrors };
 
 	const std::valarray<scalar> sonicSpeedOwner(
 			std::sqrt(
@@ -311,7 +311,7 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 		}
 		else
 		{
-			errValue = errorsEnum::RiemannSolverError;
+			errValue = errors::RiemannSolverError;
 			throw exception("Fatal error in Riemann solver.", errValue);
 		}
 
@@ -535,13 +535,13 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 							* mesh.surfaces()[i].N();
 		}
 
-		starValues.c[0].ref_r()[i] = 0;
+		starValues.c.v[0].ref_r()[i] = 0;
 		for (std::size_t k = 1; k < densityState.size(); ++k)
 		{
-			starValues.c[k].ref_r()[i] = densityState[k]
+			starValues.c.v[k].ref_r()[i] = densityState[k]
 					/ surfaceOwnerSide.phaseThermodynamics->Mv()[k - 1];
 
-			starValues.c[0].ref_r()[i] += starValues.c[k].ref()[i];
+			starValues.c.v[0].ref_r()[i] += starValues.c.v[k].ref()[i];
 		}
 		starValues.rho.ref_r()[i] = densityState[0];
 		starValues.v.ref_r()[i] = velocityState;

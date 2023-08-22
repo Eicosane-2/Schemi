@@ -8,7 +8,7 @@
 #include "abstractTurbulenceGen.hpp"
 
 schemi::abstractTurbulenceGen::abstractTurbulenceGen(const bool turb_in,
-		const turbulenceModelEnum tm_in) noexcept :
+		const turbulenceModel tm_in) noexcept :
 		turbulence(turb_in), model(tm_in)
 {
 }

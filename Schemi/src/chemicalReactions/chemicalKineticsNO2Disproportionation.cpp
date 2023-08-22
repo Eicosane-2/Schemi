@@ -248,7 +248,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveJ(
 
 			throw exception(
 					"Jacobi algorithm for NO2 disproportionation did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -345,7 +345,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveGS(
 
 			throw exception(
 					"Gauss-Seidel algorithm for NO2 disproportionation did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -404,7 +404,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveCG(
 
 			throw exception(
 					"Conjugate gradient algorithm for NO2 disproportionation did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -494,7 +494,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveJCG
 
 			throw exception(
 					"Jacobi preconditioned conjugate gradient algorithm for NO2 disproportionation did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -635,7 +635,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solve(
 		break;
 	default:
 		throw exception("Unknown chemical iterative solver type.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 		break;
 	}
 }
@@ -743,7 +743,7 @@ void schemi::chemicalKineticsNO2Disproportionation::timeStepIntegration(
 												std::abs(
 														sumFracNew
 																- sumFracOld))
-										+ '.', errorsEnum::systemError);
+										+ '.', errors::systemError);
 
 					newNO2 /= sumFracNew;
 					newH2O /= sumFracNew;
@@ -797,7 +797,7 @@ void schemi::chemicalKineticsNO2Disproportionation::timeStepIntegration(
 					if (newValues.temperature < 0)
 						throw exception(
 								"Negative temperature after chemical reaction.",
-								errorsEnum::systemError);
+								errors::negativeTemperatureError);
 
 					for (std::size_t k = 0; k < newValues.density.size(); ++k)
 						newValues.density[k] = newValues.concentration[k + 1]
@@ -816,7 +816,7 @@ void schemi::chemicalKineticsNO2Disproportionation::timeStepIntegration(
 
 				if (subTimeStep < minTimestep)
 					throw exception("Timestep become too small.",
-							errorsEnum::systemError);
+							errors::systemError);
 			}
 		}
 
@@ -835,7 +835,7 @@ schemi::chemicalKineticsNO2Disproportionation::chemicalKineticsNO2Disproportiona
 {
 	if (phaseIn.concentration.v.size() < 5)
 		throw exception("Wrong number of substances.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	std::string skipBuffer;
 
@@ -845,7 +845,7 @@ schemi::chemicalKineticsNO2Disproportionation::chemicalKineticsNO2Disproportiona
 		std::cout << "./set/chemicalKinetics.txt is opened." << std::endl;
 	else
 		throw exception("./set/chemicalKinetics.txt not found.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	chem >> skipBuffer >> skipBuffer;
 
@@ -875,7 +875,7 @@ schemi::chemicalKineticsNO2Disproportionation::chemicalKineticsNO2Disproportiona
 		itSolv = iterativeSolver::GaussElimination;
 	else
 		throw exception("Unknown type of chemical iterative solver.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	chem >> skipBuffer >> maxIterationNumber;
 

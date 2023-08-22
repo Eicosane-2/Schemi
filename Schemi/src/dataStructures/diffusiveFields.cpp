@@ -12,7 +12,7 @@
 schemi::diffusiveFields::diffusiveFields(const mesh & meshRef,
 		const bunchOfFields<cubicCell> & cellFields,
 		const std::vector<boundaryConditionType> & commBoundCond,
-		const bool turbulenceFlag, const turbulenceModelEnum sourceFlag) :
+		const bool turbulenceFlag, const turbulenceModel sourceFlag) :
 		massFraction { cellFields.concentration.v.size() - 1,
 				volumeField<scalar> { meshRef, 0 } },
 
@@ -56,13 +56,13 @@ schemi::diffusiveFields::diffusiveFields(const mesh & meshRef,
 	{
 		k.ref_r() = cellFields.kTurb.ref();
 		eps.ref_r() = cellFields.epsTurb.ref();
-		if ((sourceFlag == turbulenceModelEnum::BHRSource)
-				|| (sourceFlag == turbulenceModelEnum::BHRKLSource)
-				|| (sourceFlag == turbulenceModelEnum::kEpsASource))
+		if ((sourceFlag == turbulenceModel::BHRSource)
+				|| (sourceFlag == turbulenceModel::BHRKLSource)
+				|| (sourceFlag == turbulenceModel::kEpsASource))
 		{
 			a.ref_r() = cellFields.aTurb.ref();
-			if ((sourceFlag == turbulenceModelEnum::BHRSource)
-					|| (sourceFlag == turbulenceModelEnum::BHRKLSource))
+			if ((sourceFlag == turbulenceModel::BHRSource)
+					|| (sourceFlag == turbulenceModel::BHRKLSource))
 				b.ref_r() = cellFields.bTurb.ref();
 		}
 	}

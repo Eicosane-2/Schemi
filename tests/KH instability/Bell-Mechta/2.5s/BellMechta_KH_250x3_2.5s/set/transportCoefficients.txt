@@ -1,9 +1,11 @@
+#Transport_coefficient_model
+hardSpheres
 #Viscosity_coefficient
-2E-5
+2E-8
 #Diffusion_coefficient
-2E-5
+2E-8
 #Heat_conduction_coefficient
-2E-2
+2E-5
 #Flag_for_enthalpy_flow_solution
 explicit
 #Flag_for_molar_mass_diffusion_correction

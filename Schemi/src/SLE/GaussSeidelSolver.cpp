@@ -99,7 +99,7 @@ std::valarray<schemi::scalar> schemi::GaussSeidelSolver::algorithm(
 }
 
 schemi::GaussSeidelSolver::GaussSeidelSolver(const std::size_t maxIteration,
-		const matrixSolverEnum type_in) noexcept :
+		const matrixSolver type_in) noexcept :
 		abstractMatrixSolver(maxIteration, type_in)
 {
 }

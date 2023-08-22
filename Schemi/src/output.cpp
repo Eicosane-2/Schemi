@@ -20,7 +20,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	if (lengthOfNumber < length_of_noutput)
 		throw exception(
 				"Output number length larger than specified number of digits.",
-				errorsEnum::tooBigOutputNumberError);
+				errors::tooBigOutputNumberError);
 
 	std::string bufOutputN(lengthOfNumber - length_of_noutput, '0');
 
@@ -47,13 +47,13 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		throw exception(
 				std::string("Couldn't create outputFile ")
 						+ std::string(outputFileName) + std::string("."),
-				errorsEnum::systemError);
+				errors::systemError);
 
 	if (timeFile.is_open())
 		std::cout << "./result/Time.tsv is opened." << std::endl;
 	else
 		throw exception("Couldn't open ./result/Time.tsv.",
-				errorsEnum::systemError);
+				errors::systemError);
 
 	outputFile << "coordinate_x" << '\t';
 	outputFile << "coordinate_y" << '\t';
@@ -211,7 +211,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		throw exception(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_a) + std::string("."),
-				errorsEnum::systemError);
+				errors::systemError);
 
 	for (std::size_t i = 0; i < outputData.aTurb_xNonSorted.size(); ++i)
 		output_aVector << outputData.aTurb_xNonSorted[i] << '\t'
@@ -226,7 +226,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		throw exception(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_b) + std::string("."),
-				errorsEnum::systemError);
+				errors::systemError);
 
 	for (std::size_t i = 0; i < outputData.bTurbNonSorted.size(); ++i)
 		output_bScalar << outputData.bTurbNonSorted[i] << '\n';
@@ -239,7 +239,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		throw exception(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_epsilon)
-						+ std::string("."), errorsEnum::systemError);
+						+ std::string("."), errors::systemError);
 
 	for (std::size_t i = 0; i < outputData.epsTurbNonSorted.size(); ++i)
 		output_epsilonScalar << outputData.epsTurbNonSorted[i] << '\n';
@@ -252,7 +252,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		throw exception(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_k) + std::string("."),
-				errorsEnum::systemError);
+				errors::systemError);
 
 	for (std::size_t i = 0; i < outputData.kTurbNonSorted.size(); ++i)
 		output_kScalar << outputData.kTurbNonSorted[i] << '\n';
@@ -265,7 +265,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		throw exception(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_pressure)
-						+ std::string("."), errorsEnum::systemError);
+						+ std::string("."), errors::systemError);
 
 	for (std::size_t i = 0; i < outputData.pressureNonSorted.size(); ++i)
 		output_pressureScalar << outputData.pressureNonSorted[i] << '\n';
@@ -278,7 +278,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		throw exception(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_velocity)
-						+ std::string("."), errorsEnum::systemError);
+						+ std::string("."), errors::systemError);
 
 	for (std::size_t i = 0; i < outputData.velocity_xNonSorted.size(); ++i)
 		output_velocityVector << outputData.velocity_xNonSorted[i] << '\t'
@@ -296,7 +296,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 			throw exception(
 					std::string("Couldn't create output file for field data ")
 							+ std::string(fieldDataFileName_concentration[k])
-							+ std::string("."), errorsEnum::systemError);
+							+ std::string("."), errors::systemError);
 
 		for (std::size_t i = 0; i < outputData.concentrationNonSorted[k].size();
 				++i)
@@ -319,7 +319,7 @@ void schemi::output::mixedZoneWidth1D(const structForOutput & outputData,
 		std::cout << "./result/timeWidth.tsv is opened." << std::endl;
 	else
 		throw exception("Couldn't create ./result/timeWidth.tsv.",
-				errorsEnum::systemError);
+				errors::systemError);
 
 	scalar rL { 0 }, rR { 0 };
 	bool isFounded { false };

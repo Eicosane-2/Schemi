@@ -11,14 +11,12 @@
 #define MIXTUREVANDERWAALS_HPP_
 
 #include "abstractMixtureThermodynamics.hpp"
-#include "fractionCalculation.hpp"
 #include "vanDerWaalsFluid.hpp"
 
 namespace schemi
 {
 class mixtureVanDerWaals: private vanDerWaalsFluid,
-		public abstractMixtureThermodynamics,
-		public fractionCalculation
+		public abstractMixtureThermodynamics
 {
 	const std::valarray<scalar> M, CvArr, molecMass, Tcrit, Pcrit;
 	std::valarray<scalar> Vcrit /*per mole*/;

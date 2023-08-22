@@ -22,10 +22,9 @@ class exception: public std::exception
 	const std::string ex_txt;
 
 public:
-	const errorsEnum errType;
+	const errors errType;
 
-	exception(const std::string & in_string,
-			const errorsEnum in_errType) noexcept;
+	exception(const std::string & in_string, const errors in_errType) noexcept;
 
 	const char* what() const noexcept override;
 };

@@ -222,7 +222,7 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 
 			throw exception(
 					"Jacobi algorithm for Cl2 and H2 dissociation did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -319,7 +319,7 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 
 			throw exception(
 					"Gauss-Seidel algorithm for Cl2 and H2 dissociation did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -378,7 +378,7 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 
 			throw exception(
 					"Conjugate gradient algorithm for Cl2 and H2 dissociation did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -468,7 +468,7 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 
 			throw exception(
 					"Jacobi preconditioned conjugate gradient algorithm for Cl2 and H2 dissociation did not converged.",
-					errorsEnum::systemError);
+					errors::systemError);
 
 			normalize(newIteration);
 			return
@@ -609,7 +609,7 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 		break;
 	default:
 		throw exception("Unknown chemical iterative solver type.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 		break;
 	}
 }
@@ -723,7 +723,7 @@ void schemi::chemicalKineticsChlorumHydrogeniumDissociation::timeStepIntegration
 												std::abs(
 														sumFracNew
 																- sumFracOld))
-										+ '.', errorsEnum::systemError);
+										+ '.', errors::systemError);
 
 					newCl2 /= sumFracNew;
 					newCl /= sumFracNew;
@@ -763,7 +763,7 @@ void schemi::chemicalKineticsChlorumHydrogeniumDissociation::timeStepIntegration
 					if (newValues.temperature < 0)
 						throw exception(
 								"Negative temperature after chemical reaction.",
-								errorsEnum::systemError);
+								errors::negativeTemperatureError);
 
 					for (std::size_t k = 0; k < newValues.density.size(); ++k)
 						newValues.density[k] = newValues.concentration[k + 1]
@@ -782,7 +782,7 @@ void schemi::chemicalKineticsChlorumHydrogeniumDissociation::timeStepIntegration
 
 				if (subTimeStep < minTimestep)
 					throw exception("Timestep become too small.",
-							errorsEnum::systemError);
+							errors::systemError);
 			}
 		}
 
@@ -801,7 +801,7 @@ schemi::chemicalKineticsChlorumHydrogeniumDissociation::chemicalKineticsChlorumH
 {
 	if (phaseIn.concentration.v.size() < 5)
 		throw exception("Wrong number of substances.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	std::string skipBuffer;
 
@@ -811,7 +811,7 @@ schemi::chemicalKineticsChlorumHydrogeniumDissociation::chemicalKineticsChlorumH
 		std::cout << "./set/chemicalKinetics.txt is opened." << std::endl;
 	else
 		throw exception("./set/chemicalKinetics.txt not found.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	chem >> skipBuffer >> skipBuffer;
 
@@ -847,7 +847,7 @@ schemi::chemicalKineticsChlorumHydrogeniumDissociation::chemicalKineticsChlorumH
 		itSolv = iterativeSolver::GaussElimination;
 	else
 		throw exception("Unknown type of chemical iterative solver.",
-				errorsEnum::initializationError);
+				errors::initializationError);
 
 	chem >> skipBuffer >> maxIterationNumber;
 }

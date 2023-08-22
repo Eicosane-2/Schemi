@@ -10,7 +10,7 @@
 #include "turbulentParametersKEPS.hpp"
 
 schemi::zeroGen::zeroGen(const bool turb_in,
-		const turbulenceModelEnum tm_in) noexcept :
+		const turbulenceModel tm_in) noexcept :
 		abstractTurbulenceGen(turb_in, tm_in)
 {
 	turbPar = std::make_unique<turbulentParametersKEPS>();

@@ -17,7 +17,7 @@ namespace schemi
 class zeroGen: public abstractTurbulenceGen
 {
 public:
-	zeroGen(const bool turb_in, const turbulenceModelEnum tm_in) noexcept;
+	zeroGen(const bool turb_in, const turbulenceModel tm_in) noexcept;
 
 	std::tuple<volumeField<scalar>, volumeField<scalar>, volumeField<vector>,
 			volumeField<scalar>> calculate(scalar & sourceTimestep,
