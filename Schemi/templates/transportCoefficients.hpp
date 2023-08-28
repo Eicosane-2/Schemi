@@ -11,7 +11,6 @@
 #define TRANSPORTCOEFFICIENTS_HPP_
 
 #include <iostream>
-#include <random>
 
 #include "turbulenceModelEnum.hpp"
 #include "abstractTurbulentParameters.hpp"
@@ -137,10 +136,6 @@ struct transportCoefficients
 template<typename typeOfEntity>
 struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 {
-	std::random_device rdev;
-	std::mt19937 twister;
-	std::uniform_int_distribution<std::size_t> distr;
-
 	field<scalar, typeOfEntity> mu;
 	field<std::valarray<vector>, typeOfEntity> DFlux;
 	std::vector<field<scalar, typeOfEntity>> rhoD;
@@ -153,12 +148,6 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 	effectiveTransportCoefficients(const mesh & meshRef,
 			const std::size_t compt) noexcept :
 			transportCoefficients<typeOfEntity>(meshRef),
-
-			rdev(),
-
-			twister(rdev()),
-
-			distr(1, compt),
 
 			mu { meshRef, 0 },
 
@@ -275,15 +264,26 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 	void caclulateDFluxes(
 			const std::vector<field<vector, typeOfEntity>> & gradX,
 			const std::valarray<scalar> & M,
-			const concentrationsPack<typeOfEntity> N, const bool turb)
+			const concentrationsPack<typeOfEntity> & N, const bool turb)
 	{
 		const std::size_t Ncomp = M.size(), Ncomp1 = Ncomp + 1;
-
-		const std::size_t replaceIndex = distr(twister);
 
 		if (!turb)
 			for (std::size_t i = 0; i < DFlux.size(); ++i)
 			{
+				std::valarray<scalar> c(Ncomp);
+				for (std::size_t k = 1; k < Ncomp1; ++k)
+					c[k - 1] = N.v[k].ref()[i];
+
+				std::size_t replaceIndex { 0 };
+				const scalar replaceC { c.max() };
+				for (std::size_t k = 0; k < c.size(); ++k)
+					if (replaceC == c[k])
+					{
+						replaceIndex = k + 1;
+						break;
+					}
+
 				for (std::size_t f = 0; f < vector::vsize; ++f)
 				{
 					std::valarray<std::valarray<scalar>> cellDFluxesMatrix(
@@ -322,10 +322,6 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 										N.v[k2].ref()[i] * M[k2 - 1];
 						}
 
-					std::valarray<scalar> c(Ncomp);
-					for (std::size_t k = 1; k < Ncomp1; ++k)
-						c[k - 1] = N.v[k].ref()[i];
-
 					const std::valarray<scalar> resFlows =
 							GaussEliminationSolver(cellDFluxesMatrix, freeTerm)
 									* M * c;
@@ -337,6 +333,19 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 		else
 			for (std::size_t i = 0; i < DFlux.size(); ++i)
 			{
+				std::valarray<scalar> c(Ncomp);
+				for (std::size_t k = 1; k < Ncomp1; ++k)
+					c[k - 1] = N.v[k].ref()[i];
+
+				std::size_t replaceIndex { 0 };
+				const scalar replaceC { c.max() };
+				for (std::size_t k = 0; k < c.size(); ++k)
+					if (replaceC == c[k])
+					{
+						replaceIndex = k + 1;
+						break;
+					}
+
 				for (std::size_t f = 0; f < vector::vsize; ++f)
 				{
 					std::valarray<std::valarray<scalar>> cellDFluxesMatrix(
@@ -376,10 +385,6 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 										N.v[k2].ref()[i] * M[k2 - 1];
 						}
 
-					std::valarray<scalar> c(Ncomp);
-					for (std::size_t k = 1; k < Ncomp1; ++k)
-						c[k - 1] = N.v[k].ref()[i];
-
 					const std::valarray<scalar> resFlows =
 							GaussEliminationSolver(cellDFluxesMatrix, freeTerm)
 									* M * c;
@@ -399,7 +404,7 @@ private:
 		for (std::size_t k = 0; k < N - 1; ++k)
 			for (std::size_t i = k + 1; i < N; ++i)
 			{
-				const auto ratio = A[i][k] / A[k][k];
+				const auto ratio = A[i][k] / (A[k][k] + stabilizator);
 
 				for (std::size_t j = 0; j < N; ++j)
 					A[i][j] = A[i][j] - ratio * A[k][j];
@@ -409,7 +414,7 @@ private:
 
 		std::valarray<scalar> phi(b.size());
 
-		phi[N - 1] = b[N - 1] / A[N - 1][N - 1];
+		phi[N - 1] = b[N - 1] / (A[N - 1][N - 1] + stabilizator);
 
 		for (std::size_t i = N - 2;; --i)
 		{
@@ -418,7 +423,7 @@ private:
 			for (std::size_t j = i + 1; j < N; ++j)
 				term += A[i][j] * phi[j];
 
-			phi[i] = (b[i] - term) / A[i][i];
+			phi[i] = (b[i] - term) / (A[i][i] + stabilizator);
 
 			if (i == 0)
 				break;

@@ -376,9 +376,12 @@ schemi::surfaceField<std::valarray<schemi::scalar>> schemi::hardSpheresTransport
 				rDk += xArray[k2] / Dmatrix[k1][k2];
 			}
 
-			rDk *= 1.0 / (1.0 - xArray[k1]);
+			if (rDk >= stabilizator)
+			{
+				rDk *= 1.0 / (1.0 - xArray[k1] + stabilizator);
 
-			Dsingle.ref_r()[i][k1] = 1 / rDk;
+				Dsingle.ref_r()[i][k1] = 1 / rDk;
+			}
 		}
 	}
 
