@@ -1,5 +1,5 @@
 #Type_of_chemical_reaction
-H2Cl2Combustion
+no
 #A_Cl2_diss
 5.74E9
 #n_Cl2_diss
