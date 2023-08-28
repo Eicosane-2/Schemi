@@ -382,6 +382,8 @@ schemi::surfaceField<std::valarray<schemi::scalar>> schemi::hardSpheresTransport
 
 				Dsingle.ref_r()[i][k1] = 1 / rDk;
 			}
+			else
+				Dsingle.ref_r()[i][k1] = stabilizator;
 		}
 	}
 
