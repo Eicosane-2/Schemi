@@ -397,7 +397,7 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 private:
 	std::valarray<scalar> GaussEliminationSolver(
 			std::valarray<std::valarray<scalar>> A,
-			std::valarray<scalar> b) const
+			std::valarray<scalar> b) const noexcept
 	{
 		const std::size_t N = b.size();
 
@@ -432,6 +432,91 @@ private:
 		normalize(phi);
 
 		return phi;
+	}
+
+	std::valarray<scalar> GaussSeidelSolver(
+			const std::valarray<std::valarray<scalar>> & A,
+			const std::valarray<scalar> & b) const
+	{
+		std::valarray<scalar> oldIteration(0., b.size());
+
+		std::valarray<scalar> newIteration(oldIteration);
+
+		std::size_t nIterations { 0 };
+
+		while (true)
+		{
+			nIterations++;
+
+			for (std::size_t i = 0; i < oldIteration.size(); ++i)
+			{
+				const scalar aii { 1. / (A[i][i] + stabilizator) };
+
+				const scalar bi { b[i] };
+
+				newIteration[i] = bi * aii;
+
+				for (std::size_t j = 0; j < i; ++j)
+					newIteration[i] -= A[i][j] * newIteration[j] * aii;
+
+				for (std::size_t j = i + 1; j < oldIteration.size(); ++j)
+					newIteration[i] -= A[i][j] * oldIteration[j] * aii;
+			}
+
+			for (std::size_t i = oldIteration.size() - 1;; --i)
+			{
+				const scalar aii { 1. / (A[i][i] + stabilizator) };
+
+				const scalar bi { b[i] };
+
+				newIteration[i] = bi * aii;
+
+				if (i != 0)
+					for (std::size_t j = i - 1;; --j)
+					{
+						newIteration[i] -= A[i][j] * oldIteration[j] * aii;
+
+						if (j == 0)
+							break;
+					}
+
+				if (i != oldIteration.size() - 1)
+					for (std::size_t j = oldIteration.size() - 1;; --j)
+					{
+						newIteration[i] -= A[i][j] * newIteration[j] * aii;
+
+						if (j == i + 1)
+							break;
+					}
+
+				if (i == 0)
+					break;
+			}
+
+			const scalar diff {
+					100.
+							* std::abs(
+									(newIteration - oldIteration)
+											/ (std::abs(newIteration)
+													+ stabilizator)).max() };
+
+			if (diff < 1E-12)
+			{
+				normalize(newIteration);
+				return newIteration;
+			}
+			else if (nIterations >= 100)
+			{
+				std::clog
+						<< "Gauss-Seidel algorithm for diffusive flows did not converged. Difference is: "
+						<< diff << std::endl;
+
+				normalize(newIteration);
+				return newIteration;
+			}
+			else
+				oldIteration = newIteration;
+		}
 	}
 
 	void normalize(std::valarray<scalar> & res) const noexcept
