@@ -63,11 +63,11 @@ schemi::volumeField<schemi::scalar> schemi::hardSpheresTransportModel::calculate
 	for (std::size_t i = 0; i < temperature.size(); ++i)
 	{
 		for (std::size_t k = 0; k < compNumber; ++k)
-			xArray[k] = { concentrations.v[k + 1].ref()[i]
-					/ concentrations.v[0].ref()[i] };
+			xArray[k] = { concentrations.v[k + 1]()[i]
+					/ concentrations.v[0]()[i] };
 
 		for (std::size_t k = 0; k < compNumber; ++k)
-			muArray[k] = muHardSph(M[k], temperature.ref()[i], diameters[k]);
+			muArray[k] = muHardSph(M[k], temperature()[i], diameters[k]);
 
 		for (std::size_t k1 = 0; k1 < compNumber; ++k1)
 			for (std::size_t k2 = 0; k2 < compNumber; ++k2)
@@ -92,7 +92,7 @@ schemi::volumeField<schemi::scalar> schemi::hardSpheresTransportModel::calculate
 			muMix += xArray[k1] * muArray[k1] / Phi_k1;
 		}
 
-		muField.ref_r()[i] = muMix;
+		muField.r()[i] = muMix;
 	}
 
 	return muField;
@@ -109,7 +109,7 @@ schemi::volumeField<std::valarray<std::valarray<schemi::scalar>>> schemi::hardSp
 	volumeField<std::valarray<std::valarray<scalar>>> Dmatrix(
 			temperature.meshRef());
 
-	Dmatrix.ref_r() = std::valarray<std::valarray<scalar>>(
+	Dmatrix.r() = std::valarray<std::valarray<scalar>>(
 			std::valarray<scalar>(0., compNumber), compNumber);
 
 	for (std::size_t i = 0; i < temperature.size(); ++i)
@@ -123,8 +123,8 @@ schemi::volumeField<std::valarray<std::valarray<schemi::scalar>>> schemi::hardSp
 				const scalar molMass12 = 2 * M[k1] * M[k2] / (M[k1] + M[k2]);
 				const scalar diam12 = 0.5 * (diameters[k1] + diameters[k2]);
 
-				Dmatrix.ref_r()[i][k1][k2] = DHardSph(molMass12,
-						temperature.ref()[i], pressure.ref()[i], diam12);
+				Dmatrix.r()[i][k1][k2] = DHardSph(molMass12, temperature()[i],
+						pressure()[i], diam12);
 			}
 	}
 
@@ -147,8 +147,8 @@ schemi::volumeField<std::valarray<schemi::scalar>> schemi::hardSpheresTransportM
 	for (std::size_t i = 0; i < temperature.size(); ++i)
 	{
 		for (std::size_t k = 0; k < compNumber; ++k)
-			xArray[k] = { concentrations.v[k + 1].ref()[i]
-					/ concentrations.v[0].ref()[i] };
+			xArray[k] = { concentrations.v[k + 1]()[i]
+					/ concentrations.v[0]()[i] };
 
 		std::valarray<std::valarray<scalar>> Dmatrix { std::valarray<scalar>(0.,
 				compNumber), compNumber };
@@ -162,8 +162,8 @@ schemi::volumeField<std::valarray<schemi::scalar>> schemi::hardSpheresTransportM
 				const scalar molMass12 = 2 * M[k1] * M[k2] / (M[k1] + M[k2]);
 				const scalar diam12 = 0.5 * (diameters[k1] + diameters[k2]);
 
-				Dmatrix[k1][k2] = DHardSph(molMass12, temperature.ref()[i],
-						pressure.ref()[i], diam12);
+				Dmatrix[k1][k2] = DHardSph(molMass12, temperature()[i],
+						pressure()[i], diam12);
 			}
 
 		for (std::size_t k1 = 0; k1 < compNumber; ++k1)
@@ -180,7 +180,7 @@ schemi::volumeField<std::valarray<schemi::scalar>> schemi::hardSpheresTransportM
 
 			rDk *= 1.0 / (1.0 - xArray[k1]);
 
-			Dsingle.ref_r()[i][k1] = 1 / rDk;
+			Dsingle.r()[i][k1] = 1 / rDk;
 		}
 	}
 
@@ -206,12 +206,11 @@ schemi::volumeField<schemi::scalar> schemi::hardSpheresTransportModel::calculate
 	for (std::size_t i = 0; i < temperature.size(); ++i)
 	{
 		for (std::size_t k = 0; k < compNumber; ++k)
-			xArray[k] = { concentrations.v[k + 1].ref()[i]
-					/ concentrations.v[0].ref()[i] };
+			xArray[k] = { concentrations.v[k + 1]()[i]
+					/ concentrations.v[0]()[i] };
 
 		for (std::size_t k = 0; k < compNumber; ++k)
-			kappaArray[k] = kappaHardSph(M[k], temperature.ref()[i],
-					diameters[k]);
+			kappaArray[k] = kappaHardSph(M[k], temperature()[i], diameters[k]);
 
 		for (std::size_t k1 = 0; k1 < compNumber; ++k1)
 			for (std::size_t k2 = 0; k2 < compNumber; ++k2)
@@ -236,7 +235,7 @@ schemi::volumeField<schemi::scalar> schemi::hardSpheresTransportModel::calculate
 			kappaMix += xArray[k1] * kappaArray[k1] / Phi_k1;
 		}
 
-		kappaField.ref_r()[i] = kappaMix;
+		kappaField.r()[i] = kappaMix;
 	}
 
 	return kappaField;
@@ -261,11 +260,11 @@ schemi::surfaceField<schemi::scalar> schemi::hardSpheresTransportModel::calculat
 	for (std::size_t i = 0; i < temperature.size(); ++i)
 	{
 		for (std::size_t k = 0; k < compNumber; ++k)
-			xArray[k] = { concentrations.v[k + 1].ref()[i]
-					/ concentrations.v[0].ref()[i] };
+			xArray[k] = { concentrations.v[k + 1]()[i]
+					/ concentrations.v[0]()[i] };
 
 		for (std::size_t k = 0; k < compNumber; ++k)
-			muArray[k] = muHardSph(M[k], temperature.ref()[i], diameters[k]);
+			muArray[k] = muHardSph(M[k], temperature()[i], diameters[k]);
 
 		for (std::size_t k1 = 0; k1 < compNumber; ++k1)
 			for (std::size_t k2 = 0; k2 < compNumber; ++k2)
@@ -290,7 +289,7 @@ schemi::surfaceField<schemi::scalar> schemi::hardSpheresTransportModel::calculat
 			muMix += xArray[k1] * muArray[k1] / Phi_k1;
 		}
 
-		muField.ref_r()[i] = muMix;
+		muField.r()[i] = muMix;
 	}
 
 	return muField;
@@ -307,7 +306,7 @@ schemi::surfaceField<std::valarray<std::valarray<schemi::scalar>>> schemi::hardS
 	surfaceField<std::valarray<std::valarray<scalar>>> Dmatrix(
 			temperature.meshRef());
 
-	Dmatrix.ref_r() = std::valarray<std::valarray<scalar>>(
+	Dmatrix.r() = std::valarray<std::valarray<scalar>>(
 			std::valarray<scalar>(0., compNumber), compNumber);
 
 	for (std::size_t i = 0; i < temperature.size(); ++i)
@@ -321,8 +320,8 @@ schemi::surfaceField<std::valarray<std::valarray<schemi::scalar>>> schemi::hardS
 				const scalar molMass12 = 2 * M[k1] * M[k2] / (M[k1] + M[k2]);
 				const scalar diam12 = 0.5 * (diameters[k1] + diameters[k2]);
 
-				Dmatrix.ref_r()[i][k1][k2] = DHardSph(molMass12,
-						temperature.ref()[i], pressure.ref()[i], diam12);
+				Dmatrix.r()[i][k1][k2] = DHardSph(molMass12, temperature()[i],
+						pressure()[i], diam12);
 			}
 	}
 
@@ -345,8 +344,8 @@ schemi::surfaceField<std::valarray<schemi::scalar>> schemi::hardSpheresTransport
 	for (std::size_t i = 0; i < temperature.size(); ++i)
 	{
 		for (std::size_t k = 0; k < compNumber; ++k)
-			xArray[k] = { concentrations.v[k + 1].ref()[i]
-					/ concentrations.v[0].ref()[i] };
+			xArray[k] = { concentrations.v[k + 1]()[i]
+					/ concentrations.v[0]()[i] };
 
 		std::valarray<std::valarray<scalar>> Dmatrix { std::valarray<scalar>(0.,
 				compNumber), compNumber };
@@ -360,8 +359,8 @@ schemi::surfaceField<std::valarray<schemi::scalar>> schemi::hardSpheresTransport
 				const scalar molMass12 = 2 * M[k1] * M[k2] / (M[k1] + M[k2]);
 				const scalar diam12 = 0.5 * (diameters[k1] + diameters[k2]);
 
-				Dmatrix[k1][k2] = DHardSph(molMass12, temperature.ref()[i],
-						pressure.ref()[i], diam12);
+				Dmatrix[k1][k2] = DHardSph(molMass12, temperature()[i],
+						pressure()[i], diam12);
 			}
 
 		for (std::size_t k1 = 0; k1 < compNumber; ++k1)
@@ -380,8 +379,10 @@ schemi::surfaceField<std::valarray<schemi::scalar>> schemi::hardSpheresTransport
 			{
 				rDk *= 1.0 / (1.0 - xArray[k1] + stabilizator);
 
-				Dsingle.ref_r()[i][k1] = 1 / rDk;
+				Dsingle.r()[i][k1] = 1 / rDk;
 			}
+			else
+				Dsingle.r()[i][k1] = stabilizator;
 		}
 	}
 
@@ -407,12 +408,11 @@ schemi::surfaceField<schemi::scalar> schemi::hardSpheresTransportModel::calculat
 	for (std::size_t i = 0; i < temperature.size(); ++i)
 	{
 		for (std::size_t k = 0; k < compNumber; ++k)
-			xArray[k] = { concentrations.v[k + 1].ref()[i]
-					/ concentrations.v[0].ref()[i] };
+			xArray[k] = { concentrations.v[k + 1]()[i]
+					/ concentrations.v[0]()[i] };
 
 		for (std::size_t k = 0; k < compNumber; ++k)
-			kappaArray[k] = kappaHardSph(M[k], temperature.ref()[i],
-					diameters[k]);
+			kappaArray[k] = kappaHardSph(M[k], temperature()[i], diameters[k]);
 
 		for (std::size_t k1 = 0; k1 < compNumber; ++k1)
 			for (std::size_t k2 = 0; k2 < compNumber; ++k2)
@@ -437,7 +437,7 @@ schemi::surfaceField<schemi::scalar> schemi::hardSpheresTransportModel::calculat
 			kappaMix += xArray[k1] * kappaArray[k1] / Phi_k1;
 		}
 
-		kappaField.ref_r()[i] = kappaMix;
+		kappaField.r()[i] = kappaMix;
 	}
 
 	return kappaField;

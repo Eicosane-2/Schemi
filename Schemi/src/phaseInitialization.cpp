@@ -12,7 +12,6 @@
 
 #include "gasModelEnum.hpp"
 #include "boundaryConditionFromString.hpp"
-#include "fabricFunctions.hpp"
 #include "mixtureIdeal.hpp"
 #include "mixtureRedlichKwong.hpp"
 #include "mixtureVanDerWaals.hpp"
@@ -35,7 +34,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	std::string skipBuffer;
 
 	std::unique_ptr<abstractTurbulenceGen> turbulenceSources(
-			createTurbulenceModel(turbulenceONString, sourceTypeString));
+			abstractTurbulenceGen::createTurbulenceModel(meshReference,
+					turbulenceONString, sourceTypeString));
 
 	transportCoefficients<cubicCell> tCoeffsPhase { meshReference };
 
@@ -58,8 +58,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	if (transportCoefficientsFile.is_open())
 		std::cout << "./set/transportCoefficients.txt is opened." << std::endl;
 	else
-		throw exception("./set/transportCoefficients.txt not found.",
-				errors::initializationError);
+		throw std::ifstream::failure(
+				"./set/transportCoefficients.txt not found.");
 
 	std::string transportModelTypeString;
 	scalar cNu, cD, cKappa;
@@ -77,7 +77,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		transpModel = transportModel::hardSpheres;
 	else
 		throw exception("Unknown flag for transport model.",
-				errors::initializationError);
+				errors::initialisationError);
 
 	if (implicitEnthalpyFlowFlagString == "implicit")
 		enthalpyFlowFlag = enthalpyFlow::implicitSolve;
@@ -87,7 +87,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		enthalpyFlowFlag = enthalpyFlow::noSolve;
 	else
 		throw exception("Unknown flag for enthalpy flow calculation.",
-				errors::initializationError);
+				errors::initialisationError);
 
 	if (MolMassDiffusionFlagString == "on")
 		molMassDiffusionFlag = true;
@@ -95,7 +95,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		molMassDiffusionFlag = false;
 	else
 		throw exception("Unknown flag for molar mass diffusion correction.",
-				errors::initializationError);
+				errors::initialisationError);
 
 	/*Create mixture class and boundary conditions for basic quantities: concentrations, velocity, pressure, k, epsilon, a and b.*/
 	std::vector<std::array<std::vector<subPatchData<scalar>>, 6>> boundaryConditionsMatrix(
@@ -118,8 +118,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (substanceConditionsFile.is_open())
 			std::cout << substanceName << " is opened." << std::endl;
 		else
-			throw exception(substanceName + " not found.",
-					errors::initializationError);
+			throw std::ifstream::failure(substanceName + " not found.");
 
 		substanceConditionsFile >> skipBuffer
 				>> matrixOfSubstancesConditions[k][0] /*M*/
@@ -139,17 +138,17 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			{
 				const auto boundTp = boundaryConditionFromString(patchBoundary);
 
-				if (boundTp == boundaryConditionType::fixedValue)
+				if (boundTp == boundaryConditionType::fixedValueCell)
 				{
 					scalar fv;
 					substanceConditionsFile >> fv;
 
-					boundaryConditionsMatrix[k][boundaryI].push_back( { boundTp,
-							fv });
+					boundaryConditionsMatrix[k][boundaryI].emplace_back(boundTp,
+							fv);
 				}
 				else
-					boundaryConditionsMatrix[k][boundaryI].push_back(
-							{ boundTp });
+					boundaryConditionsMatrix[k][boundaryI].emplace_back(
+							boundTp);
 			}
 			else
 			{
@@ -159,7 +158,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errors::initializationError);
+							errors::initialisationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -169,7 +168,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					const auto boundTp = boundaryConditionFromString(
 							subPatchBoundary);
 
-					if (boundTp == boundaryConditionType::fixedValue)
+					if (boundTp == boundaryConditionType::fixedValueCell)
 					{
 						scalar vb1, vb2, vb3, ve1, ve2, ve3;
 
@@ -180,9 +179,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						scalar fv;
 						substanceConditionsFile >> fv;
 
-						boundaryConditionsMatrix[k][boundaryI].push_back( {
+						boundaryConditionsMatrix[k][boundaryI].emplace_back(
 								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
-										ve2, ve3 }, fv });
+										ve2, ve3 }, fv);
 					}
 					else
 					{
@@ -192,9 +191,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
 								>> skipBuffer;
 
-						boundaryConditionsMatrix[k][boundaryI].push_back( {
+						boundaryConditionsMatrix[k][boundaryI].emplace_back(
 								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
-										ve2, ve3 } });
+										ve2, ve3 });
 					}
 				}
 			}
@@ -203,7 +202,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		substanceConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errors::initializationError);
+					errors::initialisationError);
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 			substanceConditionsFile >> matrixOfSubstancesConditions[k][5 + j]; /*Values in zones*/
 		substanceConditionsFile.close();
@@ -215,13 +214,13 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
-		thermodynamicalProperties[0][k] = std::stod(
+		std::get<0>(thermodynamicalProperties)[k] = std::stod(
 				matrixOfSubstancesConditions[k][0]); /*M*/
-		thermodynamicalProperties[1][k] = std::stod(
+		std::get<1>(thermodynamicalProperties)[k] = std::stod(
 				matrixOfSubstancesConditions[k][1]); /*Cv*/
-		thermodynamicalProperties[2][k] = std::stod(
+		std::get<2>(thermodynamicalProperties)[k] = std::stod(
 				matrixOfSubstancesConditions[k][2]); /*Tcrit*/
-		thermodynamicalProperties[3][k] = std::stod(
+		std::get<3>(thermodynamicalProperties)[k] = std::stod(
 				matrixOfSubstancesConditions[k][3]); /*Pcrit*/
 	}
 
@@ -229,8 +228,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	{
 		parallelism.correctBoundaryConditions(boundaryConditionsMatrix[k - 1]);
 
-		cellFields.concentration.v[k] = volumeField<scalar>(meshReference, 0,
-				boundaryConditionsMatrix[k - 1][0],
+		cellFields.concentration.v[k] = volumeField<scalar>(meshReference,
+				scalar { 0 }, boundaryConditionsMatrix[k - 1][0],
 				boundaryConditionsMatrix[k - 1][1],
 				boundaryConditionsMatrix[k - 1][2],
 				boundaryConditionsMatrix[k - 1][3],
@@ -243,7 +242,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			for (auto & b_i : b_s)
 				b_i.fixVal *= thermodynamicalProperties[0][k - 1];
 
-		cellFields.density[k] = volumeField<scalar>(meshReference, 0,
+		cellFields.density[k] = volumeField<scalar>(meshReference, scalar { 0 },
 				bndVConRho_k[0], bndVConRho_k[1], bndVConRho_k[2],
 				bndVConRho_k[3], bndVConRho_k[4], bndVConRho_k[5]);
 	}
@@ -256,7 +255,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				boundaryConditionType::calculated,
 				boundaryConditionType::calculatedDensity);
 
-		cellFields.density[0] = volumeField<scalar>(meshReference, 0,
+		cellFields.density[0] = volumeField<scalar>(meshReference, scalar { 0 },
 				subPatchData<scalar> { bndConRho[0] }, subPatchData<scalar> {
 						bndConRho[1] }, subPatchData<scalar> { bndConRho[2] },
 				subPatchData<scalar> { bndConRho[3] }, subPatchData<scalar> {
@@ -281,7 +280,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	}
 	else
 		throw exception("Unknown type of universal gas constant.",
-				errors::initializationError);
+				errors::initialisationError);
 
 	{
 		gasModel gasModelFlag;
@@ -293,31 +292,38 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			gasModelFlag = gasModel::RedlichKwong;
 		else
 			throw exception("Unknown type of equation of state.",
-					errors::initializationError);
+					errors::initialisationError);
 
 		switch (gasModelFlag)
 		{
 		case gasModel::vanDerWaals:
 			mixture = std::make_unique<mixtureVanDerWaals>(R, hPlanck,
-					thermodynamicalProperties[0], thermodynamicalProperties[1],
-					thermodynamicalProperties[2], thermodynamicalProperties[3]);
+					std::get<0>(thermodynamicalProperties),
+					std::get<1>(thermodynamicalProperties),
+					std::get<2>(thermodynamicalProperties),
+					std::get<3>(thermodynamicalProperties));
 			break;
 		case gasModel::RedlichKwong:
 			mixture = std::make_unique<mixtureRedlichKwong>(R, hPlanck,
-					thermodynamicalProperties[0], thermodynamicalProperties[1],
-					thermodynamicalProperties[2], thermodynamicalProperties[3]);
+					std::get<0>(thermodynamicalProperties),
+					std::get<1>(thermodynamicalProperties),
+					std::get<2>(thermodynamicalProperties),
+					std::get<3>(thermodynamicalProperties));
 			break;
 		case gasModel::ideal:
 		default:
 			mixture = std::make_unique<mixtureIdeal>(R, hPlanck,
-					thermodynamicalProperties[0], thermodynamicalProperties[1],
-					thermodynamicalProperties[2], thermodynamicalProperties[3]);
+					std::get<0>(thermodynamicalProperties),
+					std::get<1>(thermodynamicalProperties),
+					std::get<2>(thermodynamicalProperties),
+					std::get<3>(thermodynamicalProperties));
 			break;
 		}
 	}
 
 	std::unique_ptr<abstractTransportModel> transportModel(
-			createTransportModel(matrixOfSubstancesConditions, cNu, cD, cKappa,
+			abstractTransportModel::createTransportModel(
+					matrixOfSubstancesConditions, cNu, cD, cKappa,
 					transpModel));
 
 	phase = std::make_unique<homogeneousPhase<cubicCell>>(cellFields,
@@ -332,8 +338,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (velocityConditionsFile.is_open())
 			std::cout << "./set/velocity.txt is opened." << std::endl;
 		else
-			throw exception("./set/velocity.txt not found.",
-					errors::initializationError);
+			throw std::ifstream::failure("./set/velocity.txt not found.");
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -346,17 +351,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			{
 				const auto boundTp = boundaryConditionFromString(patchBoundary);
 
-				if (boundTp == boundaryConditionType::fixedValue)
+				if (boundTp == boundaryConditionType::fixedValueCell)
 				{
 					scalar fv1, fv2, fv3;
 					velocityConditionsFile >> fv1 >> fv2 >> fv3;
 
-					boundaryConditionsVelocity[boundaryI].push_back( { boundTp,
-							vector { fv1, fv2, fv3 } });
+					boundaryConditionsVelocity[boundaryI].emplace_back(boundTp,
+							vector { fv1, fv2, fv3 });
 				}
 				else
-					boundaryConditionsVelocity[boundaryI].push_back(
-							{ boundTp });
+					boundaryConditionsVelocity[boundaryI].emplace_back(boundTp);
 			}
 			else
 			{
@@ -366,7 +370,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errors::initializationError);
+							errors::initialisationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -376,7 +380,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					const auto boundTp = boundaryConditionFromString(
 							subPatchBoundary);
 
-					if (boundTp == boundaryConditionType::fixedValue)
+					if (boundTp == boundaryConditionType::fixedValueCell)
 					{
 						scalar vb1, vb2, vb3, ve1, ve2, ve3;
 
@@ -387,9 +391,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						scalar fv1, fv2, fv3;
 						velocityConditionsFile >> fv1 >> fv2 >> fv3;
 
-						boundaryConditionsVelocity[boundaryI].push_back( {
+						boundaryConditionsVelocity[boundaryI].emplace_back(
 								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
-										ve2, ve3 }, vector { fv1, fv2, fv3 } });
+										ve2, ve3 }, vector { fv1, fv2, fv3 });
 					}
 					else
 					{
@@ -399,9 +403,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
 								>> skipBuffer;
 
-						boundaryConditionsVelocity[boundaryI].push_back( {
+						boundaryConditionsVelocity[boundaryI].emplace_back(
 								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
-										ve2, ve3 } });
+										ve2, ve3 });
 					}
 				}
 			}
@@ -410,7 +414,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		velocityConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errors::initializationError);
+					errors::initialisationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			velocityConditionsFile >> velocityConditions[3 * i]
 					>> velocityConditions[1 + 3 * i]
@@ -421,9 +425,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		parallelism.correctBoundaryConditions(boundaryConditionsVelocity);
 
 		phase->velocity = volumeField<vector>(meshReference, vector(0),
-				boundaryConditionsVelocity[0], boundaryConditionsVelocity[1],
-				boundaryConditionsVelocity[2], boundaryConditionsVelocity[3],
-				boundaryConditionsVelocity[4], boundaryConditionsVelocity[5]);
+				std::get<0>(boundaryConditionsVelocity),
+				std::get<1>(boundaryConditionsVelocity),
+				std::get<2>(boundaryConditionsVelocity),
+				std::get<3>(boundaryConditionsVelocity),
+				std::get<4>(boundaryConditionsVelocity),
+				std::get<5>(boundaryConditionsVelocity));
 	}
 
 	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsPressure;
@@ -435,8 +442,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (pressureConditionsFile.is_open())
 			std::cout << "./set/pressure.txt is opened." << std::endl;
 		else
-			throw exception("./set/pressure.txt not found.",
-					errors::initializationError);
+			throw std::ifstream::failure("./set/pressure.txt not found.");
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -449,17 +455,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			{
 				const auto boundTp = boundaryConditionFromString(patchBoundary);
 
-				if (boundTp == boundaryConditionType::fixedValue)
+				if (boundTp == boundaryConditionType::fixedValueCell)
 				{
 					scalar fv;
 					pressureConditionsFile >> fv;
 
-					boundaryConditionsPressure[boundaryI].push_back( { boundTp,
-							fv });
+					boundaryConditionsPressure[boundaryI].emplace_back(boundTp,
+							fv);
 				}
 				else
-					boundaryConditionsPressure[boundaryI].push_back(
-							{ boundTp });
+					boundaryConditionsPressure[boundaryI].emplace_back(boundTp);
 			}
 			else
 			{
@@ -469,7 +474,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errors::initializationError);
+							errors::initialisationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -479,7 +484,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					const auto boundTp = boundaryConditionFromString(
 							subPatchBoundary);
 
-					if (boundTp == boundaryConditionType::fixedValue)
+					if (boundTp == boundaryConditionType::fixedValueCell)
 					{
 						scalar vb1, vb2, vb3, ve1, ve2, ve3;
 
@@ -490,9 +495,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						scalar fv;
 						pressureConditionsFile >> fv;
 
-						boundaryConditionsPressure[boundaryI].push_back( {
+						boundaryConditionsPressure[boundaryI].emplace_back(
 								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
-										ve2, ve3 }, fv });
+										ve2, ve3 }, fv);
 					}
 					else
 					{
@@ -502,9 +507,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 								>> vb3 >> skipBuffer >> ve1 >> ve2 >> ve3
 								>> skipBuffer;
 
-						boundaryConditionsPressure[boundaryI].push_back( {
+						boundaryConditionsPressure[boundaryI].emplace_back(
 								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
-										ve2, ve3 } });
+										ve2, ve3 });
 					}
 				}
 			}
@@ -513,7 +518,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		pressureConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errors::initializationError);
+					errors::initialisationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			pressureConditionsFile >> pressureConditions[i];
 
@@ -521,10 +526,13 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		parallelism.correctBoundaryConditions(boundaryConditionsPressure);
 
-		phase->pressure = volumeField<scalar>(meshReference, 0,
-				boundaryConditionsPressure[0], boundaryConditionsPressure[1],
-				boundaryConditionsPressure[2], boundaryConditionsPressure[3],
-				boundaryConditionsPressure[4], boundaryConditionsPressure[5]);
+		phase->pressure = volumeField<scalar>(meshReference, scalar { 0 },
+				std::get<0>(boundaryConditionsPressure),
+				std::get<1>(boundaryConditionsPressure),
+				std::get<2>(boundaryConditionsPressure),
+				std::get<3>(boundaryConditionsPressure),
+				std::get<4>(boundaryConditionsPressure),
+				std::get<5>(boundaryConditionsPressure));
 	}
 
 	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionskTurb;
@@ -536,8 +544,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (kTurbConditionsFile.is_open())
 			std::cout << "./set/k.txt is opened." << std::endl;
 		else
-			throw exception("./set/k.txt is opened.",
-					errors::initializationError);
+			throw std::ifstream::failure("./set/k.txt is opened.");
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -550,16 +557,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			{
 				const auto boundTp = boundaryConditionFromString(patchBoundary);
 
-				if (boundTp == boundaryConditionType::fixedValue)
+				if (boundTp == boundaryConditionType::fixedValueCell)
 				{
 					scalar fv;
 					kTurbConditionsFile >> fv;
 
-					boundaryConditionskTurb[boundaryI].push_back(
-							{ boundTp, fv });
+					boundaryConditionskTurb[boundaryI].emplace_back(boundTp,
+							fv);
 				}
 				else
-					boundaryConditionskTurb[boundaryI].push_back( { boundTp });
+					boundaryConditionskTurb[boundaryI].emplace_back(boundTp);
 			}
 			else
 			{
@@ -569,7 +576,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errors::initializationError);
+							errors::initialisationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -579,7 +586,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					const auto boundTp = boundaryConditionFromString(
 							subPatchBoundary);
 
-					if (boundTp == boundaryConditionType::fixedValue)
+					if (boundTp == boundaryConditionType::fixedValueCell)
 					{
 						scalar vb1, vb2, vb3, ve1, ve2, ve3;
 
@@ -590,9 +597,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						scalar fv;
 						kTurbConditionsFile >> fv;
 
-						boundaryConditionskTurb[boundaryI].push_back( { boundTp,
+						boundaryConditionskTurb[boundaryI].emplace_back(boundTp,
 								vector { vb1, vb2, vb3 },
-								vector { ve1, ve2, ve3 }, fv });
+								vector { ve1, ve2, ve3 }, fv);
 					}
 					else
 					{
@@ -602,9 +609,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 								>> skipBuffer >> ve1 >> ve2 >> ve3
 								>> skipBuffer;
 
-						boundaryConditionskTurb[boundaryI].push_back( { boundTp,
+						boundaryConditionskTurb[boundaryI].emplace_back(boundTp,
 								vector { vb1, vb2, vb3 },
-								vector { ve1, ve2, ve3 } });
+								vector { ve1, ve2, ve3 });
 					}
 				}
 			}
@@ -613,7 +620,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		kTurbConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errors::initializationError);
+					errors::initialisationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			kTurbConditionsFile >> kTurbConditions[i];
 
@@ -622,9 +629,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		parallelism.correctBoundaryConditions(boundaryConditionskTurb);
 
 		phase->kTurb = volumeField<scalar>(meshReference, scalar { 0 },
-				boundaryConditionskTurb[0], boundaryConditionskTurb[1],
-				boundaryConditionskTurb[2], boundaryConditionskTurb[3],
-				boundaryConditionskTurb[4], boundaryConditionskTurb[5]);
+				std::get<0>(boundaryConditionskTurb),
+				std::get<1>(boundaryConditionskTurb),
+				std::get<2>(boundaryConditionskTurb),
+				std::get<3>(boundaryConditionskTurb),
+				std::get<4>(boundaryConditionskTurb),
+				std::get<5>(boundaryConditionskTurb));
 	}
 
 	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsepsTurb;
@@ -636,8 +646,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (epsTurbConditionsFile.is_open())
 			std::cout << "./set/epsilon.txt is opened." << std::endl;
 		else
-			throw exception("./set/epsilon.txt not found.",
-					errors::initializationError);
+			throw std::ifstream::failure("./set/epsilon.txt not found.");
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -650,17 +659,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			{
 				const auto boundTp = boundaryConditionFromString(patchBoundary);
 
-				if (boundTp == boundaryConditionType::fixedValue)
+				if (boundTp == boundaryConditionType::fixedValueCell)
 				{
 					scalar fv;
 					epsTurbConditionsFile >> fv;
 
-					boundaryConditionsepsTurb[boundaryI].push_back( { boundTp,
-							fv });
+					boundaryConditionsepsTurb[boundaryI].emplace_back(boundTp,
+							fv);
 				}
 				else
-					boundaryConditionsepsTurb[boundaryI].push_back(
-							{ boundTp });
+					boundaryConditionsepsTurb[boundaryI].emplace_back(boundTp);
 			}
 			else
 			{
@@ -670,7 +678,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errors::initializationError);
+							errors::initialisationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -680,7 +688,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					const auto boundTp = boundaryConditionFromString(
 							subPatchBoundary);
 
-					if (boundTp == boundaryConditionType::fixedValue)
+					if (boundTp == boundaryConditionType::fixedValueCell)
 					{
 						scalar vb1, vb2, vb3, ve1, ve2, ve3;
 
@@ -691,9 +699,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						scalar fv;
 						epsTurbConditionsFile >> fv;
 
-						boundaryConditionsepsTurb[boundaryI].push_back( {
+						boundaryConditionsepsTurb[boundaryI].emplace_back(
 								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
-										ve2, ve3 }, fv });
+										ve2, ve3 }, fv);
 					}
 					else
 					{
@@ -703,9 +711,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 								>> skipBuffer >> ve1 >> ve2 >> ve3
 								>> skipBuffer;
 
-						boundaryConditionsepsTurb[boundaryI].push_back( {
+						boundaryConditionsepsTurb[boundaryI].emplace_back(
 								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
-										ve2, ve3 } });
+										ve2, ve3 });
 					}
 				}
 			}
@@ -714,7 +722,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		epsTurbConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errors::initializationError);
+					errors::initialisationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			epsTurbConditionsFile >> epsTurbConditions[i];
 
@@ -722,10 +730,13 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		parallelism.correctBoundaryConditions(boundaryConditionsepsTurb);
 
-		phase->epsTurb = volumeField<scalar>(meshReference, 0,
-				boundaryConditionsepsTurb[0], boundaryConditionsepsTurb[1],
-				boundaryConditionsepsTurb[2], boundaryConditionsepsTurb[3],
-				boundaryConditionsepsTurb[4], boundaryConditionsepsTurb[5]);
+		phase->epsTurb = volumeField<scalar>(meshReference, scalar { 0 },
+				std::get<0>(boundaryConditionsepsTurb),
+				std::get<1>(boundaryConditionsepsTurb),
+				std::get<2>(boundaryConditionsepsTurb),
+				std::get<3>(boundaryConditionsepsTurb),
+				std::get<4>(boundaryConditionsepsTurb),
+				std::get<5>(boundaryConditionsepsTurb));
 	}
 
 	std::array<std::vector<subPatchData<vector>>, 6> boundaryConditionsaTurb;
@@ -737,8 +748,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (aTurbConditionsFile.is_open())
 			std::cout << "./set/a.txt is opened." << std::endl;
 		else
-			throw exception("./set/a.txt not found.",
-					errors::initializationError);
+			throw std::ifstream::failure("./set/a.txt not found.");
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -751,16 +761,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			{
 				const auto boundTp = boundaryConditionFromString(patchBoundary);
 
-				if (boundTp == boundaryConditionType::fixedValue)
+				if (boundTp == boundaryConditionType::fixedValueCell)
 				{
 					scalar fv1, fv2, fv3;
 					aTurbConditionsFile >> fv1 >> fv2 >> fv3;
 
-					boundaryConditionsaTurb[boundaryI].push_back( { boundTp,
-							vector { fv1, fv2, fv3 } });
+					boundaryConditionsaTurb[boundaryI].emplace_back(boundTp,
+							vector { fv1, fv2, fv3 });
 				}
 				else
-					boundaryConditionsaTurb[boundaryI].push_back( { boundTp });
+					boundaryConditionsaTurb[boundaryI].emplace_back(boundTp);
 			}
 			else
 			{
@@ -770,7 +780,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errors::initializationError);
+							errors::initialisationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -780,7 +790,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					const auto boundTp = boundaryConditionFromString(
 							subPatchBoundary);
 
-					if (boundTp == boundaryConditionType::fixedValue)
+					if (boundTp == boundaryConditionType::fixedValueCell)
 					{
 						scalar vb1, vb2, vb3, ve1, ve2, ve3;
 
@@ -791,10 +801,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						scalar fv1, fv2, fv3;
 						aTurbConditionsFile >> fv1 >> fv2 >> fv3;
 
-						boundaryConditionsaTurb[boundaryI].push_back( { boundTp,
+						boundaryConditionsaTurb[boundaryI].emplace_back(boundTp,
 								vector { vb1, vb2, vb3 },
 								vector { ve1, ve2, ve3 },
-								vector { fv1, fv2, fv3 } });
+								vector { fv1, fv2, fv3 });
 					}
 					else
 					{
@@ -804,9 +814,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 								>> skipBuffer >> ve1 >> ve2 >> ve3
 								>> skipBuffer;
 
-						boundaryConditionsaTurb[boundaryI].push_back( { boundTp,
+						boundaryConditionsaTurb[boundaryI].emplace_back(boundTp,
 								vector { vb1, vb2, vb3 },
-								vector { ve1, ve2, ve3 } });
+								vector { ve1, ve2, ve3 });
 					}
 				}
 			}
@@ -815,7 +825,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		aTurbConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errors::initializationError);
+					errors::initialisationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			aTurbConditionsFile >> aTurbConditions[3 * i]
 					>> aTurbConditions[1 + 3 * i] >> aTurbConditions[2 + 3 * i];
@@ -825,9 +835,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		parallelism.correctBoundaryConditions(boundaryConditionsaTurb);
 
 		phase->aTurb = volumeField<vector>(meshReference, vector(0, 0, 0),
-				boundaryConditionsaTurb[0], boundaryConditionsaTurb[1],
-				boundaryConditionsaTurb[2], boundaryConditionsaTurb[3],
-				boundaryConditionsaTurb[4], boundaryConditionsaTurb[5]);
+				std::get<0>(boundaryConditionsaTurb),
+				std::get<1>(boundaryConditionsaTurb),
+				std::get<2>(boundaryConditionsaTurb),
+				std::get<3>(boundaryConditionsaTurb),
+				std::get<4>(boundaryConditionsaTurb),
+				std::get<5>(boundaryConditionsaTurb));
 	}
 
 	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsbTurb;
@@ -839,8 +852,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (bTurbConditionsFile.is_open())
 			std::cout << "./set/b.txt is opened." << std::endl;
 		else
-			throw exception("./set/b.txt not found.",
-					errors::initializationError);
+			throw std::ifstream::failure("./set/b.txt not found.");
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -853,16 +865,16 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			{
 				const auto boundTp = boundaryConditionFromString(patchBoundary);
 
-				if (boundTp == boundaryConditionType::fixedValue)
+				if (boundTp == boundaryConditionType::fixedValueCell)
 				{
 					scalar fv;
 					bTurbConditionsFile >> fv;
 
-					boundaryConditionsbTurb[boundaryI].push_back(
-							{ boundTp, fv });
+					boundaryConditionsbTurb[boundaryI].emplace_back(boundTp,
+							fv);
 				}
 				else
-					boundaryConditionsbTurb[boundaryI].push_back( { boundTp });
+					boundaryConditionsbTurb[boundaryI].emplace_back(boundTp);
 			}
 			else
 			{
@@ -872,7 +884,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (subPatchNumber == 1)
 					throw exception("SubPatches must be more than one.",
-							errors::initializationError);
+							errors::initialisationError);
 
 				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
 				{
@@ -882,7 +894,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					const auto boundTp = boundaryConditionFromString(
 							subPatchBoundary);
 
-					if (boundTp == boundaryConditionType::fixedValue)
+					if (boundTp == boundaryConditionType::fixedValueCell)
 					{
 						scalar vb1, vb2, vb3, ve1, ve2, ve3;
 
@@ -893,9 +905,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						scalar fv;
 						bTurbConditionsFile >> fv;
 
-						boundaryConditionsbTurb[boundaryI].push_back( { boundTp,
+						boundaryConditionsbTurb[boundaryI].emplace_back(boundTp,
 								vector { vb1, vb2, vb3 },
-								vector { ve1, ve2, ve3 }, fv });
+								vector { ve1, ve2, ve3 }, fv);
 					}
 					else
 					{
@@ -905,9 +917,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 								>> skipBuffer >> ve1 >> ve2 >> ve3
 								>> skipBuffer;
 
-						boundaryConditionsbTurb[boundaryI].push_back( { boundTp,
+						boundaryConditionsbTurb[boundaryI].emplace_back(boundTp,
 								vector { vb1, vb2, vb3 },
-								vector { ve1, ve2, ve3 } });
+								vector { ve1, ve2, ve3 });
 					}
 				}
 			}
@@ -916,7 +928,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		bTurbConditionsFile >> skipBuffer;
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
-					errors::initializationError);
+					errors::initialisationError);
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 			bTurbConditionsFile >> bTurbConditions[i];
 
@@ -926,9 +938,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		phase->bTurb = volumeField<scalar>(meshReference,
 				phase->turbulenceSources->turbPar->minb_value,
-				boundaryConditionsbTurb[0], boundaryConditionsbTurb[1],
-				boundaryConditionsbTurb[2], boundaryConditionsbTurb[3],
-				boundaryConditionsbTurb[4], boundaryConditionsbTurb[5]);
+				std::get<0>(boundaryConditionsbTurb),
+				std::get<1>(boundaryConditionsbTurb),
+				std::get<2>(boundaryConditionsbTurb),
+				std::get<3>(boundaryConditionsbTurb),
+				std::get<4>(boundaryConditionsbTurb),
+				std::get<5>(boundaryConditionsbTurb));
 	}
 
 	/*Creating other fields.*/
@@ -1024,19 +1039,19 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (coordinatesOfZonesFile.is_open())
 			std::cout << "./set/coordinatesOfZones.txt is opened." << std::endl;
 		else
-			throw exception("./set/coordinatesOfZones.txt not found.",
-					errors::initializationError);
+			throw std::ifstream::failure(
+					"./set/coordinatesOfZones.txt not found.");
 
 		for (std::size_t i = 0; i < numberOfZones; ++i)
 		{
 			coordinatesOfZonesFile >> skipBuffer
-					>> vectorsOfZones[2 * i].v_r()[0]
-					>> vectorsOfZones[2 * i].v_r()[1]
-					>> vectorsOfZones[2 * i].v_r()[2];
+					>> std::get<0>(vectorsOfZones[2 * i].r())
+					>> std::get<1>(vectorsOfZones[2 * i].r())
+					>> std::get<2>(vectorsOfZones[2 * i].r());
 			coordinatesOfZonesFile >> skipBuffer
-					>> vectorsOfZones[2 * i + 1].v_r()[0]
-					>> vectorsOfZones[2 * i + 1].v_r()[1]
-					>> vectorsOfZones[2 * i + 1].v_r()[2];
+					>> std::get<0>(vectorsOfZones[2 * i + 1].r())
+					>> std::get<1>(vectorsOfZones[2 * i + 1].r())
+					>> std::get<2>(vectorsOfZones[2 * i + 1].r());
 		}
 
 		coordinatesOfZonesFile.close();
@@ -1051,18 +1066,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 			for (std::size_t j = 0; j < numberOfZones; ++j)
 			{
-				if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
-						&& (radiusOfCell.v()[0]
-								<= vectorsOfZones[2 * j + 1].v()[0])
-						&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
-						&& (radiusOfCell.v()[1]
-								<= vectorsOfZones[2 * j + 1].v()[1])
-						&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
-						&& (radiusOfCell.v()[2]
-								<= vectorsOfZones[2 * j + 1].v()[2]))
+				if ((std::get<0>(radiusOfCell())
+						>= std::get<0>(vectorsOfZones[2 * j]()))
+						&& (std::get<0>(radiusOfCell())
+								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<1>(radiusOfCell())
+								>= std::get<1>(vectorsOfZones[2 * j]()))
+						&& (std::get<1>(radiusOfCell())
+								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<2>(radiusOfCell())
+								>= std::get<2>(vectorsOfZones[2 * j]()))
+						&& (std::get<2>(radiusOfCell())
+								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
 				{
 					zoneFounded = true;
-					phase->concentration.v[k].ref_r()[i] = std::stod(
+					phase->concentration.v[k].r()[i] = std::stod(
 							matrixOfSubstancesConditions[k - 1][5 + j]);
 					break;
 				}
@@ -1072,7 +1090,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				throw exception(
 						"Cell " + std::to_string(i) + " of " + std::to_string(k)
 								+ " component concentration dropped out of all zones.",
-						errors::initializationError);
+						errors::initialisationError);
 		}
 
 	/*Set initial conditions for velocity.*/
@@ -1083,15 +1101,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
+			if ((std::get<0>(radiusOfCell())
+					>= std::get<0>(vectorsOfZones[2 * j]()))
+					&& (std::get<0>(radiusOfCell())
+							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<1>(radiusOfCell())
+							>= std::get<1>(vectorsOfZones[2 * j]()))
+					&& (std::get<1>(radiusOfCell())
+							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<2>(radiusOfCell())
+							>= std::get<2>(vectorsOfZones[2 * j]()))
+					&& (std::get<2>(radiusOfCell())
+							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
 			{
 				zoneFounded = true;
-				phase->velocity.ref_r()[i] = vector(
+				phase->velocity.r()[i] = vector(
 						std::stod(velocityConditions[3 * j]),
 						std::stod(velocityConditions[1 + 3 * j]),
 						std::stod(velocityConditions[2 + 3 * j]));
@@ -1103,7 +1127,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of velocity dropped out of all zones.",
-					errors::initializationError);
+					errors::initialisationError);
 	}
 
 	/*Set initial conditions for pressure.*/
@@ -1114,15 +1138,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
+			if ((std::get<0>(radiusOfCell())
+					>= std::get<0>(vectorsOfZones[2 * j]()))
+					&& (std::get<0>(radiusOfCell())
+							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<1>(radiusOfCell())
+							>= std::get<1>(vectorsOfZones[2 * j]()))
+					&& (std::get<1>(radiusOfCell())
+							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<2>(radiusOfCell())
+							>= std::get<2>(vectorsOfZones[2 * j]()))
+					&& (std::get<2>(radiusOfCell())
+							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
 			{
 				zoneFounded = true;
-				phase->pressure.ref_r()[i] = std::stod(pressureConditions[j]);
+				phase->pressure.r()[i] = std::stod(pressureConditions[j]);
 				break;
 			}
 		}
@@ -1130,7 +1160,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of pressure dropped out of all zones.",
-					errors::initializationError);
+					errors::initialisationError);
 	}
 
 	/*Set initial conditions for k.*/
@@ -1141,15 +1171,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
+			if ((std::get<0>(radiusOfCell())
+					>= std::get<0>(vectorsOfZones[2 * j]()))
+					&& (std::get<0>(radiusOfCell())
+							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<1>(radiusOfCell())
+							>= std::get<1>(vectorsOfZones[2 * j]()))
+					&& (std::get<1>(radiusOfCell())
+							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<2>(radiusOfCell())
+							>= std::get<2>(vectorsOfZones[2 * j]()))
+					&& (std::get<2>(radiusOfCell())
+							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
 			{
 				zoneFounded = true;
-				phase->kTurb.ref_r()[i] = std::stod(kTurbConditions[j]);
+				phase->kTurb.r()[i] = std::stod(kTurbConditions[j]);
 				break;
 			}
 		}
@@ -1157,7 +1193,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of k dropped out of all zones.",
-					errors::initializationError);
+					errors::initialisationError);
 	}
 
 	/*Set initial conditions for epsilon.*/
@@ -1168,15 +1204,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
+			if ((std::get<0>(radiusOfCell())
+					>= std::get<0>(vectorsOfZones[2 * j]()))
+					&& (std::get<0>(radiusOfCell())
+							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<1>(radiusOfCell())
+							>= std::get<1>(vectorsOfZones[2 * j]()))
+					&& (std::get<1>(radiusOfCell())
+							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<2>(radiusOfCell())
+							>= std::get<2>(vectorsOfZones[2 * j]()))
+					&& (std::get<2>(radiusOfCell())
+							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
 			{
 				zoneFounded = true;
-				phase->epsTurb.ref_r()[i] = std::stod(epsTurbConditions[j]);
+				phase->epsTurb.r()[i] = std::stod(epsTurbConditions[j]);
 				break;
 			}
 		}
@@ -1184,7 +1226,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of epsilon dropped out of all zones.",
-					errors::initializationError);
+					errors::initialisationError);
 	}
 
 	/*Set initial conditions for a.*/
@@ -1195,16 +1237,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
+			if ((std::get<0>(radiusOfCell())
+					>= std::get<0>(vectorsOfZones[2 * j]()))
+					&& (std::get<0>(radiusOfCell())
+							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<1>(radiusOfCell())
+							>= std::get<1>(vectorsOfZones[2 * j]()))
+					&& (std::get<1>(radiusOfCell())
+							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<2>(radiusOfCell())
+							>= std::get<2>(vectorsOfZones[2 * j]()))
+					&& (std::get<2>(radiusOfCell())
+							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
 			{
 				zoneFounded = true;
-				phase->aTurb.ref_r()[i] = vector(
-						std::stod(aTurbConditions[3 * j]),
+				phase->aTurb.r()[i] = vector(std::stod(aTurbConditions[3 * j]),
 						std::stod(aTurbConditions[1 + 3 * j]),
 						std::stod(aTurbConditions[2 + 3 * j]));
 				break;
@@ -1215,7 +1262,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of a dropped out of all zones.",
-					errors::initializationError);
+					errors::initialisationError);
 	}
 
 	/*Set initial conditions for b.*/
@@ -1226,15 +1273,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 		for (std::size_t j = 0; j < numberOfZones; ++j)
 		{
-			if ((radiusOfCell.v()[0] >= vectorsOfZones[2 * j].v()[0])
-					&& (radiusOfCell.v()[0] <= vectorsOfZones[2 * j + 1].v()[0])
-					&& (radiusOfCell.v()[1] >= vectorsOfZones[2 * j].v()[1])
-					&& (radiusOfCell.v()[1] <= vectorsOfZones[2 * j + 1].v()[1])
-					&& (radiusOfCell.v()[2] >= vectorsOfZones[2 * j].v()[2])
-					&& (radiusOfCell.v()[2] <= vectorsOfZones[2 * j + 1].v()[2]))
+			if ((std::get<0>(radiusOfCell())
+					>= std::get<0>(vectorsOfZones[2 * j]()))
+					&& (std::get<0>(radiusOfCell())
+							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<1>(radiusOfCell())
+							>= std::get<1>(vectorsOfZones[2 * j]()))
+					&& (std::get<1>(radiusOfCell())
+							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+					&& (std::get<2>(radiusOfCell())
+							>= std::get<2>(vectorsOfZones[2 * j]()))
+					&& (std::get<2>(radiusOfCell())
+							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
 			{
 				zoneFounded = true;
-				phase->bTurb.ref_r()[i] = std::stod(bTurbConditions[j]);
+				phase->bTurb.r()[i] = std::stod(bTurbConditions[j]);
 				break;
 			}
 		}
@@ -1242,7 +1295,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception(
 					"Cell " + std::to_string(i)
 							+ " of b dropped out of all zones.",
-					errors::initializationError);
+					errors::initialisationError);
 	}
 
 	if (readDataPoint)
@@ -1297,10 +1350,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_aVector { fieldDataFileName_a };
 			if (!input_aVector.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_a)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_aVector.precision(ioPrecision);
 
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
@@ -1314,9 +1367,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->aTurb.ref_r()[i_local] = vector(
-							std::stod(vectorData1), std::stod(vectorData2),
-							std::stod(vectorData3));
+					phase->aTurb.r()[i_local] = vector(std::stod(vectorData1),
+							std::stod(vectorData2), std::stod(vectorData3));
 				}
 			}
 			input_aVector.close();
@@ -1325,10 +1377,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_bScalar { fieldDataFileName_b };
 			if (!input_bScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_b)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_bScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1340,7 +1392,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->bTurb.ref_r()[i_local] = bData;
+					phase->bTurb.r()[i_local] = bData;
 				}
 			}
 			input_bScalar.close();
@@ -1349,10 +1401,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_epsilonScalar { fieldDataFileName_epsilon };
 			if (!input_epsilonScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_epsilon)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_epsilonScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1364,7 +1416,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->epsTurb.ref_r()[i_local] = epsilonData;
+					phase->epsTurb.r()[i_local] = epsilonData;
 				}
 			}
 			input_epsilonScalar.close();
@@ -1373,10 +1425,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_kScalar { fieldDataFileName_k };
 			if (!input_kScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_k)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_kScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1388,7 +1440,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->kTurb.ref_r()[i_local] = kData;
+					phase->kTurb.r()[i_local] = kData;
 				}
 			}
 			input_kScalar.close();
@@ -1397,10 +1449,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_pressureScalar { fieldDataFileName_pressure };
 			if (!input_pressureScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_pressure)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_pressureScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1412,7 +1464,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->pressure.ref_r()[i_local] = pressureData;
+					phase->pressure.r()[i_local] = pressureData;
 				}
 			}
 			input_pressureScalar.close();
@@ -1421,10 +1473,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_velocityVector { fieldDataFileName_velocity };
 			if (!input_velocityVector.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_velocity)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_velocityVector.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1438,7 +1490,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->velocity.ref_r()[i_local] = vector(
+					phase->velocity.r()[i_local] = vector(
 							std::stod(vectorData1), std::stod(vectorData2),
 							std::stod(vectorData3));
 				}
@@ -1451,11 +1503,11 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::ifstream input_concentrationScalar {
 					fieldDataFileName_concentration[k] };
 			if (!input_concentrationScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(
 										fieldDataFileName_concentration[k])
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_concentrationScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < parallelism.totCellNum(); ++i)
 			{
@@ -1467,7 +1519,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->concentration.v[k + 1].ref_r()[i_local] =
+					phase->concentration.v[k + 1].r()[i_local] =
 							concentrationData;
 				}
 			}
@@ -1477,10 +1529,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_aVector { fieldDataFileName_a };
 			if (!input_aVector.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_a)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_aVector.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1488,7 +1540,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				input_aVector >> vectorData1 >> vectorData2 >> vectorData3;
 
-				phase->aTurb.ref_r()[i] = vector(std::stod(vectorData1),
+				phase->aTurb.r()[i] = vector(std::stod(vectorData1),
 						std::stod(vectorData2), std::stod(vectorData3));
 			}
 			input_aVector.close();
@@ -1497,17 +1549,17 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_bScalar { fieldDataFileName_b };
 			if (!input_bScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_b)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_bScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
 				scalar bData;
 				input_bScalar >> bData;
 
-				phase->bTurb.ref_r()[i] = bData;
+				phase->bTurb.r()[i] = bData;
 			}
 			input_bScalar.close();
 		}
@@ -1515,17 +1567,17 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_epsilonScalar { fieldDataFileName_epsilon };
 			if (!input_epsilonScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_epsilon)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_epsilonScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
 				scalar epsilonData;
 				input_epsilonScalar >> epsilonData;
 
-				phase->epsTurb.ref_r()[i] = epsilonData;
+				phase->epsTurb.r()[i] = epsilonData;
 			}
 			input_epsilonScalar.close();
 		}
@@ -1533,17 +1585,17 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_kScalar { fieldDataFileName_k };
 			if (!input_kScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_k)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_kScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
 				scalar kData;
 				input_kScalar >> kData;
 
-				phase->kTurb.ref_r()[i] = kData;
+				phase->kTurb.r()[i] = kData;
 			}
 			input_kScalar.close();
 		}
@@ -1551,17 +1603,17 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_pressureScalar { fieldDataFileName_pressure };
 			if (!input_pressureScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_pressure)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_pressureScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
 				scalar pressureData;
 				input_pressureScalar >> pressureData;
 
-				phase->pressure.ref_r()[i] = pressureData;
+				phase->pressure.r()[i] = pressureData;
 			}
 			input_pressureScalar.close();
 		}
@@ -1569,10 +1621,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		{
 			std::ifstream input_velocityVector { fieldDataFileName_velocity };
 			if (!input_velocityVector.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(fieldDataFileName_velocity)
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_velocityVector.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
@@ -1581,7 +1633,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				input_velocityVector >> vectorData1 >> vectorData2
 						>> vectorData3;
 
-				phase->velocity.ref_r()[i] = vector(std::stod(vectorData1),
+				phase->velocity.r()[i] = vector(std::stod(vectorData1),
 						std::stod(vectorData2), std::stod(vectorData3));
 			}
 			input_velocityVector.close();
@@ -1592,18 +1644,18 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::ifstream input_concentrationScalar {
 					fieldDataFileName_concentration[k] };
 			if (!input_concentrationScalar.is_open())
-				throw exception(
+				throw std::ifstream::failure(
 						std::string("Couldn't open output file for field data ")
 								+ std::string(
 										fieldDataFileName_concentration[k])
-								+ std::string("."), errors::systemError);
+								+ std::string("."));
 			input_concentrationScalar.precision(ioPrecision);
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
 				scalar concentrationData;
 				input_concentrationScalar >> concentrationData;
 
-				phase->concentration.v[k + 1].ref_r()[i] = concentrationData;
+				phase->concentration.v[k + 1].r()[i] = concentrationData;
 			}
 			input_concentrationScalar.close();
 		}
@@ -1621,8 +1673,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (turbPeakConditionsFile.is_open())
 			std::cout << "./set/turbPeak.txt is opened." << std::endl;
 		else
-			throw exception("./set/turbPeak.txt not found.",
-					errors::initializationError);
+			throw std::ifstream::failure("./set/turbPeak.txt not found.");
 
 		turbPeakConditionsFile >> skipBuffer >> profileType >> skipBuffer
 				>> kMax >> skipBuffer >> epsMax >> skipBuffer >> xCenter
@@ -1648,75 +1699,74 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
 				const vector & cellRad = meshReference.cells()[i].rC();
-				const scalar xCoord = cellRad.v()[0];
+				const scalar xCoord = std::get<0>(cellRad());
 				if ((xCoord >= leftX) && (xCoord < xCenter))
 				{
 					const scalar relX = xCoord - leftX;
-					kAdd.ref_r()[i] = fL_k * relX;
-					epsAdd.ref_r()[i] = fL_eps * relX;
+					kAdd.r()[i] = fL_k * relX;
+					epsAdd.r()[i] = fL_eps * relX;
 				}
 				else if ((xCoord >= xCenter) && (xCoord <= rightX))
 				{
 					const scalar relX = xCoord - xCenter;
-					kAdd.ref_r()[i] = kMax - fR_k * relX;
-					epsAdd.ref_r()[i] = epsMax - fR_eps * relX;
+					kAdd.r()[i] = kMax - fR_k * relX;
+					epsAdd.r()[i] = epsMax - fR_eps * relX;
 				}
 			}
 
-			epsAdd.ref_r() = std::pow(kAdd.ref(), 3. / 2.) / (lBound + rBound);
+			epsAdd.r() = std::pow(kAdd(), 3. / 2.) / (lBound + rBound);
 
-			phase->kTurb.ref_r() += kAdd.ref();
-			phase->epsTurb.ref_r() += epsAdd.ref();
+			phase->kTurb.r() += kAdd();
+			phase->epsTurb.r() += epsAdd();
 
 			std::cout << "Added linear peak for k and epsilon." << std::endl;
 		}
 		else if (profileType != "no")
 			throw exception(
 					"Wrong parameter of peak, must be <<linear>> or <<no>>.",
-					errors::initializationError);
+					errors::initialisationError);
 	}
 	/**/
 
 	/*Check for minimum values.*/
-	std::replace_if(std::begin(phase->kTurb.ref_r()),
-			std::end(phase->kTurb.ref_r()), [&phase](const scalar value) 
+	std::replace_if(std::begin(phase->kTurb.r()), std::end(phase->kTurb.r()),
+			[&phase](const scalar value) 
 			{
 				return value < phase->turbulenceSources->turbPar->mink();
 			}, phase->turbulenceSources->turbPar->mink());
 
-	std::replace_if(std::begin(phase->epsTurb.ref_r()),
-			std::end(phase->epsTurb.ref_r()), [&phase](const scalar value) 
+	std::replace_if(std::begin(phase->epsTurb.r()),
+			std::end(phase->epsTurb.r()), [&phase](const scalar value) 
 			{
 				return value < phase->turbulenceSources->turbPar->mineps();
 			}, phase->turbulenceSources->turbPar->mineps());
 
 	/*Calculate derived fields.*/
 	for (std::size_t k = 1; k < phase->concentration.v.size(); ++k)
-		phase->concentration.v[0].ref_r() += phase->concentration.v[k].ref();
+		phase->concentration.v[0].r() += phase->concentration.v[k]();
 
 	for (std::size_t k = 1; k < phase->density.size(); ++k)
-		phase->density[k].ref_r() = phase->concentration.v[k].ref()
+		phase->density[k].r() = phase->concentration.v[k]()
 				* phase->phaseThermodynamics->Mv()[k - 1];
 
 	for (std::size_t k = 1; k < phase->density.size(); ++k)
-		phase->density[0].ref_r() += phase->density[k].ref();
+		phase->density[0].r() += phase->density[k]();
 
-	phase->momentum.ref_r() =
-			astProduct(phase->velocity, phase->density[0]).ref();
+	phase->momentum.r() = astProduct(phase->velocity, phase->density[0])();
 
-	phase->internalEnergy.ref_r() = phase->phaseThermodynamics->UvFromp(
-			phase->concentration.p, phase->pressure.ref());
+	phase->internalEnergy.r() = phase->phaseThermodynamics->UvFromp(
+			phase->concentration.p, phase->pressure());
 
-	phase->temperature.ref_r() = phase->phaseThermodynamics->TFromUv(
-			phase->concentration.p, phase->internalEnergy.ref());
+	phase->temperature.r() = phase->phaseThermodynamics->TFromUv(
+			phase->concentration.p, phase->internalEnergy());
 
-	phase->rhokTurb.ref_r() = phase->kTurb.ref() * phase->density[0].ref();
+	phase->rhokTurb.r() = phase->kTurb() * phase->density[0]();
 
-	phase->rhoepsTurb.ref_r() = phase->density[0].ref() * phase->epsTurb.ref();
+	phase->rhoepsTurb.r() = phase->density[0]() * phase->epsTurb();
 
-	phase->rhoaTurb.ref_r() = astProduct(phase->aTurb, phase->density[0]).ref();
+	phase->rhoaTurb.r() = astProduct(phase->aTurb, phase->density[0])();
 
-	phase->rhobTurb.ref_r() = phase->density[0].ref() * phase->bTurb.ref();
+	phase->rhobTurb.r() = phase->density[0]() * phase->bTurb();
 
 	phase->calculateCoefficients(phase->kTurb, phase->epsTurb,
 			*phase->turbulenceSources->turbPar);
@@ -1724,14 +1774,14 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	/*Set turbulent quantities to zero, if it is non-turbulent task.*/
 	if (!phase->turbulenceSources->turbulence)
 	{
-		phase->kTurb.ref_r() = scalar { 0 };
-		phase->epsTurb.ref_r() = 0;
-		phase->rhokTurb.ref_r() = scalar { 0 };
-		phase->rhoepsTurb.ref_r() = 0;
-		phase->aTurb.ref_r() = vector(0);
-		phase->bTurb.ref_r() = 0;
-		phase->rhoaTurb.ref_r() = vector(0);
-		phase->rhobTurb.ref_r() = 0;
+		phase->kTurb.r() = scalar { 0 };
+		phase->epsTurb.r() = 0;
+		phase->rhokTurb.r() = scalar { 0 };
+		phase->rhoepsTurb.r() = 0;
+		phase->aTurb.r() = vector(0);
+		phase->bTurb.r() = 0;
+		phase->rhoaTurb.r() = vector(0);
+		phase->rhobTurb.r() = 0;
 
 		phase->tAssign(0.);
 	}
@@ -1739,16 +1789,15 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	{
 		const auto v2 = ampProduct(phase->velocity, phase->velocity);
 
-		phase->totalEnergy.ref_r() = phase->internalEnergy.ref()
-				+ phase->density[0].ref() * v2.ref() * 0.5
-				+ phase->rhokTurb.ref();
+		phase->totalEnergy.r() = phase->internalEnergy()
+				+ phase->density[0]() * v2() * 0.5 + phase->rhokTurb();
 	}
 
-	phase->HelmholtzEnergy.ref_r() = phase->phaseThermodynamics->Fv(
-			phase->concentration.p, phase->temperature.ref());
+	phase->HelmholtzEnergy.r() = phase->phaseThermodynamics->Fv(
+			phase->concentration.p, phase->temperature());
 
-	phase->entropy.ref_r() = phase->phaseThermodynamics->Sv(
-			phase->concentration.p, phase->temperature.ref());
+	phase->entropy.r() = phase->phaseThermodynamics->Sv(phase->concentration.p,
+			phase->temperature());
 
 	return std::make_tuple(std::move(phase), enthalpyFlowFlag,
 			molMassDiffusionFlag);

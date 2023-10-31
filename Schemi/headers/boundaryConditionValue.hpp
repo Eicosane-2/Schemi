@@ -12,6 +12,7 @@
 
 #include "abstractMixtureThermodynamics.hpp"
 #include "abstractTurbulentParameters.hpp"
+#include "MPIHandler.hpp"
 #include "slipFunction.hpp"
 
 namespace schemi
@@ -23,9 +24,11 @@ class boundaryConditionValue
 	const abstractMixtureThermodynamics & mix;
 	const mesh & meshReference;
 public:
+	const MPIHandler & parallelism;
 	boundaryConditionValue(const abstractTurbulentParameters & turbPar_in,
 			const bunchOfFields<cubicCell> & cellFields_in,
-			const abstractMixtureThermodynamics & mix_in) noexcept;
+			const abstractMixtureThermodynamics & mix_in,
+			const MPIHandler & parallelism_in) noexcept;
 
 	template<typename typeOfValue>
 	typeOfValue boundaryConditionValueSurface(const typeOfValue & inValue,
@@ -45,8 +48,22 @@ public:
 					meshReference.surfaces()[surfaceIndex].N());
 			break;
 		case boundaryConditionType::calculatedParallelBoundary:
-		case boundaryConditionType::fixedValue:
+		{
+			const auto outerDelta =
+					parallelism.cSdR().boundCond()[surfaceIndex].second.mag();
+
+			const auto innerDelta = (meshReference.surfaces()[surfaceIndex].rC()
+					- meshReference.cells()[cellIndex].rC()).mag();
+
+			retValue = (inValue * outerDelta + bndCondInfo.second * innerDelta)
+					/ (outerDelta + innerDelta);
+		}
+			break;
+		case boundaryConditionType::fixedValueCell:
 			retValue = (inValue + bndCondInfo.second) * 0.5;
+			break;
+		case boundaryConditionType::fixedValueSurface:
+			retValue = bndCondInfo.second;
 			break;
 		case boundaryConditionType::innerSurface:
 			throw exception(
@@ -61,13 +78,12 @@ public:
 		case boundaryConditionType::calculatedTurbulentViscosity:
 		{
 			const scalar kBoundary(
-					boundaryConditionValueSurface(
-							cellFields.kTurb.ref()[cellIndex],
+					boundaryConditionValueSurface(cellFields.kTurb()[cellIndex],
 							cellFields.kTurb.boundCond()[surfaceIndex],
 							cellIndex, surfaceIndex));
 
 			const scalar epsilonBoundary { boundaryConditionValueSurface(
-					cellFields.epsTurb.ref()[cellIndex],
+					cellFields.epsTurb()[cellIndex],
 					cellFields.epsTurb.boundCond()[surfaceIndex], cellIndex,
 					surfaceIndex) };
 
@@ -82,7 +98,7 @@ public:
 			for (std::size_t k = 1; k < concentrationsBoundary.size(); ++k)
 			{
 				concentrationsBoundary[k] = boundaryConditionValueSurface(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -90,7 +106,7 @@ public:
 			}
 
 			const scalar pressureBoundary { boundaryConditionValueSurface(
-					cellFields.pressure.ref()[cellIndex],
+					cellFields.pressure()[cellIndex],
 					cellFields.pressure.boundCond()[surfaceIndex], cellIndex,
 					surfaceIndex) };
 
@@ -105,7 +121,7 @@ public:
 		{
 			const scalar density {
 					boundaryConditionValueSurface(
-							cellFields.concentration.v[componentIndex].ref()[cellIndex],
+							cellFields.concentration.v[componentIndex]()[cellIndex],
 							cellFields.concentration.v[componentIndex].boundCond()[surfaceIndex],
 							cellIndex, surfaceIndex)
 							* mix.Mv()[componentIndex - 1] };
@@ -114,7 +130,7 @@ public:
 
 			for (std::size_t k = 1; k < cellFields.concentration.v.size(); ++k)
 				sumDensity += boundaryConditionValueSurface(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex) * mix.Mv()[k - 1];
 
@@ -125,7 +141,7 @@ public:
 		{
 			const scalar concentration {
 					boundaryConditionValueSurface(
-							cellFields.concentration.v[componentIndex].ref()[cellIndex],
+							cellFields.concentration.v[componentIndex]()[cellIndex],
 							cellFields.concentration.v[componentIndex].boundCond()[surfaceIndex],
 							cellIndex, surfaceIndex) };
 
@@ -133,7 +149,7 @@ public:
 
 			for (std::size_t k = 1; k < cellFields.concentration.v.size(); ++k)
 				sumConcentration += boundaryConditionValueSurface(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -148,7 +164,7 @@ public:
 			{
 				const scalar boundaryConcentration_k {
 						boundaryConditionValueSurface(
-								cellFields.concentration.v[k].ref()[cellIndex],
+								cellFields.concentration.v[k]()[cellIndex],
 								cellFields.concentration.v[k].boundCond()[surfaceIndex],
 								cellIndex, surfaceIndex) };
 
@@ -170,7 +186,7 @@ public:
 			for (std::size_t k = 1; k < concentrationsBoundary.size(); ++k)
 			{
 				concentrationsBoundary[k] = boundaryConditionValueSurface(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -180,7 +196,7 @@ public:
 			}
 
 			const scalar temperature { boundaryConditionValueSurface(
-					cellFields.temperature.ref()[cellIndex],
+					cellFields.temperature()[cellIndex],
 					cellFields.temperature.boundCond()[surfaceIndex], cellIndex,
 					surfaceIndex) };
 
@@ -198,7 +214,7 @@ public:
 			for (std::size_t k = 1; k < concentrationsBoundary.size(); ++k)
 			{
 				concentrationsBoundary[k] = boundaryConditionValueSurface(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -218,7 +234,7 @@ public:
 			for (std::size_t k = 1; k < concentrationsBoundary.size(); ++k)
 			{
 				concentrationsBoundary[k] = boundaryConditionValueSurface(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -239,7 +255,7 @@ public:
 			{
 				const scalar concentrationsBoundary_k {
 						boundaryConditionValueSurface(
-								cellFields.concentration.v[k].ref()[cellIndex],
+								cellFields.concentration.v[k]()[cellIndex],
 								cellFields.concentration.v[k].boundCond()[surfaceIndex],
 								cellIndex, surfaceIndex) };
 
@@ -276,9 +292,13 @@ public:
 					meshReference.surfaces()[surfaceIndex].N()) * 2 - inValue;
 			break;
 		case boundaryConditionType::calculatedParallelBoundary:
-		case boundaryConditionType::fixedValue:
+		case boundaryConditionType::fixedValueCell:
 			retValue = bndCondInfo.second;
 			break;
+		case boundaryConditionType::fixedValueSurface:
+			throw exception(
+					"<<fixedValueSurface>> is incorrect variant for returning boundary condition value.",
+					errors::boundaryConditionError);
 		case boundaryConditionType::innerSurface:
 			throw exception(
 					"<<innerSurface>> is incorrect variant for returning boundary condition value.",
@@ -292,13 +312,12 @@ public:
 		case boundaryConditionType::calculatedTurbulentViscosity:
 		{
 			const scalar kBoundary(
-					boundaryConditionValueCell(
-							cellFields.kTurb.ref()[cellIndex],
+					boundaryConditionValueCell(cellFields.kTurb()[cellIndex],
 							cellFields.kTurb.boundCond()[surfaceIndex],
 							cellIndex, surfaceIndex));
 
 			const scalar epsilonBoundary { boundaryConditionValueCell(
-					cellFields.epsTurb.ref()[cellIndex],
+					cellFields.epsTurb()[cellIndex],
 					cellFields.epsTurb.boundCond()[surfaceIndex], cellIndex,
 					surfaceIndex) };
 
@@ -313,7 +332,7 @@ public:
 			for (std::size_t k = 1; k < concentrationsBoundary.size(); ++k)
 			{
 				concentrationsBoundary[k] = boundaryConditionValueCell(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -321,7 +340,7 @@ public:
 			}
 
 			const scalar pressureBoundary { boundaryConditionValueCell(
-					cellFields.pressure.ref()[cellIndex],
+					cellFields.pressure()[cellIndex],
 					cellFields.pressure.boundCond()[surfaceIndex], cellIndex,
 					surfaceIndex) };
 
@@ -336,7 +355,7 @@ public:
 		{
 			const scalar density {
 					boundaryConditionValueCell(
-							cellFields.concentration.v[componentIndex].ref()[cellIndex],
+							cellFields.concentration.v[componentIndex]()[cellIndex],
 							cellFields.concentration.v[componentIndex].boundCond()[surfaceIndex],
 							cellIndex, surfaceIndex)
 							* mix.Mv()[componentIndex - 1] };
@@ -345,7 +364,7 @@ public:
 
 			for (std::size_t k = 1; k < cellFields.concentration.v.size(); ++k)
 				sumDensity += boundaryConditionValueCell(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex) * mix.Mv()[k - 1];
 
@@ -356,7 +375,7 @@ public:
 		{
 			const scalar concentration {
 					boundaryConditionValueCell(
-							cellFields.concentration.v[componentIndex].ref()[cellIndex],
+							cellFields.concentration.v[componentIndex]()[cellIndex],
 							cellFields.concentration.v[componentIndex].boundCond()[surfaceIndex],
 							cellIndex, surfaceIndex) };
 
@@ -364,7 +383,7 @@ public:
 
 			for (std::size_t k = 1; k < cellFields.concentration.v.size(); ++k)
 				sumConcentration += boundaryConditionValueCell(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -379,7 +398,7 @@ public:
 			{
 				const scalar boundaryConcentration_k {
 						boundaryConditionValueCell(
-								cellFields.concentration.v[k].ref()[cellIndex],
+								cellFields.concentration.v[k]()[cellIndex],
 								cellFields.concentration.v[k].boundCond()[surfaceIndex],
 								cellIndex, surfaceIndex) };
 
@@ -401,7 +420,7 @@ public:
 			for (std::size_t k = 1; k < concentrationsBoundary.size(); ++k)
 			{
 				concentrationsBoundary[k] = boundaryConditionValueCell(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -411,7 +430,7 @@ public:
 			}
 
 			const scalar temperature { boundaryConditionValueSurface(
-					cellFields.temperature.ref()[cellIndex],
+					cellFields.temperature()[cellIndex],
 					cellFields.temperature.boundCond()[surfaceIndex], cellIndex,
 					surfaceIndex) };
 
@@ -429,7 +448,7 @@ public:
 			for (std::size_t k = 1; k < concentrationsBoundary.size(); ++k)
 			{
 				concentrationsBoundary[k] = boundaryConditionValueCell(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -449,7 +468,7 @@ public:
 			for (std::size_t k = 1; k < concentrationsBoundary.size(); ++k)
 			{
 				concentrationsBoundary[k] = boundaryConditionValueCell(
-						cellFields.concentration.v[k].ref()[cellIndex],
+						cellFields.concentration.v[k]()[cellIndex],
 						cellFields.concentration.v[k].boundCond()[surfaceIndex],
 						cellIndex, surfaceIndex);
 
@@ -470,7 +489,7 @@ public:
 			{
 				const scalar concentrationsBoundary_k {
 						boundaryConditionValueCell(
-								cellFields.concentration.v[k].ref()[cellIndex],
+								cellFields.concentration.v[k]()[cellIndex],
 								cellFields.concentration.v[k].boundCond()[surfaceIndex],
 								cellIndex, surfaceIndex) };
 

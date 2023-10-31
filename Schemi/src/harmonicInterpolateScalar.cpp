@@ -11,9 +11,9 @@ schemi::surfaceField<schemi::scalar> schemi::harmonicInterpolate(
 		const volumeField<scalar> & inField,
 		const boundaryConditionValue & bncCalc, const std::size_t compt)
 {
-	auto & mesh { inField.meshRef() };
+	auto & mesh_ { inField.meshRef() };
 
-	surfaceField<scalar> retSurfField { mesh, 0., inField.boundCond() };
+	surfaceField<scalar> retSurfField { mesh_, 0., inField.boundCond() };
 
 	for (std::size_t i = 0; i < retSurfField.size(); ++i)
 	{
@@ -21,27 +21,26 @@ schemi::surfaceField<schemi::scalar> schemi::harmonicInterpolate(
 		{
 		case boundaryConditionType::innerSurface:
 		{
-			const std::size_t ownIndex { mesh.surfaceOwner()[i] };
-			const std::size_t neiIndex { mesh.surfaceNeighbour()[i] };
-			const scalar surfOwnR { (mesh.surfaces()[i].rC()
-					- mesh.cells()[ownIndex].rC()).mag() };
-			const scalar surfNeiR { (mesh.surfaces()[i].rC()
-					- mesh.cells()[neiIndex].rC()).mag() };
+			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
+			const std::size_t neiIndex { mesh_.surfaceNeighbour()[i] };
+			const scalar surfOwnR { (mesh_.surfaces()[i].rC()
+					- mesh_.cells()[ownIndex].rC()).mag() };
+			const scalar surfNeiR { (mesh_.surfaces()[i].rC()
+					- mesh_.cells()[neiIndex].rC()).mag() };
 
-			const scalar reversedValue = (surfNeiR / inField.ref()[ownIndex]
-					+ surfOwnR / inField.ref()[neiIndex])
-					/ (surfOwnR + surfNeiR);
+			const scalar reversedValue = (surfNeiR / inField()[ownIndex]
+					+ surfOwnR / inField()[neiIndex]) / (surfOwnR + surfNeiR);
 
-			retSurfField.ref_r()[i] = 1. / reversedValue;
+			retSurfField.r()[i] = 1. / reversedValue;
 		}
 			break;
 		default:
 		{
-			const std::size_t ownIndex { mesh.surfaceOwner()[i] };
+			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
-			retSurfField.ref_r()[i] = bncCalc.boundaryConditionValueSurface(
-					inField.ref()[ownIndex], inField.boundCond()[i], ownIndex,
-					i, compt);
+			retSurfField.r()[i] = bncCalc.boundaryConditionValueSurface(
+					inField()[ownIndex], inField.boundCond()[i], ownIndex, i,
+					compt);
 		}
 			break;
 		}

@@ -142,25 +142,25 @@ struct bunchOfFields
 	void clear() noexcept
 	{
 		for (auto & c : concentration)
-			c.v.ref_r() = 0;
+			c.v.r() = 0;
 		for (auto & d : density)
-			d.ref_r() = 0;
-		velocity.ref_r() = vector(0);
-		pressure.ref_r() = 0;
-		kTurb.ref_r() = scalar { 0 };
-		epsTurb.ref_r() = 0;
-		aTurb.ref_r() = vector(0);
-		bTurb.ref_r() = 0;
-		momentum.ref_r() = vector(0);
-		internalEnergy.ref_r() = 0;
-		totalEnergy.ref_r() = 0;
-		temperature.ref_r() = 0;
-		rhokTurb.ref_r() = scalar { 0 };
-		rhoepsTurb.ref_r() = 0;
-		rhoaTurb.ref_r() = vector(0);
-		rhobTurb.ref_r() = 0;
-		HelmholtzEnergy.ref_r() = 0;
-		entropy.ref_r() = 0;
+			d.r() = 0;
+		velocity.r() = vector(0);
+		pressure.r() = 0;
+		kTurb.r() = scalar { 0 };
+		epsTurb.r() = 0;
+		aTurb.r() = vector(0);
+		bTurb.r() = 0;
+		momentum.r() = vector(0);
+		internalEnergy.r() = 0;
+		totalEnergy.r() = 0;
+		temperature.r() = 0;
+		rhokTurb.r() = scalar { 0 };
+		rhoepsTurb.r() = 0;
+		rhoaTurb.r() = vector(0);
+		rhobTurb.r() = 0;
+		HelmholtzEnergy.r() = 0;
+		entropy.r() = 0;
 	}
 
 	void average(const bunchOfFields<typeOfEnity1> & in,
@@ -171,41 +171,34 @@ struct bunchOfFields
 
 		for (std::size_t k = 0; k < in.concentration.v.size(); ++k)
 		{
-			concentration.v[k].ref_r() = ownWeight * concentration.v[k].ref()
-					+ inWeight * in.concentration.v[k].ref();
+			concentration.v[k].r() = ownWeight * concentration.v[k]()
+					+ inWeight * in.concentration.v[k]();
 
-			density[k].ref_r() = ownWeight * density[k].ref()
-					+ inWeight * in.density[k].ref();
+			density[k].r() = ownWeight * density[k]()
+					+ inWeight * in.density[k]();
 		}
-		momentum.ref_r() = astProduct(momentum, ownWeight).ref()
-				+ astProduct(in.momentum, inWeight).ref();
-		totalEnergy.ref_r() = ownWeight * totalEnergy.ref()
-				+ inWeight * in.totalEnergy.ref();
-		rhokTurb.ref_r() = ownWeight * rhokTurb.ref()
-				+ inWeight * in.rhokTurb.ref();
-		rhoepsTurb.ref_r() = ownWeight * rhoepsTurb.ref()
-				+ inWeight * in.rhoepsTurb.ref();
-		rhoaTurb.ref_r() = astProduct(rhoaTurb, ownWeight).ref()
-				+ astProduct(in.rhoaTurb, inWeight).ref();
-		rhobTurb.ref_r() = ownWeight * rhobTurb.ref()
-				+ inWeight * in.rhobTurb.ref();
+		momentum.r() = astProduct(momentum, ownWeight)()
+				+ astProduct(in.momentum, inWeight)();
+		totalEnergy.r() = ownWeight * totalEnergy()
+				+ inWeight * in.totalEnergy();
+		rhokTurb.r() = ownWeight * rhokTurb() + inWeight * in.rhokTurb();
+		rhoepsTurb.r() = ownWeight * rhoepsTurb() + inWeight * in.rhoepsTurb();
+		rhoaTurb.r() = astProduct(rhoaTurb, ownWeight)()
+				+ astProduct(in.rhoaTurb, inWeight)();
+		rhobTurb.r() = ownWeight * rhobTurb() + inWeight * in.rhobTurb();
 
-		velocity.ref_r() = division(momentum, density[0]).ref();
-		kTurb.ref_r() = rhokTurb.ref() / density[0].ref();
-		epsTurb.ref_r() = rhoepsTurb.ref() / density[0].ref();
-		aTurb.ref_r() = division(rhoaTurb, density[0]).ref();
+		velocity.r() = division(momentum, density[0])();
+		kTurb.r() = rhokTurb() / density[0]();
+		epsTurb.r() = rhoepsTurb() / density[0]();
+		aTurb.r() = division(rhoaTurb, density[0])();
 		{
-			internalEnergy.ref_r() = totalEnergy.ref() - rhokTurb.ref()
-					- 0.5 * density[0].ref()
-							* ampProduct(velocity, velocity).ref();
+			internalEnergy.r() = totalEnergy() - rhokTurb()
+					- 0.5 * density[0]() * ampProduct(velocity, velocity)();
 		}
-		pressure.ref_r() = mixture.pFromUv(concentration.p,
-				internalEnergy.ref());
-		temperature.ref_r() = mixture.TFromUv(concentration.p,
-				internalEnergy.ref());
-		HelmholtzEnergy.ref_r() = mixture.Fv(concentration.p,
-				temperature.ref());
-		entropy.ref_r() = mixture.Sv(concentration.p, temperature.ref());
+		pressure.r() = mixture.pFromUv(concentration.p, internalEnergy());
+		temperature.r() = mixture.TFromUv(concentration.p, internalEnergy());
+		HelmholtzEnergy.r() = mixture.Fv(concentration.p, temperature());
+		entropy.r() = mixture.Sv(concentration.p, temperature());
 	}
 
 	void copyFrom(const bunchOfFields<typeOfEnity1> & in,
@@ -213,33 +206,29 @@ struct bunchOfFields
 	{
 		for (std::size_t k = 0; k < in.concentration.v.size(); ++k)
 		{
-			concentration.v[k].ref_r() = in.concentration.v[k].ref();
+			concentration.v[k].r() = in.concentration.v[k]();
 
-			density[k].ref_r() = in.density[k].ref();
+			density[k].r() = in.density[k]();
 		}
-		momentum.ref_r() = in.momentum.ref();
-		totalEnergy.ref_r() = in.totalEnergy.ref();
-		rhokTurb.ref_r() = in.rhokTurb.ref();
-		rhoepsTurb.ref_r() = in.rhoepsTurb.ref();
-		rhoaTurb.ref_r() = in.rhoaTurb.ref();
-		rhobTurb.ref_r() = in.rhobTurb.ref();
+		momentum.r() = in.momentum();
+		totalEnergy.r() = in.totalEnergy();
+		rhokTurb.r() = in.rhokTurb();
+		rhoepsTurb.r() = in.rhoepsTurb();
+		rhoaTurb.r() = in.rhoaTurb();
+		rhobTurb.r() = in.rhobTurb();
 
-		velocity.ref_r() = division(momentum, density[0]).ref();
-		kTurb.ref_r() = rhokTurb.ref() / density[0].ref();
-		epsTurb.ref_r() = rhoepsTurb.ref() / density[0].ref();
-		aTurb.ref_r() = division(rhoaTurb, density[0]).ref();
+		velocity.r() = division(momentum, density[0])();
+		kTurb.r() = rhokTurb() / density[0]();
+		epsTurb.r() = rhoepsTurb() / density[0]();
+		aTurb.r() = division(rhoaTurb, density[0])();
 		{
-			internalEnergy.ref_r() = totalEnergy.ref() - rhokTurb.ref()
-					- 0.5 * density[0].ref()
-							* ampProduct(velocity, velocity).ref();
+			internalEnergy.r() = totalEnergy() - rhokTurb()
+					- 0.5 * density[0]() * ampProduct(velocity, velocity)();
 		}
-		pressure.ref_r() = mixture.pFromUv(concentration.p,
-				internalEnergy.ref());
-		temperature.ref_r() = mixture.TFromUv(concentration.p,
-				internalEnergy.ref());
-		HelmholtzEnergy.ref_r() = mixture.Fv(concentration.p,
-				temperature.ref());
-		entropy.ref_r() = mixture.Sv(concentration.p, temperature.ref());
+		pressure.r() = mixture.pFromUv(concentration.p, internalEnergy());
+		temperature.r() = mixture.TFromUv(concentration.p, internalEnergy());
+		HelmholtzEnergy.r() = mixture.Fv(concentration.p, temperature());
+		entropy.r() = mixture.Sv(concentration.p, temperature());
 	}
 };
 }  // namespace schemi

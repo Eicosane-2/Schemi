@@ -23,19 +23,19 @@ schemi::tensor::tensor(const scalar VXXin, const scalar VXYin,
 {
 }
 
-const std::array<schemi::scalar, 9>& schemi::tensor::v() const noexcept
+const std::array<schemi::scalar, 9>& schemi::tensor::operator()() const noexcept
 {
 	return value;
 }
 
-std::array<schemi::scalar, 9>& schemi::tensor::v_r() noexcept
+std::array<schemi::scalar, 9>& schemi::tensor::r() noexcept
 {
 	return value;
 }
 
 schemi::scalar schemi::tensor::trace() const noexcept
 {
-	return value[0] + value[4] + value[8];
+	return std::get<0>(value) + std::get<4>(value) + std::get<8>(value);
 }
 
 schemi::scalar schemi::tensor::mag() const noexcept
@@ -52,12 +52,12 @@ schemi::tensor& schemi::tensor::transpose() noexcept
 {
 	const auto buf(value);
 
-	value[1] = buf[3];
-	value[2] = buf[6];
-	value[3] = buf[1];
-	value[5] = buf[7];
-	value[6] = buf[2];
-	value[7] = buf[5];
+	std::get<1>(value) = std::get<3>(buf);
+	std::get<2>(value) = std::get<6>(buf);
+	std::get<3>(value) = std::get<1>(buf);
+	std::get<5>(value) = std::get<7>(buf);
+	std::get<6>(value) = std::get<2>(buf);
+	std::get<7>(value) = std::get<5>(buf);
 
 	return *this;
 }
@@ -66,7 +66,7 @@ schemi::tensor schemi::tensor::operator+(const tensor & inTensor) const noexcept
 {
 	tensor sum(inTensor);
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.v_r()[i] += value[i];
+		sum.r()[i] += value[i];
 
 	return sum;
 }
@@ -74,7 +74,7 @@ schemi::tensor schemi::tensor::operator+(const tensor & inTensor) const noexcept
 schemi::tensor& schemi::tensor::operator+=(const tensor & inTensor) noexcept
 {
 	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] += inTensor.v()[i];
+		value[i] += inTensor()[i];
 
 	return *this;
 }
@@ -83,7 +83,7 @@ schemi::tensor schemi::tensor::operator-(const tensor & inTensor) const noexcept
 {
 	tensor sum(inTensor * (-1.));
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.v_r()[i] += value[i];
+		sum.r()[i] += value[i];
 
 	return sum;
 }
@@ -91,16 +91,18 @@ schemi::tensor schemi::tensor::operator-(const tensor & inTensor) const noexcept
 schemi::tensor& schemi::tensor::operator-=(const tensor & inTensor) noexcept
 {
 	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] -= inTensor.v()[i];
+		value[i] -= inTensor()[i];
 
 	return *this;
 }
 
 schemi::tensor schemi::tensor::operator*(const scalar inScalar) const noexcept
 {
-	return tensor(value[0] * inScalar, value[1] * inScalar, value[2] * inScalar,
-			value[3] * inScalar, value[4] * inScalar, value[5] * inScalar,
-			value[6] * inScalar, value[7] * inScalar, value[8] * inScalar);
+	return tensor(std::get<0>(value) * inScalar, std::get<1>(value) * inScalar,
+			std::get<2>(value) * inScalar, std::get<3>(value) * inScalar,
+			std::get<4>(value) * inScalar, std::get<5>(value) * inScalar,
+			std::get<6>(value) * inScalar, std::get<7>(value) * inScalar,
+			std::get<8>(value) * inScalar);
 }
 
 schemi::tensor& schemi::tensor::operator*=(const scalar inScalar) noexcept
@@ -113,9 +115,11 @@ schemi::tensor& schemi::tensor::operator*=(const scalar inScalar) noexcept
 
 schemi::tensor schemi::tensor::operator/(const scalar inScalar) const noexcept
 {
-	return tensor(value[0] / inScalar, value[1] / inScalar, value[2] / inScalar,
-			value[3] / inScalar, value[4] / inScalar, value[5] / inScalar,
-			value[6] / inScalar, value[7] / inScalar, value[8] / inScalar);
+	return tensor(std::get<0>(value) / inScalar, std::get<1>(value) / inScalar,
+			std::get<2>(value) / inScalar, std::get<3>(value) / inScalar,
+			std::get<4>(value) / inScalar, std::get<5>(value) / inScalar,
+			std::get<6>(value) / inScalar, std::get<7>(value) / inScalar,
+			std::get<8>(value) / inScalar);
 }
 
 schemi::tensor& schemi::tensor::operator/=(const scalar inScalar) noexcept

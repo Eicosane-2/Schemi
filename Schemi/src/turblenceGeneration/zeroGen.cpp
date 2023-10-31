@@ -9,11 +9,11 @@
 
 #include "turbulentParametersKEPS.hpp"
 
-schemi::zeroGen::zeroGen(const bool turb_in,
+schemi::zeroGen::zeroGen(const mesh & meshIn, const bool turb_in,
 		const turbulenceModel tm_in) noexcept :
 		abstractTurbulenceGen(turb_in, tm_in)
 {
-	turbPar = std::make_unique<turbulentParametersKEPS>();
+	turbPar = std::make_unique<turbulentParametersKEPS>(meshIn);
 }
 
 std::tuple<schemi::volumeField<schemi::scalar>,
@@ -29,14 +29,14 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 		const abstractMixtureThermodynamics&,
 		const volumeField<scalar>&) const noexcept
 {
-	auto & mesh { cellFields.pressure.meshRef() };
+	auto & mesh_ { cellFields.pressure.meshRef() };
 
-	volumeField<scalar> sigmaSourcek(mesh, 0);
-	volumeField<scalar> sigmaSourceeps(mesh, 0);
-	volumeField<vector> sigmaSourcea(mesh, vector(0));
-	volumeField<scalar> sigmaSourceb(mesh, 0);
+	volumeField<scalar> sigmaSourcek(mesh_, 0);
+	volumeField<scalar> sigmaSourceeps(mesh_, 0);
+	volumeField<vector> sigmaSourcea(mesh_, vector(0));
+	volumeField<scalar> sigmaSourceb(mesh_, 0);
 
-	sourceTimestep = std::min(mesh.timestepSource(), veryBig);
+	sourceTimestep = std::min(mesh_.timestepSource(), veryBig);
 
 	return std::make_tuple(sigmaSourcek, sigmaSourceeps, sigmaSourcea,
 			sigmaSourceb);

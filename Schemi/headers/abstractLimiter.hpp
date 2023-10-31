@@ -10,6 +10,8 @@
 #ifndef ABSTRACTTVDLIMITER_HPP_
 #define ABSTRACTTVDLIMITER_HPP_
 
+#include <memory>
+
 #include "tensor.hpp"
 #include "tensor3.hpp"
 #include "vector.hpp"
@@ -20,6 +22,9 @@ class abstractLimiter
 {
 public:
 	virtual ~abstractLimiter() noexcept =0;
+
+	static std::unique_ptr<abstractLimiter> createLimiter(
+			const std::string & name);
 
 	virtual vector calculate(const vector& /*r*/,
 			const vector& /*gradientC*/) const noexcept =0;

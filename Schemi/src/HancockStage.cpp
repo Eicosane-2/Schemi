@@ -12,20 +12,20 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 		const boundaryConditionValue & boundaryConditionValueCalc,
 		const MPIHandler & parallelism)
 {
-	auto & mesh { surfaceOwnerSide.pressure.meshRef() };
+	auto & mesh_ { surfaceOwnerSide.pressure.meshRef() };
 
 	/*Creating Hancock divergences.*/
 	std::vector<volumeField<scalar>> divRhoVHancock {
 			surfaceOwnerSide.phaseThermodynamics->Mv().size() + 1, volumeField<
-					scalar> { mesh, 0 } };
+					scalar> { mesh_, 0 } };
 
 	volumeField<vector> divRhoVVHancock(
-			volumeField<vector> { mesh, vector(0) });
-	volumeField<scalar> divRhoEVHancock { mesh, 0 };
-	volumeField<scalar> divRhokVHancock { mesh, 0 };
-	volumeField<scalar> divRhoEpsVHancock { mesh, 0 };
-	volumeField<vector> divRhoaVHancock { mesh, vector(0) };
-	volumeField<scalar> divRhobVHancock { mesh, 0 };
+			volumeField<vector> { mesh_, vector(0) });
+	volumeField<scalar> divRhoEVHancock { mesh_, 0 };
+	volumeField<scalar> divRhokVHancock { mesh_, 0 };
+	volumeField<scalar> divRhoEpsVHancock { mesh_, 0 };
+	volumeField<vector> divRhoaVHancock { mesh_, vector(0) };
+	volumeField<scalar> divRhobVHancock { mesh_, 0 };
 
 	/*Hancock divergence calculation.*/
 	/*Rho.*/
@@ -34,81 +34,81 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 				surfaceNeighbourSide.velocity, surfaceOwnerSide.density[k],
 				surfaceNeighbourSide.density[k]);
 	/*Momentum.*/
-	for (std::size_t i = 0; i < mesh.cellsSize(); ++i)
+	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
 		const std::vector<std::size_t> & surfacesOfCell_i {
-				mesh.surfacesOfCells()[i] };
+				mesh_.surfacesOfCells()[i] };
 
 		for (std::size_t j = 0; j < surfacesOfCell_i.size(); ++j)
 		{
 			const std::size_t surfaceIndex { surfacesOfCell_i[j] };
 
-			if (i == mesh.surfaceOwner()[surfaceIndex])
-				divRhoVVHancock.ref_r()[i] +=
-						(((surfaceOwnerSide.momentum.ref()[surfaceIndex]
-								* surfaceOwnerSide.velocity.ref()[surfaceIndex])
-								& mesh.surfaces()[surfaceIndex].N())
-								+ (mesh.surfaces()[surfaceIndex].N()
-										* (surfaceOwnerSide.pressure.ref()[surfaceIndex]
+			if (i == mesh_.surfaceOwner()[surfaceIndex])
+				divRhoVVHancock.r()[i] +=
+						(((surfaceOwnerSide.momentum()[surfaceIndex]
+								* surfaceOwnerSide.velocity()[surfaceIndex])
+								& mesh_.surfaces()[surfaceIndex].N())
+								+ (mesh_.surfaces()[surfaceIndex].N()
+										* (surfaceOwnerSide.pressure()[surfaceIndex]
 												+ twothirds
-														* surfaceOwnerSide.rhokTurb.ref()[surfaceIndex])))
-								* mesh.surfaces()[surfaceIndex].S();
-			else if (i == mesh.surfaceNeighbour()[surfaceIndex])
-				divRhoVVHancock.ref_r()[i] +=
-						(((surfaceNeighbourSide.momentum.ref()[surfaceIndex]
-								* surfaceNeighbourSide.velocity.ref()[surfaceIndex])
-								& (mesh.surfaces()[surfaceIndex].N() * (-1)))
-								+ ((mesh.surfaces()[surfaceIndex].N() * (-1))
-										* (surfaceNeighbourSide.pressure.ref()[surfaceIndex]
+														* surfaceOwnerSide.rhokTurb()[surfaceIndex])))
+								* mesh_.surfaces()[surfaceIndex].S();
+			else if (i == mesh_.surfaceNeighbour()[surfaceIndex])
+				divRhoVVHancock.r()[i] +=
+						(((surfaceNeighbourSide.momentum()[surfaceIndex]
+								* surfaceNeighbourSide.velocity()[surfaceIndex])
+								& (mesh_.surfaces()[surfaceIndex].N() * (-1)))
+								+ ((mesh_.surfaces()[surfaceIndex].N() * (-1))
+										* (surfaceNeighbourSide.pressure()[surfaceIndex]
 												+ twothirds
-														* surfaceNeighbourSide.rhokTurb.ref()[surfaceIndex])))
-								* mesh.surfaces()[surfaceIndex].S();
+														* surfaceNeighbourSide.rhokTurb()[surfaceIndex])))
+								* mesh_.surfaces()[surfaceIndex].S();
 			else
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
 						errors::systemError);
 		}
-		divRhoVVHancock.ref_r()[i] /= mesh.cells()[i].V();
+		divRhoVVHancock.r()[i] /= mesh_.cells()[i].V();
 	}
 	/*Total energy.*/
-	for (std::size_t i = 0; i < mesh.cellsSize(); ++i)
+	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
 		const std::vector<std::size_t> & surfacesOfCell_i {
-				mesh.surfacesOfCells()[i] };
+				mesh_.surfacesOfCells()[i] };
 
 		for (std::size_t j = 0; j < surfacesOfCell_i.size(); ++j)
 		{
 			const std::size_t surfaceIndex { surfacesOfCell_i[j] };
 
-			if (i == mesh.surfaceOwner()[surfaceIndex])
-				divRhoEVHancock.ref_r()[i] +=
-						(((surfaceOwnerSide.velocity.ref()[surfaceIndex]
-								* surfaceOwnerSide.totalEnergy.ref()[surfaceIndex])
-								& mesh.surfaces()[surfaceIndex].N())
-								+ ((surfaceOwnerSide.velocity.ref()[surfaceIndex]
-										* (surfaceOwnerSide.pressure.ref()[surfaceIndex]
+			if (i == mesh_.surfaceOwner()[surfaceIndex])
+				divRhoEVHancock.r()[i] +=
+						(((surfaceOwnerSide.velocity()[surfaceIndex]
+								* surfaceOwnerSide.totalEnergy()[surfaceIndex])
+								& mesh_.surfaces()[surfaceIndex].N())
+								+ ((surfaceOwnerSide.velocity()[surfaceIndex]
+										* (surfaceOwnerSide.pressure()[surfaceIndex]
 												+ twothirds
-														* surfaceOwnerSide.rhokTurb.ref()[surfaceIndex]))
-										& mesh.surfaces()[surfaceIndex].N()))
-								* mesh.surfaces()[surfaceIndex].S();
-			else if (i == mesh.surfaceNeighbour()[surfaceIndex])
-				divRhoEVHancock.ref_r()[i] +=
-						(((surfaceNeighbourSide.velocity.ref()[surfaceIndex]
-								* surfaceNeighbourSide.totalEnergy.ref()[surfaceIndex])
-								& (mesh.surfaces()[surfaceIndex].N() * (-1)))
-								+ ((surfaceNeighbourSide.velocity.ref()[surfaceIndex]
-										* (surfaceNeighbourSide.pressure.ref()[surfaceIndex]
+														* surfaceOwnerSide.rhokTurb()[surfaceIndex]))
+										& mesh_.surfaces()[surfaceIndex].N()))
+								* mesh_.surfaces()[surfaceIndex].S();
+			else if (i == mesh_.surfaceNeighbour()[surfaceIndex])
+				divRhoEVHancock.r()[i] +=
+						(((surfaceNeighbourSide.velocity()[surfaceIndex]
+								* surfaceNeighbourSide.totalEnergy()[surfaceIndex])
+								& (mesh_.surfaces()[surfaceIndex].N() * (-1)))
+								+ ((surfaceNeighbourSide.velocity()[surfaceIndex]
+										* (surfaceNeighbourSide.pressure()[surfaceIndex]
 												+ twothirds
-														* surfaceNeighbourSide.rhokTurb.ref()[surfaceIndex]))
-										& (mesh.surfaces()[surfaceIndex].N()
+														* surfaceNeighbourSide.rhokTurb()[surfaceIndex]))
+										& (mesh_.surfaces()[surfaceIndex].N()
 												* (-1))))
-								* mesh.surfaces()[surfaceIndex].S();
+								* mesh_.surfaces()[surfaceIndex].S();
 			else
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
 						errors::systemError);
 		}
-		divRhoEVHancock.ref_r()[i] /= mesh.cells()[i].V();
+		divRhoEVHancock.r()[i] /= mesh_.cells()[i].V();
 	}
 	if (surfaceOwnerSide.turbulenceSources->turbulence)
 	{
@@ -144,7 +144,7 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 	}
 
 	/*Hancock time integration.*/
-	const scalar halfTimestep { 0.5 * mesh.timestep() };
+	const scalar halfTimestep { 0.5 * mesh_.timestep() };
 
 	/*Rho.*/
 	for (std::size_t k = 0; k < divRhoVHancock.size(); ++k)
@@ -188,25 +188,25 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 	/*Recalculation of other fields.*/
 	{
 		/*Owner side.*/
-		surfaceOwnerSide.concentration.v[0].ref_r() = 0;
+		surfaceOwnerSide.concentration.v[0].r() = 0;
 		for (std::size_t k = 1; k < surfaceOwnerSide.concentration.v.size();
 				++k)
 		{
-			surfaceOwnerSide.concentration.v[k].ref_r() =
-					surfaceOwnerSide.density[k].ref()
+			surfaceOwnerSide.concentration.v[k].r() =
+					surfaceOwnerSide.density[k]()
 							/ surfaceOwnerSide.phaseThermodynamics->Mv()[k - 1];
 
-			surfaceOwnerSide.concentration.v[0].ref_r() +=
-					surfaceOwnerSide.concentration.v[k].ref();
+			surfaceOwnerSide.concentration.v[0].r() +=
+					surfaceOwnerSide.concentration.v[k]();
 		}
 
 		if (surfaceOwnerSide.turbulenceSources->turbulence)
 		{
-			surfaceOwnerSide.kTurb.ref_r() = surfaceOwnerSide.rhokTurb.ref()
-					/ surfaceOwnerSide.density[0].ref();
+			surfaceOwnerSide.kTurb.r() = surfaceOwnerSide.rhokTurb()
+					/ surfaceOwnerSide.density[0]();
 
-			surfaceOwnerSide.epsTurb.ref_r() = surfaceOwnerSide.rhoepsTurb.ref()
-					/ surfaceOwnerSide.density[0].ref();
+			surfaceOwnerSide.epsTurb.r() = surfaceOwnerSide.rhoepsTurb()
+					/ surfaceOwnerSide.density[0]();
 
 			if ((surfaceOwnerSide.turbulenceSources->model
 					== turbulenceModel::BHRSource)
@@ -215,86 +215,82 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 					|| (surfaceOwnerSide.turbulenceSources->model
 							== turbulenceModel::kEpsASource))
 			{
-				surfaceOwnerSide.aTurb.ref_r() =
-						division(surfaceOwnerSide.rhoaTurb,
-								surfaceOwnerSide.density[0]).ref();
+				surfaceOwnerSide.aTurb.r() = division(surfaceOwnerSide.rhoaTurb,
+						surfaceOwnerSide.density[0])();
 
 				if ((surfaceOwnerSide.turbulenceSources->model
 						== turbulenceModel::BHRSource)
 						|| (surfaceOwnerSide.turbulenceSources->model
 								== turbulenceModel::BHRKLSource))
-					surfaceOwnerSide.bTurb.ref_r() =
-							surfaceOwnerSide.rhobTurb.ref()
-									/ surfaceOwnerSide.density[0].ref();
+					surfaceOwnerSide.bTurb.r() = surfaceOwnerSide.rhobTurb()
+							/ surfaceOwnerSide.density[0]();
 			}
 		}
 
-		surfaceOwnerSide.velocity.ref_r() = division(surfaceOwnerSide.momentum,
-				surfaceOwnerSide.density[0]).ref();
+		surfaceOwnerSide.velocity.r() = division(surfaceOwnerSide.momentum,
+				surfaceOwnerSide.density[0])();
 
 		{
 			const auto v2 = ampProduct(surfaceOwnerSide.velocity,
 					surfaceOwnerSide.velocity);
 
-			surfaceOwnerSide.internalEnergy.ref_r() =
-					surfaceOwnerSide.totalEnergy.ref()
-							- surfaceOwnerSide.density[0].ref() * v2.ref() * 0.5
-							- surfaceOwnerSide.rhokTurb.ref();
+			surfaceOwnerSide.internalEnergy.r() = surfaceOwnerSide.totalEnergy()
+					- surfaceOwnerSide.density[0]() * v2() * 0.5
+					- surfaceOwnerSide.rhokTurb();
 		}
 
-		surfaceOwnerSide.pressure.ref_r() =
+		surfaceOwnerSide.pressure.r() =
 				surfaceOwnerSide.phaseThermodynamics->pFromUv(
 						surfaceOwnerSide.concentration.p,
-						surfaceOwnerSide.internalEnergy.ref());
+						surfaceOwnerSide.internalEnergy());
 
-		surfaceOwnerSide.temperature.ref_r() =
+		surfaceOwnerSide.temperature.r() =
 				surfaceOwnerSide.phaseThermodynamics->TFromUv(
 						surfaceOwnerSide.concentration.p,
-						surfaceOwnerSide.internalEnergy.ref());
+						surfaceOwnerSide.internalEnergy());
 
-		surfaceOwnerSide.HelmholtzEnergy.ref_r() =
+		surfaceOwnerSide.HelmholtzEnergy.r() =
 				surfaceOwnerSide.phaseThermodynamics->Fv(
 						surfaceOwnerSide.concentration.p,
-						surfaceOwnerSide.temperature.ref());
+						surfaceOwnerSide.temperature());
 
-		surfaceOwnerSide.entropy.ref_r() =
-				surfaceOwnerSide.phaseThermodynamics->Sv(
-						surfaceOwnerSide.concentration.p,
-						surfaceOwnerSide.temperature.ref());
+		surfaceOwnerSide.entropy.r() = surfaceOwnerSide.phaseThermodynamics->Sv(
+				surfaceOwnerSide.concentration.p,
+				surfaceOwnerSide.temperature());
 
 		/*Update parallel boundary conditions*/
 		parallelism.correctBoundaryValues(surfaceOwnerSide);
 
 		/*Neighbour side.*/
-		for (std::size_t i = 0; i < mesh.surfacesSize(); ++i)
-			if (mesh.surfaceNeighbour()[i] != mesh.nonexistCell())
+		for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
+			if (mesh_.surfaceNeighbour()[i] != mesh_.nonexistCell())
 			{
-				surfaceNeighbourSide.concentration.v[0].ref_r()[i] = 0;
+				surfaceNeighbourSide.concentration.v[0].r()[i] = 0;
 				for (std::size_t k = 1;
 						k < surfaceNeighbourSide.concentration.v.size(); ++k)
 				{
-					surfaceNeighbourSide.concentration.v[k].ref_r()[i] =
-							surfaceNeighbourSide.density[k].ref()[i]
+					surfaceNeighbourSide.concentration.v[k].r()[i] =
+							surfaceNeighbourSide.density[k]()[i]
 									/ surfaceNeighbourSide.phaseThermodynamics->Mv()[k
 											- 1];
 
-					surfaceNeighbourSide.concentration.v[0].ref_r()[i] +=
-							surfaceNeighbourSide.concentration.v[k].ref()[i];
+					surfaceNeighbourSide.concentration.v[0].r()[i] +=
+							surfaceNeighbourSide.concentration.v[k]()[i];
 				}
 
-				surfaceNeighbourSide.velocity.ref_r()[i] =
-						surfaceNeighbourSide.momentum.ref()[i]
-								/ surfaceNeighbourSide.density[0].ref()[i];
+				surfaceNeighbourSide.velocity.r()[i] =
+						surfaceNeighbourSide.momentum()[i]
+								/ surfaceNeighbourSide.density[0]()[i];
 
 				if (surfaceNeighbourSide.turbulenceSources->turbulence)
 				{
-					surfaceNeighbourSide.kTurb.ref_r()[i] =
-							surfaceNeighbourSide.rhokTurb.ref()[i]
-									/ surfaceNeighbourSide.density[0].ref()[i];
+					surfaceNeighbourSide.kTurb.r()[i] =
+							surfaceNeighbourSide.rhokTurb()[i]
+									/ surfaceNeighbourSide.density[0]()[i];
 
-					surfaceNeighbourSide.epsTurb.ref_r()[i] =
-							surfaceNeighbourSide.rhoepsTurb.ref()[i]
-									/ surfaceNeighbourSide.density[0].ref()[i];
+					surfaceNeighbourSide.epsTurb.r()[i] =
+							surfaceNeighbourSide.rhoepsTurb()[i]
+									/ surfaceNeighbourSide.density[0]()[i];
 
 					if ((surfaceNeighbourSide.turbulenceSources->model
 							== turbulenceModel::BHRSource)
@@ -303,116 +299,116 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 							|| (surfaceNeighbourSide.turbulenceSources->model
 									== turbulenceModel::kEpsASource))
 					{
-						surfaceNeighbourSide.aTurb.ref_r()[i] =
-								surfaceNeighbourSide.rhoaTurb.ref()[i]
-										/ surfaceNeighbourSide.density[0].ref()[i];
+						surfaceNeighbourSide.aTurb.r()[i] =
+								surfaceNeighbourSide.rhoaTurb()[i]
+										/ surfaceNeighbourSide.density[0]()[i];
 
 						if ((surfaceNeighbourSide.turbulenceSources->model
 								== turbulenceModel::BHRSource)
 								|| (surfaceNeighbourSide.turbulenceSources->model
 										== turbulenceModel::BHRKLSource))
-							surfaceNeighbourSide.bTurb.ref_r()[i] =
-									surfaceNeighbourSide.rhobTurb.ref()[i]
-											/ surfaceNeighbourSide.density[0].ref()[i];
+							surfaceNeighbourSide.bTurb.r()[i] =
+									surfaceNeighbourSide.rhobTurb()[i]
+											/ surfaceNeighbourSide.density[0]()[i];
 					}
 				}
 
-				const scalar v2 { surfaceNeighbourSide.velocity.ref()[i]
-						& surfaceNeighbourSide.velocity.ref()[i] };
+				const scalar v2 { surfaceNeighbourSide.velocity()[i]
+						& surfaceNeighbourSide.velocity()[i] };
 
-				surfaceNeighbourSide.internalEnergy.ref_r()[i] =
-						surfaceNeighbourSide.totalEnergy.ref()[i]
-								- surfaceNeighbourSide.density[0].ref()[i] * v2
+				surfaceNeighbourSide.internalEnergy.r()[i] =
+						surfaceNeighbourSide.totalEnergy()[i]
+								- surfaceNeighbourSide.density[0]()[i] * v2
 										* 0.5
-								- surfaceNeighbourSide.rhokTurb.ref()[i];
+								- surfaceNeighbourSide.rhokTurb()[i];
 
 				std::valarray<scalar> concentrations_i(
 						surfaceNeighbourSide.concentration.v.size());
 				for (std::size_t k = 0; k < concentrations_i.size(); ++k)
 					concentrations_i[k] =
-							surfaceNeighbourSide.concentration.v[k].ref()[i];
+							surfaceNeighbourSide.concentration.v[k]()[i];
 
-				surfaceNeighbourSide.pressure.ref_r()[i] =
+				surfaceNeighbourSide.pressure.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->pFromUv(
 								concentrations_i,
-								surfaceNeighbourSide.internalEnergy.ref()[i]);
+								surfaceNeighbourSide.internalEnergy()[i]);
 
-				surfaceNeighbourSide.temperature.ref_r() =
+				surfaceNeighbourSide.temperature.r() =
 						surfaceNeighbourSide.phaseThermodynamics->TFromUv(
 								concentrations_i,
-								surfaceNeighbourSide.internalEnergy.ref()[i]);
+								surfaceNeighbourSide.internalEnergy()[i]);
 
-				surfaceNeighbourSide.HelmholtzEnergy.ref_r() =
+				surfaceNeighbourSide.HelmholtzEnergy.r() =
 						surfaceNeighbourSide.phaseThermodynamics->Fv(
 								concentrations_i,
-								surfaceNeighbourSide.temperature.ref()[i]);
+								surfaceNeighbourSide.temperature()[i]);
 
-				surfaceNeighbourSide.entropy.ref_r() =
+				surfaceNeighbourSide.entropy.r() =
 						surfaceNeighbourSide.phaseThermodynamics->Sv(
 								concentrations_i,
-								surfaceNeighbourSide.temperature.ref()[i]);
+								surfaceNeighbourSide.temperature()[i]);
 			}
 			else
 			{
 				/*Coping from surface owner side.*/
-				surfaceNeighbourSide.concentration.v[0].ref_r()[i] = 0;
-				surfaceNeighbourSide.density[0].ref_r()[i] = 0;
+				surfaceNeighbourSide.concentration.v[0].r()[i] = 0;
+				surfaceNeighbourSide.density[0].r()[i] = 0;
 				for (std::size_t k = 1;
 						k < surfaceNeighbourSide.concentration.v.size(); ++k)
 				{
-					surfaceNeighbourSide.concentration.v[k].ref_r()[i] =
+					surfaceNeighbourSide.concentration.v[k].r()[i] =
 							boundaryConditionValueCalc.boundaryConditionValueCell(
-									surfaceOwnerSide.concentration.v[k].ref()[i],
+									surfaceOwnerSide.concentration.v[k]()[i],
 									surfaceOwnerSide.concentration.v[k].boundCond()[i],
 									i, i, k);
 
-					surfaceNeighbourSide.density[k].ref_r()[i] =
-							surfaceNeighbourSide.concentration.v[k].ref()[i]
+					surfaceNeighbourSide.density[k].r()[i] =
+							surfaceNeighbourSide.concentration.v[k]()[i]
 									* surfaceNeighbourSide.phaseThermodynamics->Mv()[k
 											- 1];
 
-					surfaceNeighbourSide.concentration.v[0].ref_r()[i] +=
-							surfaceNeighbourSide.concentration.v[k].ref()[i];
+					surfaceNeighbourSide.concentration.v[0].r()[i] +=
+							surfaceNeighbourSide.concentration.v[k]()[i];
 
-					surfaceNeighbourSide.density[0].ref_r()[i] +=
-							surfaceNeighbourSide.density[k].ref()[i];
+					surfaceNeighbourSide.density[0].r()[i] +=
+							surfaceNeighbourSide.density[k]()[i];
 				}
 
-				surfaceNeighbourSide.velocity.ref_r()[i] =
+				surfaceNeighbourSide.velocity.r()[i] =
 						boundaryConditionValueCalc.boundaryConditionValueCell(
-								surfaceOwnerSide.velocity.ref()[i],
+								surfaceOwnerSide.velocity()[i],
 								surfaceOwnerSide.velocity.boundCond()[i], i, i);
 
-				surfaceNeighbourSide.momentum.ref_r()[i] =
-						surfaceNeighbourSide.velocity.ref_r()[i]
-								* surfaceNeighbourSide.density[0].ref()[i];
+				surfaceNeighbourSide.momentum.r()[i] =
+						surfaceNeighbourSide.velocity.r()[i]
+								* surfaceNeighbourSide.density[0]()[i];
 
-				surfaceNeighbourSide.pressure.ref_r()[i] =
+				surfaceNeighbourSide.pressure.r()[i] =
 						boundaryConditionValueCalc.boundaryConditionValueCell(
-								surfaceOwnerSide.pressure.ref()[i],
+								surfaceOwnerSide.pressure()[i],
 								surfaceOwnerSide.pressure.boundCond()[i], i, i);
 
 				if (surfaceNeighbourSide.turbulenceSources->turbulence)
 				{
-					surfaceNeighbourSide.kTurb.ref_r()[i] =
+					surfaceNeighbourSide.kTurb.r()[i] =
 							boundaryConditionValueCalc.boundaryConditionValueCell(
-									surfaceOwnerSide.kTurb.ref()[i],
+									surfaceOwnerSide.kTurb()[i],
 									surfaceOwnerSide.kTurb.boundCond()[i], i,
 									i);
 
-					surfaceNeighbourSide.rhokTurb.ref_r()[i] =
-							surfaceNeighbourSide.density[0].ref_r()[i]
-									* surfaceNeighbourSide.kTurb.ref()[i];
+					surfaceNeighbourSide.rhokTurb.r()[i] =
+							surfaceNeighbourSide.density[0].r()[i]
+									* surfaceNeighbourSide.kTurb()[i];
 
-					surfaceNeighbourSide.epsTurb.ref_r()[i] =
+					surfaceNeighbourSide.epsTurb.r()[i] =
 							boundaryConditionValueCalc.boundaryConditionValueCell(
-									surfaceOwnerSide.epsTurb.ref()[i],
+									surfaceOwnerSide.epsTurb()[i],
 									surfaceOwnerSide.epsTurb.boundCond()[i], i,
 									i);
 
-					surfaceNeighbourSide.rhoepsTurb.ref_r()[i] =
-							surfaceNeighbourSide.density[0].ref_r()[i]
-									* surfaceNeighbourSide.epsTurb.ref()[i];
+					surfaceNeighbourSide.rhoepsTurb.r()[i] =
+							surfaceNeighbourSide.density[0].r()[i]
+									* surfaceNeighbourSide.epsTurb()[i];
 
 					if ((surfaceNeighbourSide.turbulenceSources->model
 							== turbulenceModel::BHRSource)
@@ -421,30 +417,30 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 							|| (surfaceNeighbourSide.turbulenceSources->model
 									== turbulenceModel::kEpsASource))
 					{
-						surfaceNeighbourSide.aTurb.ref_r()[i] =
+						surfaceNeighbourSide.aTurb.r()[i] =
 								boundaryConditionValueCalc.boundaryConditionValueCell(
-										surfaceOwnerSide.aTurb.ref()[i],
+										surfaceOwnerSide.aTurb()[i],
 										surfaceOwnerSide.aTurb.boundCond()[i],
 										i, i);
 
-						surfaceNeighbourSide.rhoaTurb.ref_r()[i] =
-								surfaceNeighbourSide.aTurb.ref_r()[i]
-										* surfaceNeighbourSide.density[0].ref()[i];
+						surfaceNeighbourSide.rhoaTurb.r()[i] =
+								surfaceNeighbourSide.aTurb.r()[i]
+										* surfaceNeighbourSide.density[0]()[i];
 
 						if ((surfaceNeighbourSide.turbulenceSources->model
 								== turbulenceModel::BHRSource)
 								|| (surfaceNeighbourSide.turbulenceSources->model
 										== turbulenceModel::BHRKLSource))
 						{
-							surfaceNeighbourSide.bTurb.ref_r()[i] =
+							surfaceNeighbourSide.bTurb.r()[i] =
 									boundaryConditionValueCalc.boundaryConditionValueCell(
-											surfaceOwnerSide.bTurb.ref()[i],
+											surfaceOwnerSide.bTurb()[i],
 											surfaceOwnerSide.bTurb.boundCond()[i],
 											i, i);
 
-							surfaceNeighbourSide.rhobTurb.ref_r()[i] =
-									surfaceNeighbourSide.density[0].ref_r()[i]
-											* surfaceNeighbourSide.bTurb.ref()[i];
+							surfaceNeighbourSide.rhobTurb.r()[i] =
+									surfaceNeighbourSide.density[0].r()[i]
+											* surfaceNeighbourSide.bTurb()[i];
 						}
 					}
 				}
@@ -453,36 +449,36 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 						surfaceNeighbourSide.concentration.v.size());
 				for (std::size_t k = 0; k < concentrations_i.size(); ++k)
 					concentrations_i[k] =
-							surfaceNeighbourSide.concentration.v[k].ref()[i];
+							surfaceNeighbourSide.concentration.v[k]()[i];
 
-				surfaceNeighbourSide.internalEnergy.ref_r()[i] =
+				surfaceNeighbourSide.internalEnergy.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->UvFromp(
 								concentrations_i,
-								surfaceNeighbourSide.pressure.ref()[i]);
+								surfaceNeighbourSide.pressure()[i]);
 
-				surfaceNeighbourSide.temperature.ref_r()[i] =
+				surfaceNeighbourSide.temperature.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->TFromUv(
 								concentrations_i,
-								surfaceNeighbourSide.internalEnergy.ref()[i]);
+								surfaceNeighbourSide.internalEnergy()[i]);
 
-				const scalar v2 { surfaceNeighbourSide.velocity.ref()[i]
-						& surfaceNeighbourSide.velocity.ref()[i] };
+				const scalar v2 { surfaceNeighbourSide.velocity()[i]
+						& surfaceNeighbourSide.velocity()[i] };
 
-				surfaceNeighbourSide.totalEnergy.ref_r()[i] =
-						surfaceNeighbourSide.internalEnergy.ref_r()[i]
-								+ surfaceNeighbourSide.density[0].ref()[i] * v2
+				surfaceNeighbourSide.totalEnergy.r()[i] =
+						surfaceNeighbourSide.internalEnergy.r()[i]
+								+ surfaceNeighbourSide.density[0]()[i] * v2
 										* 0.5
-								+ surfaceNeighbourSide.rhokTurb.ref()[i];
+								+ surfaceNeighbourSide.rhokTurb()[i];
 
-				surfaceNeighbourSide.HelmholtzEnergy.ref_r()[i] =
+				surfaceNeighbourSide.HelmholtzEnergy.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->Fv(
 								concentrations_i,
-								surfaceNeighbourSide.temperature.ref()[i]);
+								surfaceNeighbourSide.temperature()[i]);
 
-				surfaceNeighbourSide.entropy.ref_r()[i] =
+				surfaceNeighbourSide.entropy.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->Sv(
 								concentrations_i,
-								surfaceNeighbourSide.temperature.ref()[i]);
+								surfaceNeighbourSide.temperature()[i]);
 			}
 	}
 }

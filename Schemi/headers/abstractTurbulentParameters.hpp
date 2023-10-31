@@ -15,15 +15,14 @@
 #include <fstream>
 
 #include "cubicCell.hpp"
-#include "scalar.hpp"
-#include "vector.hpp"
 #include "bunchOfFields.hpp"
-#include "field.hpp"
 #include "surfaceField.hpp"
 #include "volumeField.hpp"
 
 namespace schemi
 {
+class boundaryConditionValue;
+
 class abstractTurbulentParameters
 {
 	std::function<
@@ -60,6 +59,11 @@ class abstractTurbulentParameters
 	scalar CMS_D_;
 	scalar CMS_B_;
 
+	volumeField<scalar> y;
+
+	std::valarray<scalar> solveMatrix(const volumeField<scalar> & phi,
+			const boundaryConditionValue & boundCond) const;
+
 public:
 	scalar Cmu() const noexcept;
 	scalar C0() const noexcept;
@@ -84,6 +88,8 @@ public:
 	virtual ~abstractTurbulentParameters() noexcept =0;
 
 	abstractTurbulentParameters(
+
+	const mesh & meshIn,
 
 	const scalar CmuI,
 
@@ -166,7 +172,7 @@ public:
 		field<typeOfField, scalar> returnField { divV.meshP(), 0. };
 
 		for (std::size_t i = 0; i < returnField.size(); ++i)
-			returnField.ref_r()[i] = thetaS(divV.ref()[i]);
+			returnField.r()[i] = thetaS(divV()[i]);
 
 		return returnField;
 	}
@@ -192,17 +198,20 @@ public:
 		field<scalar, typeOfField> returnField { a.meshP(), 0. };
 
 		for (std::size_t i = 0; i < returnField.size(); ++i)
-			returnField.ref_r()[i] = thetaB(a.ref()[i], k.ref()[i],
-					epsilon.ref()[i], gradMav_n.ref()[i], a_s2[i],
-					std::pair<scalar, vector>(rhoGradRho.first.ref()[i],
-							rhoGradRho.second.ref()[i]),
-					std::pair<scalar, vector>(pGradP.first.ref()[i],
-							pGradP.second.ref()[i]), nu_t.ref()[i]);
+			returnField.r()[i] = thetaB(a()[i], k()[i], epsilon()[i],
+					gradMav_n()[i], a_s2[i],
+					std::pair<scalar, vector>(rhoGradRho.first()[i],
+							rhoGradRho.second()[i]),
+					std::pair<scalar, vector>(pGradP.first()[i],
+							pGradP.second()[i]), nu_t()[i]);
 
 		return returnField;
 	}
 
 	constexpr static scalar minb_value { 1E-15 };
+
+	void calculateNearWallDistance(const volumeField<scalar> & eps,
+			const boundaryConditionValue & boundCond);
 };
 }  // namespace schemi
 

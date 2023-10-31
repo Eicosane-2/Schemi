@@ -8,11 +8,14 @@
 #ifndef ABSTRACTTRANSPORTMODEL_HPP_
 #define ABSTRACTTRANSPORTMODEL_HPP_
 
+#include <memory>
+
 #include "abstractMixtureThermodynamics.hpp"
 #include "concentrationsPack.hpp"
 #include "scalar.hpp"
 #include "volumeField.hpp"
 #include "surfaceField.hpp"
+#include "transportModelEnum.hpp"
 
 namespace schemi
 {
@@ -30,6 +33,11 @@ public:
 			const scalar kappa_in) noexcept;
 
 	virtual ~abstractTransportModel() noexcept;
+
+	static std::unique_ptr<abstractTransportModel> createTransportModel(
+			const std::vector<std::vector<std::string>> & matrixOfSubstancesConditions,
+			const scalar constNu, const scalar constD, const scalar constKappa,
+			const transportModel model) noexcept;
 
 	virtual volumeField<scalar> calculateMu(const std::valarray<scalar>&,
 			const volumeField<scalar>&,

@@ -27,6 +27,7 @@
 #include "secondOrderStepSolver.hpp"
 #include "structForOutput.hpp"
 #include "thirdOrderStepSolver.hpp"
+#include "ThomasSolver.hpp"
 
 #ifdef MPI_VERSION
 int main(int argc, char * argv[])
@@ -56,7 +57,7 @@ int main()
 		if (parallelism.mpi_size <= 1)
 			throw exception(
 					"Program's work with number of nodes less than 2 has not been tested.",
-					errors::initializationError);
+					errors::initialisationError);
 #endif
 
 		vector systemSize;
@@ -70,8 +71,9 @@ int main()
 				typeOfTVDLimeterString, diffusionONString, turbulenceONString,
 				matrixSolverString, gravitationONString, sourceTypeString,
 				flowSolwerString, dimensionsOfTask, sourceTimeFlagString,
-				linearFlagString, thirdOrderString, readFromOutput;
-		bool diffusionFlag, gravitationFlag, linearFlag;
+				linearFlagString, thirdOrderString, readFromOutput,
+				mixedZoneWidthCalString;
+		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag;
 		vector g { 0 }, gDelta { 0 };
 		dimensions dimensionsFlag;
 		timestep sourceTimeFlag;
@@ -85,12 +87,15 @@ int main()
 			if (gFile.is_open())
 				std::cout << "./set/g.txt is opened." << std::endl;
 			else
-				throw exception("./set/g.txt not found.",
-						errors::initializationError);
+				throw std::ifstream::failure("./set/g.txt not found.");
 
 			gFile >> skipBuffer >> gravitationONString >> skipBuffer
-					>> g.v_r()[0] >> g.v_r()[1] >> g.v_r()[2] >> skipBuffer
-					>> gDelta.v_r()[0] >> gDelta.v_r()[1] >> gDelta.v_r()[2];
+					>> std::get<0>(g.r()) >> std::get<1>(g.r())
+					>> std::get<2>(g.r()) >> skipBuffer
+					>> std::get<0>(gDelta.r()) >> std::get<1>(gDelta.r())
+					>> std::get<2>(gDelta.r());
+
+			gFile.close();
 		}
 
 		/*Reading initial and boundary conditions.*/
@@ -99,13 +104,12 @@ int main()
 			if (mainParametersFile.is_open())
 				std::cout << "./set/main.txt is opened." << std::endl;
 			else
-				throw exception("./set/main.txt not found.",
-						errors::initializationError);
+				throw std::ifstream::failure("./set/main.txt not found.");
 
-			mainParametersFile
+			mainParametersFile >> skipBuffer
 
-			>> skipBuffer >> systemSize.v_r()[0] >> systemSize.v_r()[1]
-					>> systemSize.v_r()[2]
+			>> std::get<0>(systemSize.r()) >> std::get<1>(systemSize.r())
+					>> std::get<2>(systemSize.r())
 
 					>> skipBuffer >> numberOfCells_x >> numberOfCells_y
 					>> numberOfCells_z
@@ -150,7 +154,9 @@ int main()
 
 					>> skipBuffer >> thirdOrderString
 
-					>> skipBuffer >> readFromOutput;
+					>> skipBuffer >> readFromOutput
+
+					>> skipBuffer >> mixedZoneWidthCalString;
 
 			mainParametersFile.close();
 		}
@@ -162,7 +168,7 @@ int main()
 			linearFlag = false;
 		else
 			throw exception("Unknown reconstruction flag.",
-					errors::initializationError);
+					errors::initialisationError);
 
 		frequencyOfOutputWidth = std::min(frequencyOfOutput, std::size_t(1000));
 
@@ -180,7 +186,7 @@ int main()
 
 			if (((eqCount != 1) && (comCount != 1)) || (eqFind > comFind))
 				throw exception("Wrong format of time-step parameters settings",
-						errors::initializationError);
+						errors::initialisationError);
 
 			std::string sourceTimeFlagType;
 			auto eqIt = sourceTimeFlagString.begin();
@@ -242,7 +248,7 @@ int main()
 			}
 			else
 				throw exception("Unknown source time-step flag.",
-						errors::initializationError);
+						errors::initialisationError);
 		}
 
 		if (gravitationONString == "on")
@@ -251,7 +257,7 @@ int main()
 			gravitationFlag = false;
 		else
 			throw exception("Unknown gravitation flag.",
-					errors::initializationError);
+					errors::initialisationError);
 
 		if (diffusionONString == "on")
 			diffusionFlag = true;
@@ -259,16 +265,18 @@ int main()
 			diffusionFlag = false;
 		else
 			throw exception("Unknown diffusion flag.",
-					errors::initializationError);
+					errors::initialisationError);
 
 		std::unique_ptr<abstractLimiter> limiter(
-				createLimiter(typeOfTVDLimeterString));
+				abstractLimiter::createLimiter(typeOfTVDLimeterString));
 
-		auto [msolver, msolverEnthFl] = createMatrixSolver(matrixSolverString,
-				dimensionsOfTask, numberOfIterations);
+		auto [msolver, msolverEnthFl] =
+				abstractMatrixSolver::createMatrixSolver(matrixSolverString,
+						dimensionsOfTask, numberOfIterations);
 
 		std::unique_ptr<abstractFlowSolver> fsolver(
-				createFlowSolver(flowSolwerString));
+				abstractFlowSolver::createFlowSolver(flowSolwerString,
+						parallelism));
 
 		if (dimensionsOfTask == "1D")
 			dimensionsFlag = dimensions::task1D;
@@ -278,7 +286,7 @@ int main()
 			dimensionsFlag = dimensions::task3D;
 		else
 			throw exception("Unknown dimensions flag.",
-					errors::initializationError);
+					errors::initialisationError);
 
 		bool thirdOrder;
 		if (thirdOrderString == "SecondOrder")
@@ -287,7 +295,15 @@ int main()
 			thirdOrder = true;
 		else
 			throw exception("Unknown gas dynamics approximation order.",
-					errors::initializationError);
+					errors::initialisationError);
+
+		if (mixedZoneWidthCalString == "on")
+			mixedZoneWidthCalcFlag = true;
+		else if (mixedZoneWidthCalString == "off")
+			mixedZoneWidthCalcFlag = false;
+		else
+			throw exception("Unknown flag for mixed zone width calculation.",
+					errors::initialisationError);
 
 		std::size_t readDataPoint;
 		if ((readFromOutput == "no") || (readFromOutput == "0"))
@@ -308,7 +324,8 @@ int main()
 					std::ofstream timeFile(timeFileName);
 					timeFile.close();
 				}
-				if (dimensionsFlag == dimensions::task1D)
+				if ((dimensionsFlag == dimensions::task1D)
+						&& mixedZoneWidthCalcFlag)
 				{
 					/*Recreation of timeWidth.tsv, if it exist.*/
 					std::string timeWidthFileName("./result/timeWidth.tsv");
@@ -333,8 +350,8 @@ int main()
 				std::string timeFileName("./result/Time.tsv");
 				std::ifstream timeFile(timeFileName);
 				if (!timeFile.is_open())
-					throw exception(std::string("Couldn't open Time.tsv"),
-							errors::systemError);
+					throw std::ifstream::failure(
+							std::string("Couldn't open Time.tsv"));
 				timeFile.precision(ioPrecision);
 
 				std::string timeString;
@@ -393,7 +410,7 @@ int main()
 				if (remainingTime <= 0)
 					throw exception(
 							"Time of calculation lesser or equal than time of executed calculation.",
-							errors::initializationError);
+							errors::initialisationError);
 
 				if (nouts != readDataPoint)
 					throw exception(
@@ -412,8 +429,8 @@ int main()
 				/*Recreation of Time.tsv.*/
 				std::ofstream timeFileNew(timeFileName);
 				if (!timeFileNew.is_open())
-					throw exception(std::string("Couldn't open Time.tsv"),
-							errors::systemError);
+					throw std::ofstream::failure(
+							std::string("Couldn't open Time.tsv"));
 				timeFileNew.precision(ioPrecision);
 
 				for (std::size_t str_i = 0; str_i < lineNumber; ++str_i)
@@ -423,39 +440,46 @@ int main()
 
 				if (isLastOutput)
 				{
-					std::ifstream numberOfStepsFile("./timeOfCalculation.tsv");
-					if (!numberOfStepsFile.is_open())
-						throw exception(
-								std::string(
-										"Couldn't open timeOfCalculation.tsv"),
-								errors::systemError);
-
-					while (!numberOfStepsFile.eof())
+					try
 					{
-						std::string word;
-						numberOfStepsFile >> word;
+						std::ifstream numberOfStepsFile(
+								"./timeOfCalculation.tsv");
+						if (!numberOfStepsFile.is_open())
+							throw std::ifstream::failure(
+									std::string(
+											"Couldn't open timeOfCalculation.tsv"));
 
-						if (word == "steps")
+						while (!numberOfStepsFile.eof())
 						{
+							std::string word;
 							numberOfStepsFile >> word;
 
-							nsteps = std::stoul(word);
+							if (word == "steps")
+							{
+								numberOfStepsFile >> word;
 
-							break;
+								nsteps = std::stoul(word);
+
+								break;
+							}
 						}
+						numberOfStepsFile.close();
+					} catch (...)
+					{
+						nsteps = nouts * frequencyOfOutput;
 					}
 				}
 				else
 					nsteps = nouts * frequencyOfOutput;
 
-				if (dimensionsFlag == dimensions::task1D)
+				if ((dimensionsFlag == dimensions::task1D)
+						&& mixedZoneWidthCalcFlag)
 				{
 					std::string timeWidthFileName("./result/timeWidth.tsv");
 					std::ifstream timeWidthFile(timeWidthFileName);
 					if (!timeWidthFile.is_open())
-						throw exception(
-								std::string("Couldn't open timeWidth.tsv"),
-								errors::systemError);
+						throw std::ifstream::failure(
+								std::string("Couldn't open timeWidth.tsv"));
 
 					lineNumber = 0;
 					std::string widthData;
@@ -507,9 +531,8 @@ int main()
 					/*Recreation of timeWidth.tsv.*/
 					std::ofstream timeWidthFileNew(timeWidthFileName);
 					if (!timeWidthFileNew.is_open())
-						throw exception(
-								std::string("Couldn't open timeWidth.tsv"),
-								errors::systemError);
+						throw std::ofstream::failure(
+								std::string("Couldn't open timeWidth.tsv"));
 					timeWidthFileNew.precision(ioPrecision);
 
 					for (std::size_t str_i = 0; str_i < lineNumber; ++str_i)
@@ -597,54 +620,53 @@ int main()
 			}
 		}
 
-		auto & mesh = *meshObjPointer;
+		auto & mesh_ = *meshObjPointer;
 
-		parallelism.initialiseBuffersSize(mesh);
-		parallelism.initializeParalleMeshData(mesh);
+		parallelism.initialiseBuffersSize(mesh_);
+		parallelism.initialiseParalleMeshData(mesh_);
 
 		/*Check number of components.*/
 		if (numberOfComponents > 9)
 			throw exception("More than 9 components.",
-					errors::initializationError);
+					errors::initialisationError);
 
 		/*Creating fields.*/
 		auto [gasPhase, enthalpyFlowFlag, molMassDiffusionFlag] =
-				phaseInitialization(numberOfComponents, numberOfZones, mesh,
+				phaseInitialization(numberOfComponents, numberOfZones, mesh_,
 						commonConditions, parallelism, turbulenceONString,
 						sourceTypeString, universalGasConstant, equationOfState,
 						readDataPoint);
 
-		volumeField<scalar> sonicSpeed { mesh, 0 };
-		sonicSpeed.ref_r() = std::sqrt(
+		volumeField<scalar> sonicSpeed { mesh_, 0 };
+		sonicSpeed.r() = std::sqrt(
 				gasPhase->phaseThermodynamics->sqSonicSpeed(
-						gasPhase->concentration.p, gasPhase->density[0].ref(),
-						gasPhase->internalEnergy.ref(),
-						gasPhase->pressure.ref()));
+						gasPhase->concentration.p, gasPhase->density[0](),
+						gasPhase->internalEnergy(), gasPhase->pressure()));
 
 		/*Calculate effective length for time-step calculation and set first time-step.*/
-		volumeField<scalar> minimalLengthScale { mesh, 0 };
-		for (std::size_t i = 0; i < mesh.cellsSize(); ++i)
+		volumeField<scalar> minimalLengthScale { mesh_, 0 };
+		for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 		{
-			const auto edge1 =
-					(mesh.cells()[i].rX00() - mesh.cells()[i].r000()).mag();
-			const auto edge2 =
-					(mesh.cells()[i].r0Y0() - mesh.cells()[i].r000()).mag();
-			const auto edge3 =
-					(mesh.cells()[i].r00Z() - mesh.cells()[i].r000()).mag();
+			const auto edge1 = (mesh_.cells()[i].rX00()
+					- mesh_.cells()[i].r000()).mag();
+			const auto edge2 = (mesh_.cells()[i].r0Y0()
+					- mesh_.cells()[i].r000()).mag();
+			const auto edge3 = (mesh_.cells()[i].r00Z()
+					- mesh_.cells()[i].r000()).mag();
 
 			const auto minEdge = std::min(std::min(edge1, edge2), edge3);
 
-			minimalLengthScale.ref_r()[i] = 1. / minEdge;
+			minimalLengthScale.r()[i] = 1. / minEdge;
 		}
 
 		/*Set small initial step for safe source integration.*/
 		if (!constTimeStep.first)
 		{
-			mesh.setTimestep(minTime);
-			mesh.setTimestep(std::min(mesh.timestep(), timeOfCalculation));
+			mesh_.setTimestep(minTime);
+			mesh_.setTimestep(std::min(mesh_.timestep(), timeOfCalculation));
 		}
 		else
-			mesh.setTimestep(constTimeStep.second);
+			mesh_.setTimestep(constTimeStep.second);
 
 		chemicalReactions chemReactionFlag;
 		{
@@ -654,8 +676,8 @@ int main()
 				std::cout << "./set/chemicalKinetics.txt is opened."
 						<< std::endl;
 			else
-				throw exception("./set/chemicalKinetics.txt not found.",
-						errors::initializationError);
+				throw std::ifstream::failure(
+						"./set/chemicalKinetics.txt not found.");
 
 			std::string reactionName;
 
@@ -673,17 +695,20 @@ int main()
 				chemReactionFlag = chemicalReactions::NO2Disproportionation;
 			else
 				throw exception("Unknown chemical reaction model.",
-						errors::initializationError);
+						errors::initialisationError);
+
+			chem.close();
 		}
 
 		std::unique_ptr<abstractChemicalKinetics> chmk(
-				createChemicalKinetics(*gasPhase, chemReactionFlag, minTime));
+				abstractChemicalKinetics::createChemicalKinetics(*gasPhase,
+						chemReactionFlag, minTime));
 
 		/*Write initial conditions.*/
 		{
 			if (!readDataPoint)
 			{
-				structForOutput outputData(parallelism, mesh,
+				structForOutput outputData(parallelism, mesh_,
 						numberOfComponents);
 				if (parallelism.isRoot())
 					outputData.setSizes();
@@ -694,7 +719,8 @@ int main()
 				{
 					output::dataOutput(outputData, nouts, Time);
 
-					if (dimensionsFlag == dimensions::task1D)
+					if ((dimensionsFlag == dimensions::task1D)
+							&& mixedZoneWidthCalcFlag)
 						output::mixedZoneWidth1D(outputData, Time);
 				}
 			}
@@ -703,7 +729,7 @@ int main()
 
 		boundaryConditionValue boundaryConditionValueCalc(
 				*gasPhase->turbulenceSources->turbPar, *gasPhase,
-				*(gasPhase->phaseThermodynamics));
+				*(gasPhase->phaseThermodynamics), parallelism);
 
 		skipBuffer.clear();
 
@@ -744,13 +770,13 @@ int main()
 			{
 				std::clog << exception.what() << std::endl;
 				std::clog << "Step number " << nsteps << '.' << std::endl;
-				std::clog << "Time-step " << mesh.timestep() << '.'
+				std::clog << "Time-step " << mesh_.timestep() << '.'
 						<< std::endl;
 #ifndef MPI_VERSION
 				inputString();
 				std::clog << "Emergency output." << std::endl;
 				{
-					structForOutput outputData(parallelism, mesh,
+					structForOutput outputData(parallelism, mesh_,
 							numberOfComponents);
 					if (parallelism.isRoot())
 						outputData.setSizes();
@@ -768,43 +794,42 @@ int main()
 			}
 
 			if (gravitationFlag)
-				g += gDelta * mesh.timestep();
+				g += gDelta * mesh_.timestep();
 
-			Time += mesh.timestep();
+			Time += mesh_.timestep();
 
 			/*Calculation of new time-step through speed of sound.*/
 			if (!constTimeStep.first)
 			{
-				sonicSpeed.ref_r() = std::sqrt(
+				sonicSpeed.r() = std::sqrt(
 						gasPhase->phaseThermodynamics->sqSonicSpeed(
 								gasPhase->concentration.p,
-								gasPhase->density[0].ref(),
-								gasPhase->internalEnergy.ref(),
-								gasPhase->pressure.ref()));
+								gasPhase->density[0](),
+								gasPhase->internalEnergy(),
+								gasPhase->pressure()));
 
-				std::valarray<scalar> signalSpeed(
-						gasPhase->velocity.ref().size());
+				std::valarray<scalar> signalSpeed(gasPhase->velocity().size());
 
-				for (std::size_t i = 0; i < mesh.cellsSize(); ++i)
-					signalSpeed[i] = gasPhase->velocity.ref()[i].mag()
-							+ sonicSpeed.ref()[i];
+				for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
+					signalSpeed[i] = gasPhase->velocity()[i].mag()
+							+ sonicSpeed()[i];
 
-				signalSpeed *= minimalLengthScale.ref();
+				signalSpeed *= minimalLengthScale();
 
 				const scalar maxSignalSpeed { signalSpeed.max() };
 
-				mesh.setTimestep(Courant / maxSignalSpeed);
+				mesh_.setTimestep(Courant / maxSignalSpeed);
 				if (sourceTimeFlag != timestep::CourantTimeStep)
-					mesh.setTimestep(
-							std::min(mesh.timestep(), mesh.timestepSource()));
-				mesh.setTimestep(std::max(mesh.timestep(), minTime));
-				mesh.timestepSourceRef() = veryBig;
+					mesh_.setTimestep(
+							std::min(mesh_.timestep(), mesh_.timestepSource()));
+				mesh_.setTimestep(std::max(mesh_.timestep(), minTime));
+				mesh_.timestepSourceRef() = veryBig;
 
 #ifdef MPI_VERSION
 				/*Calculate parallel timestep*/
 				{
 					const MPIHandler::mpi_scalar timestep_arr[1] {
-							mesh.timestep() };
+							mesh_.timestep() };
 
 					MPIHandler::mpi_scalar * nodesTimes = nullptr;
 					if (parallelism.isRoot())
@@ -830,7 +855,7 @@ int main()
 					MPI_Bcast(minOfAllTimes, 1, MPI_DOUBLE, parallelism.root,
 					MPI_COMM_WORLD);
 
-					mesh.setTimestep(minOfAllTimes[0]);
+					mesh_.setTimestep(minOfAllTimes[0]);
 				}
 #endif
 			}
@@ -840,10 +865,10 @@ int main()
 					|| (Time == timeOfCalculation))
 			{
 				std::cout << "Time = " << Time << std::endl;
-				std::cout << "Time-step = " << mesh.timestep() << std::endl;
+				std::cout << "Time-step = " << mesh_.timestep() << std::endl;
 				std::cout << "Step number = " << nsteps << std::endl;
 
-				structForOutput outputData(parallelism, mesh,
+				structForOutput outputData(parallelism, mesh_,
 						numberOfComponents);
 				if (parallelism.isRoot())
 					outputData.setSizes();
@@ -869,16 +894,16 @@ int main()
 			}
 			if (((nsteps == (noutsW * frequencyOfOutputWidth))
 					|| (Time == timeOfCalculation))
-					&& (dimensionsFlag == dimensions::task1D))
+					&& (dimensionsFlag == dimensions::task1D)
+					&& mixedZoneWidthCalcFlag)
 			{
 				std::cout << "Time = " << Time << std::endl;
-				std::cout << "Time-step = " << mesh.timestep() << std::endl;
+				std::cout << "Time-step = " << mesh_.timestep() << std::endl;
 				std::cout << "Step number = " << nsteps << std::endl;
-				structForOutput outputData(parallelism, mesh,
+				structForOutput outputData(parallelism, mesh_,
 						numberOfComponents);
 				if (parallelism.isRoot())
 					outputData.setSizes();
-
 				outputData.collectParallelData(*gasPhase, gasPhase->tNu,
 						sonicSpeed);
 				if (parallelism.isRoot())
@@ -887,8 +912,8 @@ int main()
 			}
 
 			/*Time correction for last time-step.*/
-			if ((Time + mesh.timestep()) > timeOfCalculation)
-				mesh.setTimestep(timeOfCalculation - Time);
+			if ((Time + mesh_.timestep()) > timeOfCalculation)
+				mesh_.setTimestep(timeOfCalculation - Time);
 
 #ifdef MPI_VERSION
 			(MPI_Barrier(MPI_COMM_WORLD));
@@ -899,7 +924,7 @@ int main()
 		MPI_Finalize();
 #endif
 
-		std::ofstream outputTimeExecutionFile { "timeOfCalculation.tsv" };
+		std::ofstream outputTimeExecutionFile { "./timeOfCalculation.tsv" };
 		outputTimeExecutionFile.precision(ioPrecision);
 		outputTimeExecutionFile << "Time of execution" << std::endl
 				<< std::chrono::duration_cast<std::chrono::milliseconds>(

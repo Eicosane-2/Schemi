@@ -18,7 +18,7 @@ scalar operator&&(const T & inTensor1, const T & inTensor2) noexcept
 	scalar result { 0 };
 
 	for (std::size_t i = 0; i < T::vsize; ++i)
-		result += inTensor1.v()[i] * inTensor2.v()[i];
+		result += inTensor1()[i] * inTensor2()[i];
 
 	return result;
 }

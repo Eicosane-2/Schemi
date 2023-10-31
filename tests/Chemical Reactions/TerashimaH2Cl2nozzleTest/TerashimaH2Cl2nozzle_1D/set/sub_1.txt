@@ -9,7 +9,7 @@
 #Kinetic_diametr_(A)
 3.2
 #Tail_boundary_condition
-fixedValue 802
+fixedValueCell 802
 #Point_boundary_condition
 freeBoundary
 #Bottom_boundary_condition

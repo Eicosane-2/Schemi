@@ -10,10 +10,15 @@
 #include <fstream>
 #include <iostream>
 #include <cmath>
+
+#include "boundaryConditionValue.hpp"
 #include "errorsEnum.hpp"
 #include "exception.hpp"
 #include "vectorVectorDotProduct.hpp"
 #include "intExpPow.hpp"
+#include "gradient.hpp"
+#include "SLEMatrix.hpp"
+#include "conjugateGradientSolver.hpp"
 
 schemi::scalar schemi::abstractTurbulentParameters::Cmu() const noexcept
 {
@@ -94,6 +99,8 @@ schemi::scalar schemi::abstractTurbulentParameters::CMS_B() const noexcept
 
 schemi::abstractTurbulentParameters::abstractTurbulentParameters(
 
+const mesh & meshIn,
+
 const scalar CmuI,
 
 const scalar C0In,
@@ -168,7 +175,9 @@ const scalar CMS_B_In) noexcept :
 
 		CMS_D_ { CMS_D_In },
 
-		CMS_B_ { CMS_B_In }
+		CMS_B_ { CMS_B_In },
+
+		y { meshIn }
 {
 }
 
@@ -276,7 +285,7 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 	else
 		throw exception(
 				"Wrong type of thetaB function. Must be <<sqrt>> or <<cbrt>> or <<gradMav>> or <<wD>> or <<gradMavGradRho>> or <<no>>.",
-				errors::initializationError);
+				errors::initialisationError);
 }
 
 schemi::scalar schemi::abstractTurbulentParameters::thetaS(
@@ -293,6 +302,77 @@ schemi::scalar schemi::abstractTurbulentParameters::thetaB(const vector & a,
 {
 	return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2, rhoGradRho, pGradP,
 			nu_t);
+}
+
+void schemi::abstractTurbulentParameters::calculateNearWallDistance(
+		const volumeField<scalar> & eps,
+		const boundaryConditionValue & boundCond)
+{
+	constexpr static scalar phiInit = 1;
+	constexpr static scalar convergenceTolerance { convergenceToleranceGlobal };
+
+	volumeField<scalar> phiOld = eps;
+
+	phiOld.r() = phiInit;
+	for (auto & b_i : phiOld.boundCond_r())
+		if (b_i.first == boundaryConditionType::slip)
+		{
+			b_i.first = boundaryConditionType::fixedValueSurface;
+			b_i.second = 0.;
+		}
+		else if ((b_i.first == boundaryConditionType::fixedValueCell)
+				|| (b_i.first == boundaryConditionType::fixedValueSurface))
+			b_i.first = boundaryConditionType::freeBoundary;
+
+	boundCond.parallelism.correctBoundaryValues(phiOld);
+
+	volumeField<scalar> phiNew = phiOld;
+
+	std::size_t it { 0 };
+	while (true)
+	{
+		it++;
+
+		const scalar delta = std::abs((phiNew() - phiOld()) / phiOld()).max();
+
+		if (((delta < convergenceTolerance) && (it > 1)) || (it > 10000))
+			break;
+
+		phiOld = phiNew;
+
+		phiNew.r() = solveMatrix(phiOld, boundCond);
+
+		boundCond.parallelism.correctBoundaryValues(phiNew);
+	}
+
+	const volumeField<vector> gradPhi = grad(phiNew, boundCond);
+
+	volumeField<scalar> distance(phiNew.meshRef());
+
+	for (std::size_t i = 0; i < distance.size(); ++i)
+		distance.r()[i] = -gradPhi()[i].mag()
+				+ std::sqrt(
+						pow<scalar, 2>(gradPhi()[i].mag()) + 2 * phiNew()[i]);
+
+	y = distance;
+}
+
+std::valarray<schemi::scalar> schemi::abstractTurbulentParameters::solveMatrix(
+		const volumeField<scalar> & phi,
+		const boundaryConditionValue & boundCond) const
+{
+	const auto & mesh_ = phi.meshRef();
+
+	SLEMatrix wallDistanceMatrix(std::string("wallDistance"));
+
+	wallDistanceMatrix.generateLaplacianSurfaceBoundary(phi,
+			surfaceField<scalar>(mesh_, 1.0), boundCond);
+
+	wallDistanceMatrix.SLE[0].freeTerm += 1;
+
+	conjugateGradientSovler solv(100000, matrixSolver::conjugateGradient);
+
+	return solv.solve(phi(), wallDistanceMatrix);
 }
 
 schemi::abstractTurbulentParameters::~abstractTurbulentParameters() noexcept

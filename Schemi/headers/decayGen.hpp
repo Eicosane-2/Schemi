@@ -17,7 +17,8 @@ namespace schemi
 class decayGen: public abstractTurbulenceGen
 {
 public:
-	decayGen(const bool turb_in, const turbulenceModel tm_in) noexcept;
+	decayGen(const mesh & meshIn, const bool turb_in,
+			const turbulenceModel tm_in) noexcept;
 
 	std::tuple<volumeField<scalar>, volumeField<scalar>, volumeField<vector>,
 			volumeField<scalar>> calculate(scalar & sourceTimestep,

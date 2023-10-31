@@ -1,7 +1,7 @@
 #Tail_boundary_condition
 slip
 #Point_boundary_condition
-fixedValue -1.0 0.0 0.0
+fixedValueCell -1.0 0.0 0.0
 #Bottom_boundary_condition
 blank
 #Right_boundary_condition

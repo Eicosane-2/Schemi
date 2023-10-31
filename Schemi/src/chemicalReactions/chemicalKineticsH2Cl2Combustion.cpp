@@ -24,7 +24,7 @@ void schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::reactionMatrix
 			const std::size_t iNew = jAbsOld;
 			const std::size_t jNew = i;
 
-			RightTriangleNew[iNew].push_back( { Avalue, jNew });
+			RightTriangleNew[iNew].emplace_back(Avalue, jNew);
 		}
 
 		for (std::size_t j = 0; j < RightTriangle[i].size(); ++j)
@@ -35,7 +35,7 @@ void schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::reactionMatrix
 			const std::size_t iNew = jAbsOld;
 			const std::size_t jNew = i;
 
-			LeftTriangleNew[iNew].push_back( { Avalue, jNew });
+			LeftTriangleNew[iNew].emplace_back(Avalue, jNew);
 		}
 	}
 
@@ -123,41 +123,41 @@ schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::cellReactionMatrix(
 
 	const scalar B5 { C_HCl_0 / (timeStep * rho_0) };
 
-	matrix.Diagonale[0] = A11;
-	matrix.Diagonale[1] = A22;
-	matrix.Diagonale[2] = A33;
-	matrix.Diagonale[3] = A44;
-	matrix.Diagonale[4] = A55;
+	std::get<0>(matrix.Diagonale) = A11;
+	std::get<1>(matrix.Diagonale) = A22;
+	std::get<2>(matrix.Diagonale) = A33;
+	std::get<3>(matrix.Diagonale) = A44;
+	std::get<4>(matrix.Diagonale) = A55;
 
-	matrix.LeftTriangle[1][0].first = A21;
+	std::get<1>(matrix.LeftTriangle)[0].first = A21;
 
-	matrix.LeftTriangle[2][0].first = A32;
+	std::get<2>(matrix.LeftTriangle)[0].first = A32;
 
-	matrix.LeftTriangle[3][0].first = A41;
-	matrix.LeftTriangle[3][1].first = A42;
-	matrix.LeftTriangle[3][2].first = A43;
+	std::get<3>(matrix.LeftTriangle)[0].first = A41;
+	std::get<3>(matrix.LeftTriangle)[1].first = A42;
+	std::get<3>(matrix.LeftTriangle)[2].first = A43;
 
-	matrix.LeftTriangle[4][0].first = A51;
-	matrix.LeftTriangle[4][1].first = A52;
-	matrix.LeftTriangle[4][2].first = A53;
-	matrix.LeftTriangle[4][3].first = A54;
+	std::get<4>(matrix.LeftTriangle)[0].first = A51;
+	std::get<4>(matrix.LeftTriangle)[1].first = A52;
+	std::get<4>(matrix.LeftTriangle)[2].first = A53;
+	std::get<4>(matrix.LeftTriangle)[3].first = A54;
 
-	matrix.RightTriangle[0][0].first = A12;
-	matrix.RightTriangle[0][1].first = A14;
+	std::get<0>(matrix.RightTriangle)[0].first = A12;
+	std::get<0>(matrix.RightTriangle)[1].first = A14;
 
-	matrix.RightTriangle[1][0].first = A23;
-	matrix.RightTriangle[1][1].first = A24;
-	matrix.RightTriangle[1][2].first = A25;
+	std::get<1>(matrix.RightTriangle)[0].first = A23;
+	std::get<1>(matrix.RightTriangle)[1].first = A24;
+	std::get<1>(matrix.RightTriangle)[2].first = A25;
 
-	matrix.RightTriangle[2][0].first = A34;
+	std::get<2>(matrix.RightTriangle)[0].first = A34;
 
-	matrix.RightTriangle[3][0].first = A45;
+	std::get<3>(matrix.RightTriangle)[0].first = A45;
 
-	matrix.FreeTerm[0] = B1;
-	matrix.FreeTerm[1] = B2;
-	matrix.FreeTerm[2] = B3;
-	matrix.FreeTerm[3] = B4;
-	matrix.FreeTerm[4] = B5;
+	std::get<0>(matrix.FreeTerm) = B1;
+	std::get<1>(matrix.FreeTerm) = B2;
+	std::get<2>(matrix.FreeTerm) = B3;
+	std::get<3>(matrix.FreeTerm) = B4;
+	std::get<4>(matrix.FreeTerm) = B5;
 }
 
 std::valarray<schemi::scalar> schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::matrixDotProduct(
@@ -670,7 +670,7 @@ auto schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::solve(
 		break;
 	default:
 		throw exception("Unknown chemical iterative solver type.",
-				errors::initializationError);
+				errors::initialisationError);
 		break;
 	}
 }
@@ -705,12 +705,12 @@ schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix schemi::chemicalKine
 	const scalar k_HCl_diss = A_HCl_diss * std::pow(T, n_HCl_diss)
 			* std::exp(-E_HCl_diss / (R * T));
 
-	const scalar & Cl2 = concentrations[1];
-	const scalar & Cl = concentrations[2];
-	const scalar & H2 = concentrations[3];
-	const scalar & H = concentrations[4];
-	const scalar & HCl = concentrations[5];
-	const scalar & M = concentrations[0];
+	const scalar & Cl2 = std::get<1>(concentrations);
+	const scalar & Cl = std::get<2>(concentrations);
+	const scalar & H2 = std::get<3>(concentrations);
+	const scalar & H = std::get<4>(concentrations);
+	const scalar & HCl = std::get<5>(concentrations);
+	const scalar & M = std::get<0>(concentrations);
 
 	return cellReactionMatrix(timestep, k_Cl2_diss, k_Cl_recomb, k_H2_diss,
 			k_H_recomb, k_Cl_H2_prop, k_H_Cl2_prop, k_H_Cl_recomb, k_HCl_diss,
@@ -734,13 +734,13 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 				phaseN.density.size() - 1);
 
 		for (std::size_t k = 0; k < concs.size(); ++k)
-			concs[k] = phaseN.concentration.v[k].ref()[i];
+			concs[k] = phaseN.concentration.v[k]()[i];
 
 		for (std::size_t k = 0; k < dens.size(); ++k)
-			dens[k] = phaseN.density[k + 1].ref()[i];
+			dens[k] = phaseN.density[k + 1]()[i];
 
-		const cellReactingFields oldValues(phaseN.internalEnergy.ref()[i],
-				phaseN.temperature.ref()[i], concs, dens);
+		const cellReactingFields oldValues(phaseN.internalEnergy()[i],
+				phaseN.temperature()[i], concs, dens);
 
 		cellReactingFields newValues(oldValues);
 
@@ -755,11 +755,11 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 					scalar deltaU { 0 };
 
 					const std::array<scalar, 5> oldMassFraction {
-							newValues.density[0] / phaseN.density[0].ref()[i],
-							newValues.density[1] / phaseN.density[0].ref()[i],
-							newValues.density[2] / phaseN.density[0].ref()[i],
-							newValues.density[3] / phaseN.density[0].ref()[i],
-							newValues.density[4] / phaseN.density[0].ref()[i], };
+							newValues.density[0] / phaseN.density[0]()[i],
+							newValues.density[1] / phaseN.density[0]()[i],
+							newValues.density[2] / phaseN.density[0]()[i],
+							newValues.density[3] / phaseN.density[0]()[i],
+							newValues.density[4] / phaseN.density[0]()[i], };
 
 					const scalar sumFracOld = std::accumulate(
 							oldMassFraction.begin(), oldMassFraction.end(), 0.);
@@ -768,7 +768,7 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 						continue;
 
 					const auto cellReactionVel = velocityCalculation(
-							subTimeStep, phaseN.temperature.ref()[i],
+							subTimeStep, phaseN.temperature()[i],
 							{ newValues.concentration[0],
 									newValues.concentration[1],
 									newValues.concentration[2],
@@ -780,7 +780,7 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 									phaseN.phaseThermodynamics->Mv()[2],
 									phaseN.phaseThermodynamics->Mv()[3],
 									phaseN.phaseThermodynamics->Mv()[4] },
-							phaseN.density[0].ref()[i],
+							phaseN.density[0]()[i],
 							phaseN.phaseThermodynamics->Rv());
 
 					auto [newCl2, newCl, newH2, newH, newHCl] =
@@ -818,15 +818,15 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 					newH *= sumFracOld;
 					newHCl *= sumFracOld;
 
-					const auto newCCl2 = newCl2 * phaseN.density[0].ref()[i]
+					const auto newCCl2 = newCl2 * phaseN.density[0]()[i]
 							/ phaseN.phaseThermodynamics->Mv()[0];
-					const auto newCCl = newCl * phaseN.density[0].ref()[i]
+					const auto newCCl = newCl * phaseN.density[0]()[i]
 							/ phaseN.phaseThermodynamics->Mv()[1];
-					const auto newCH2 = newH2 * phaseN.density[0].ref()[i]
+					const auto newCH2 = newH2 * phaseN.density[0]()[i]
 							/ phaseN.phaseThermodynamics->Mv()[2];
-					const auto newCH = newH * phaseN.density[0].ref()[i]
+					const auto newCH = newH * phaseN.density[0]()[i]
 							/ phaseN.phaseThermodynamics->Mv()[3];
-					const auto newCHCl = newHCl * phaseN.density[0].ref()[i]
+					const auto newCHCl = newHCl * phaseN.density[0]()[i]
 							/ phaseN.phaseThermodynamics->Mv()[4];
 
 					{
@@ -838,11 +838,9 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 						const auto deltaCv = 2 * thermo.Cvv()[4]
 								- thermo.Cvv()[0] - thermo.Cvv()[2];
 
-						deltaU =
-								-(ΔU_298
-										+ deltaCv
-												* (phaseN.temperature.ref()[i]
-														- 298.15)) * deltaC_HCl;
+						deltaU = -(ΔU_298
+								+ deltaCv * (phaseN.temperature()[i] - 298.15))
+								* deltaC_HCl;
 					}
 
 					newValues.concentration[1] = newCCl2;
@@ -888,12 +886,12 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 			}
 		}
 
-		phaseN.internalEnergy.ref_r()[i] = newValues.internalEnergy;
-		phaseN.temperature.ref_r()[i] = newValues.temperature;
+		phaseN.internalEnergy.r()[i] = newValues.internalEnergy;
+		phaseN.temperature.r()[i] = newValues.temperature;
 		for (std::size_t k = 0; k < newValues.concentration.size(); ++k)
-			phaseN.concentration.v[k].ref_r()[i] = newValues.concentration[k];
+			phaseN.concentration.v[k].r()[i] = newValues.concentration[k];
 		for (std::size_t k = 0; k < newValues.density.size(); ++k)
-			phaseN.density[k + 1].ref_r()[i] = newValues.density[k];
+			phaseN.density[k + 1].r()[i] = newValues.density[k];
 	}
 }
 
@@ -903,7 +901,7 @@ schemi::chemicalKineticsH2Cl2Combustion::chemicalKineticsH2Cl2Combustion(
 {
 	if (phaseIn.concentration.v.size() < 6)
 		throw exception("Wrong number of substances.",
-				errors::initializationError);
+				errors::initialisationError);
 
 	std::string skipBuffer;
 
@@ -912,8 +910,7 @@ schemi::chemicalKineticsH2Cl2Combustion::chemicalKineticsH2Cl2Combustion(
 	if (chem.is_open())
 		std::cout << "./set/chemicalKinetics.txt is opened." << std::endl;
 	else
-		throw exception("./set/chemicalKinetics.txt not found.",
-				errors::initializationError);
+		throw std::ifstream::failure("./set/chemicalKinetics.txt not found.");
 
 	chem >> skipBuffer >> skipBuffer;
 
@@ -967,11 +964,13 @@ schemi::chemicalKineticsH2Cl2Combustion::chemicalKineticsH2Cl2Combustion(
 		itSolv = iterativeSolver::GaussElimination;
 	else
 		throw exception("Unknown type of chemical iterative solver.",
-				errors::initializationError);
+				errors::initialisationError);
 
 	chem >> skipBuffer >> maxIterationNumber;
 
 	ΔU_298 = ΔН_298 - Δn * phaseIn.phaseThermodynamics->Rv() * 298.15;
+
+	chem.close();
 }
 
 void schemi::chemicalKineticsH2Cl2Combustion::solveChemicalKinetics(
@@ -983,21 +982,20 @@ void schemi::chemicalKineticsH2Cl2Combustion::solveChemicalKinetics(
 
 	timeStepIntegration(phaseN1);
 
-	phaseN1.pressure.ref_r() = phaseN1.phaseThermodynamics->pFromUv(
-			phaseN1.concentration.p, phaseN1.internalEnergy.ref());
+	phaseN1.pressure.r() = phaseN1.phaseThermodynamics->pFromUv(
+			phaseN1.concentration.p, phaseN1.internalEnergy());
 
-	phaseN1.HelmholtzEnergy.ref_r() = phaseN1.phaseThermodynamics->Fv(
-			phaseN1.concentration.p, phaseN1.temperature.ref());
+	phaseN1.HelmholtzEnergy.r() = phaseN1.phaseThermodynamics->Fv(
+			phaseN1.concentration.p, phaseN1.temperature());
 
-	phaseN1.entropy.ref_r() = phaseN1.phaseThermodynamics->Sv(
-			phaseN1.concentration.p, phaseN1.temperature.ref());
+	phaseN1.entropy.r() = phaseN1.phaseThermodynamics->Sv(
+			phaseN1.concentration.p, phaseN1.temperature());
 
 	{
 		const auto v2 = ampProduct(phaseN1.velocity, phaseN1.velocity);
 
-		phaseN1.totalEnergy.ref_r() = phaseN1.internalEnergy.ref()
-				+ phaseN1.density[0].ref() * v2.ref() * 0.5
-				+ phaseN1.rhokTurb.ref();
+		phaseN1.totalEnergy.r() = phaseN1.internalEnergy()
+				+ phaseN1.density[0]() * v2() * 0.5 + phaseN1.rhokTurb();
 	}
 
 	phaseIn.average(phaseN1, *phaseIn.phaseThermodynamics, 0.5);

@@ -116,27 +116,30 @@ schemi::scalar schemi::returnSinglePosValue(std::array<scalar, 3> tripleValue)
 	}
 
 	if (nPositive == 1)
-		return std::max(std::max(tripleValue[0], tripleValue[1]),
-				tripleValue[2]);
+		return std::max(
+				std::max(std::get<0>(tripleValue), std::get<1>(tripleValue)),
+				std::get<2>(tripleValue));
 	else if (nPositive == 2) //Two roots are equal.
 	{
-		if (((tripleValue[0] - tripleValue[1]) < zeroLevel)
-				&& (tripleValue[2] < 0))
-			return tripleValue[0];
-		else if (((tripleValue[1] - tripleValue[2]) < zeroLevel)
-				&& (tripleValue[0] < 0))
-			return tripleValue[1];
-		else if (((tripleValue[0] - tripleValue[2]) < zeroLevel)
-				&& (tripleValue[1] < 0))
-			return tripleValue[2];
+		if (((std::get<0>(tripleValue) - std::get<1>(tripleValue)) < zeroLevel)
+				&& (std::get<2>(tripleValue) < 0))
+			return std::get<0>(tripleValue);
+		else if (((std::get<1>(tripleValue) - std::get<2>(tripleValue))
+				< zeroLevel) && (std::get<0>(tripleValue) < 0))
+			return std::get<1>(tripleValue);
+		else if (((std::get<0>(tripleValue) - std::get<2>(tripleValue))
+				< zeroLevel) && (std::get<1>(tripleValue) < 0))
+			return std::get<2>(tripleValue);
 		else
 			throw exception("Can't choose solitary positive value.",
 					errors::positivnessError);
 	}
 	else if ((nPositive == 3) //All three roots are equal.
-			&& (((tripleValue[0] - tripleValue[1]) < zeroLevel)
-					&& ((tripleValue[1] - tripleValue[2]) < zeroLevel)))
-		return tripleValue[0];
+			&& (((std::get<0>(tripleValue) - std::get<1>(tripleValue))
+					< zeroLevel)
+					&& ((std::get<1>(tripleValue) - std::get<2>(tripleValue))
+							< zeroLevel)))
+		return std::get<0>(tripleValue);
 	else
 		throw exception("Can't choose solitary positive value.",
 				errors::positivnessError);

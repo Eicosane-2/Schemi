@@ -18,8 +18,10 @@ schemi::boundaryConditionType schemi::boundaryConditionFromString(
 		return boundaryConditionType::freeBoundary;
 	else if (boundaryConditionString == "slip")
 		return boundaryConditionType::slip;
-	else if (boundaryConditionString == "fixedValue")
-		return boundaryConditionType::fixedValue;
+	else if (boundaryConditionString == "fixedValueCell")
+		return boundaryConditionType::fixedValueCell;
+	else if (boundaryConditionString == "fixedValueSurface")
+		return boundaryConditionType::fixedValueSurface;
 	else if (boundaryConditionString == "innerSurface")
 		throw exception("<<innerSurface>> can not be boundary surface type.",
 				errors::boundaryConditionError);

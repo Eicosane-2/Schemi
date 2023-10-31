@@ -26,7 +26,7 @@ auto astProduct(const field<arg1, typeOfField> & F1,
 	field<resultType, typeOfField> retField { F1.meshRef(), resultType { 0 } };
 
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		retField.ref_r()[i] = F1.ref()[i] * F2.ref()[i];
+		retField.r()[i] = F1()[i] * F2()[i];
 
 	return retField;
 }
@@ -39,7 +39,7 @@ auto astProduct(const field<arg1, typeOfField> & F1, const arg2 & F2) noexcept
 	field<resultType, typeOfField> retField { F1.meshRef(), resultType { 0 } };
 
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		retField.ref_r()[i] = F1.ref()[i] * F2;
+		retField.r()[i] = F1()[i] * F2;
 
 	return retField;
 }
@@ -49,7 +49,7 @@ auto& astProductSelf(field<arg1, typeOfField> & F1,
 		const field<arg2, typeOfField> & F2) noexcept
 {
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		F1.ref_r()[i] *= F2.ref()[i];
+		F1.r()[i] *= F2()[i];
 
 	return F1;
 }
@@ -58,7 +58,7 @@ template<typename arg1, typename arg2, typename typeOfField>
 auto& astProductSelf(field<arg1, typeOfField> & F1, const arg2 & F2) noexcept
 {
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		F1.ref_r()[i] *= F2;
+		F1.r()[i] *= F2;
 
 	return F1;
 }
@@ -72,7 +72,7 @@ auto ampProduct(const field<arg1, typeOfField> & F1,
 	field<resultType, typeOfField> retField { F1.meshRef(), resultType { 0 } };
 
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		retField.ref_r()[i] = F1.ref()[i] & F2.ref()[i];
+		retField.r()[i] = F1()[i] & F2()[i];
 
 	return retField;
 }
@@ -85,7 +85,7 @@ auto ampProduct(const field<arg1, typeOfField> & F1, const arg2 & F2) noexcept
 	field<resultType, typeOfField> retField { F1.meshRef(), resultType { 0 } };
 
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		retField.ref_r()[i] = F1.ref()[i] & F2;
+		retField.r()[i] = F1()[i] & F2;
 
 	return retField;
 }
@@ -99,7 +99,7 @@ auto dampProduct(const field<arg1, typeOfField> & F1,
 	field<resultType, typeOfField> retField { F1.meshRef(), resultType { 0 } };
 
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		retField.ref_r()[i] = F1.ref()[i] && F2.ref()[i];
+		retField.r()[i] = F1()[i] && F2()[i];
 
 	return retField;
 }
@@ -112,7 +112,7 @@ auto dampProduct(const field<arg1, typeOfField> & F1, const arg2 & F2) noexcept
 	field<resultType, typeOfField> retField { F1.meshRef(), resultType { 0 } };
 
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		retField.ref_r()[i] = F1.ref()[i] && F2;
+		retField.r()[i] = F1()[i] && F2;
 
 	return retField;
 }
@@ -126,7 +126,7 @@ auto division(const field<arg1, typeOfField> & F1,
 	field<resultType, typeOfField> retField { F1.meshRef(), resultType { 0 } };
 
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		retField.ref_r()[i] = F1.ref()[i] / F2.ref()[i];
+		retField.r()[i] = F1()[i] / F2()[i];
 
 	return retField;
 }
@@ -139,7 +139,7 @@ auto division(const field<arg1, typeOfField> & F1, const arg2 & F2) noexcept
 	field<resultType, typeOfField> retField { F1.meshRef(), resultType { 0 } };
 
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		retField.ref_r()[i] = F1.ref()[i] / F2;
+		retField.r()[i] = F1()[i] / F2;
 
 	return retField;
 }
@@ -149,7 +149,7 @@ auto& divisionSelf(field<arg1, typeOfField> & F1,
 		const field<arg2, typeOfField> & F2) noexcept
 {
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		F1.ref_r()[i] /= F2.ref()[i];
+		F1.r()[i] /= F2()[i];
 
 	return F1;
 }
@@ -158,7 +158,7 @@ template<typename arg1, typename arg2, typename typeOfField>
 auto& divisionSelf(field<arg1, typeOfField> & F1, const arg2 & F2) noexcept
 {
 	for (std::size_t i = 0; i < F1.size(); ++i)
-		F1.ref_r()[i] /= F2;
+		F1.r()[i] /= F2;
 
 	return F1;
 }
