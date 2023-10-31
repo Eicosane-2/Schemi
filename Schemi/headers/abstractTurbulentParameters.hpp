@@ -29,12 +29,12 @@ class abstractTurbulentParameters
 			scalar(const vector& /*a*/, const scalar /*k*/,
 					const scalar /*epsilon*/, const vector& /*gradMav_n*/,
 					const scalar /*a_s2*/,
-					const std::pair<scalar, vector>& /*rho, gradRho*/,
-					const std::pair<scalar, vector>& /*p, gradP*/,
+					const std::pair<scalar, vector>&& /*rho, gradRho*/,
+					const std::pair<scalar, vector>&& /*p, gradP*/,
 					const scalar /*nu_t*/)> thetaB_pointer = [this](
 			const vector&, const scalar, const scalar, const vector&,
-			const scalar, const std::pair<scalar, vector>&,
-			const std::pair<scalar, vector>&, const scalar) 
+			const scalar, const std::pair<scalar, vector>&&,
+			const std::pair<scalar, vector>&&, const scalar) 
 			{
 				return 1.;
 			};
@@ -179,8 +179,8 @@ public:
 
 	scalar thetaB(const vector & a, const scalar k, const scalar epsilon,
 			const vector & gradMav_n, const scalar a_s2,
-			const std::pair<scalar, vector> & rhoGradRho,
-			const std::pair<scalar, vector> & pGradP,
+			const std::pair<scalar, vector> && rhoGradRho,
+			const std::pair<scalar, vector> && pGradP,
 			const scalar nu_t) const noexcept;
 
 	template<typename typeOfField>
