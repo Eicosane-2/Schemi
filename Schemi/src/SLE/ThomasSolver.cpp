@@ -74,12 +74,12 @@ std::valarray<schemi::vector> schemi::ThomasSolver::solve(
 		std::valarray<scalar> v_j_buf(oldField.size());
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			v_j_buf[i] = oldField[i].v()[j];
+			v_j_buf[i] = oldField[i]()[j];
 
 		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].v_r()[j] = v_j_buf[i];
+			result[i].r()[j] = v_j_buf[i];
 	}
 
 	return result;
@@ -96,12 +96,12 @@ std::valarray<schemi::tensor> schemi::ThomasSolver::solve(
 		std::valarray<scalar> v_j_buf(oldField.size());
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			v_j_buf[i] = oldField[i].v()[j];
+			v_j_buf[i] = oldField[i]()[j];
 
 		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].v_r()[j] = v_j_buf[i];
+			result[i].r()[j] = v_j_buf[i];
 	}
 
 	return result;

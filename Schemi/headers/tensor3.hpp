@@ -36,9 +36,9 @@ public:
 			const scalar VZZXin, const scalar VZZYin,
 			const scalar VZZZin) noexcept;
 
-	const std::array<scalar, 27>& v() const noexcept;
+	const std::array<scalar, 27>& operator()() const noexcept;
 
-	std::array<scalar, 27>& v_r() noexcept;
+	std::array<scalar, 27>& r() noexcept;
 
 	scalar trace() const noexcept;
 

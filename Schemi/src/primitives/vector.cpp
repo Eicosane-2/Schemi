@@ -21,12 +21,12 @@ schemi::vector::vector(const scalar VXin, const scalar VYin,
 {
 }
 
-const std::array<schemi::scalar, 3>& schemi::vector::v() const noexcept
+const std::array<schemi::scalar, 3>& schemi::vector::operator()() const noexcept
 {
 	return value;
 }
 
-std::array<schemi::scalar, 3>& schemi::vector::v_r() noexcept
+std::array<schemi::scalar, 3>& schemi::vector::r() noexcept
 {
 	return value;
 }
@@ -35,14 +35,15 @@ schemi::scalar schemi::vector::mag() const noexcept
 {
 	//return std::sqrt(
 	//		value[0] * value[0] + value[1] * value[1] + value[2] * value[2]);
-	return std::hypot(value[0], value[1], value[2]); //XXX May be slow.
+	return std::hypot(std::get<0>(value), std::get<1>(value),
+			std::get<2>(value)); //XXX May be slow.
 }
 
 schemi::vector schemi::vector::operator+(const vector & inVector) const noexcept
 {
 	vector sum(inVector);
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.v_r()[i] += value[i];
+		sum.r()[i] += value[i];
 
 	return sum;
 }
@@ -50,7 +51,7 @@ schemi::vector schemi::vector::operator+(const vector & inVector) const noexcept
 schemi::vector& schemi::vector::operator+=(const vector & inVector) noexcept
 {
 	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] += inVector.v()[i];
+		value[i] += inVector()[i];
 
 	return *this;
 }
@@ -59,7 +60,7 @@ schemi::vector schemi::vector::operator-(const vector & inVector) const noexcept
 {
 	vector sum(inVector * (-1.));
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.v_r()[i] += value[i];
+		sum.r()[i] += value[i];
 
 	return sum;
 }
@@ -67,14 +68,15 @@ schemi::vector schemi::vector::operator-(const vector & inVector) const noexcept
 schemi::vector& schemi::vector::operator-=(const vector & inVector) noexcept
 {
 	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] -= inVector.v()[i];
+		value[i] -= inVector()[i];
 
 	return *this;
 }
 
 schemi::vector schemi::vector::operator*(const scalar inScalar) const noexcept
 {
-	return vector(value[0] * inScalar, value[1] * inScalar, value[2] * inScalar);
+	return vector(std::get<0>(value) * inScalar, std::get<1>(value) * inScalar,
+			std::get<2>(value) * inScalar);
 }
 
 schemi::vector& schemi::vector::operator*=(const scalar inScalar) noexcept
@@ -87,7 +89,8 @@ schemi::vector& schemi::vector::operator*=(const scalar inScalar) noexcept
 
 schemi::vector schemi::vector::operator/(const scalar inScalar) const noexcept
 {
-	return vector(value[0] / inScalar, value[1] / inScalar, value[2] / inScalar);
+	return vector(std::get<0>(value) / inScalar, std::get<1>(value) / inScalar,
+			std::get<2>(value) / inScalar);
 }
 
 schemi::vector& schemi::vector::operator/=(const scalar inScalar) noexcept

@@ -27,7 +27,7 @@ inline T elementsDivision(const T & a, const T & b) noexcept
 	T ret;
 
 	for (std::size_t i = 0; i < T::vsize; ++i)
-		ret.v_r()[i] = a.v()[i] / (b.v()[i] + stabilizator);
+		ret.r()[i] = a()[i] / (b()[i] + stabilizator);
 
 	return ret;
 }

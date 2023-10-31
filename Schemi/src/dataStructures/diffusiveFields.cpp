@@ -42,28 +42,28 @@ schemi::diffusiveFields::diffusiveFields(const mesh & meshRef,
 	std::valarray<scalar> sumMassFrac(scalar(0), meshRef.cellsSize());
 	for (std::size_t k_ind = 0; k_ind < massFraction.size(); ++k_ind)
 	{
-		massFraction[k_ind].ref_r() = cellFields.density[k_ind + 1].ref()
-				/ cellFields.density[0].ref();
-		sumMassFrac += massFraction[k_ind].ref();
+		massFraction[k_ind].r() = cellFields.density[k_ind + 1]()
+				/ cellFields.density[0]();
+		sumMassFrac += massFraction[k_ind]();
 	}
 
 	for (auto & diffFieldMassFrac_k : massFraction)
-		diffFieldMassFrac_k.ref_r() /= sumMassFrac;
+		diffFieldMassFrac_k.r() /= sumMassFrac;
 
-	velocity.ref_r() = cellFields.velocity.ref();
-	temperature.ref_r() = cellFields.temperature.ref();
+	velocity.r() = cellFields.velocity();
+	temperature.r() = cellFields.temperature();
 	if (turbulenceFlag)
 	{
-		k.ref_r() = cellFields.kTurb.ref();
-		eps.ref_r() = cellFields.epsTurb.ref();
+		k.r() = cellFields.kTurb();
+		eps.r() = cellFields.epsTurb();
 		if ((sourceFlag == turbulenceModel::BHRSource)
 				|| (sourceFlag == turbulenceModel::BHRKLSource)
 				|| (sourceFlag == turbulenceModel::kEpsASource))
 		{
-			a.ref_r() = cellFields.aTurb.ref();
+			a.r() = cellFields.aTurb();
 			if ((sourceFlag == turbulenceModel::BHRSource)
 					|| (sourceFlag == turbulenceModel::BHRKLSource))
-				b.ref_r() = cellFields.bTurb.ref();
+				b.r() = cellFields.bTurb();
 		}
 	}
 }

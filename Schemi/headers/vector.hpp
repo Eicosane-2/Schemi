@@ -25,9 +25,9 @@ public:
 
 	vector(const scalar VXin, const scalar VYin, const scalar VZin) noexcept;
 
-	const std::array<scalar, 3>& v() const noexcept;
+	const std::array<scalar, 3>& operator()() const noexcept;
 
-	std::array<scalar, 3>& v_r() noexcept;
+	std::array<scalar, 3>& r() noexcept;
 
 	scalar mag() const noexcept;
 

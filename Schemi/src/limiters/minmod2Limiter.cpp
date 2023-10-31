@@ -37,70 +37,88 @@ schemi::scalar schemi::minmod2Limiter::minmod2LimiterCalculation(
 schemi::vector schemi::minmod2Limiter::calculate(const vector & r,
 		const vector & gradientC) const noexcept
 {
-	vector minmod2, xiR { 2 / (1 + r.v()[0]), 2 / (1 + r.v()[1]), 2
-			/ (1 + r.v()[2]) };
+	vector minmod2, xiR { 2 / (1 + std::get<0>(r())), 2
+			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())) };
 
 	for (std::size_t j = 0; j < vector::vsize; ++j)
-		minmod2.v_r()[j] = minmod2LimiterCalculation(r.v()[j], xiR.v()[j]);
+		minmod2.r()[j] = minmod2LimiterCalculation(r()[j], xiR()[j]);
 
-	return vector { minmod2.v()[0] * gradientC.v()[0], minmod2.v()[1]
-			* gradientC.v()[1], minmod2.v()[2] * gradientC.v()[2] };
+	return vector { std::get<0>(minmod2()) * std::get<0>(gradientC()), std::get<
+			1>(minmod2()) * std::get<1>(gradientC()), std::get<2>(minmod2())
+			* std::get<2>(gradientC()) };
 }
 
 schemi::tensor schemi::minmod2Limiter::calculate(const tensor & r,
 		const tensor & gradientC) const noexcept
 {
-	tensor minmod2, xiR { 2 / (1 + r.v()[0]), 2 / (1 + r.v()[1]), 2
-			/ (1 + r.v()[2]), 2 / (1 + r.v()[3]), 2 / (1 + r.v()[4]), 2
-			/ (1 + r.v()[5]), 2 / (1 + r.v()[6]), 2 / (1 + r.v()[7]), 2
-			/ (1 + r.v()[8]) };
+	tensor minmod2, xiR { 2 / (1 + std::get<0>(r())), 2
+			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())), 2
+			/ (1 + std::get<3>(r())), 2 / (1 + std::get<4>(r())), 2
+			/ (1 + std::get<5>(r())), 2 / (1 + std::get<6>(r())), 2
+			/ (1 + std::get<7>(r())), 2 / (1 + std::get<8>(r())) };
 
 	for (std::size_t j = 0; j < tensor::vsize; ++j)
-		minmod2.v_r()[j] = minmod2LimiterCalculation(r.v()[j], xiR.v()[j]);
+		minmod2.r()[j] = minmod2LimiterCalculation(r()[j], xiR()[j]);
 
-	return tensor { minmod2.v()[0] * gradientC.v()[0], minmod2.v()[1]
-			* gradientC.v()[1], minmod2.v()[2] * gradientC.v()[2],
-			minmod2.v()[3] * gradientC.v()[3], minmod2.v()[4]
-					* gradientC.v()[4], minmod2.v()[5] * gradientC.v()[5],
-			minmod2.v()[6] * gradientC.v()[6], minmod2.v()[7]
-					* gradientC.v()[7], minmod2.v()[8] * gradientC.v()[8] };
+	return tensor { std::get<0>(minmod2()) * std::get<0>(gradientC()), std::get<
+			1>(minmod2()) * std::get<1>(gradientC()), std::get<2>(minmod2())
+			* std::get<2>(gradientC()), std::get<3>(minmod2())
+			* std::get<3>(gradientC()), std::get<4>(minmod2())
+			* std::get<4>(gradientC()), std::get<5>(minmod2())
+			* std::get<5>(gradientC()), std::get<6>(minmod2())
+			* std::get<6>(gradientC()), std::get<7>(minmod2())
+			* std::get<7>(gradientC()), std::get<8>(minmod2())
+			* std::get<8>(gradientC()) };
 }
 
 schemi::tensor3 schemi::minmod2Limiter::calculate(const tensor3 & r,
 		const tensor3 & gradientC) const noexcept
 {
-	tensor3 minmod2, xiR { 2 / (1 + r.v()[0]), 2 / (1 + r.v()[1]), 2
-			/ (1 + r.v()[2]), 2 / (1 + r.v()[3]), 2 / (1 + r.v()[4]), 2
-			/ (1 + r.v()[5]), 2 / (1 + r.v()[6]), 2 / (1 + r.v()[7]), 2
-			/ (1 + r.v()[8]), 2 / (1 + r.v()[9]), 2 / (1 + r.v()[10]), 2
-			/ (1 + r.v()[11]), 2 / (1 + r.v()[12]), 2 / (1 + r.v()[13]), 2
-			/ (1 + r.v()[14]), 2 / (1 + r.v()[15]), 2 / (1 + r.v()[16]), 2
-			/ (1 + r.v()[17]), 2 / (1 + r.v()[18]), 2 / (1 + r.v()[19]), 2
-			/ (1 + r.v()[20]), 2 / (1 + r.v()[21]), 2 / (1 + r.v()[22]), 2
-			/ (1 + r.v()[23]), 2 / (1 + r.v()[24]), 2 / (1 + r.v()[25]), 2
-			/ (1 + r.v()[26]) };
+	tensor3 minmod2, xiR { 2 / (1 + std::get<0>(r())), 2
+			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())), 2
+			/ (1 + std::get<3>(r())), 2 / (1 + std::get<4>(r())), 2
+			/ (1 + std::get<5>(r())), 2 / (1 + std::get<6>(r())), 2
+			/ (1 + std::get<7>(r())), 2 / (1 + std::get<8>(r())), 2
+			/ (1 + std::get<9>(r())), 2 / (1 + std::get<10>(r())), 2
+			/ (1 + std::get<11>(r())), 2 / (1 + std::get<12>(r())), 2
+			/ (1 + std::get<13>(r())), 2 / (1 + std::get<14>(r())), 2
+			/ (1 + std::get<15>(r())), 2 / (1 + std::get<16>(r())), 2
+			/ (1 + std::get<17>(r())), 2 / (1 + std::get<18>(r())), 2
+			/ (1 + std::get<19>(r())), 2 / (1 + std::get<20>(r())), 2
+			/ (1 + std::get<21>(r())), 2 / (1 + std::get<22>(r())), 2
+			/ (1 + std::get<23>(r())), 2 / (1 + std::get<24>(r())), 2
+			/ (1 + std::get<25>(r())), 2 / (1 + std::get<26>(r())) };
 
 	for (std::size_t j = 0; j < tensor3::vsize; ++j)
-		minmod2.v_r()[j] = minmod2LimiterCalculation(r.v()[j], xiR.v()[j]);
+		minmod2.r()[j] = minmod2LimiterCalculation(r()[j], xiR()[j]);
 
-	return tensor3 { minmod2.v()[0] * gradientC.v()[0], minmod2.v()[1]
-			* gradientC.v()[1], minmod2.v()[2] * gradientC.v()[2],
-			minmod2.v()[3] * gradientC.v()[3], minmod2.v()[4]
-					* gradientC.v()[4], minmod2.v()[5] * gradientC.v()[5],
-			minmod2.v()[6] * gradientC.v()[6], minmod2.v()[7]
-					* gradientC.v()[7], minmod2.v()[8] * gradientC.v()[8],
-			minmod2.v()[9] * gradientC.v()[9], minmod2.v()[10]
-					* gradientC.v()[10], minmod2.v()[11] * gradientC.v()[11],
-			minmod2.v()[12] * gradientC.v()[12], minmod2.v()[13]
-					* gradientC.v()[13], minmod2.v()[14] * gradientC.v()[14],
-			minmod2.v()[15] * gradientC.v()[15], minmod2.v()[16]
-					* gradientC.v()[16], minmod2.v()[17] * gradientC.v()[17],
-			minmod2.v()[18] * gradientC.v()[18], minmod2.v()[19]
-					* gradientC.v()[19], minmod2.v()[20] * gradientC.v()[20],
-			minmod2.v()[21] * gradientC.v()[21], minmod2.v()[22]
-					* gradientC.v()[22], minmod2.v()[23] * gradientC.v()[23],
-			minmod2.v()[24] * gradientC.v()[24], minmod2.v()[25]
-					* gradientC.v()[25], minmod2.v()[26] * gradientC.v()[26] };
+	return tensor3 { std::get<0>(minmod2()) * std::get<0>(gradientC()),
+			std::get<1>(minmod2()) * std::get<1>(gradientC()), std::get<2>(
+					minmod2()) * std::get<2>(gradientC()), std::get<3>(
+					minmod2()) * std::get<3>(gradientC()), std::get<4>(
+					minmod2()) * std::get<4>(gradientC()), std::get<5>(
+					minmod2()) * std::get<5>(gradientC()), std::get<6>(
+					minmod2()) * std::get<6>(gradientC()), std::get<7>(
+					minmod2()) * std::get<7>(gradientC()), std::get<8>(
+					minmod2()) * std::get<8>(gradientC()), std::get<9>(
+					minmod2()) * std::get<9>(gradientC()), std::get<10>(
+					minmod2()) * std::get<10>(gradientC()), std::get<11>(
+					minmod2()) * std::get<11>(gradientC()), std::get<12>(
+					minmod2()) * std::get<12>(gradientC()), std::get<13>(
+					minmod2()) * std::get<13>(gradientC()), std::get<14>(
+					minmod2()) * std::get<14>(gradientC()), std::get<15>(
+					minmod2()) * std::get<15>(gradientC()), std::get<16>(
+					minmod2()) * std::get<16>(gradientC()), std::get<17>(
+					minmod2()) * std::get<17>(gradientC()), std::get<18>(
+					minmod2()) * std::get<18>(gradientC()), std::get<19>(
+					minmod2()) * std::get<19>(gradientC()), std::get<20>(
+					minmod2()) * std::get<20>(gradientC()), std::get<21>(
+					minmod2()) * std::get<21>(gradientC()), std::get<22>(
+					minmod2()) * std::get<22>(gradientC()), std::get<23>(
+					minmod2()) * std::get<23>(gradientC()), std::get<24>(
+					minmod2()) * std::get<24>(gradientC()), std::get<25>(
+					minmod2()) * std::get<25>(gradientC()), std::get<26>(
+					minmod2()) * std::get<26>(gradientC()) };
 }
 
 schemi::vector schemi::minmod2Limiter::calculateNoRightLimit(const vector & r,
@@ -109,10 +127,11 @@ schemi::vector schemi::minmod2Limiter::calculateNoRightLimit(const vector & r,
 	vector minmod2;
 
 	for (std::size_t j = 0; j < vector::vsize; ++j)
-		minmod2.v_r()[j] = minmod2LimiterCalculation(r.v()[j]);
+		minmod2.r()[j] = minmod2LimiterCalculation(r()[j]);
 
-	return vector { minmod2.v()[0] * gradientC.v()[0], minmod2.v()[1]
-			* gradientC.v()[1], minmod2.v()[2] * gradientC.v()[2] };
+	return vector { std::get<0>(minmod2()) * std::get<0>(gradientC()), std::get<
+			1>(minmod2()) * std::get<1>(gradientC()), std::get<2>(minmod2())
+			* std::get<2>(gradientC()) };
 }
 
 schemi::tensor schemi::minmod2Limiter::calculateNoRightLimit(const tensor & r,
@@ -121,14 +140,17 @@ schemi::tensor schemi::minmod2Limiter::calculateNoRightLimit(const tensor & r,
 	tensor minmod2;
 
 	for (std::size_t j = 0; j < tensor::vsize; ++j)
-		minmod2.v_r()[j] = minmod2LimiterCalculation(r.v()[j]);
+		minmod2.r()[j] = minmod2LimiterCalculation(r()[j]);
 
-	return tensor { minmod2.v()[0] * gradientC.v()[0], minmod2.v()[1]
-			* gradientC.v()[1], minmod2.v()[2] * gradientC.v()[2],
-			minmod2.v()[3] * gradientC.v()[3], minmod2.v()[4]
-					* gradientC.v()[4], minmod2.v()[5] * gradientC.v()[5],
-			minmod2.v()[6] * gradientC.v()[6], minmod2.v()[7]
-					* gradientC.v()[7], minmod2.v()[8] * gradientC.v()[8] };
+	return tensor { std::get<0>(minmod2()) * std::get<0>(gradientC()), std::get<
+			1>(minmod2()) * std::get<1>(gradientC()), std::get<2>(minmod2())
+			* std::get<2>(gradientC()), std::get<3>(minmod2())
+			* std::get<3>(gradientC()), std::get<4>(minmod2())
+			* std::get<4>(gradientC()), std::get<5>(minmod2())
+			* std::get<5>(gradientC()), std::get<6>(minmod2())
+			* std::get<6>(gradientC()), std::get<7>(minmod2())
+			* std::get<7>(gradientC()), std::get<8>(minmod2())
+			* std::get<8>(gradientC()) };
 }
 
 schemi::tensor3 schemi::minmod2Limiter::calculateNoRightLimit(const tensor3 & r,
@@ -137,24 +159,33 @@ schemi::tensor3 schemi::minmod2Limiter::calculateNoRightLimit(const tensor3 & r,
 	tensor3 minmod2;
 
 	for (std::size_t j = 0; j < tensor3::vsize; ++j)
-		minmod2.v_r()[j] = minmod2LimiterCalculation(r.v()[j]);
+		minmod2.r()[j] = minmod2LimiterCalculation(r()[j]);
 
-	return tensor3 { minmod2.v()[0] * gradientC.v()[0], minmod2.v()[1]
-			* gradientC.v()[1], minmod2.v()[2] * gradientC.v()[2],
-			minmod2.v()[3] * gradientC.v()[3], minmod2.v()[4]
-					* gradientC.v()[4], minmod2.v()[5] * gradientC.v()[5],
-			minmod2.v()[6] * gradientC.v()[6], minmod2.v()[7]
-					* gradientC.v()[7], minmod2.v()[8] * gradientC.v()[8],
-			minmod2.v()[9] * gradientC.v()[9], minmod2.v()[10]
-					* gradientC.v()[10], minmod2.v()[11] * gradientC.v()[11],
-			minmod2.v()[12] * gradientC.v()[12], minmod2.v()[13]
-					* gradientC.v()[13], minmod2.v()[14] * gradientC.v()[14],
-			minmod2.v()[15] * gradientC.v()[15], minmod2.v()[16]
-					* gradientC.v()[16], minmod2.v()[17] * gradientC.v()[17],
-			minmod2.v()[18] * gradientC.v()[18], minmod2.v()[19]
-					* gradientC.v()[19], minmod2.v()[20] * gradientC.v()[20],
-			minmod2.v()[21] * gradientC.v()[21], minmod2.v()[22]
-					* gradientC.v()[22], minmod2.v()[23] * gradientC.v()[23],
-			minmod2.v()[24] * gradientC.v()[24], minmod2.v()[25]
-					* gradientC.v()[25], minmod2.v()[26] * gradientC.v()[26] };
+	return tensor3 { std::get<0>(minmod2()) * std::get<0>(gradientC()),
+			std::get<1>(minmod2()) * std::get<1>(gradientC()), std::get<2>(
+					minmod2()) * std::get<2>(gradientC()), std::get<3>(
+					minmod2()) * std::get<3>(gradientC()), std::get<4>(
+					minmod2()) * std::get<4>(gradientC()), std::get<5>(
+					minmod2()) * std::get<5>(gradientC()), std::get<6>(
+					minmod2()) * std::get<6>(gradientC()), std::get<7>(
+					minmod2()) * std::get<7>(gradientC()), std::get<8>(
+					minmod2()) * std::get<8>(gradientC()), std::get<9>(
+					minmod2()) * std::get<9>(gradientC()), std::get<10>(
+					minmod2()) * std::get<10>(gradientC()), std::get<11>(
+					minmod2()) * std::get<11>(gradientC()), std::get<12>(
+					minmod2()) * std::get<12>(gradientC()), std::get<13>(
+					minmod2()) * std::get<13>(gradientC()), std::get<14>(
+					minmod2()) * std::get<14>(gradientC()), std::get<15>(
+					minmod2()) * std::get<15>(gradientC()), std::get<16>(
+					minmod2()) * std::get<16>(gradientC()), std::get<17>(
+					minmod2()) * std::get<17>(gradientC()), std::get<18>(
+					minmod2()) * std::get<18>(gradientC()), std::get<19>(
+					minmod2()) * std::get<19>(gradientC()), std::get<20>(
+					minmod2()) * std::get<20>(gradientC()), std::get<21>(
+					minmod2()) * std::get<21>(gradientC()), std::get<22>(
+					minmod2()) * std::get<22>(gradientC()), std::get<23>(
+					minmod2()) * std::get<23>(gradientC()), std::get<24>(
+					minmod2()) * std::get<24>(gradientC()), std::get<25>(
+					minmod2()) * std::get<25>(gradientC()), std::get<26>(
+					minmod2()) * std::get<26>(gradientC()) };
 }

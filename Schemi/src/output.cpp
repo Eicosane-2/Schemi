@@ -44,16 +44,14 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 				<< " output file is opened. Number of output: " << noutput
 				<< '.' << std::endl;
 	else
-		throw exception(
+		throw std::ofstream::failure(
 				std::string("Couldn't create outputFile ")
-						+ std::string(outputFileName) + std::string("."),
-				errors::systemError);
+						+ std::string(outputFileName) + std::string("."));
 
 	if (timeFile.is_open())
 		std::cout << "./result/Time.tsv is opened." << std::endl;
 	else
-		throw exception("Couldn't open ./result/Time.tsv.",
-				errors::systemError);
+		throw std::ofstream::failure("Couldn't open ./result/Time.tsv.");
 
 	outputFile << "coordinate_x" << '\t';
 	outputFile << "coordinate_y" << '\t';
@@ -208,10 +206,9 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	std::ofstream output_aVector { fieldDataFileName_a };
 	output_aVector.precision(ioPrecision);
 	if (!output_aVector.is_open())
-		throw exception(
+		throw std::ofstream::failure(
 				std::string("Couldn't create output file for field data ")
-						+ std::string(fieldDataFileName_a) + std::string("."),
-				errors::systemError);
+						+ std::string(fieldDataFileName_a) + std::string("."));
 
 	for (std::size_t i = 0; i < outputData.aTurb_xNonSorted.size(); ++i)
 		output_aVector << outputData.aTurb_xNonSorted[i] << '\t'
@@ -223,10 +220,9 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	std::ofstream output_bScalar { fieldDataFileName_b };
 	output_bScalar.precision(ioPrecision);
 	if (!output_bScalar.is_open())
-		throw exception(
+		throw std::ofstream::failure(
 				std::string("Couldn't create output file for field data ")
-						+ std::string(fieldDataFileName_b) + std::string("."),
-				errors::systemError);
+						+ std::string(fieldDataFileName_b) + std::string("."));
 
 	for (std::size_t i = 0; i < outputData.bTurbNonSorted.size(); ++i)
 		output_bScalar << outputData.bTurbNonSorted[i] << '\n';
@@ -236,10 +232,10 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	std::ofstream output_epsilonScalar { fieldDataFileName_epsilon };
 	output_epsilonScalar.precision(ioPrecision);
 	if (!output_epsilonScalar.is_open())
-		throw exception(
+		throw std::ofstream::failure(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_epsilon)
-						+ std::string("."), errors::systemError);
+						+ std::string("."));
 
 	for (std::size_t i = 0; i < outputData.epsTurbNonSorted.size(); ++i)
 		output_epsilonScalar << outputData.epsTurbNonSorted[i] << '\n';
@@ -249,10 +245,9 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	std::ofstream output_kScalar { fieldDataFileName_k };
 	output_kScalar.precision(ioPrecision);
 	if (!output_kScalar.is_open())
-		throw exception(
+		throw std::ofstream::failure(
 				std::string("Couldn't create output file for field data ")
-						+ std::string(fieldDataFileName_k) + std::string("."),
-				errors::systemError);
+						+ std::string(fieldDataFileName_k) + std::string("."));
 
 	for (std::size_t i = 0; i < outputData.kTurbNonSorted.size(); ++i)
 		output_kScalar << outputData.kTurbNonSorted[i] << '\n';
@@ -262,10 +257,10 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	std::ofstream output_pressureScalar { fieldDataFileName_pressure };
 	output_pressureScalar.precision(ioPrecision);
 	if (!output_pressureScalar.is_open())
-		throw exception(
+		throw std::ofstream::failure(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_pressure)
-						+ std::string("."), errors::systemError);
+						+ std::string("."));
 
 	for (std::size_t i = 0; i < outputData.pressureNonSorted.size(); ++i)
 		output_pressureScalar << outputData.pressureNonSorted[i] << '\n';
@@ -275,10 +270,10 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	std::ofstream output_velocityVector { fieldDataFileName_velocity };
 	output_velocityVector.precision(ioPrecision);
 	if (!output_velocityVector.is_open())
-		throw exception(
+		throw std::ofstream::failure(
 				std::string("Couldn't create output file for field data ")
 						+ std::string(fieldDataFileName_velocity)
-						+ std::string("."), errors::systemError);
+						+ std::string("."));
 
 	for (std::size_t i = 0; i < outputData.velocity_xNonSorted.size(); ++i)
 		output_velocityVector << outputData.velocity_xNonSorted[i] << '\t'
@@ -293,10 +288,10 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 				fieldDataFileName_concentration[k] };
 		output_concentrationScalar.precision(20);
 		if (!output_concentrationScalar.is_open())
-			throw exception(
+			throw std::ofstream::failure(
 					std::string("Couldn't create output file for field data ")
 							+ std::string(fieldDataFileName_concentration[k])
-							+ std::string("."), errors::systemError);
+							+ std::string("."));
 
 		for (std::size_t i = 0; i < outputData.concentrationNonSorted[k].size();
 				++i)
@@ -318,8 +313,7 @@ void schemi::output::mixedZoneWidth1D(const structForOutput & outputData,
 	if (timeWidthFile.is_open())
 		std::cout << "./result/timeWidth.tsv is opened." << std::endl;
 	else
-		throw exception("Couldn't create ./result/timeWidth.tsv.",
-				errors::systemError);
+		throw std::ofstream::failure("Couldn't create ./result/timeWidth.tsv.");
 
 	scalar rL { 0 }, rR { 0 };
 	bool isFounded { false };

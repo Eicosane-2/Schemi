@@ -23,7 +23,9 @@ schemi::scalar schemi::turbulentParametersKEPS::thetaS(const scalar divV,
 
 schemi::turbulentParametersKEPS::turbulentParametersKEPS(
 
-const scalar CmuI,
+const mesh & meshIn,
+
+const scalar CmuIn,
 
 const scalar C0In,
 
@@ -60,9 +62,10 @@ const scalar CMS_R_In,
 const scalar CMS_D_In,
 
 const scalar CMS_B_In) noexcept :
-		abstractTurbulentParameters(CmuI, C0In, C1In, C2In, C3In, sigmaScIn,
-				sigmaTIn, sigmaEIn, sigmakIn, sigmaepsIn, sigmaaIn, sigmabIn,
-				Ca1In, Cb1In, minkIn, mienpsIn, CMS_R_In, CMS_D_In, CMS_B_In)
+		abstractTurbulentParameters(meshIn, CmuIn, C0In, C1In, C2In, C3In,
+				sigmaScIn, sigmaTIn, sigmaEIn, sigmakIn, sigmaepsIn, sigmaaIn,
+				sigmabIn, Ca1In, Cb1In, minkIn, mienpsIn, CMS_R_In, CMS_D_In,
+				CMS_B_In)
 {
 }
 
@@ -82,7 +85,7 @@ schemi::scalar schemi::turbulentParametersKEPS::calculateNut(const scalar k,
 std::valarray<schemi::scalar> schemi::turbulentParametersKEPS::rhoepsilon(
 		const bunchOfFields<cubicCell> & cf) const noexcept
 {
-	return cf.rhoepsTurb.ref();
+	return cf.rhoepsTurb();
 }
 
 schemi::scalar schemi::turbulentParametersKEPS::thetaS_R(const scalar divV,
@@ -98,8 +101,7 @@ schemi::volumeField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_R(
 	volumeField<scalar> returnField { divV.meshRef(), 0. };
 
 	for (std::size_t i = 0; i < returnField.size(); ++i)
-		returnField.ref_r()[i] = thetaS(divV.ref()[i], k.ref()[i], eps.ref()[i],
-				CMS_R());
+		returnField.r()[i] = thetaS(divV()[i], k()[i], eps()[i], CMS_R());
 
 	return returnField;
 }
@@ -111,8 +113,7 @@ schemi::surfaceField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_R(
 	surfaceField<scalar> returnField { divV.meshRef(), 0. };
 
 	for (std::size_t i = 0; i < returnField.size(); ++i)
-		returnField.ref_r()[i] = thetaS(divV.ref()[i], k.ref()[i], eps.ref()[i],
-				CMS_R());
+		returnField.r()[i] = thetaS(divV()[i], k()[i], eps()[i], CMS_R());
 
 	return returnField;
 }
@@ -133,11 +134,10 @@ schemi::volumeField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_D(
 	volumeField<scalar> returnField { divV.meshRef(), 0. };
 
 	for (std::size_t i = 0; i < returnField.size(); ++i)
-		if (divV.ref()[i] < 0.)
-			returnField.ref_r()[i] = thetaS(divV.ref()[i], k.ref()[i],
-					eps.ref()[i], CMS_D());
+		if (divV()[i] < 0.)
+			returnField.r()[i] = thetaS(divV()[i], k()[i], eps()[i], CMS_D());
 		else
-			returnField.ref_r()[i] = 1.;
+			returnField.r()[i] = 1.;
 
 	return returnField;
 }
@@ -149,11 +149,10 @@ schemi::surfaceField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_D(
 	surfaceField<scalar> returnField { divV.meshRef(), 0. };
 
 	for (std::size_t i = 0; i < returnField.size(); ++i)
-		if (divV.ref()[i] < 0.)
-			returnField.ref_r()[i] = thetaS(divV.ref()[i], k.ref()[i],
-					eps.ref()[i], CMS_D());
+		if (divV()[i] < 0.)
+			returnField.r()[i] = thetaS(divV()[i], k()[i], eps()[i], CMS_D());
 		else
-			returnField.ref_r()[i] = 1.;
+			returnField.r()[i] = 1.;
 
 	return returnField;
 }

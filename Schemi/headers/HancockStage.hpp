@@ -26,37 +26,35 @@ volumeField<T> HancockDivergence(
 		const surfaceField<T> & surfaceOwnerSideT,
 		const surfaceField<T> & surfaceNeighbourSideT)
 {
-	auto & mesh { surfaceOwnerSideVelocity.meshRef() };
+	auto & mesh_ { surfaceOwnerSideVelocity.meshRef() };
 
-	volumeField<T> divTVHancock { mesh, T(0) };
+	volumeField<T> divTVHancock { mesh_, T(0) };
 
 	for (std::size_t i = 0; i < divTVHancock.size(); ++i)
 	{
 		const std::vector<std::size_t> & surfacesOfCell_i {
-				mesh.surfacesOfCells()[i] };
+				mesh_.surfacesOfCells()[i] };
 
 		for (std::size_t j = 0; j < surfacesOfCell_i.size(); ++j)
 		{
 			const std::size_t surfaceIndex { surfacesOfCell_i[j] };
 
-			if (i == mesh.surfaceOwner()[surfaceIndex])
-				divTVHancock.ref_r()[i] +=
-						((surfaceOwnerSideT.ref()[surfaceIndex]
-								* surfaceOwnerSideVelocity.ref()[surfaceIndex])
-								& mesh.surfaces()[surfaceIndex].N())
-								* mesh.surfaces()[surfaceIndex].S();
-			else if (i == mesh.surfaceNeighbour()[surfaceIndex])
-				divTVHancock.ref_r()[i] +=
-						((surfaceNeighbourSideT.ref()[surfaceIndex]
-								* surfaceNeighbourSideVelocity.ref()[surfaceIndex])
-								& (mesh.surfaces()[surfaceIndex].N() * (-1)))
-								* mesh.surfaces()[surfaceIndex].S();
+			if (i == mesh_.surfaceOwner()[surfaceIndex])
+				divTVHancock.r()[i] += ((surfaceOwnerSideT()[surfaceIndex]
+						* surfaceOwnerSideVelocity()[surfaceIndex])
+						& mesh_.surfaces()[surfaceIndex].N())
+						* mesh_.surfaces()[surfaceIndex].S();
+			else if (i == mesh_.surfaceNeighbour()[surfaceIndex])
+				divTVHancock.r()[i] += ((surfaceNeighbourSideT()[surfaceIndex]
+						* surfaceNeighbourSideVelocity()[surfaceIndex])
+						& (mesh_.surfaces()[surfaceIndex].N() * (-1)))
+						* mesh_.surfaces()[surfaceIndex].S();
 			else
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
 						errors::systemError);
 		}
-		divTVHancock.ref_r()[i] /= mesh.cells()[i].V();
+		divTVHancock.r()[i] /= mesh_.cells()[i].V();
 	}
 
 	return divTVHancock;
@@ -67,23 +65,23 @@ void HancockTimeIntegration(const volumeField<T> & flowDivergence,
 		surfaceField<T> & surfaceOwnerSideT,
 		surfaceField<T> & surfaceNeighbourSideT, const scalar halfTimestep)
 {
-	auto & mesh { surfaceOwnerSideT.meshRef() };
+	auto & mesh_ { surfaceOwnerSideT.meshRef() };
 
-	for (std::size_t i = 0; i < mesh.cellsSize(); ++i)
+	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
 		const std::vector<std::size_t> & surfacesOfCell_i {
-				mesh.surfacesOfCells()[i] };
+				mesh_.surfacesOfCells()[i] };
 
 		for (std::size_t j = 0; j < surfacesOfCell_i.size(); ++j)
 		{
 			const std::size_t surfaceIndex { surfacesOfCell_i[j] };
 
-			if (i == mesh.surfaceOwner()[surfaceIndex])
-				surfaceOwnerSideT.ref_r()[surfaceIndex] -=
-						flowDivergence.ref()[i] * halfTimestep;
-			else if (i == mesh.surfaceNeighbour()[surfaceIndex])
-				surfaceNeighbourSideT.ref_r()[surfaceIndex] -=
-						flowDivergence.ref()[i] * halfTimestep;
+			if (i == mesh_.surfaceOwner()[surfaceIndex])
+				surfaceOwnerSideT.r()[surfaceIndex] -= flowDivergence()[i]
+						* halfTimestep;
+			else if (i == mesh_.surfaceNeighbour()[surfaceIndex])
+				surfaceNeighbourSideT.r()[surfaceIndex] -= flowDivergence()[i]
+						* halfTimestep;
 			else
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",

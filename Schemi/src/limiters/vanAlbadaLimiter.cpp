@@ -39,70 +39,88 @@ schemi::scalar schemi::vanAlbadaLimiter::vanAlbadaLimiterCalculation(
 schemi::vector schemi::vanAlbadaLimiter::calculate(const vector & r,
 		const vector & gradientC) const noexcept
 {
-	vector vanAlbada, xiR(2 / (1 + r.v()[0]), 2 / (1 + r.v()[1]),
-			2 / (1 + r.v()[2]));
+	vector vanAlbada, xiR { 2 / (1 + std::get<0>(r())), 2
+			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())) };
 
 	for (std::size_t j = 0; j < vector::vsize; ++j)
-		vanAlbada.v_r()[j] = vanAlbadaLimiterCalculation(r.v()[j], xiR.v()[j]);
+		vanAlbada.r()[j] = vanAlbadaLimiterCalculation(r()[j], xiR()[j]);
 
-	return vector { vanAlbada.v()[0] * gradientC.v()[0], vanAlbada.v()[1]
-			* gradientC.v()[1], vanAlbada.v()[2] * gradientC.v()[2] };
+	return vector { std::get<0>(vanAlbada()) * std::get<0>(gradientC()),
+			std::get<1>(vanAlbada()) * std::get<1>(gradientC()), std::get<2>(
+					vanAlbada()) * std::get<2>(gradientC()) };
 }
 
 schemi::tensor schemi::vanAlbadaLimiter::calculate(const tensor & r,
 		const tensor & gradientC) const noexcept
 {
-	tensor vanAlbada, xiR(2 / (1 + r.v()[0]), 2 / (1 + r.v()[1]),
-			2 / (1 + r.v()[2]), 2 / (1 + r.v()[3]), 2 / (1 + r.v()[4]),
-			2 / (1 + r.v()[5]), 2 / (1 + r.v()[6]), 2 / (1 + r.v()[7]),
-			2 / (1 + r.v()[8]));
+	tensor vanAlbada, xiR { 2 / (1 + std::get<0>(r())), 2
+			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())), 2
+			/ (1 + std::get<3>(r())), 2 / (1 + std::get<4>(r())), 2
+			/ (1 + std::get<5>(r())), 2 / (1 + std::get<6>(r())), 2
+			/ (1 + std::get<7>(r())), 2 / (1 + std::get<8>(r())) };
 
 	for (std::size_t j = 0; j < tensor::vsize; ++j)
-		vanAlbada.v_r()[j] = vanAlbadaLimiterCalculation(r.v()[j], xiR.v()[j]);
+		vanAlbada.r()[j] = vanAlbadaLimiterCalculation(r()[j], xiR()[j]);
 
-	return tensor { vanAlbada.v()[0] * gradientC.v()[0], vanAlbada.v()[1]
-			* gradientC.v()[1], vanAlbada.v()[2] * gradientC.v()[2],
-			vanAlbada.v()[3] * gradientC.v()[3], vanAlbada.v()[4]
-					* gradientC.v()[4], vanAlbada.v()[5] * gradientC.v()[5],
-			vanAlbada.v()[6] * gradientC.v()[6], vanAlbada.v()[7]
-					* gradientC.v()[7], vanAlbada.v()[8] * gradientC.v()[8] };
+	return tensor { std::get<0>(vanAlbada()) * std::get<0>(gradientC()),
+			std::get<1>(vanAlbada()) * std::get<1>(gradientC()), std::get<2>(
+					vanAlbada()) * std::get<2>(gradientC()), std::get<3>(
+					vanAlbada()) * std::get<3>(gradientC()), std::get<4>(
+					vanAlbada()) * std::get<4>(gradientC()), std::get<5>(
+					vanAlbada()) * std::get<5>(gradientC()), std::get<6>(
+					vanAlbada()) * std::get<6>(gradientC()), std::get<7>(
+					vanAlbada()) * std::get<7>(gradientC()), std::get<8>(
+					vanAlbada()) * std::get<8>(gradientC()) };
 }
 
 schemi::tensor3 schemi::vanAlbadaLimiter::calculate(const tensor3 & r,
 		const tensor3 & gradientC) const noexcept
 {
-	tensor3 vanAlbada, xiR(2 / (1 + r.v()[0]), 2 / (1 + r.v()[1]),
-			2 / (1 + r.v()[2]), 2 / (1 + r.v()[3]), 2 / (1 + r.v()[4]),
-			2 / (1 + r.v()[5]), 2 / (1 + r.v()[6]), 2 / (1 + r.v()[7]),
-			2 / (1 + r.v()[8]), 2 / (1 + r.v()[9]), 2 / (1 + r.v()[10]),
-			2 / (1 + r.v()[11]), 2 / (1 + r.v()[12]), 2 / (1 + r.v()[13]),
-			2 / (1 + r.v()[14]), 2 / (1 + r.v()[15]), 2 / (1 + r.v()[16]),
-			2 / (1 + r.v()[17]), 2 / (1 + r.v()[18]), 2 / (1 + r.v()[19]),
-			2 / (1 + r.v()[20]), 2 / (1 + r.v()[21]), 2 / (1 + r.v()[22]),
-			2 / (1 + r.v()[23]), 2 / (1 + r.v()[24]), 2 / (1 + r.v()[25]),
-			2 / (1 + r.v()[26]));
+	tensor3 vanAlbada, xiR { 2 / (1 + std::get<0>(r())), 2
+			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())), 2
+			/ (1 + std::get<3>(r())), 2 / (1 + std::get<4>(r())), 2
+			/ (1 + std::get<5>(r())), 2 / (1 + std::get<6>(r())), 2
+			/ (1 + std::get<7>(r())), 2 / (1 + std::get<8>(r())), 2
+			/ (1 + std::get<9>(r())), 2 / (1 + std::get<10>(r())), 2
+			/ (1 + std::get<11>(r())), 2 / (1 + std::get<12>(r())), 2
+			/ (1 + std::get<13>(r())), 2 / (1 + std::get<14>(r())), 2
+			/ (1 + std::get<15>(r())), 2 / (1 + std::get<16>(r())), 2
+			/ (1 + std::get<17>(r())), 2 / (1 + std::get<18>(r())), 2
+			/ (1 + std::get<19>(r())), 2 / (1 + std::get<20>(r())), 2
+			/ (1 + std::get<21>(r())), 2 / (1 + std::get<22>(r())), 2
+			/ (1 + std::get<23>(r())), 2 / (1 + std::get<24>(r())), 2
+			/ (1 + std::get<25>(r())), 2 / (1 + std::get<26>(r())) };
 
 	for (std::size_t j = 0; j < tensor3::vsize; ++j)
-		vanAlbada.v_r()[j] = vanAlbadaLimiterCalculation(r.v()[j], xiR.v()[j]);
+		vanAlbada.r()[j] = vanAlbadaLimiterCalculation(r()[j], xiR()[j]);
 
-	return tensor3 { vanAlbada.v()[0] * gradientC.v()[0], vanAlbada.v()[1]
-			* gradientC.v()[1], vanAlbada.v()[2] * gradientC.v()[2],
-			vanAlbada.v()[3] * gradientC.v()[3], vanAlbada.v()[4]
-					* gradientC.v()[4], vanAlbada.v()[5] * gradientC.v()[5],
-			vanAlbada.v()[6] * gradientC.v()[6], vanAlbada.v()[7]
-					* gradientC.v()[7], vanAlbada.v()[8] * gradientC.v()[8],
-			vanAlbada.v()[9] * gradientC.v()[9], vanAlbada.v()[10]
-					* gradientC.v()[10], vanAlbada.v()[11] * gradientC.v()[11],
-			vanAlbada.v()[12] * gradientC.v()[12], vanAlbada.v()[13]
-					* gradientC.v()[13], vanAlbada.v()[14] * gradientC.v()[14],
-			vanAlbada.v()[15] * gradientC.v()[15], vanAlbada.v()[16]
-					* gradientC.v()[16], vanAlbada.v()[17] * gradientC.v()[17],
-			vanAlbada.v()[18] * gradientC.v()[18], vanAlbada.v()[19]
-					* gradientC.v()[19], vanAlbada.v()[20] * gradientC.v()[20],
-			vanAlbada.v()[21] * gradientC.v()[21], vanAlbada.v()[22]
-					* gradientC.v()[22], vanAlbada.v()[23] * gradientC.v()[23],
-			vanAlbada.v()[24] * gradientC.v()[24], vanAlbada.v()[25]
-					* gradientC.v()[25], vanAlbada.v()[26] * gradientC.v()[26] };
+	return tensor3 { std::get<0>(vanAlbada()) * std::get<0>(gradientC()),
+			std::get<1>(vanAlbada()) * std::get<1>(gradientC()), std::get<2>(
+					vanAlbada()) * std::get<2>(gradientC()), std::get<3>(
+					vanAlbada()) * std::get<3>(gradientC()), std::get<4>(
+					vanAlbada()) * std::get<4>(gradientC()), std::get<5>(
+					vanAlbada()) * std::get<5>(gradientC()), std::get<6>(
+					vanAlbada()) * std::get<6>(gradientC()), std::get<7>(
+					vanAlbada()) * std::get<7>(gradientC()), std::get<8>(
+					vanAlbada()) * std::get<8>(gradientC()), std::get<9>(
+					vanAlbada()) * std::get<9>(gradientC()), std::get<10>(
+					vanAlbada()) * std::get<10>(gradientC()), std::get<11>(
+					vanAlbada()) * std::get<11>(gradientC()), std::get<12>(
+					vanAlbada()) * std::get<12>(gradientC()), std::get<13>(
+					vanAlbada()) * std::get<13>(gradientC()), std::get<14>(
+					vanAlbada()) * std::get<14>(gradientC()), std::get<15>(
+					vanAlbada()) * std::get<15>(gradientC()), std::get<16>(
+					vanAlbada()) * std::get<16>(gradientC()), std::get<17>(
+					vanAlbada()) * std::get<17>(gradientC()), std::get<18>(
+					vanAlbada()) * std::get<18>(gradientC()), std::get<19>(
+					vanAlbada()) * std::get<19>(gradientC()), std::get<20>(
+					vanAlbada()) * std::get<20>(gradientC()), std::get<21>(
+					vanAlbada()) * std::get<21>(gradientC()), std::get<22>(
+					vanAlbada()) * std::get<22>(gradientC()), std::get<23>(
+					vanAlbada()) * std::get<23>(gradientC()), std::get<24>(
+					vanAlbada()) * std::get<24>(gradientC()), std::get<25>(
+					vanAlbada()) * std::get<25>(gradientC()), std::get<26>(
+					vanAlbada()) * std::get<26>(gradientC()) };
 }
 
 schemi::vector schemi::vanAlbadaLimiter::calculateNoRightLimit(const vector & r,
@@ -111,10 +129,11 @@ schemi::vector schemi::vanAlbadaLimiter::calculateNoRightLimit(const vector & r,
 	vector vanAlbada;
 
 	for (std::size_t j = 0; j < vector::vsize; ++j)
-		vanAlbada.v_r()[j] = vanAlbadaLimiterCalculation(r.v()[j]);
+		vanAlbada.r()[j] = vanAlbadaLimiterCalculation(r()[j]);
 
-	return vector { vanAlbada.v()[0] * gradientC.v()[0], vanAlbada.v()[1]
-			* gradientC.v()[1], vanAlbada.v()[2] * gradientC.v()[2] };
+	return vector { std::get<0>(vanAlbada()) * std::get<0>(gradientC()),
+			std::get<1>(vanAlbada()) * std::get<1>(gradientC()), std::get<2>(
+					vanAlbada()) * std::get<2>(gradientC()) };
 }
 
 schemi::tensor schemi::vanAlbadaLimiter::calculateNoRightLimit(const tensor & r,
@@ -123,14 +142,17 @@ schemi::tensor schemi::vanAlbadaLimiter::calculateNoRightLimit(const tensor & r,
 	tensor vanAlbada;
 
 	for (std::size_t j = 0; j < tensor::vsize; ++j)
-		vanAlbada.v_r()[j] = vanAlbadaLimiterCalculation(r.v()[j]);
+		vanAlbada.r()[j] = vanAlbadaLimiterCalculation(r()[j]);
 
-	return tensor { vanAlbada.v()[0] * gradientC.v()[0], vanAlbada.v()[1]
-			* gradientC.v()[1], vanAlbada.v()[2] * gradientC.v()[2],
-			vanAlbada.v()[3] * gradientC.v()[3], vanAlbada.v()[4]
-					* gradientC.v()[4], vanAlbada.v()[5] * gradientC.v()[5],
-			vanAlbada.v()[6] * gradientC.v()[6], vanAlbada.v()[7]
-					* gradientC.v()[7], vanAlbada.v()[8] * gradientC.v()[8] };
+	return tensor { std::get<0>(vanAlbada()) * std::get<0>(gradientC()),
+			std::get<1>(vanAlbada()) * std::get<1>(gradientC()), std::get<2>(
+					vanAlbada()) * std::get<2>(gradientC()), std::get<3>(
+					vanAlbada()) * std::get<3>(gradientC()), std::get<4>(
+					vanAlbada()) * std::get<4>(gradientC()), std::get<5>(
+					vanAlbada()) * std::get<5>(gradientC()), std::get<6>(
+					vanAlbada()) * std::get<6>(gradientC()), std::get<7>(
+					vanAlbada()) * std::get<7>(gradientC()), std::get<8>(
+					vanAlbada()) * std::get<8>(gradientC()) };
 }
 
 schemi::tensor3 schemi::vanAlbadaLimiter::calculateNoRightLimit(
@@ -139,24 +161,33 @@ schemi::tensor3 schemi::vanAlbadaLimiter::calculateNoRightLimit(
 	tensor3 vanAlbada;
 
 	for (std::size_t j = 0; j < tensor3::vsize; ++j)
-		vanAlbada.v_r()[j] = vanAlbadaLimiterCalculation(r.v()[j]);
+		vanAlbada.r()[j] = vanAlbadaLimiterCalculation(r()[j]);
 
-	return tensor3 { vanAlbada.v()[0] * gradientC.v()[0], vanAlbada.v()[1]
-			* gradientC.v()[1], vanAlbada.v()[2] * gradientC.v()[2],
-			vanAlbada.v()[3] * gradientC.v()[3], vanAlbada.v()[4]
-					* gradientC.v()[4], vanAlbada.v()[5] * gradientC.v()[5],
-			vanAlbada.v()[6] * gradientC.v()[6], vanAlbada.v()[7]
-					* gradientC.v()[7], vanAlbada.v()[8] * gradientC.v()[8],
-			vanAlbada.v()[9] * gradientC.v()[9], vanAlbada.v()[10]
-					* gradientC.v()[10], vanAlbada.v()[11] * gradientC.v()[11],
-			vanAlbada.v()[12] * gradientC.v()[12], vanAlbada.v()[13]
-					* gradientC.v()[13], vanAlbada.v()[14] * gradientC.v()[14],
-			vanAlbada.v()[15] * gradientC.v()[15], vanAlbada.v()[16]
-					* gradientC.v()[16], vanAlbada.v()[17] * gradientC.v()[17],
-			vanAlbada.v()[18] * gradientC.v()[18], vanAlbada.v()[19]
-					* gradientC.v()[19], vanAlbada.v()[20] * gradientC.v()[20],
-			vanAlbada.v()[21] * gradientC.v()[21], vanAlbada.v()[22]
-					* gradientC.v()[22], vanAlbada.v()[23] * gradientC.v()[23],
-			vanAlbada.v()[24] * gradientC.v()[24], vanAlbada.v()[25]
-					* gradientC.v()[25], vanAlbada.v()[26] * gradientC.v()[26] };
+	return tensor3 { std::get<0>(vanAlbada()) * std::get<0>(gradientC()),
+			std::get<1>(vanAlbada()) * std::get<1>(gradientC()), std::get<2>(
+					vanAlbada()) * std::get<2>(gradientC()), std::get<3>(
+					vanAlbada()) * std::get<3>(gradientC()), std::get<4>(
+					vanAlbada()) * std::get<4>(gradientC()), std::get<5>(
+					vanAlbada()) * std::get<5>(gradientC()), std::get<6>(
+					vanAlbada()) * std::get<6>(gradientC()), std::get<7>(
+					vanAlbada()) * std::get<7>(gradientC()), std::get<8>(
+					vanAlbada()) * std::get<8>(gradientC()), std::get<9>(
+					vanAlbada()) * std::get<9>(gradientC()), std::get<10>(
+					vanAlbada()) * std::get<10>(gradientC()), std::get<11>(
+					vanAlbada()) * std::get<11>(gradientC()), std::get<12>(
+					vanAlbada()) * std::get<12>(gradientC()), std::get<13>(
+					vanAlbada()) * std::get<13>(gradientC()), std::get<14>(
+					vanAlbada()) * std::get<14>(gradientC()), std::get<15>(
+					vanAlbada()) * std::get<15>(gradientC()), std::get<16>(
+					vanAlbada()) * std::get<16>(gradientC()), std::get<17>(
+					vanAlbada()) * std::get<17>(gradientC()), std::get<18>(
+					vanAlbada()) * std::get<18>(gradientC()), std::get<19>(
+					vanAlbada()) * std::get<19>(gradientC()), std::get<20>(
+					vanAlbada()) * std::get<20>(gradientC()), std::get<21>(
+					vanAlbada()) * std::get<21>(gradientC()), std::get<22>(
+					vanAlbada()) * std::get<22>(gradientC()), std::get<23>(
+					vanAlbada()) * std::get<23>(gradientC()), std::get<24>(
+					vanAlbada()) * std::get<24>(gradientC()), std::get<25>(
+					vanAlbada()) * std::get<25>(gradientC()), std::get<26>(
+					vanAlbada()) * std::get<26>(gradientC()) };
 }

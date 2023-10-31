@@ -10,7 +10,8 @@
 schemi::vector schemi::vectorProduct(const schemi::vector & a,
 		const schemi::vector & b) noexcept
 {
-	return vector { a.v()[1] * b.v()[2] - a.v()[2] * b.v()[1], -(a.v()[0]
-			* b.v()[2] - a.v()[2] * b.v()[0]), a.v()[0] * b.v()[1]
-			- a.v()[1] * b.v()[0] };
+	return vector { std::get<1>(a()) * std::get<2>(b())
+			- std::get<2>(a()) * std::get<1>(b()), -(std::get<0>(a())
+			* std::get<2>(b()) - std::get<2>(a()) * std::get<0>(b())), std::get<
+			0>(a()) * std::get<1>(b()) - std::get<1>(a()) * std::get<0>(b()) };
 }

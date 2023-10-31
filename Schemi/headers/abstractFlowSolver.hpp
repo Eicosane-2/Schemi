@@ -14,8 +14,9 @@
 
 #include "conservativeFlows.hpp"
 #include "quadraticSurface.hpp"
-#include "starFields.hpp"
 #include "homogeneousPhase.hpp"
+#include "MPIHandler.hpp"
+#include "starFields.hpp"
 
 namespace schemi
 {
@@ -23,6 +24,9 @@ class abstractFlowSolver
 {
 public:
 	virtual ~abstractFlowSolver() noexcept =0;
+
+	static std::unique_ptr<abstractFlowSolver> createFlowSolver(
+			const std::string & name, const MPIHandler & par);
 
 	virtual std::tuple<conservativeFlows, starFields> calculateFlows(
 			const homogeneousPhase<quadraticSurface>& /*surfaceOwnerSide*/,

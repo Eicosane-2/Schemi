@@ -23,9 +23,9 @@ enum class errors
 	cubicEquationError,
 	positivnessError,
 	MPIError,
-	fieldInitializationError,
+	fieldInitialisationError,
 	meshGenerationError,
-	initializationError,
+	initialisationError,
 	NaNError
 };
 }  // namespace schemi

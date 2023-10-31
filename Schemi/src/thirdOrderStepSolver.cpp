@@ -50,7 +50,7 @@ void schemi::thirdOrderStepSolver::calculateStep()
 			g }, boundaryConditionValueCalc, timeForTVD, timeForHancock,
 			timeForFlowCalculation, timeForTimeIntegration, parallelism);
 
-	/* gasPhase: Un1 */
+	/* gasPhase: Un1 = Un - dt*divF(Un) */
 
 	parallelism.correctBoundaryValues(gasPhase);
 
@@ -58,7 +58,7 @@ void schemi::thirdOrderStepSolver::calculateStep()
 			boundaryConditionValueCalc, timeForTVD, timeForHancock,
 			timeForFlowCalculation, timeForTimeIntegration, parallelism);
 
-	/* gasPhase: Un1 - dt*divF(Un1) */
+	/* gasPhase: Un2 = Un1 - dt*divF(Un1) */
 
 	bunchOfFields<cubicCell> Un2 = gasPhase;
 	Un2.average(Un, *gasPhase.phaseThermodynamics, 0.25);
@@ -70,7 +70,7 @@ void schemi::thirdOrderStepSolver::calculateStep()
 			boundaryConditionValueCalc, timeForTVD, timeForHancock,
 			timeForFlowCalculation, timeForTimeIntegration, parallelism);
 
-	/* gasPhase: Un2 - dt*divF(Un2) */
+	/* gasPhase: Un3 = Un2 - dt*divF(Un2) */
 
 	bunchOfFields<cubicCell> Un3 = gasPhase;
 	Un3.average(Un, *gasPhase.phaseThermodynamics, 2. / 3.);
@@ -80,13 +80,13 @@ void schemi::thirdOrderStepSolver::calculateStep()
 
 	if (diffusionFlag)
 	{
-		star.c.v[0].ref_r() = 0;
+		star.c.v[0].r() = 0;
 		for (std::size_t k = 1; k < star.c.v.size(); ++k)
 		{
 			star.c.v[k] = linearInterpolate(gasPhase.concentration.v[k],
 					boundaryConditionValueCalc);
 
-			star.c.v[0].ref_r() += star.c.v[k].ref();
+			star.c.v[0].r() += star.c.v[k]();
 		}
 
 		star.rho = linearInterpolate(gasPhase.density[0],

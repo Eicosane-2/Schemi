@@ -23,6 +23,8 @@
 
 namespace schemi
 {
+class boundaryConditionValue;
+
 class SLEMatrix
 {
 public:
@@ -35,6 +37,8 @@ public:
 		std::vector<std::vector<std::pair<scalar, std::size_t>>> lowerTriangle,
 				upperTriangle;
 
+		std::valarray<scalar> explOldTime = std::valarray<scalar>(0);
+
 		SLEMatrixStorage();
 
 		explicit SLEMatrixStorage(const mesh & meshRef) noexcept;
@@ -46,79 +50,79 @@ public:
 
 	std::vector<SLEMatrixStorage> SLE { };
 
-	void generateNabla(const volumeField<scalar> & vField,
+	void generateLaplacianSurfaceBoundary(const volumeField<scalar> & vField,
+			const surfaceField<scalar> & effectiveDiffusionCoefficient,
+			const boundaryConditionValue & bncCalc, const std::size_t compt =
+					componentPlaceholder);
+
+	void generateDTimeNabla(const volumeField<scalar> & vField,
 			const volumeField<scalar> & rFieldOld,
 			const volumeField<scalar> & rFieldNew,
 			const surfaceField<vector> & additionalField, const scalar timestep,
 			const boundaryConditionValue & bncCalc, const std::size_t compt =
 					componentPlaceholder);
 
-	void generateLaplacian(const volumeField<scalar> & vField,
+	void generateDTimeLaplacian(const volumeField<scalar> & vField,
 			const volumeField<scalar> & rFieldOld,
 			const volumeField<scalar> & rFieldNew,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
-	void generateLaplacian2TO(const volumeField<scalar> & vField,
+	void generateDTimeLaplacian2TO(const volumeField<scalar> & vField,
 			const volumeField<scalar> & rFieldOld,
 			const volumeField<scalar> & rFieldNew,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
-	void generateLaplacian(const volumeField<vector> & vField,
+	void generateDTimeLaplacian(const volumeField<vector> & vField,
 			const volumeField<scalar> & rField,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
-	void generateLaplacian2TO(const volumeField<vector> & vField,
+	void generateDTimeLaplacian2TO(const volumeField<vector> & vField,
 			const volumeField<scalar> & rField,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
-	void generateLaplacian(const volumeField<tensor> & vField,
+	void generateDTimeLaplacian(const volumeField<tensor> & vField,
 			const volumeField<scalar> & rField,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
-	void generateLaplacian2TO(const volumeField<tensor> & vField,
+	void generateDTimeLaplacian2TO(const volumeField<tensor> & vField,
 			const volumeField<scalar> & rField,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
-	void generateExplicitLaplacian(const volumeField<scalar> & vField,
+	void generateDTimeExplicitLaplacian(const volumeField<scalar> & vField,
 			const volumeField<scalar> & rFieldOld,
 			const volumeField<scalar> & rFieldNew,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
-			const surfaceField<scalar> & surfaceVField, const scalar timestep,
 			const boundaryConditionValue & bncCalc, const std::size_t compt =
 					componentPlaceholder);
 
-	void generateExplicitLaplacian(const volumeField<vector> & vField,
+	void generateDTimeExplicitLaplacian(const volumeField<vector> & vField,
 			const volumeField<scalar> & rField,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
-			const surfaceField<vector> & surfaceVField, const scalar timestep,
 			const boundaryConditionValue & bncCalc, const std::size_t compt =
 					componentPlaceholder);
 
-	void generateExplicitLaplacian(const volumeField<tensor> & vField,
+	void generateDTimeExplicitLaplacian(const volumeField<tensor> & vField,
 			const volumeField<scalar> & rField,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
-			const surfaceField<tensor> & surfaceVField, const scalar timestep,
 			const boundaryConditionValue & bncCalc, const std::size_t compt =
 					componentPlaceholder);
 
 	/*Such distribution is only possible for non-negative scalars, so no overloads for vector and tensor.*/
-	void distributeMinusSourceTerm(const volumeField<scalar> & source,
-			const volumeField<scalar> & basicField) noexcept;
-
-	void distributePlusSourceTerm(const volumeField<scalar> & source,
-			const volumeField<scalar> & basicField) noexcept;
+	void distributeSourceTerm(const volumeField<scalar> & source,
+			const volumeField<scalar> & basicField,
+			const scalar timestep) noexcept;
 };
 }  // namespace schemi
 

@@ -64,7 +64,7 @@ class mesh
 	std::size_t cellsNumber = 0;
 	std::size_t surfacesNumber = 0;
 
-	bool initialized = false;
+	bool initialised = false;
 
 	dimensions taskDim = dimensions::task1D;
 
@@ -86,7 +86,7 @@ class mesh
 public:
 	static mesh* instance();
 
-	bool is_initialized() const noexcept;
+	bool is_initialised() const noexcept;
 
 	const std::vector<cubicCell>& cells() const noexcept;
 
@@ -135,17 +135,17 @@ public:
 	scalar& timestepSourceRef() noexcept;
 
 	void oneDParallelepiped(
-			const std::pair<vector, scalar> & vectorOfParallelepiped,
+			const std::pair<vector, vector> & vectorOfParallelepiped,
 			const std::size_t N_x,
 			const std::vector<boundaryConditionType> & commonConditions);
 
 	void twoDParallelepiped(
-			const std::pair<vector, scalar> & vectorOfParallelepiped,
+			const std::pair<vector, vector> & vectorOfParallelepiped,
 			const std::size_t N_x, const std::size_t N_y,
 			const std::vector<boundaryConditionType> & commonConditions);
 
 	void threeDParallelepiped(
-			const std::pair<vector, scalar> & vectorOfParallelepiped,
+			const std::pair<vector, vector> & vectorOfParallelepiped,
 			const std::size_t N_x, const std::size_t N_y, const std::size_t N_z,
 			const std::vector<boundaryConditionType> & commonConditions);
 };
