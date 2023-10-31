@@ -11,6 +11,7 @@
 #define ABSTRACTTVDLIMITER_HPP_
 
 #include <memory>
+#include <string>
 
 #include "tensor.hpp"
 #include "tensor3.hpp"
