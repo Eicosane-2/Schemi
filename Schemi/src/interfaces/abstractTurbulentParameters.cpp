@@ -202,8 +202,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 		thetaB_pointer = [this](const vector & a, const scalar k,
 				const scalar /*epsilon*/, const vector& /*gradMav_n*/,
 				const scalar /*a_s2*/,
-				const std::pair<scalar, vector>& /*rho, gradRho*/,
-				const std::pair<scalar, vector>& /*p, gradP*/,
+				const std::pair<scalar, vector>&& /*rho, gradRho*/,
+				const std::pair<scalar, vector>&& /*p, gradP*/,
 				const scalar /*nu_t*/) 
 				{
 					return 1. / std::sqrt(1 + (a & a) / (CMS_B() * k));
@@ -216,8 +216,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 		thetaB_pointer = [this](const vector & a, const scalar k,
 				const scalar /*epsilon*/, const vector& /*gradMav_n*/,
 				const scalar /*a_s2*/,
-				const std::pair<scalar, vector>& /*rho, gradRho*/,
-				const std::pair<scalar, vector>& /*p, gradP*/,
+				const std::pair<scalar, vector>&& /*rho, gradRho*/,
+				const std::pair<scalar, vector>&& /*p, gradP*/,
 				const scalar /*nu_t*/) 
 				{
 					return 1. / std::cbrt(1 + (a & a) / (CMS_B() * k));
@@ -231,8 +231,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 				[this](const vector& /*a*/, const scalar k,
 						const scalar epsilon, const vector & gradMav_n,
 						const scalar /*a_s2*/,
-						const std::pair<scalar, vector>& /*rho, gradRho*/,
-						const std::pair<scalar, vector>& /*p, gradP*/,
+						const std::pair<scalar, vector>&& /*rho, gradRho*/,
+						const std::pair<scalar, vector>&& /*p, gradP*/,
 						const scalar /*nu_t*/) 
 						{
 							const auto k3eps2 = pow<scalar, 3>(k) / pow<scalar, 2>(epsilon);
@@ -249,8 +249,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 				[this](const vector& /*a*/, const scalar k,
 						const scalar /*epsilon*/, const vector& /*gradMav_n*/,
 						const scalar a_s2,
-						const std::pair<scalar, vector> & rhoGradRho,
-						const std::pair<scalar, vector> & pGradP,
+						const std::pair<scalar, vector> && rhoGradRho,
+						const std::pair<scalar, vector> && pGradP,
 						const scalar nu_t) 
 						{
 							const auto wD = -nu_t * (rhoGradRho.second/rhoGradRho.first -pGradP.second/(rhoGradRho.first * a_s2));
@@ -268,8 +268,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 				[this](const vector& /*a*/, const scalar k,
 						const scalar epsilon, const vector & gradMav_n,
 						const scalar /*a_s2*/,
-						const std::pair<scalar, vector> & rhoGradRho,
-						const std::pair<scalar, vector> & pGradP,
+						const std::pair<scalar, vector> && rhoGradRho,
+						const std::pair<scalar, vector> && pGradP,
 						const scalar /*nu_t*/) 
 						{
 							const auto k4eps2 = pow<scalar, 4>(k) / pow<scalar, 2>(epsilon);
@@ -278,6 +278,24 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 
 		std::cout
 				<< "thetaB is calculated with gradient of average molar mass and density gradient function."
+				<< std::endl;
+	}
+	else if (thetaBType == "gradMavGradP")
+	{
+		thetaB_pointer =
+				[this](const vector& /*a*/, const scalar k,
+						const scalar epsilon, const vector & gradMav_n,
+						const scalar /*a_s2*/,
+						const std::pair<scalar, vector>&&,
+						const std::pair<scalar, vector> && pGradP,
+						const scalar /*nu_t*/) 
+						{
+							const auto k3eps2 = pow<scalar, 3>(k) / pow<scalar, 2>(epsilon);
+							return 1. / std::sqrt(1 + std::abs(gradMav_n & (pGradP.second/pGradP.first)) * k3eps2 / CMS_B());
+						};
+
+		std::cout
+				<< "thetaB is calculated with gradient of average molar mass and pressure gradient function."
 				<< std::endl;
 	}
 	else if (thetaBType == "no")
@@ -296,12 +314,12 @@ schemi::scalar schemi::abstractTurbulentParameters::thetaS(
 
 schemi::scalar schemi::abstractTurbulentParameters::thetaB(const vector & a,
 		const scalar k, const scalar epsilon, const vector & gradMav_n,
-		const scalar a_s2, const std::pair<scalar, vector> & rhoGradRho,
-		const std::pair<scalar, vector> & pGradP,
+		const scalar a_s2, const std::pair<scalar, vector> && rhoGradRho,
+		const std::pair<scalar, vector> && pGradP,
 		const scalar nu_t) const noexcept
 {
-	return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2, rhoGradRho, pGradP,
-			nu_t);
+	return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2, std::move(rhoGradRho),
+			std::move(pGradP), nu_t);
 }
 
 void schemi::abstractTurbulentParameters::calculateNearWallDistance(
