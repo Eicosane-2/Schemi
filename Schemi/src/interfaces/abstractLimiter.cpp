@@ -18,6 +18,7 @@
 #include "superbeeLimiter.hpp"
 #include "vanAlbada2Limiter.hpp"
 #include "minmod2Limiter.hpp"
+#include "SewbyLimiter.hpp"
 #include "zeroLimiter.hpp"
 
 schemi::abstractLimiter::~abstractLimiter() noexcept
@@ -48,6 +49,8 @@ std::unique_ptr<schemi::abstractLimiter> schemi::abstractLimiter::createLimiter(
 		limiterFlag = typeOfTVDLimiter::vanAlbada2;
 	else if (name == "minmod2")
 		limiterFlag = typeOfTVDLimiter::minmod2;
+	else if (name == "Sewby")
+		limiterFlag = typeOfTVDLimiter::Sewby;
 	else
 		throw exception("Unknown TVD limiter flag.",
 				errors::initialisationError);
@@ -80,6 +83,9 @@ std::unique_ptr<schemi::abstractLimiter> schemi::abstractLimiter::createLimiter(
 		break;
 	case typeOfTVDLimiter::minmod2:
 		return std::make_unique<minmod2Limiter>();
+		break;
+	case typeOfTVDLimiter::Sewby:
+		return std::make_unique<SewbyLimiter>();
 		break;
 	default:
 		return std::make_unique<zeroLimiter>();

@@ -174,7 +174,7 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 
 		for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
 		{
-			const auto D = this->physDs()[i];
+			const auto & D = this->physDs()[i];
 
 			maxFieldVal.r()[i] = std::max(maxFieldVal()[i], D.max());
 			maxFieldVal.r()[i] = std::max(maxFieldVal()[i], this->physMu()[i]);

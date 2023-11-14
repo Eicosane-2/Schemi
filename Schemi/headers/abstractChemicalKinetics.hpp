@@ -59,6 +59,8 @@ protected:
 		}
 	};
 
+	static void normalize(std::valarray<scalar> & res) noexcept;
+
 public:
 	const bool chemicalReaction;
 

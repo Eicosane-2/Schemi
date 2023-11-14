@@ -8,6 +8,8 @@
 #ifndef ELEMENTSPRODUCT_HPP_
 #define ELEMENTSPRODUCT_HPP_
 
+#include "globalConstants.hpp"
+
 namespace schemi
 {
 template<typename T>

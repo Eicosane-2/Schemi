@@ -88,8 +88,7 @@ std::valarray<schemi::scalar> schemi::JacobiSolver::algorithm(
 		else if (nIterations >= maxIterationNumber)
 		{
 			std::clog << name << std::endl;
-			std::clog
-					<< "Gauss-Seidel algorithm did not converged. Difference is: "
+			std::clog << "Jacobi algorithm did not converged. Difference is: "
 					<< diff << std::endl;
 
 			normalize(newIteration);

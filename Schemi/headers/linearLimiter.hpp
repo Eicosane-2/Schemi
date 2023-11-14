@@ -17,23 +17,23 @@ namespace schemi
 class linearLimiter: public abstractLimiter
 {
 public:
-	vector calculate(const vector&, const vector & gradientC) const noexcept
+	vector calculate(const vector&, const vector & gradient) const noexcept
 			override;
 
-	tensor calculate(const tensor&, const tensor & gradientC) const noexcept
+	tensor calculate(const tensor&, const tensor & gradient) const noexcept
 			override;
 
-	tensor3 calculate(const tensor3&, const tensor3 & gradientC) const noexcept
+	tensor3 calculate(const tensor3&, const tensor3 & gradient) const noexcept
 			override;
 
-	vector calculateNoRightLimit(const vector&,
-			const vector & gradientC) const noexcept override;
+	vector calculate3OLimit(const vector&,
+			const vector & gradient) const noexcept override;
 
-	tensor calculateNoRightLimit(const tensor&,
-			const tensor & gradientC) const noexcept override;
+	tensor calculate3OLimit(const tensor&,
+			const tensor & gradient) const noexcept override;
 
-	tensor3 calculateNoRightLimit(const tensor3&,
-			const tensor3 & gradientC) const noexcept override;
+	tensor3 calculate3OLimit(const tensor3&,
+			const tensor3 & gradient) const noexcept override;
 };
 }  // namespace schemi
 

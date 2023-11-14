@@ -52,3 +52,11 @@ std::unique_ptr<schemi::abstractChemicalKinetics> schemi::abstractChemicalKineti
 		break;
 	}
 }
+
+void schemi::abstractChemicalKinetics::normalize(
+		std::valarray<scalar> & res) noexcept
+{
+	for (auto & i : res)
+		if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
+			i = 0;
+}

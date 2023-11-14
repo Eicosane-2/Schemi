@@ -25,19 +25,19 @@ schemi::tensor3 schemi::zeroLimiter::calculate(const tensor3&,
 	return tensor3 { 0 };
 }
 
-schemi::vector schemi::zeroLimiter::calculateNoRightLimit(const vector&,
+schemi::vector schemi::zeroLimiter::calculate3OLimit(const vector&,
 		const vector&) const noexcept
 {
 	return vector { 0 };
 }
 
-schemi::tensor schemi::zeroLimiter::calculateNoRightLimit(const tensor&,
+schemi::tensor schemi::zeroLimiter::calculate3OLimit(const tensor&,
 		const tensor&) const noexcept
 {
 	return tensor { 0 };
 }
 
-schemi::tensor3 schemi::zeroLimiter::calculateNoRightLimit(const tensor3&,
+schemi::tensor3 schemi::zeroLimiter::calculate3OLimit(const tensor3&,
 		const tensor3&) const noexcept
 {
 	return tensor3 { 0 };

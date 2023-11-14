@@ -28,22 +28,22 @@ public:
 			const std::string & name);
 
 	virtual vector calculate(const vector& /*r*/,
-			const vector& /*gradientC*/) const noexcept =0;
+			const vector& /*gradient*/) const noexcept =0;
 
 	virtual tensor calculate(const tensor& /*r*/,
-			const tensor& /*gradientC*/) const noexcept =0;
+			const tensor& /*gradient*/) const noexcept =0;
 
 	virtual tensor3 calculate(const tensor3& /*r*/,
-			const tensor3& /*gradientC*/) const noexcept =0;
+			const tensor3& /*gradient*/) const noexcept =0;
 
-	virtual vector calculateNoRightLimit(const vector& /*r*/,
-			const vector& /*gradientC*/) const noexcept =0;
+	virtual vector calculate3OLimit(const vector& /*r*/,
+			const vector& /*gradient*/) const noexcept =0;
 
-	virtual tensor calculateNoRightLimit(const tensor& /*r*/,
-			const tensor& /*gradientC*/) const noexcept =0;
+	virtual tensor calculate3OLimit(const tensor& /*r*/,
+			const tensor& /*gradient*/) const noexcept =0;
 
-	virtual tensor3 calculateNoRightLimit(const tensor3& /*r*/,
-			const tensor3& /*gradientC*/) const noexcept =0;
+	virtual tensor3 calculate3OLimit(const tensor3& /*r*/,
+			const tensor3& /*gradient*/) const noexcept =0;
 };
 }  // namespace schemi
 

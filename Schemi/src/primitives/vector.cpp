@@ -7,6 +7,7 @@
 
 #include "vector.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 
@@ -81,8 +82,9 @@ schemi::vector schemi::vector::operator*(const scalar inScalar) const noexcept
 
 schemi::vector& schemi::vector::operator*=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] *= inScalar;
+	std::transform(value.begin(), value.end(), value.begin(),
+			[inScalar](const auto i) 
+			{	return i *inScalar;});
 
 	return *this;
 }
@@ -95,16 +97,16 @@ schemi::vector schemi::vector::operator/(const scalar inScalar) const noexcept
 
 schemi::vector& schemi::vector::operator/=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] /= inScalar;
+	std::transform(value.begin(), value.end(), value.begin(),
+			[inScalar](const auto i) 
+			{	return i /inScalar;});
 
 	return *this;
 }
 
 schemi::vector& schemi::vector::operator=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] = inScalar;
+	value.fill(inScalar);
 
 	return *this;
 }
