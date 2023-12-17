@@ -45,8 +45,10 @@ std::unique_ptr<schemi::abstractTransportModel> schemi::abstractTransportModel::
 	{
 		std::valarray<scalar> molDiams(matrixOfSubstancesConditions.size());
 
-		for (std::size_t k = 0; k < molDiams.size(); ++k)
-			molDiams[k] = std::stod(matrixOfSubstancesConditions[k][4]);
+		std::transform(matrixOfSubstancesConditions.begin(),
+				matrixOfSubstancesConditions.end(), std::begin(molDiams),
+				[](const auto & strVec) -> scalar 
+				{	return std::stod(strVec[4]);});
 
 		return std::make_unique<hardSpheresTransportModel>(constNu, constD,
 				constKappa, molDiams);

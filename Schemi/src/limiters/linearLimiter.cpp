@@ -8,38 +8,38 @@
 #include "linearLimiter.hpp"
 
 schemi::vector schemi::linearLimiter::calculate(const vector&,
-		const vector & gradientC) const noexcept
+		const vector & gradient) const noexcept
 {
-	return gradientC;
+	return gradient;
 }
 
 schemi::tensor schemi::linearLimiter::calculate(const tensor&,
-		const tensor & gradientC) const noexcept
+		const tensor & gradient) const noexcept
 {
-	return gradientC;
+	return gradient;
 }
 
 schemi::tensor3 schemi::linearLimiter::calculate(const tensor3&,
-		const tensor3 & gradientC) const noexcept
+		const tensor3 & gradient) const noexcept
 {
-	return gradientC;
+	return gradient;
 }
 
-schemi::vector schemi::linearLimiter::calculateNoRightLimit(const vector&,
-		const vector & gradientC) const noexcept
+schemi::vector schemi::linearLimiter::calculate3OLimit(const vector&,
+		const vector & gradient) const noexcept
 {
-	return gradientC;
+	return gradient;
 }
 
-schemi::tensor schemi::linearLimiter::calculateNoRightLimit(const tensor&,
-		const tensor & gradientC) const noexcept
+schemi::tensor schemi::linearLimiter::calculate3OLimit(const tensor&,
+		const tensor & gradient) const noexcept
 {
-	return gradientC;
+	return gradient;
 }
 
-schemi::tensor3 schemi::linearLimiter::calculateNoRightLimit(const tensor3&,
-		const tensor3 & gradientC) const noexcept
+schemi::tensor3 schemi::linearLimiter::calculate3OLimit(const tensor3&,
+		const tensor3 & gradient) const noexcept
 {
-	return gradientC;
+	return gradient;
 }
 

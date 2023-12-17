@@ -43,14 +43,6 @@ void schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::reactionMatrix
 	RightTriangle = RightTriangleNew;
 }
 
-void schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::normalize(
-		std::valarray<scalar> & res) const noexcept
-{
-	for (auto & i : res)
-		if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
-			i = 0;
-}
-
 schemi::chemicalKineticsH2Cl2Combustion::cellReactionMatrix::cellReactionMatrix() noexcept :
 		solverFlag(iterativeSolver::noSolver), matrix()
 {

@@ -1,25 +1,23 @@
 /*
- * vanAlbada2Limiter.hpp
+ * SewbyLimiter.hpp
  *
- *  Created on: 2021/11/24
+ *  Created on: 2023/11/05
  *      Author: Maxim Boldyrev
- *
- *      van Albada ver. 2 slope limiter class.
  */
 
-#ifndef VANALBADA2LIMITER_HPP_
-#define VANALBADA2LIMITER_HPP_
+#ifndef SEWBYLIMITER_HPP_
+#define SEWBYLIMITER_HPP_
 
 #include "abstractLimiter.hpp"
 
 namespace schemi
 {
-class vanAlbada2Limiter: public abstractLimiter
+class SewbyLimiter: public abstractLimiter
 {
-	scalar vanAlbada2LimiterCalculation(const scalar r,
+	scalar SewbyLimiterCalculation(const scalar r,
 			const scalar xiR) const noexcept;
 
-	scalar vanAlbada2LimiterCalculation(const scalar r) const noexcept;
+	scalar SewbyLimiterCalculation(const scalar r) const noexcept;
 public:
 	vector calculate(const vector & r, const vector & gradient) const noexcept
 			override;
@@ -41,4 +39,4 @@ public:
 };
 }  // namespace schemi
 
-#endif /* VANALBADA2LIMITER_HPP_ */
+#endif /* SEWBYLIMITER_HPP_ */

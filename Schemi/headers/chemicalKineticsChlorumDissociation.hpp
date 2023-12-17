@@ -54,8 +54,6 @@ class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
 			void transpose() noexcept;
 		} matrix;
 
-		void normalize(std::valarray<scalar> & res) const noexcept;
-
 		std::valarray<scalar> matrixDotProduct(const reactionMatrix & m,
 				const std::valarray<scalar> & v) const noexcept;
 

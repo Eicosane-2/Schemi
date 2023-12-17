@@ -43,14 +43,6 @@ void schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 	RightTriangle = RightTriangleNew;
 }
 
-void schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::normalize(
-		std::valarray<scalar> & res) const noexcept
-{
-	for (auto & i : res)
-		if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
-			i = 0;
-}
-
 schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::cellReactionMatrix() noexcept :
 		solverFlag(iterativeSolver::noSolver), matrix()
 {

@@ -7,6 +7,7 @@
 
 #include "tensor3.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 schemi::tensor3::tensor3(const scalar inValue) noexcept :
@@ -146,8 +147,9 @@ schemi::tensor3 schemi::tensor3::operator*(const scalar inScalar) const noexcept
 
 schemi::tensor3& schemi::tensor3::operator*=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] *= inScalar;
+	std::transform(value.begin(), value.end(), value.begin(),
+			[inScalar](const auto i) 
+			{	return i *inScalar;});
 
 	return *this;
 }
@@ -172,16 +174,16 @@ schemi::tensor3 schemi::tensor3::operator/(const scalar inScalar) const noexcept
 
 schemi::tensor3& schemi::tensor3::operator/=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] /= inScalar;
+	std::transform(value.begin(), value.end(), value.begin(),
+			[inScalar](const auto i) 
+			{	return i /inScalar;});
 
 	return *this;
 }
 
 schemi::tensor3& schemi::tensor3::operator=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] = inScalar;
+	value.fill(inScalar);
 
 	return *this;
 }

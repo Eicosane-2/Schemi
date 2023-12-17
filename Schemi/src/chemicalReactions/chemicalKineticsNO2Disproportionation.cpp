@@ -43,14 +43,6 @@ void schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::reaction
 	RightTriangle = RightTriangleNew;
 }
 
-void schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::normalize(
-		std::valarray<scalar> & res) const noexcept
-{
-	for (auto & i : res)
-		if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
-			i = 0;
-}
-
 schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::cellReactionMatrix() noexcept :
 		solverFlag(iterativeSolver::noSolver), matrix()
 {

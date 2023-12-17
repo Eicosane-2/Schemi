@@ -171,8 +171,9 @@ public:
 	{
 		field<typeOfField, scalar> returnField { divV.meshP(), 0. };
 
-		for (std::size_t i = 0; i < returnField.size(); ++i)
-			returnField.r()[i] = thetaS(divV()[i]);
+		std::transform(std::begin(divV()), std::end(divV()),
+				std::begin(returnField.r()), [this](const auto div) 
+				{	return this->thetaS(div);});
 
 		return returnField;
 	}

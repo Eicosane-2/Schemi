@@ -111,8 +111,9 @@ schemi::volumeField<schemi::vector> schemi::TVDLimiter(
 						neighbourGradientsOfSurfaces[cx]()[j]);
 		}
 
-		for (std::size_t j = 0; j < vector::vsize; ++j)
-			r.r()[j] = min()[j] / (max()[j] + stabilizator);
+		std::transform(min().begin(), min().end(), max().begin(), r.r().begin(),
+				[](const auto num, const auto denom) 
+				{	return num/(denom + stabilizator);});
 
 		retField.r()[i] = limiterObjectP.calculate(r, gradient()[i]);
 	}
@@ -257,8 +258,9 @@ schemi::volumeField<schemi::tensor> schemi::TVDLimiter(
 						neighbourGradientsOfSurfaces[cx]()[j]);
 		}
 
-		for (std::size_t j = 0; j < tensor::vsize; ++j)
-			r.r()[j] = min()[j] / (max()[j] + stabilizator);
+		std::transform(min().begin(), min().end(), max().begin(), r.r().begin(),
+				[](const auto num, const auto denom) 
+				{	return num/(denom + stabilizator);});
 
 		retField.r()[i] = limiterObjectP.calculate(r, gradient()[i]);
 	}
@@ -496,8 +498,9 @@ schemi::volumeField<schemi::tensor3> schemi::TVDLimiter(
 						neighbourGradientsOfSurfaces[cx]()[j]);
 		}
 
-		for (std::size_t j = 0; j < tensor3::vsize; ++j)
-			r.r()[j] = min()[j] / (max()[j] + stabilizator);
+		std::transform(min().begin(), min().end(), max().begin(), r.r().begin(),
+				[](const auto num, const auto denom) 
+				{	return num/(denom + stabilizator);});
 
 		retField.r()[i] = limiterObjectP.calculate(r, gradient()[i]);
 	}

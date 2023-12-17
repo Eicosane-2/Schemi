@@ -298,6 +298,23 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 				<< "thetaB is calculated with gradient of average molar mass and pressure gradient function."
 				<< std::endl;
 	}
+	else if (thetaBType == "gradMavGradRhoA")
+	{
+		thetaB_pointer =
+				[this](const vector & a, const scalar, const scalar epsilon,
+						const vector & gradMav_n, const scalar /*a_s2*/,
+						const std::pair<scalar, vector> && rhoGradRho,
+						const std::pair<scalar, vector> && pGradP,
+						const scalar /*nu_t*/) 
+						{
+							const auto k4eps2 = pow<scalar, 4>(a&a) / pow<scalar, 2>(epsilon);
+							return 1. / std::sqrt(1 + std::abs(gradMav_n & rhoGradRho.second)/pGradP.first * k4eps2 / CMS_B());
+						};
+
+		std::cout
+				<< "thetaB is calculated with gradient of average molar mass and density gradient function and vector a."
+				<< std::endl;
+	}
 	else if (thetaBType == "no")
 		std::cout << "thetaB is 1." << std::endl;
 	else

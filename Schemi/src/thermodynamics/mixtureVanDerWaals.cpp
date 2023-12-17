@@ -84,10 +84,10 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::pFromUv(
 
 	const auto X = calcMolarFrac(concentrations);
 
-	std::valarray<scalar> CvMixtureture(0., pressureOutput.size());
+	std::valarray<scalar> CvMixture(0., pressureOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
-		CvMixtureture += X[k] * CvArr[k];
+		CvMixture += X[k] * CvArr[k];
 
 	std::valarray<scalar> aMixture(0., pressureOutput.size());
 	std::valarray<scalar> bMixture(0., pressureOutput.size());
@@ -100,8 +100,8 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::pFromUv(
 		}
 
 	for (std::size_t i = 0; i < pressureOutput.size(); ++i)
-		pressureOutput[i] = vanDerWaalsFluid::pFromUv(R / CvMixtureture[i],
-				Uv[i], (*concentrations[0])[i], aMixture[i], bMixture[i]);
+		pressureOutput[i] = vanDerWaalsFluid::pFromUv(R / CvMixture[i], Uv[i],
+				(*concentrations[0])[i], aMixture[i], bMixture[i]);
 
 	return pressureOutput;
 }
@@ -524,10 +524,10 @@ schemi::scalar schemi::mixtureVanDerWaals::pFromUv(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar CvMixtureture { 0 };
+	scalar CvMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
-		CvMixtureture += X[k] * CvArr[k];
+		CvMixture += X[k] * CvArr[k];
 
 	scalar aMixture { 0 };
 	scalar bMixture { 0 };
@@ -539,7 +539,7 @@ schemi::scalar schemi::mixtureVanDerWaals::pFromUv(
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return vanDerWaalsFluid::pFromUv(R / CvMixtureture, Uv, concentrations[0],
+	return vanDerWaalsFluid::pFromUv(R / CvMixture, Uv, concentrations[0],
 			aMixture, bMixture);
 }
 
@@ -549,10 +549,10 @@ schemi::scalar schemi::mixtureVanDerWaals::UvFromp(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar CvMixtureture { 0 };
+	scalar CvMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
-		CvMixtureture += X[k] * CvArr[k];
+		CvMixture += X[k] * CvArr[k];
 
 	scalar aMixture { 0 };
 	scalar bMixture { 0 };
@@ -564,7 +564,7 @@ schemi::scalar schemi::mixtureVanDerWaals::UvFromp(
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return vanDerWaalsFluid::UvFromp(R / CvMixtureture, p, concentrations[0],
+	return vanDerWaalsFluid::UvFromp(R / CvMixture, p, concentrations[0],
 			aMixture, bMixture);
 }
 
