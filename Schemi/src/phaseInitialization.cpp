@@ -14,6 +14,7 @@
 #include "boundaryConditionFromString.hpp"
 #include "mixtureIdeal.hpp"
 #include "mixtureRedlichKwong.hpp"
+#include "mixtureStiffened.hpp"
 #include "mixtureVanDerWaals.hpp"
 #include "fieldProducts.hpp"
 
@@ -290,6 +291,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			gasModelFlag = gasModel::ideal;
 		else if (equationOfState == "RedlichKwong")
 			gasModelFlag = gasModel::RedlichKwong;
+		else if (equationOfState == "stiffened")
+			gasModelFlag = gasModel::stiffened;
 		else
 			throw exception("Unknown type of equation of state.",
 					errors::initialisationError);
@@ -309,6 +312,36 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					std::get<1>(thermodynamicalProperties),
 					std::get<2>(thermodynamicalProperties),
 					std::get<3>(thermodynamicalProperties));
+			break;
+		case gasModel::stiffened:
+		{
+			const std::string stiffenedCoeffsName {
+					"./set/stiffenedFluidData.txt" };
+
+			std::ifstream fluidConditionsFile { stiffenedCoeffsName };
+
+			if (fluidConditionsFile.is_open())
+				std::cout << stiffenedCoeffsName << " is opened." << std::endl;
+			else
+				throw std::ifstream::failure(
+						stiffenedCoeffsName + " not found.");
+
+			std::valarray<scalar> p0Data(numberOfComponents), gammaData(
+					numberOfComponents);
+
+			for (std::size_t k = 0; k < numberOfComponents; ++k)
+			{
+				if (fluidConditionsFile.eof())
+					throw std::ifstream::failure(
+							stiffenedCoeffsName + ". Unexpected end of file.");
+
+				fluidConditionsFile >> skipBuffer >> p0Data[k] >> gammaData[k];
+			}
+
+			mixture = std::make_unique<mixtureStiffened>(R, hPlanck,
+					std::get<0>(thermodynamicalProperties),
+					std::get<1>(thermodynamicalProperties), p0Data, gammaData);
+		}
 			break;
 		case gasModel::ideal:
 		default:
