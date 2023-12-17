@@ -1,0 +1,13 @@
+/Debug/
+/Debug_MPI/
+/Debug_O3/
+/Release/
+/Release_cpp20/
+/result/
+/set/
+/timeOfCalculation.tsv
+/gmon.out
+/fieldsOutput/
+/.settings/language.settings.xml
+/.cpoject
+/.project
