@@ -57,8 +57,8 @@ auto& astProductSelf(field<arg1, typeOfField> & F1,
 template<typename arg1, typename arg2, typename typeOfField>
 auto& astProductSelf(field<arg1, typeOfField> & F1, const arg2 & F2) noexcept
 {
-	for (std::size_t i = 0; i < F1.size(); ++i)
-		F1.r()[i] *= F2;
+	for (auto & F1_i : F1.r())
+		F1_i *= F2;
 
 	return F1;
 }
@@ -157,8 +157,8 @@ auto& divisionSelf(field<arg1, typeOfField> & F1,
 template<typename arg1, typename arg2, typename typeOfField>
 auto& divisionSelf(field<arg1, typeOfField> & F1, const arg2 & F2) noexcept
 {
-	for (std::size_t i = 0; i < F1.size(); ++i)
-		F1.r()[i] /= F2;
+	for (auto & F1_i : F1.r())
+		F1_i /= F2;
 
 	return F1;
 }
