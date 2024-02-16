@@ -751,7 +751,7 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 							newValues.density[1] / phaseN.density[0]()[i],
 							newValues.density[2] / phaseN.density[0]()[i],
 							newValues.density[3] / phaseN.density[0]()[i],
-							newValues.density[4] / phaseN.density[0]()[i], };
+							newValues.density[4] / phaseN.density[0]()[i] };
 
 					const scalar sumFracOld = std::accumulate(
 							oldMassFraction.begin(), oldMassFraction.end(), 0.);
@@ -775,54 +775,35 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 							phaseN.density[0]()[i],
 							phaseN.phaseThermodynamics->Rv());
 
-					auto [newCl2, newCl, newH2, newH, newHCl] =
-							cellReactionVel.solve(oldMassFraction,
-									maxIterationNumber);
+					auto reactionResult = cellReactionVel.solve(oldMassFraction,
+							maxIterationNumber);
 
-					newCl2 = std::max(static_cast<scalar>(0.), newCl2);
-					newCl = std::max(static_cast<scalar>(0.), newCl);
-					newH2 = std::max(static_cast<scalar>(0.), newH2);
-					newH = std::max(static_cast<scalar>(0.), newH);
-					newHCl = std::max(static_cast<scalar>(0.), newHCl);
+					for (auto & w_k : reactionResult)
+						w_k = std::max(static_cast<scalar>(0.), w_k);
 
-					const auto sumFracNew = newCl2 + newCl + newH2 + newH
-							+ newHCl;
+					const scalar sumFracNew = std::accumulate(
+							reactionResult.begin(), reactionResult.end(), 0.);
 
 					if (std::abs(sumFracNew - sumFracOld) > massFracTolerance)
 						throw exception(
 								std::string(
-										"Error in mass fraction is too big. Delta is ")
+										"Difference in mass fraction is too big. Delta is ")
 										+ std::to_string(
 												std::abs(
 														sumFracNew
 																- sumFracOld))
 										+ '.', errors::systemError);
 
-					newCl2 /= sumFracNew;
-					newCl /= sumFracNew;
-					newH2 /= sumFracNew;
-					newH /= sumFracNew;
-					newHCl /= sumFracNew;
-
-					newCl2 *= sumFracOld;
-					newCl *= sumFracOld;
-					newH2 *= sumFracOld;
-					newH *= sumFracOld;
-					newHCl *= sumFracOld;
-
-					const auto newCCl2 = newCl2 * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[0];
-					const auto newCCl = newCl * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[1];
-					const auto newCH2 = newH2 * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[2];
-					const auto newCH = newH * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[3];
-					const auto newCHCl = newHCl * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[4];
+					for (auto & w_k : reactionResult)
+					{
+						w_k /= sumFracNew;
+						w_k *= sumFracOld;
+					}
 
 					{
-						const scalar deltaC_HCl = newCHCl
+						const scalar deltaC_HCl = std::get<4>(reactionResult)
+								* phaseN.density[0]()[i]
+								/ phaseN.phaseThermodynamics->Mv()[4]
 								- newValues.concentration[5];
 
 						const auto & thermo = *phaseN.phaseThermodynamics;
@@ -835,11 +816,10 @@ void schemi::chemicalKineticsH2Cl2Combustion::timeStepIntegration(
 								* deltaC_HCl;
 					}
 
-					newValues.concentration[1] = newCCl2;
-					newValues.concentration[2] = newCCl;
-					newValues.concentration[3] = newCH2;
-					newValues.concentration[4] = newCH;
-					newValues.concentration[5] = newCHCl;
+					for (std::size_t k = 0; k < 5; ++k)
+						newValues.concentration[k + 1] = reactionResult[k]
+								* phaseN.density[0]()[i]
+								/ phaseN.phaseThermodynamics->Mv()[k];
 
 					newValues.concentration[0] = 0;
 					for (std::size_t k = 1; k < newValues.concentration.size();

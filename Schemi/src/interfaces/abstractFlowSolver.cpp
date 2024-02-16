@@ -21,7 +21,7 @@ schemi::abstractFlowSolver::~abstractFlowSolver() noexcept
 }
 
 std::unique_ptr<schemi::abstractFlowSolver> schemi::abstractFlowSolver::createFlowSolver(
-		const std::string & name, const MPIHandler & par)
+		const std::string_view name, const MPIHandler & par)
 {
 	flowSolver flowSolwerFlag;
 	if (name == "HLLCF")

@@ -37,7 +37,7 @@ public:
 
 	static std::pair<std::unique_ptr<abstractMatrixSolver>,
 			std::unique_ptr<abstractMatrixSolver>> createMatrixSolver(
-			const std::string & name, const std::string & dim,
+			const std::string_view name, const std::string_view dim,
 			const std::size_t iter);
 
 	abstractMatrixSolver(const std::size_t maxIt_in,

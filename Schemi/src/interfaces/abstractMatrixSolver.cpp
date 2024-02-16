@@ -46,7 +46,7 @@ schemi::abstractMatrixSolver::~abstractMatrixSolver() noexcept
 
 std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 		std::unique_ptr<schemi::abstractMatrixSolver>> schemi::abstractMatrixSolver::createMatrixSolver(
-		const std::string & name, const std::string & dim,
+		const std::string_view name, const std::string_view dim,
 		const std::size_t iter)
 {
 	matrixSolver matrixSolverFlag;

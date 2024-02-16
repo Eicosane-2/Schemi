@@ -26,7 +26,7 @@ schemi::abstractLimiter::~abstractLimiter() noexcept
 }
 
 std::unique_ptr<schemi::abstractLimiter> schemi::abstractLimiter::createLimiter(
-		const std::string & name)
+		const std::string_view name)
 {
 	typeOfTVDLimiter limiterFlag;
 	if (name == "minmod")

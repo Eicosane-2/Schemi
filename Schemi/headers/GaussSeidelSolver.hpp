@@ -18,7 +18,7 @@ class GaussSeidelSolver: public abstractMatrixSolver
 {
 	std::valarray<scalar> algorithm(const std::valarray<scalar> & oldField,
 			const SLEMatrix::SLEMatrixStorage & matrix,
-			const std::string & name) const noexcept;
+			const std::string_view name) const noexcept;
 public:
 	GaussSeidelSolver(const std::size_t maxIteration,
 			const matrixSolver type_in) noexcept;
