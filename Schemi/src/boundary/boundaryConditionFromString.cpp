@@ -10,7 +10,7 @@
 #include "exception.hpp"
 
 schemi::boundaryConditionType schemi::boundaryConditionFromString(
-		const std::string & boundaryConditionString)
+		const std::string_view boundaryConditionString)
 {
 	if (boundaryConditionString == "blank")
 		return boundaryConditionType::blank;

@@ -7,6 +7,8 @@
 
 #include "abstractTransportModel.hpp"
 
+#include <algorithm>
+
 #include "hardSpheresTransportModel.hpp"
 
 schemi::scalar schemi::abstractTransportModel::muConst() const noexcept

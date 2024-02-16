@@ -10,6 +10,7 @@
 #ifndef ABSTRACTTURBULENTPARAMETERS_HPP_
 #define ABSTRACTTURBULENTPARAMETERS_HPP_
 
+#include <algorithm>
 #include <functional>
 #include <utility>
 #include <fstream>

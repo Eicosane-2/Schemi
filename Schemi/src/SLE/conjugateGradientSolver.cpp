@@ -14,7 +14,7 @@
 std::valarray<schemi::scalar> schemi::conjugateGradientSovler::algorithm(
 		const std::valarray<scalar> & oldField,
 		const SLEMatrix::SLEMatrixStorage & matrix,
-		const std::string & name) const noexcept
+		const std::string_view name) const noexcept
 {
 	std::valarray<scalar> oldFieldValues(oldField);
 

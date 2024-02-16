@@ -26,7 +26,7 @@ public:
 	virtual ~abstractFlowSolver() noexcept =0;
 
 	static std::unique_ptr<abstractFlowSolver> createFlowSolver(
-			const std::string & name, const MPIHandler & par);
+			const std::string_view name, const MPIHandler & par);
 
 	virtual std::tuple<conservativeFlows, starFields> calculateFlows(
 			const homogeneousPhase<quadraticSurface>& /*surfaceOwnerSide*/,

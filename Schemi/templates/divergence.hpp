@@ -19,7 +19,8 @@ namespace schemi
 template<typename Type>
 volumeField<returnTypeDivergence<Type>> divergence(
 		const volumeField<Type> & inField,
-		const boundaryConditionValue & bncCalc, const std::size_t compt = 0)
+		const boundaryConditionValue & bncCalc, const std::size_t compt =
+				componentPlaceholder)
 {
 	auto & mesh_ { inField.meshRef() };
 
@@ -95,7 +96,8 @@ volumeField<returnTypeDivergence<Type>> divergence(
 template<typename Type>
 surfaceField<returnTypeDivergence<Type>> surfDivergence(
 		const volumeField<Type> & inField,
-		const boundaryConditionValue & bncCalc, const std::size_t compt = 0)
+		const boundaryConditionValue & bncCalc, const std::size_t compt =
+				componentPlaceholder)
 {
 	auto & mesh_ { inField.meshRef() };
 

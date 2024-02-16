@@ -17,7 +17,7 @@
 namespace schemi
 {
 boundaryConditionType boundaryConditionFromString(
-		const std::string & boundaryConditionString);
+		const std::string_view boundaryConditionString);
 }  // namespace schemi
 
 #endif /* BOUNDARYCONDITIONFROMSTRING_HPP_ */

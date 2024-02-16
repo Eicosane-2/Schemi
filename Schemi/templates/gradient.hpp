@@ -18,7 +18,8 @@ namespace schemi
 {
 template<typename Type>
 volumeField<returnTypeGradient<Type>> grad(const volumeField<Type> & inField,
-		const boundaryConditionValue & bncCalc, const std::size_t compt = 0)
+		const boundaryConditionValue & bncCalc, const std::size_t compt =
+				componentPlaceholder)
 {
 	auto & mesh_ { inField.meshRef() };
 
@@ -93,7 +94,8 @@ volumeField<returnTypeGradient<Type>> grad(const surfaceField<Type> & inField)
 template<typename Type>
 surfaceField<returnTypeGradient<Type>> surfGrad(
 		const volumeField<Type> & inField,
-		const boundaryConditionValue & bncCalc, const std::size_t compt = 0)
+		const boundaryConditionValue & bncCalc, const std::size_t compt =
+				componentPlaceholder)
 {
 	auto & mesh_ { inField.meshRef() };
 

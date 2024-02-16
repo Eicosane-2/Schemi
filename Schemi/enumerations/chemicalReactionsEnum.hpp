@@ -16,7 +16,8 @@ enum class chemicalReactions
 	Cl2Dissociation,
 	Cl2H2Dissociation,
 	H2Cl2Combustion,
-	NO2Disproportionation
+	NO2Disproportionation,
+	H2O2Combustion
 };
 }  // namespace schemi
 

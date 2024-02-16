@@ -28,8 +28,8 @@ schemi::abstractTurbulenceGen::~abstractTurbulenceGen() noexcept
 }
 
 std::unique_ptr<schemi::abstractTurbulenceGen> schemi::abstractTurbulenceGen::createTurbulenceModel(
-		const mesh & meshIn, const std::string & turbulenceONString,
-		const std::string & sourceTypeString)
+		const mesh & meshIn, const std::string_view turbulenceONString,
+		const std::string_view sourceTypeString)
 {
 	bool turbulenceFlag;
 	if (turbulenceONString == "on")

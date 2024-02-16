@@ -669,8 +669,6 @@ void schemi::chemicalKineticsChlorumHydrogeniumDissociation::timeStepIntegration
 
 				for (std::size_t st = 0; st < subItNum; ++st)
 				{
-					scalar deltaU { 0 };
-
 					const std::array<scalar, 4> oldMassFraction {
 							newValues.density[0] / phaseN.density[0]()[i],
 							newValues.density[1] / phaseN.density[0]()[i],
@@ -697,57 +695,41 @@ void schemi::chemicalKineticsChlorumHydrogeniumDissociation::timeStepIntegration
 							phaseN.density[0]()[i],
 							phaseN.phaseThermodynamics->Rv());
 
-					auto [newCl2, newCl, newH2, newH] = cellReactionVel.solve(
-							oldMassFraction, maxIterationNumber);
+					auto reactionResult = cellReactionVel.solve(oldMassFraction,
+							maxIterationNumber);
 
-					newCl2 = std::max(static_cast<scalar>(0.), newCl2);
-					newCl = std::max(static_cast<scalar>(0.), newCl);
-					newH2 = std::max(static_cast<scalar>(0.), newH2);
-					newH = std::max(static_cast<scalar>(0.), newH);
+					for (auto & w_k : reactionResult)
+						w_k = std::max(static_cast<scalar>(0.), w_k);
 
-					const auto sumFracNew = newCl2 + newCl + newH2 + newH;
+					const scalar sumFracNew = std::accumulate(
+							reactionResult.begin(), reactionResult.end(), 0.);
 
 					if (std::abs(sumFracNew - sumFracOld) > massFracTolerance)
 						throw exception(
 								std::string(
-										"Error in mass fraction is too big. Delta is ")
+										"Difference in mass fraction is too big. Delta is ")
 										+ std::to_string(
 												std::abs(
 														sumFracNew
 																- sumFracOld))
 										+ '.', errors::systemError);
 
-					newCl2 /= sumFracNew;
-					newCl /= sumFracNew;
-					newH2 /= sumFracNew;
-					newH /= sumFracNew;
+					for (auto & w_k : reactionResult)
+					{
+						w_k /= sumFracNew;
+						w_k *= sumFracOld;
+					}
 
-					newCl2 *= sumFracOld;
-					newCl *= sumFracOld;
-					newH2 *= sumFracOld;
-					newH *= sumFracOld;
-
-					const auto newCCl2 = newCl2 * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[0];
-					const auto newCCl = newCl * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[1];
-					const auto newCH2 = newH2 * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[2];
-					const auto newCH = newH * phaseN.density[0]()[i]
-							/ phaseN.phaseThermodynamics->Mv()[3];
-
-					newValues.concentration[1] = newCCl2;
-					newValues.concentration[2] = newCCl;
-					newValues.concentration[3] = newCH2;
-					newValues.concentration[4] = newCH;
+					for (std::size_t k = 0; k < 4; ++k)
+						newValues.concentration[k + 1] = reactionResult[k]
+								* phaseN.density[0]()[i]
+								/ phaseN.phaseThermodynamics->Mv()[k];
 
 					newValues.concentration[0] = 0;
 					for (std::size_t k = 1; k < newValues.concentration.size();
 							++k)
 						newValues.concentration[0] +=
 								newValues.concentration[k];
-
-					newValues.internalEnergy += deltaU;
 
 					newValues.temperature = phaseN.phaseThermodynamics->TFromUv(
 							newValues.concentration, newValues.internalEnergy);
