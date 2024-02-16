@@ -200,8 +200,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		const auto thetaS_s = gasPhase.turbulenceSources->turbPar->thetaS_D(
 				divV_s, k_surf, eps_surf);
 
-		effectiveCoeffs.k_D.r() = effectiveCoeffs.k_D() * thetaS_s();
-		effectiveCoeffs.eps_D.r() = effectiveCoeffs.eps_D() * thetaS_s();
+		effectiveCoeffs.k_D.r() *= thetaS_s();
+		effectiveCoeffs.eps_D.r() *= thetaS_s();
 
 		thetaS_R = gasPhase.turbulenceSources->turbPar->thetaS_R(divV,
 				diffFieldsOld.k, diffFieldsOld.eps);
@@ -372,6 +372,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	surfaceField<vector> nonIdFlow { mesh_, vector(0) };
 
 	nonIdFlow.r() = astProduct(gradCvM, surfaceTemperature)() + gradNonIdRho();
+	astProductSelf(nonIdFlow, -1.0);
 	const auto nonIdealityCorrectionLaplacian = astProduct(nonIdFlow,
 			astProduct(surfaceRho, effectiveCoeffs.tLambda));
 
