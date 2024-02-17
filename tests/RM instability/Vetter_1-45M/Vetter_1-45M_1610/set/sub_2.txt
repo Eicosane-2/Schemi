@@ -6,7 +6,7 @@
 318.7
 #Critical_pressure_(Pa)
 3.65E6
-#Kinetic_diametr_(A)
+#Kinetic_diameter_(A)
 5.5
 #Tail_boundary_condition
 freeBoundary
