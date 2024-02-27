@@ -35,4 +35,3 @@ schemi::scalar schemi::secantMethod(const scalar startingValue,
 
 	return x2;
 }
-

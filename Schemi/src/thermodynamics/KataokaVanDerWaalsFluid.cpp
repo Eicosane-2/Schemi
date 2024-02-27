@@ -11,6 +11,7 @@
 
 #include "intExpPow.hpp"
 #include "globalConstants.hpp"
+#include "NewtonMethod.hpp"
 #include "secantMethod.hpp"
 
 schemi::scalar schemi::KataokaVanDerWaalsFluid::qa(const scalar c,
@@ -219,34 +220,42 @@ schemi::scalar schemi::KataokaVanDerWaalsFluid::dUvdT(const scalar c,
 
 schemi::scalar schemi::KataokaVanDerWaalsFluid::pFromUv(const scalar c,
 		const scalar Cv, const scalar Uv, const scalar V0, const scalar eps,
-		const scalar R, const scalar b) const
+		const scalar R, const scalar b) const noexcept
 {
 	auto U_T = [this, &c, &Cv, &Uv, &V0, &eps, &R](const scalar T) 
 	{
 		return c * Cv * T + UvA(c, T, V0, eps, R) - Uv;
 	};
 
-	const scalar initT { Uv / ((c + stabilizator) * Cv) }, guessT = { 1.1
-			* initT + 2 * convergenceToleranceGlobal };
+	auto dU_dT = [this, &c, &Cv, &V0, &eps, &R](const scalar T) 
+	{
+		return dUvdT(c, Cv, T, V0, eps, R);
+	};
 
-	const auto T = secantMethod(initT, guessT, U_T);
+	const scalar initT { Uv / ((c + stabilizator) * Cv) };
+
+	const auto T = NewtonMethod(initT, U_T, dU_dT);
 
 	return c * R * T / (1 - c * b) + pA(c, T, V0, eps, R);
 }
 
 schemi::scalar schemi::KataokaVanDerWaalsFluid::UvFromp(const scalar c,
 		const scalar Cv, const scalar p, const scalar V0, const scalar eps,
-		const scalar R, const scalar b) const
+		const scalar R, const scalar b) const noexcept
 {
 	auto p_T = [this, &c, &p, &V0, &eps, &b, &R](const scalar T) 
 	{
 		return c * R * T / (1 - c * b) + pA(c, T, V0, eps, R) - p;
 	};
 
-	const scalar initT { p / ((c + stabilizator) * R) }, guessT = { 1.1 * initT
-			+ 2 * convergenceToleranceGlobal };
+	auto dp_dT = [this, &c, &V0, &eps, &b, &R](const scalar T) 
+	{
+		return dPdT(c, T, V0, eps, R, b);
+	};
 
-	const auto T = secantMethod(initT, guessT, p_T);
+	const scalar initT { p / ((c + stabilizator) * R) };
+
+	const auto T = NewtonMethod(initT, p_T, dp_dT);
 
 	return c * Cv * T + UvA(c, T, V0, eps, R);
 }
@@ -267,17 +276,21 @@ schemi::scalar schemi::KataokaVanDerWaalsFluid::UvcFromT(const scalar c,
 
 schemi::scalar schemi::KataokaVanDerWaalsFluid::TFromUv(const scalar c,
 		const scalar Cv, const scalar Uv, const scalar V0, const scalar eps,
-		const scalar R) const
+		const scalar R) const noexcept
 {
 	auto U_T = [this, &c, &Cv, &Uv, &V0, &eps, &R](const scalar T) 
 	{
 		return c * Cv * T + UvA(c, T, V0, eps, R) - Uv;
 	};
 
-	const scalar initT { Uv / ((c + stabilizator) * Cv) }, guessT = { 1.1
-			* initT + 2 * convergenceToleranceGlobal };
+	auto dU_dT = [this, &c, &Cv, &V0, &eps, &R](const scalar T) 
+	{
+		return dUvdT(c, Cv, T, V0, eps, R);
+	};
 
-	return secantMethod(initT, guessT, U_T);
+	const scalar initT { Uv / ((c + stabilizator) * Cv) };
+
+	return NewtonMethod(initT, U_T, dU_dT);
 }
 
 schemi::scalar schemi::KataokaVanDerWaalsFluid::cFrompT(const scalar p,
@@ -297,17 +310,21 @@ schemi::scalar schemi::KataokaVanDerWaalsFluid::cFrompT(const scalar p,
 
 schemi::scalar schemi::KataokaVanDerWaalsFluid::dpdrho(const scalar MolMass,
 		const scalar c, const scalar Cv, const scalar Uv, const scalar V0,
-		const scalar eps, const scalar R, const scalar b) const
+		const scalar eps, const scalar R, const scalar b) const noexcept
 {
 	auto U_T = [this, &c, &Cv, &Uv, &V0, &eps, &R](const scalar T) 
 	{
 		return c * Cv * T + UvA(c, T, V0, eps, R) - Uv;
 	};
 
-	const scalar initT { Uv / ((c + stabilizator) * Cv) }, guessT = { 1.1
-			* initT + 2 * convergenceToleranceGlobal };
+	auto dU_dT = [this, &c, &Cv, &V0, &eps, &R](const scalar T) 
+	{
+		return dUvdT(c, Cv, T, V0, eps, R);
+	};
 
-	const auto T = secantMethod(initT, guessT, U_T);
+	const scalar initT { Uv / ((c + stabilizator) * Cv) };
+
+	const auto T = NewtonMethod(initT, U_T, dU_dT);
 
 	return (dPdC(c, T, V0, eps, R, b)
 			- dPdT(c, T, V0, eps, R, b) * dUvdC(c, Cv, T, V0, eps, R)
@@ -316,17 +333,21 @@ schemi::scalar schemi::KataokaVanDerWaalsFluid::dpdrho(const scalar MolMass,
 
 schemi::scalar schemi::KataokaVanDerWaalsFluid::dpdUv(const scalar c,
 		const scalar Cv, const scalar Uv, const scalar V0, const scalar eps,
-		const scalar R, const scalar b) const
+		const scalar R, const scalar b) const noexcept
 {
 	auto U_T = [this, &c, &Cv, &Uv, &V0, &eps, &R](const scalar T) 
 	{
 		return c * Cv * T + UvA(c, T, V0, eps, R) - Uv;
 	};
 
-	const scalar initT { Uv / ((c + stabilizator) * Cv) }, guessT = { 1.1
-			* initT + 2 * convergenceToleranceGlobal };
+	auto dU_dT = [this, &c, &Cv, &V0, &eps, &R](const scalar T) 
+	{
+		return dUvdT(c, Cv, T, V0, eps, R);
+	};
 
-	const auto T = secantMethod(initT, guessT, U_T);
+	const scalar initT { Uv / ((c + stabilizator) * Cv) };
+
+	const auto T = NewtonMethod(initT, U_T, dU_dT);
 
 	return dPdT(c, T, V0, eps, R, b) / dUvdT(c, Cv, T, V0, eps, R);
 }
