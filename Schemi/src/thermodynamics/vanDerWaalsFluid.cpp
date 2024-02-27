@@ -10,7 +10,6 @@
 #include "cubicEquationSolver.hpp"
 #include "globalConstants.hpp"
 #include "intExpPow.hpp"
-#include "secantMethod.hpp"
 
 schemi::scalar schemi::vanDerWaalsFluid::pFromUv(const scalar gamma1,
 		const scalar Uv, const scalar c, const scalar a,

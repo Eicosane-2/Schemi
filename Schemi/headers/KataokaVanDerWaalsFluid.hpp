@@ -39,11 +39,11 @@ class KataokaVanDerWaalsFluid
 public:
 	scalar pFromUv(const scalar c, const scalar Cv, const scalar Uv,
 			const scalar V0, const scalar eps, const scalar R,
-			const scalar b) const;
+			const scalar b) const noexcept;
 
 	scalar UvFromp(const scalar c, const scalar Cv, const scalar p,
 			const scalar V0, const scalar eps, const scalar R,
-			const scalar b) const;
+			const scalar b) const noexcept;
 
 	scalar pcFromT(const scalar c, const scalar T, const scalar V0,
 			const scalar eps, const scalar R, const scalar b) const noexcept;
@@ -52,18 +52,18 @@ public:
 			const scalar V0, const scalar eps, const scalar R) const noexcept;
 
 	scalar TFromUv(const scalar c, const scalar Cv, const scalar Uv,
-			const scalar V0, const scalar eps, const scalar R) const;
+			const scalar V0, const scalar eps, const scalar R) const noexcept;
 
 	scalar cFrompT(const scalar p, const scalar T, const scalar V0,
 			const scalar eps, const scalar R, const scalar b) const;
 
 	scalar dpdrho(const scalar MolMass, const scalar c, const scalar Cv,
 			const scalar Uv, const scalar V0, const scalar eps, const scalar R,
-			const scalar b) const;
+			const scalar b) const noexcept;
 
 	scalar dpdUv(const scalar c, const scalar Cv, const scalar Uv,
 			const scalar V0, const scalar eps, const scalar R,
-			const scalar b) const;
+			const scalar b) const noexcept;
 
 	scalar nonIdeality(const scalar c, const scalar T, const scalar V0,
 			const scalar eps, const scalar R) const noexcept;
