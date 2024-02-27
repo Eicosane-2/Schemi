@@ -1,51 +1,56 @@
 /*
- * mixtureRedlichKwong.cpp
+ * mixtureKataokaVanDerWaals.cpp
  *
- *  Created on: 2023/06/04
+ *  Created on: 2024/02/23
  *      Author: Maxim Boldyrev
  */
 
-#include "mixtureRedlichKwong.hpp"
+#include "mixtureKataokaVanDerWaals.hpp"
 
+#include "intExpPow.hpp"
 #include "globalConstants.hpp"
 
-schemi::mixtureRedlichKwong::mixtureRedlichKwong() noexcept :
+schemi::mixtureKataokaVanDerWaals::mixtureKataokaVanDerWaals() noexcept :
 		abstractMixtureThermodynamics(0, 0), M(0), CvArr(0), molecMass(0), Tcrit(
-				0), Pcrit(0), Vcrit(0), aMatrix(0), bMatrix(0), aMatrixMolec(0), bMatrixMolec(
-				0)
+				0), Pcrit(0), Vcrit(0), V0Matrix(0), epsMatrix(0), bMatrix(0), V0MatrixMolec(
+				0), epsMatrixMolec(0), bMatrixMolec(0)
 {
 }
 
-schemi::mixtureRedlichKwong::mixtureRedlichKwong(const scalar Rin,
+schemi::mixtureKataokaVanDerWaals::mixtureKataokaVanDerWaals(const scalar Rin,
 		const scalar hPin, const std::valarray<scalar> & Min,
 		const std::valarray<scalar> & Cvin,
 		const std::valarray<scalar> & Tcritin,
-		const std::valarray<scalar> & Pcritin) noexcept :
+		const std::valarray<scalar> & Pcritin,
+		const std::valarray<scalar> & epsilonLJ, /*J/mole*/
+		const std::valarray<scalar> & sigmaLJ, /*m*/
+		const std::pair<bool, scalar> & bCalcType) noexcept :
 		abstractMixtureThermodynamics(Rin, hPin), M(Min), CvArr(Cvin), molecMass(
 				M / NAvogardro), Tcrit(Tcritin), Pcrit(Pcritin), Vcrit(
-				Min.size()), aMatrix(std::valarray<scalar>(Min.size()),
+				Min.size()), V0Matrix(std::valarray<scalar>(Min.size()),
+				Min.size()), epsMatrix(std::valarray<scalar>(Min.size()),
 				Min.size()), bMatrix(std::valarray<scalar>(Min.size()),
-				Min.size()), aMatrixMolec(std::valarray<scalar>(Min.size()),
+				Min.size()), V0MatrixMolec(std::valarray<scalar>(Min.size()),
+				Min.size()), epsMatrixMolec(std::valarray<scalar>(Min.size()),
 				Min.size()), bMatrixMolec(std::valarray<scalar>(Min.size()),
 				Min.size())
 {
-#if ( defined(__GNUG__) ) && ( !defined(__ICC) )
-	constexpr scalar chi { std::cbrt(2) - 1. };
-	constexpr scalar Sigma_a { 1. / (9. * chi) }, Sigma_b { chi / 3. };
-#else
-		const scalar chi { std::cbrt(2) - 1. };
-		const scalar Sigma_a { 1. / (9. * chi) }, Sigma_b { chi / 3. };
-#endif
-
 	const std::size_t numberOfComponents { Min.size() };
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
-		bMatrix[k][k] = Sigma_b * R * Tcrit[k] / Pcrit[k];
-		aMatrix[k][k] = Sigma_a * R * R * Tcrit[k] * Tcrit[k]
-				* std::sqrt(Tcrit[k]) / Pcrit[k];
+		bMatrix[k][k] = [this, &bCalcType, &sigmaLJ](const std::size_t comp)
+		{
+			if (bCalcType.first)
+				return bCalcType.second * R * Tcrit[comp] / (8 * Pcrit[comp]);
+			else
+				return bCalcType.second * pow<scalar, 3>(sigmaLJ[comp])
+						* NAvogardro;
+		}(k);
+		V0Matrix[k][k] = pow<scalar, 3>(sigmaLJ[k]) / std::sqrt(2) * NAvogardro;
+		epsMatrix[k][k] = epsilonLJ[k];
 
-		Vcrit[k] = 1 / 0.259921 * bMatrix[k][k];
+		Vcrit[k] = 3 * bMatrix[k][k];
 	}
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
@@ -56,32 +61,37 @@ schemi::mixtureRedlichKwong::mixtureRedlichKwong(const scalar Rin,
 						0.5
 								* (std::cbrt(bMatrix[k][k])
 										+ std::cbrt(bMatrix[l][l])), 3);
-				aMatrix[k][l] = std::sqrt(aMatrix[k][k] * aMatrix[l][l]);
+				V0Matrix[k][l] = std::pow(
+						0.5
+								* (std::cbrt(V0Matrix[k][k])
+										+ std::cbrt(V0Matrix[l][l])), 3);
+				epsMatrix[k][l] = std::sqrt(epsMatrix[k][k] * epsMatrix[l][l]);
 			}
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
 		bMatrixMolec[k] = bMatrix[k] / NAvogardro;
-		aMatrixMolec[k] = aMatrix[k] / (NAvogardro * NAvogardro);
+		V0MatrixMolec[k] = V0Matrix[k] / NAvogardro;
+		epsMatrixMolec[k] = epsMatrix[k] / NAvogardro;
 	}
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::Rv() const noexcept
+schemi::scalar schemi::mixtureKataokaVanDerWaals::Rv() const noexcept
 {
 	return R;
 }
 
-const std::valarray<schemi::scalar>& schemi::mixtureRedlichKwong::Mv() const noexcept
+const std::valarray<schemi::scalar>& schemi::mixtureKataokaVanDerWaals::Mv() const noexcept
 {
 	return M;
 }
 
-const std::valarray<schemi::scalar>& schemi::mixtureRedlichKwong::Cvv() const noexcept
+const std::valarray<schemi::scalar>& schemi::mixtureKataokaVanDerWaals::Cvv() const noexcept
 {
 	return CvArr;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Cv(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::Cv(
 		const std::vector<const std::valarray<scalar>*> & concentrations) const noexcept
 {
 	std::valarray<scalar> CvMixOutput(0., concentrations[0]->size());
@@ -94,7 +104,7 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Cv(
 	return CvMixOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::pFromUv(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::pFromUv(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & Uv) const
 {
@@ -107,24 +117,26 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::pFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., pressureOutput.size()), bMixture(0.,
-			pressureOutput.size());
+	std::valarray<scalar> V0Mixture(0., pressureOutput.size()), epsMixture(0.,
+			pressureOutput.size()), bMixture(0., pressureOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < pressureOutput.size(); ++i)
-		pressureOutput[i] = RedlichKwongFluid::pFromUv(R, CvMixture[i], Uv[i],
-				(*concentrations[0])[i], aMixture[i], bMixture[i]);
+		pressureOutput[i] = KataokaVanDerWaalsFluid::pFromUv(
+				(*concentrations[0])[i], CvMixture[i], Uv[i], V0Mixture[i],
+				epsMixture[i], R, bMixture[i]);
 
 	return pressureOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::UvFromp(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::UvFromp(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & p) const
 {
@@ -137,24 +149,26 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::UvFromp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., UvOutput.size()), bMixture(0.,
-			UvOutput.size());
+	std::valarray<scalar> V0Mixture(0., UvOutput.size()), epsMixture(0.,
+			UvOutput.size()), bMixture(0., UvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < UvOutput.size(); ++i)
-		UvOutput[i] = RedlichKwongFluid::UvFromp(R, CvMixture[i], p[i],
-				(*concentrations[0])[i], aMixture[i], bMixture[i]);
+		UvOutput[i] = KataokaVanDerWaalsFluid::UvFromp((*concentrations[0])[i],
+				CvMixture[i], p[i], V0Mixture[i], epsMixture[i], R,
+				bMixture[i]);
 
 	return UvOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::pcFromT(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::pcFromT(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & T) const noexcept
 {
@@ -163,24 +177,28 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::pcFromT(
 
 	const auto X = calcMolarFrac(concentrations);
 
-	std::valarray<scalar> aMixture(0., pressureConcentrationRatioOutput.size()),
-			bMixture(0., pressureConcentrationRatioOutput.size());
+	std::valarray<scalar> V0Mixture(0.,
+			pressureConcentrationRatioOutput.size()), epsMixture(0.,
+			pressureConcentrationRatioOutput.size()), bMixture(0.,
+			pressureConcentrationRatioOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < pressureConcentrationRatioOutput.size(); ++i)
-		pressureConcentrationRatioOutput[i] = RedlichKwongFluid::pcFromT(R,
-				T[i], (*concentrations[0])[i], aMixture[i], bMixture[i]);
+		pressureConcentrationRatioOutput[i] = KataokaVanDerWaalsFluid::pcFromT(
+				(*concentrations[0])[i], T[i], V0Mixture[i], epsMixture[i], R,
+				bMixture[i]);
 
 	return pressureConcentrationRatioOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::pcFromTk(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::pcFromTk(
 		const std::valarray<scalar> & concentration,
 		const std::valarray<scalar> & T,
 		const std::size_t componentIndex) const noexcept
@@ -188,17 +206,18 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::pcFromTk(
 	std::valarray<scalar> pressureConcentrationRatioOutput(
 			concentration.size());
 
-	const auto & ak = aMatrix[componentIndex][componentIndex];
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
 	const auto & bk = bMatrix[componentIndex][componentIndex];
 
 	for (std::size_t i = 0; i < pressureConcentrationRatioOutput.size(); ++i)
-		pressureConcentrationRatioOutput[i] = RedlichKwongFluid::pcFromT(R,
-				T[i], concentration[i], ak, bk);
+		pressureConcentrationRatioOutput[i] = KataokaVanDerWaalsFluid::pcFromT(
+				concentration[i], T[i], V0k, epsk, R, bk);
 
 	return pressureConcentrationRatioOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::UvcFromT(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::UvcFromT(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & T) const noexcept
 {
@@ -213,27 +232,27 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::UvcFromT(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0.,
-			InternalEnergyConcentrationRatioOutput.size()), bMixture(0.,
+	std::valarray<scalar> V0Mixture(0.,
+			InternalEnergyConcentrationRatioOutput.size()), epsMixture(0.,
 			InternalEnergyConcentrationRatioOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < InternalEnergyConcentrationRatioOutput.size();
 			++i)
-		InternalEnergyConcentrationRatioOutput[i] = RedlichKwongFluid::UvcFromT(
-				CvMixture[i], T[i], (*concentrations[0])[i], aMixture[i],
-				bMixture[i]);
+		InternalEnergyConcentrationRatioOutput[i] =
+				KataokaVanDerWaalsFluid::UvcFromT((*concentrations[0])[i],
+						CvMixture[i], T[i], V0Mixture[i], epsMixture[i], R);
 
 	return InternalEnergyConcentrationRatioOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::UvcFromTk(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::UvcFromTk(
 		const std::valarray<scalar> & concentration,
 		const std::valarray<scalar> & T,
 		const std::size_t componentIndex) const noexcept
@@ -243,18 +262,19 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::UvcFromTk(
 
 	const auto & Cvk = CvArr[componentIndex];
 
-	const auto & ak = aMatrix[componentIndex][componentIndex];
-	const auto & bk = bMatrix[componentIndex][componentIndex];
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
 
 	for (std::size_t i = 0; i < InternalEnergyConcentrationRatioOutput.size();
 			++i)
-		InternalEnergyConcentrationRatioOutput[i] = RedlichKwongFluid::UvcFromT(
-				Cvk, T[i], concentration[i], ak, bk);
+		InternalEnergyConcentrationRatioOutput[i] =
+				KataokaVanDerWaalsFluid::UvcFromT(concentration[i], Cvk, T[i],
+						V0k, epsk, R);
 
 	return InternalEnergyConcentrationRatioOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::TFromUv(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::TFromUv(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & Uv) const
 {
@@ -267,24 +287,25 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::TFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., TemperatureOutput.size()), bMixture(0.,
-			TemperatureOutput.size());
+	std::valarray<scalar> V0Mixture(0., TemperatureOutput.size()), epsMixture(
+			0., TemperatureOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < TemperatureOutput.size(); ++i)
-		TemperatureOutput[i] = RedlichKwongFluid::TFromUv(CvMixture[i], Uv[i],
-				(*concentrations[0])[i], aMixture[i], bMixture[i]);
+		TemperatureOutput[i] = KataokaVanDerWaalsFluid::TFromUv(
+				(*concentrations[0])[i], CvMixture[i], Uv[i], V0Mixture[i],
+				epsMixture[i], R);
 
 	return TemperatureOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdrho(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::dpdrho(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & Uv) const
 {
@@ -301,25 +322,26 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdrho(
 		MMixture += X[k] * M[k];
 	}
 
-	std::valarray<scalar> aMixture(0., dpdrhoOutput.size()), bMixture(0.,
-			dpdrhoOutput.size());
+	std::valarray<scalar> V0Mixture(0., dpdrhoOutput.size()), epsMixture(0.,
+			dpdrhoOutput.size()), bMixture(0., dpdrhoOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < dpdrhoOutput.size(); ++i)
-		dpdrhoOutput[i] = RedlichKwongFluid::dpdrho(CvMixture[i], Uv[i],
-				(*concentrations[0])[i], MMixture[i], aMixture[i], bMixture[i],
-				R);
+		dpdrhoOutput[i] = KataokaVanDerWaalsFluid::dpdrho(MMixture[i],
+				(*concentrations[0])[i], CvMixture[i], Uv[i], V0Mixture[i],
+				epsMixture[i], R, bMixture[i]);
 
 	return dpdrhoOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdUv(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::dpdUv(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & Uv) const
 {
@@ -332,24 +354,26 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., dpdUvOutput.size()), bMixture(0.,
-			dpdUvOutput.size());
+	std::valarray<scalar> V0Mixture(0., dpdUvOutput.size()), epsMixture(0.,
+			dpdUvOutput.size()), bMixture(0., dpdUvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < dpdUvOutput.size(); ++i)
-		dpdUvOutput[i] = RedlichKwongFluid::dpdUv(CvMixture[i],
-				(*concentrations[0])[i], Uv[i], aMixture[i], bMixture[i], R);
+		dpdUvOutput[i] = KataokaVanDerWaalsFluid::dpdUv((*concentrations[0])[i],
+				CvMixture[i], Uv[i], V0Mixture[i], epsMixture[i], R,
+				bMixture[i]);
 
 	return dpdUvOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::nonIdeality(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::nonIdeality(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & T) const noexcept
 {
@@ -357,24 +381,24 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::nonIdeality(
 
 	const auto X = calcMolarFrac(concentrations);
 
-	std::valarray<scalar> aMixture(0., nonIdealityOutput.size()), bMixture(0.,
-			nonIdealityOutput.size());
+	std::valarray<scalar> V0Mixture(0., nonIdealityOutput.size()), epsMixture(
+			0., nonIdealityOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < nonIdealityOutput.size(); ++i)
-		nonIdealityOutput[i] = RedlichKwongFluid::nonIdeality(
-				(*concentrations[0])[i], aMixture[i], bMixture[i], T[i]);
+		nonIdealityOutput[i] = KataokaVanDerWaalsFluid::nonIdeality(
+				(*concentrations[0])[i], T[i], V0Mixture[i], epsMixture[i], R);
 
 	return nonIdealityOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::sqSonicSpeed(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::sqSonicSpeed(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & density, const std::valarray<scalar> & Uv,
 		const std::valarray<scalar> & pressure) const noexcept
@@ -383,7 +407,7 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::sqSonicSpeed(
 			+ dpdUv(concentrations, Uv) * (Uv + pressure) / density;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Cp(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::Cp(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & T) const noexcept
 {
@@ -396,47 +420,53 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Cp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., CpMixOutput.size()), bMixture(0.,
-			CpMixOutput.size());
+	std::valarray<scalar> V0Mixture(0., CpMixOutput.size()), epsMixture(0.,
+			CpMixOutput.size()), bMixture(0., CpMixOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
 	for (std::size_t i = 0; i < CpMixOutput.size(); ++i)
-		CpMixOutput[i] = RedlichKwongFluid::Cp(CvMixture[i], R, aMixture[i],
-				bMixture[i], (*concentrations[0])[i], T[i]);
+		CpMixOutput[i] = KataokaVanDerWaalsFluid::Cp((*concentrations[0])[i],
+				T[i], V0Mixture[i], epsMixture[i], bMixture[i], R,
+				CvMixture[i]);
 
 	return CpMixOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Cpk(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::Cpk(
 		const std::valarray<scalar> & concentration,
 		const std::valarray<scalar> & T,
 		const std::size_t componentIndex) const noexcept
 {
 	std::valarray<scalar> CpkOutput(T.size());
 
+	const auto & Cvk = CvArr[componentIndex];
+
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
+	const auto & bk = bMatrix[componentIndex][componentIndex];
+
 	for (std::size_t i = 0; i < CpkOutput.size(); ++i)
-		CpkOutput[i] = RedlichKwongFluid::Cp(CvArr[componentIndex], R,
-				aMatrix[componentIndex][componentIndex],
-				bMatrix[componentIndex][componentIndex], concentration[i],
-				T[i]);
+		CpkOutput[i] = KataokaVanDerWaalsFluid::Cp(concentration[i], T[i], V0k,
+				epsk, bk, R, Cvk);
 
 	return CpkOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::hT(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::hT(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & T) const noexcept
 {
 	return (UvcFromT(concentrations, T) + pcFromT(concentrations, T)) / T;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::hkT(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::hkT(
 		const std::valarray<scalar> & concentration,
 		const std::valarray<scalar> & T,
 		const std::size_t componentIndex) const noexcept
@@ -445,7 +475,7 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::hkT(
 			+ pcFromTk(concentration, T, componentIndex)) / T;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Fv(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::Fv(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & T) const noexcept
 {
@@ -459,25 +489,26 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Fv(
 
 	const auto rearX = rearrangeMolFrac(X);
 
-	std::valarray<scalar> aMixtureMolec(0., FvOutput.size()), bMixtureMolec(0.,
-			FvOutput.size());
+	std::valarray<scalar> V0MixtureMolec(0., FvOutput.size()), epsMixtureMolec(
+			0., FvOutput.size()), bMixtureMolec(0., FvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			V0MixtureMolec += X[k] * X[l] * V0MatrixMolec[k][l];
+			epsMixtureMolec += X[k] * X[l] * epsMatrixMolec[k][l];
 			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
 		}
 
 	for (std::size_t i = 0; i < FvOutput.size(); ++i)
-		FvOutput[i] = RedlichKwongFluid::Fmx(hPlanck, molecMass, kB, T[i],
-				rearX[i], molecVolumeMixture[i], aMixtureMolec[i],
-				bMixtureMolec[i]);
+		FvOutput[i] = KataokaVanDerWaalsFluid::Fmx(hPlanck, molecMass, kB, T[i],
+				rearX[i], molecVolumeMixture[i], V0MixtureMolec[i],
+				epsMixtureMolec[i], bMixtureMolec[i]);
 
 	return FvOutput * molecConc;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Fvk(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::Fvk(
 		const std::valarray<scalar> & concentration,
 		const std::valarray<scalar> & T,
 		const std::size_t componentIndex) const noexcept
@@ -486,17 +517,18 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Fvk(
 
 	const auto & Mk = M[componentIndex];
 
-	const auto & ak = aMatrix[componentIndex][componentIndex];
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
 	const auto & bk = bMatrix[componentIndex][componentIndex];
 
 	for (std::size_t i = 0; i < FvOutput.size(); ++i)
-		FvOutput[i] = RedlichKwongFluid::Fv(concentration[i], T[i], R, Mk, ak,
-				bk, hPlanck);
+		FvOutput[i] = KataokaVanDerWaalsFluid::Fv(concentration[i], T[i], R, Mk,
+				V0k, epsk, bk, hPlanck);
 
 	return FvOutput;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Sv(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::Sv(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & T) const noexcept
 {
@@ -510,25 +542,26 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Sv(
 
 	const auto rearX = rearrangeMolFrac(X);
 
-	std::valarray<scalar> aMixtureMolec(0., SvOutput.size()), bMixtureMolec(0.,
-			SvOutput.size());
+	std::valarray<scalar> V0MixtureMolec(0., SvOutput.size()), epsMixtureMolec(
+			0., SvOutput.size()), bMixtureMolec(0., SvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			V0MixtureMolec += X[k] * X[l] * V0MatrixMolec[k][l];
+			epsMixtureMolec += X[k] * X[l] * epsMatrixMolec[k][l];
 			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
 		}
 
 	for (std::size_t i = 0; i < SvOutput.size(); ++i)
-		SvOutput[i] = RedlichKwongFluid::Smx(hPlanck, molecMass, kB, T[i],
-				rearX[i], molecVolumeMixture[i], aMixtureMolec[i],
-				bMixtureMolec[i]);
+		SvOutput[i] = KataokaVanDerWaalsFluid::Smx(hPlanck, molecMass, kB, T[i],
+				rearX[i], molecVolumeMixture[i], V0MixtureMolec[i],
+				epsMixtureMolec[i], bMixtureMolec[i]);
 
 	return SvOutput * molecConc;
 }
 
-std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Svk(
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::Svk(
 		const std::valarray<scalar> & concentration,
 		const std::valarray<scalar> & T,
 		const std::size_t componentIndex) const noexcept
@@ -537,17 +570,18 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Svk(
 
 	const auto & Mk = M[componentIndex];
 
-	const auto & ak = aMatrix[componentIndex][componentIndex];
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
 	const auto & bk = bMatrix[componentIndex][componentIndex];
 
 	for (std::size_t i = 0; i < SvOutput.size(); ++i)
-		SvOutput[i] = RedlichKwongFluid::Sv(concentration[i], T[i], R, Mk, ak,
-				bk, hPlanck);
+		SvOutput[i] = KataokaVanDerWaalsFluid::Sv(concentration[i], T[i], R, Mk,
+				V0k, epsk, bk, hPlanck);
 
 	return SvOutput;
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::Cv(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::Cv(
 		const std::valarray<scalar> & concentrations) const noexcept
 {
 	const auto X = calcMolarFrac(concentrations);
@@ -560,7 +594,7 @@ schemi::scalar schemi::mixtureRedlichKwong::Cv(
 	return CvMixOutput;
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::pFromUv(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::pFromUv(
 		const std::valarray<scalar> & concentrations, const scalar Uv) const
 {
 	const auto X = calcMolarFrac(concentrations);
@@ -570,20 +604,21 @@ schemi::scalar schemi::mixtureRedlichKwong::pFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. }, bMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::pFromUv(R, CvMixture, Uv, concentrations[0],
-			aMixture, bMixture);
+	return KataokaVanDerWaalsFluid::pFromUv(concentrations[0], CvMixture, Uv,
+			V0Mixture, epsMixture, R, bMixture);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::UvFromp(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::UvFromp(
 		const std::valarray<scalar> & concentrations, const scalar p) const
 {
 	const auto X = calcMolarFrac(concentrations);
@@ -593,48 +628,52 @@ schemi::scalar schemi::mixtureRedlichKwong::UvFromp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. }, bMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::UvFromp(R, CvMixture, p, concentrations[0],
-			aMixture, bMixture);
+	return KataokaVanDerWaalsFluid::UvFromp(concentrations[0], CvMixture, p,
+			V0Mixture, epsMixture, R, bMixture);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::pcFromT(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::pcFromT(
 		const std::valarray<scalar> & concentrations,
 		const scalar T) const noexcept
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. }, bMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::pcFromT(R, T, concentrations[0], aMixture,
-			bMixture);
+	return KataokaVanDerWaalsFluid::pcFromT(concentrations[0], T, V0Mixture,
+			epsMixture, R, bMixture);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::pcFromTk(const scalar concentration,
-		const scalar T, const std::size_t componentIndex) const noexcept
+schemi::scalar schemi::mixtureKataokaVanDerWaals::pcFromTk(
+		const scalar concentration, const scalar T,
+		const std::size_t componentIndex) const noexcept
 {
-	const auto & ak = aMatrix[componentIndex][componentIndex];
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
 	const auto & bk = bMatrix[componentIndex][componentIndex];
 
-	return RedlichKwongFluid::pcFromT(R, T, concentration, ak, bk);
+	return KataokaVanDerWaalsFluid::pcFromT(concentration, T, V0k, epsk, R, bk);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::UvcFromT(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::UvcFromT(
 		const std::valarray<scalar> & concentrations,
 		const scalar T) const noexcept
 {
@@ -645,32 +684,33 @@ schemi::scalar schemi::mixtureRedlichKwong::UvcFromT(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::UvcFromT(CvMixture, T, concentrations[0],
-			aMixture, bMixture);
+	return KataokaVanDerWaalsFluid::UvcFromT(concentrations[0], CvMixture, T,
+			V0Mixture, epsMixture, R);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::UvcFromTk(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::UvcFromTk(
 		const scalar concentration, const scalar T,
 		const std::size_t componentIndex) const noexcept
 {
 	const auto & Cvk = CvArr[componentIndex];
 
-	const auto & ak = aMatrix[componentIndex][componentIndex];
-	const auto & bk = bMatrix[componentIndex][componentIndex];
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
 
-	return RedlichKwongFluid::UvcFromT(Cvk, T, concentration, ak, bk);
+	return KataokaVanDerWaalsFluid::UvcFromT(concentration, Cvk, T, V0k, epsk,
+			R);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::TFromUv(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::TFromUv(
 		const std::valarray<scalar> & concentrations, const scalar Uv) const
 {
 	const auto X = calcMolarFrac(concentrations);
@@ -680,20 +720,20 @@ schemi::scalar schemi::mixtureRedlichKwong::TFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::TFromUv(CvMixture, Uv, concentrations[0],
-			aMixture, bMixture);
+	return KataokaVanDerWaalsFluid::TFromUv(concentrations[0], CvMixture, Uv,
+			V0Mixture, epsMixture, R);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::dpdrho(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::dpdrho(
 		const std::valarray<scalar> & concentrations, const scalar Uv) const
 {
 	const auto X = calcMolarFrac(concentrations);
@@ -706,20 +746,21 @@ schemi::scalar schemi::mixtureRedlichKwong::dpdrho(
 		MMixture += X[k] * M[k];
 	}
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. }, bMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::dpdrho(CvMixture, Uv, concentrations[0], MMixture,
-			aMixture, bMixture, R);
+	return KataokaVanDerWaalsFluid::dpdrho(MMixture, concentrations[0],
+			CvMixture, Uv, V0Mixture, epsMixture, R, bMixture);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::dpdUv(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::dpdUv(
 		const std::valarray<scalar> & concentrations, const scalar Uv) const
 {
 	const auto X = calcMolarFrac(concentrations);
@@ -729,39 +770,40 @@ schemi::scalar schemi::mixtureRedlichKwong::dpdUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. }, bMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::dpdUv(CvMixture, concentrations[0], Uv, aMixture,
-			bMixture, R);
+	return KataokaVanDerWaalsFluid::dpdUv(concentrations[0], CvMixture, Uv,
+			V0Mixture, epsMixture, R, bMixture);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::nonIdeality(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::nonIdeality(
 		const std::valarray<scalar> & concentrations,
 		const scalar T) const noexcept
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::nonIdeality(concentrations[0], aMixture, bMixture,
-			T);
+	return KataokaVanDerWaalsFluid::nonIdeality(concentrations[0], T, V0Mixture,
+			epsMixture, R);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::sqSonicSpeed(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::sqSonicSpeed(
 		const std::valarray<scalar> & concentrations, const scalar density,
 		const scalar Uv, const scalar pressure) const noexcept
 {
@@ -769,7 +811,7 @@ schemi::scalar schemi::mixtureRedlichKwong::sqSonicSpeed(
 			+ dpdUv(concentrations, Uv) * (Uv + pressure) / density;
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::Cp(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::Cp(
 		const std::valarray<scalar> & concentrations,
 		const scalar T) const noexcept
 {
@@ -780,42 +822,49 @@ schemi::scalar schemi::mixtureRedlichKwong::Cp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 }, bMixture { 0 };
+	scalar V0Mixture { 0. }, epsMixture { 0. }, bMixture { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::Cp(CvMixture, R, aMixture, bMixture,
-			concentrations[0], T);
+	return KataokaVanDerWaalsFluid::Cp(concentrations[0], T, V0Mixture,
+			epsMixture, bMixture, R, CvMixture);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::Cpk(const scalar concentration,
-		const scalar T, const std::size_t componentIndex) const noexcept
+schemi::scalar schemi::mixtureKataokaVanDerWaals::Cpk(
+		const scalar concentration, const scalar T,
+		const std::size_t componentIndex) const noexcept
 {
-	return RedlichKwongFluid::Cp(CvArr[componentIndex], R,
-			aMatrix[componentIndex][componentIndex],
-			bMatrix[componentIndex][componentIndex], concentration, T);
+	const auto & Cvk = CvArr[componentIndex];
+
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
+	const auto & bk = bMatrix[componentIndex][componentIndex];
+
+	return KataokaVanDerWaalsFluid::Cp(concentration, T, V0k, epsk, bk, R, Cvk);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::hT(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::hT(
 		const std::valarray<scalar> & concentrations,
 		const scalar T) const noexcept
 {
 	return (UvcFromT(concentrations, T) + pcFromT(concentrations, T)) / T;
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::hkT(const scalar concentration,
-		const scalar T, const std::size_t componentIndex) const noexcept
+schemi::scalar schemi::mixtureKataokaVanDerWaals::hkT(
+		const scalar concentration, const scalar T,
+		const std::size_t componentIndex) const noexcept
 {
 	return (UvcFromTk(concentration, T, componentIndex)
 			+ pcFromTk(concentration, T, componentIndex)) / T;
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::Fv(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::Fv(
 		const std::valarray<scalar> & concentrations,
 		const scalar T) const noexcept
 {
@@ -825,30 +874,34 @@ schemi::scalar schemi::mixtureRedlichKwong::Fv(
 
 	const auto molecVolumeMixture { 1 / molecConc };
 
-	scalar aMixtureMolec { 0 }, bMixtureMolec { 0 };
+	scalar V0MixtureMolec { 0. }, epsMixtureMolec { 0. }, bMixtureMolec { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			V0MixtureMolec += X[k] * X[l] * V0MatrixMolec[k][l];
+			epsMixtureMolec += X[k] * X[l] * epsMatrixMolec[k][l];
 			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
 		}
 
-	return RedlichKwongFluid::Fmx(hPlanck, molecMass, kB, T, X,
-			molecVolumeMixture, aMixtureMolec, bMixtureMolec) * molecConc;
+	return KataokaVanDerWaalsFluid::Fmx(hPlanck, molecMass, kB, T, X,
+			molecVolumeMixture, V0MixtureMolec, epsMixtureMolec, bMixtureMolec)
+			* molecConc;
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::Fvk(const scalar concentration,
-		const scalar T, const std::size_t componentIndex) const noexcept
+schemi::scalar schemi::mixtureKataokaVanDerWaals::Fvk(
+		const scalar concentration, const scalar T,
+		const std::size_t componentIndex) const noexcept
 {
-	const auto & ak = aMatrix[componentIndex][componentIndex];
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
 	const auto & bk = bMatrix[componentIndex][componentIndex];
 
-	return RedlichKwongFluid::Fv(concentration, T, R, M[componentIndex], ak, bk,
-			hPlanck);
+	return KataokaVanDerWaalsFluid::Fv(concentration, T, R, M[componentIndex],
+			V0k, epsk, bk, hPlanck);
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::Sv(
+schemi::scalar schemi::mixtureKataokaVanDerWaals::Sv(
 		const std::valarray<scalar> & concentrations,
 		const scalar T) const noexcept
 {
@@ -858,25 +911,29 @@ schemi::scalar schemi::mixtureRedlichKwong::Sv(
 
 	const auto molecVolumeMixture { 1 / molecConc };
 
-	scalar aMixtureMolec { 0 }, bMixtureMolec { 0 };
+	scalar V0MixtureMolec { 0. }, epsMixtureMolec { 0. }, bMixtureMolec { 0. };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			V0MixtureMolec += X[k] * X[l] * V0MatrixMolec[k][l];
+			epsMixtureMolec += X[k] * X[l] * epsMatrixMolec[k][l];
 			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
 		}
 
-	return RedlichKwongFluid::Smx(hPlanck, molecMass, kB, T, X,
-			molecVolumeMixture, aMixtureMolec, bMixtureMolec) * molecConc;
+	return KataokaVanDerWaalsFluid::Smx(hPlanck, molecMass, kB, T, X,
+			molecVolumeMixture, V0MixtureMolec, epsMixtureMolec, bMixtureMolec)
+			* molecConc;
 }
 
-schemi::scalar schemi::mixtureRedlichKwong::Svk(const scalar concentration,
-		const scalar T, const std::size_t componentIndex) const noexcept
+schemi::scalar schemi::mixtureKataokaVanDerWaals::Svk(
+		const scalar concentration, const scalar T,
+		const std::size_t componentIndex) const noexcept
 {
-	const auto & ak = aMatrix[componentIndex][componentIndex];
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
 	const auto & bk = bMatrix[componentIndex][componentIndex];
 
-	return RedlichKwongFluid::Sv(concentration, T, R, M[componentIndex], ak, bk,
-			hPlanck);
+	return KataokaVanDerWaalsFluid::Sv(concentration, T, R, M[componentIndex],
+			V0k, epsk, bk, hPlanck);
 }

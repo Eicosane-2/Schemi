@@ -14,7 +14,7 @@ namespace schemi
 {
 enum class gasModel
 {
-	ideal, vanDerWaals, RedlichKwong, stiffened
+	ideal, vanDerWaals, RedlichKwong, stiffened, KataokaVanDerWaals
 };
 }  // namespace schemi
 

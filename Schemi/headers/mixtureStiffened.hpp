@@ -35,7 +35,8 @@ public:
 
 	/**** For field ****/
 	std::valarray<scalar> Cv(
-			const std::vector<const std::valarray<scalar>*> & concentrations) const noexcept;
+			const std::vector<const std::valarray<scalar>*> & concentrations) const noexcept
+					override;
 
 	std::valarray<scalar> pFromUv(
 			const std::vector<const std::valarray<scalar>*> & concentrations,

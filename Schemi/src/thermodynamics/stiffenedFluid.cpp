@@ -25,19 +25,25 @@ schemi::scalar schemi::stiffenedFluid::UvFromp(const scalar gamma1,
 schemi::scalar schemi::stiffenedFluid::pcFromT(const scalar R, const scalar T,
 		const scalar p0, const scalar c) const noexcept
 {
-	return R * T - p0 / c;
+	return R * T - p0 / (c + stabilizator);
 }
 
 schemi::scalar schemi::stiffenedFluid::UvcFromT(const scalar Cv, const scalar T,
 		const scalar p0, const scalar c) const noexcept
 {
-	return Cv * T + p0 / c;
+	return Cv * T + p0 / (c + stabilizator);
 }
 
 schemi::scalar schemi::stiffenedFluid::TFromUv(const scalar Cv, const scalar Uv,
 		const scalar c, const scalar p0) const noexcept
 {
-	return (Uv - p0) / (c * Cv);
+	return (Uv - p0) / ((c + stabilizator) * Cv);
+}
+
+schemi::scalar schemi::stiffenedFluid::cFrompT(const scalar R, const scalar p,
+		const scalar T, const scalar p0) const noexcept
+{
+	return (p + p0) / (R * T);
 }
 
 schemi::scalar schemi::stiffenedFluid::dpdrho() const noexcept
@@ -70,7 +76,8 @@ schemi::scalar schemi::stiffenedFluid::Fv(const scalar c, const scalar T,
 			(2 * Pi_number * M * R * T) / pow<scalar, 2>(NAvogardro * h)) };
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
-	return -c * R * T * (std::log(nQ / (c * NAvogardro)) + 1) + p0;
+	return -c * R * T * (std::log(nQ / ((c + stabilizator) * NAvogardro)) + 1)
+			+ p0;
 }
 
 schemi::scalar schemi::stiffenedFluid::Sv(const scalar c, const scalar T,
@@ -80,7 +87,7 @@ schemi::scalar schemi::stiffenedFluid::Sv(const scalar c, const scalar T,
 			(2 * Pi_number * M * R * T) / pow<scalar, 2>(NAvogardro * h)) };
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
-	return c * R * (log(nQ / (c * NAvogardro)) + 5. / 2.);
+	return c * R * (log(nQ / ((c + stabilizator) * NAvogardro)) + 5. / 2.);
 }
 
 schemi::scalar schemi::stiffenedFluid::Fmx(const scalar h,
