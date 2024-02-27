@@ -32,6 +32,9 @@ public:
 	scalar TFromUv(const scalar Cv, const scalar Uv, const scalar c,
 			const scalar p0) const noexcept;
 
+	scalar cFrompT(const scalar R, const scalar p, const scalar T,
+			const scalar p0) const noexcept;
+
 	scalar dpdrho() const noexcept;
 
 	scalar dpdUv(const scalar gamma1) const noexcept;

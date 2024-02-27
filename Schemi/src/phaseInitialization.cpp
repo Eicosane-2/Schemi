@@ -13,6 +13,7 @@
 #include "gasModelEnum.hpp"
 #include "boundaryConditionFromString.hpp"
 #include "mixtureIdeal.hpp"
+#include "mixtureKataokaVanDerWaals.hpp"
 #include "mixtureRedlichKwong.hpp"
 #include "mixtureStiffened.hpp"
 #include "mixtureVanDerWaals.hpp"
@@ -293,6 +294,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			gasModelFlag = gasModel::RedlichKwong;
 		else if (equationOfState == "stiffened")
 			gasModelFlag = gasModel::stiffened;
+		else if (equationOfState == "Kataoka")
+			gasModelFlag = gasModel::KataokaVanDerWaals;
 		else
 			throw exception("Unknown type of equation of state.",
 					errors::initialisationError);
@@ -343,13 +346,60 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					std::get<1>(thermodynamicalProperties), p0Data, gammaData);
 		}
 			break;
+		case gasModel::KataokaVanDerWaals:
+		{
+			const std::string KataokaCoeffsName {
+					"./set/KataokaVanDerWaalsFluidData.txt" };
+
+			std::ifstream fluidConditionsFile { KataokaCoeffsName };
+
+			if (fluidConditionsFile.is_open())
+				std::cout << KataokaCoeffsName << " is opened." << std::endl;
+			else
+				throw std::ifstream::failure(KataokaCoeffsName + " not found.");
+
+			std::valarray<scalar> epsilonLJData(numberOfComponents),
+					sigmaLJData(numberOfComponents);
+
+			for (std::size_t k = 0; k < numberOfComponents; ++k)
+			{
+				if (fluidConditionsFile.eof())
+					throw std::ifstream::failure(
+							KataokaCoeffsName + ". Unexpected end of file.");
+
+				fluidConditionsFile >> skipBuffer >> epsilonLJData[k]
+						>> sigmaLJData[k];
+			}
+
+			std::string bCalcTypeStr;
+			scalar bCoeff;
+
+			fluidConditionsFile >> skipBuffer >> bCalcTypeStr >> bCoeff;
+
+			std::pair<bool, scalar> bCalc;
+
+			if (bCalcTypeStr == "critical")
+				bCalc = { true, bCoeff };
+			else if (bCalcTypeStr == "Kataoka")
+				bCalc = { false, bCoeff };
+			else
+				throw exception(
+						"Wrong type of Kataoka-van der Waals b coefficient calculation",
+						errors::initialisationError);
+
+			mixture = std::make_unique<mixtureKataokaVanDerWaals>(R, hPlanck,
+					std::get<0>(thermodynamicalProperties),
+					std::get<1>(thermodynamicalProperties),
+					std::get<2>(thermodynamicalProperties),
+					std::get<3>(thermodynamicalProperties), epsilonLJData,
+					sigmaLJData, bCalc);
+		}
+			break;
 		case gasModel::ideal:
 		default:
 			mixture = std::make_unique<mixtureIdeal>(R, hPlanck,
 					std::get<0>(thermodynamicalProperties),
-					std::get<1>(thermodynamicalProperties),
-					std::get<2>(thermodynamicalProperties),
-					std::get<3>(thermodynamicalProperties));
+					std::get<1>(thermodynamicalProperties));
 			break;
 		}
 	}

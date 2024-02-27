@@ -495,8 +495,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 
 			if (linearRec)
 			{
-				grada = grad(gasPhase.aTurb, bncCalc);
-				diva = divergence(gasPhase.aTurb, bncCalc);
+				grada = grad(diffFieldsOld.a, bncCalc);
+				diva = divergence(diffFieldsOld.a, bncCalc);
 			}
 			else
 			{
@@ -520,8 +520,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		{
 			if (linearRec)
 			{
-				grada = grad(gasPhase.aTurb, bncCalc);
-				diva = divergence(gasPhase.aTurb, bncCalc);
+				grada = grad(diffFieldsOld.a, bncCalc);
+				diva = divergence(diffFieldsOld.a, bncCalc);
 				gradb = grad(diffFieldsOld.b, bncCalc);
 			}
 			else
@@ -725,9 +725,13 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		case turbulenceModel::arithmeticA2Source:
 		case turbulenceModel::arithmeticA3Source:
 		{
-			auto pDiva = astProduct(gasPhase.pressure, diva);
+			volumeField<scalar> pDiva { mesh_ };
+			volumeField<vector> totalPdivergence { mesh_ };
 
-			pDiva.r() -= dampProduct(devPhysVisc, grada)();
+			totalPdivergence.r() = gradP() - divDevPhysVisc();
+
+			pDiva.r() = ampProduct(diffFieldsOld.a, totalPdivergence)();
+			astProductSelf(pDiva, (-1.0));
 
 			temperatureMatrix.SLE[0].freeTerm += pDiva();
 

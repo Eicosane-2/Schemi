@@ -571,11 +571,6 @@ schemi::scalar schemi::mixtureStiffened::dpdUv(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar CvMixture { 0 };
-
-	for (std::size_t k = 0; k < X.size(); ++k)
-		CvMixture += X[k] * CvArr[k];
-
 	scalar gammaMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)

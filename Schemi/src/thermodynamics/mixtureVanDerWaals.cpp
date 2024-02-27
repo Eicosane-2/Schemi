@@ -11,7 +11,8 @@
 
 schemi::mixtureVanDerWaals::mixtureVanDerWaals() noexcept :
 		abstractMixtureThermodynamics(0, 0), M(0), CvArr(0), molecMass(0), Tcrit(
-				0), Pcrit(0), Vcrit(0), aMatrix(0), bMatrix(0)
+				0), Pcrit(0), Vcrit(0), aMatrix(0), bMatrix(0), aMatrixMolec(0), bMatrixMolec(
+				0)
 {
 }
 
@@ -24,6 +25,8 @@ schemi::mixtureVanDerWaals::mixtureVanDerWaals(const scalar Rin,
 				M / NAvogardro), Tcrit(Tcritin), Pcrit(Pcritin), Vcrit(
 				Min.size()), aMatrix(std::valarray<scalar>(Min.size()),
 				Min.size()), bMatrix(std::valarray<scalar>(Min.size()),
+				Min.size()), aMatrixMolec(std::valarray<scalar>(Min.size()),
+				Min.size()), bMatrixMolec(std::valarray<scalar>(Min.size()),
 				Min.size())
 {
 	const std::size_t numberOfComponents { Min.size() };
@@ -46,6 +49,12 @@ schemi::mixtureVanDerWaals::mixtureVanDerWaals(const scalar Rin,
 										+ std::cbrt(bMatrix[l][l])), 3);
 				aMatrix[k][l] = std::sqrt(aMatrix[k][k] * aMatrix[l][l]);
 			}
+
+	for (std::size_t k = 0; k < numberOfComponents; ++k)
+	{
+		bMatrixMolec[k] = bMatrix[k] / NAvogardro;
+		aMatrixMolec[k] = aMatrix[k] / (NAvogardro * NAvogardro);
+	}
 }
 
 schemi::scalar schemi::mixtureVanDerWaals::Rv() const noexcept
@@ -89,8 +98,8 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::pFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., pressureOutput.size());
-	std::valarray<scalar> bMixture(0., pressureOutput.size());
+	std::valarray<scalar> aMixture(0., pressureOutput.size()), bMixture(0.,
+			pressureOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -119,8 +128,8 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::UvFromp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., UvOutput.size());
-	std::valarray<scalar> bMixture(0., UvOutput.size());
+	std::valarray<scalar> aMixture(0., UvOutput.size()), bMixture(0.,
+			UvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -145,8 +154,8 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::pcFromT(
 
 	const auto X = calcMolarFrac(concentrations);
 
-	std::valarray<scalar> aMixture(0., pressureConcentrationRatioOutput.size());
-	std::valarray<scalar> bMixture(0., pressureConcentrationRatioOutput.size());
+	std::valarray<scalar> aMixture(0., pressureConcentrationRatioOutput.size()),
+			bMixture(0., pressureConcentrationRatioOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -264,8 +273,8 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::dpdrho(
 
 	const auto X = calcMolarFrac(concentrations);
 
-	std::valarray<scalar> CvMixture(0., dpdrhoOutput.size());
-	std::valarray<scalar> MMixture(0., dpdrhoOutput.size());
+	std::valarray<scalar> CvMixture(0., dpdrhoOutput.size()), MMixture(0.,
+			dpdrhoOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 	{
@@ -273,8 +282,8 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::dpdrho(
 		MMixture += X[k] * M[k];
 	}
 
-	std::valarray<scalar> aMixture(0., dpdrhoOutput.size());
-	std::valarray<scalar> bMixture(0., dpdrhoOutput.size());
+	std::valarray<scalar> aMixture(0., dpdrhoOutput.size()), bMixture(0.,
+			dpdrhoOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -359,8 +368,8 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::Cp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., CpMixtureOutput.size());
-	std::valarray<scalar> bMixture(0., CpMixtureOutput.size());
+	std::valarray<scalar> aMixture(0., CpMixtureOutput.size()), bMixture(0.,
+			CpMixtureOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -422,21 +431,20 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::Fv(
 
 	const auto rearX = rearrangeMolFrac(X);
 
-	std::valarray<scalar> aMixture(0., FvOutput.size());
-	std::valarray<scalar> bMixture(0., FvOutput.size());
+	std::valarray<scalar> aMixtureMolec(0., FvOutput.size()), bMixtureMolec(0.,
+			FvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
 		}
 
 	for (std::size_t i = 0; i < FvOutput.size(); ++i)
 		FvOutput[i] = vanDerWaalsFluid::Fmx(hPlanck, molecMass, kB, T[i],
-				rearX[i], molecVolumeMixture[i],
-				aMixture[i] / (NAvogardro * NAvogardro),
-				bMixture[i] / NAvogardro);
+				rearX[i], molecVolumeMixture[i], aMixtureMolec[i],
+				bMixtureMolec[i]);
 
 	return FvOutput * molecConc;
 }
@@ -474,15 +482,15 @@ std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::Sv(
 
 	const auto rearX = rearrangeMolFrac(X);
 
-	std::valarray<scalar> bMixture(0., SvOutput.size());
+	std::valarray<scalar> bMixtureMolec(0., SvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
 
 	for (std::size_t i = 0; i < SvOutput.size(); ++i)
 		SvOutput[i] = vanDerWaalsFluid::Smx(hPlanck, molecMass, kB, T[i],
-				rearX[i], molecVolumeMixture[i], bMixture[i] / NAvogardro);
+				rearX[i], molecVolumeMixture[i], bMixtureMolec[i] / NAvogardro);
 
 	return SvOutput * molecConc;
 }
@@ -529,8 +537,7 @@ schemi::scalar schemi::mixtureVanDerWaals::pFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -554,8 +561,7 @@ schemi::scalar schemi::mixtureVanDerWaals::UvFromp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -574,8 +580,7 @@ schemi::scalar schemi::mixtureVanDerWaals::pcFromT(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -603,12 +608,10 @@ schemi::scalar schemi::mixtureVanDerWaals::UvcFromT(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar CvMixture { 0 };
+	scalar CvMixture { 0 }, aMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
-
-	scalar aMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -633,12 +636,10 @@ schemi::scalar schemi::mixtureVanDerWaals::TFromUv(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar CvMixture { 0 };
+	scalar CvMixture { 0 }, aMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
-
-	scalar aMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -653,8 +654,7 @@ schemi::scalar schemi::mixtureVanDerWaals::dpdrho(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar CvMixture { 0 };
-	scalar MMixture { 0 };
+	scalar CvMixture { 0 }, MMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 	{
@@ -662,8 +662,7 @@ schemi::scalar schemi::mixtureVanDerWaals::dpdrho(
 		MMixture += X[k] * M[k];
 	}
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -682,12 +681,10 @@ schemi::scalar schemi::mixtureVanDerWaals::dpdUv(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar CvMixture { 0 };
+	scalar CvMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
-
-	scalar bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -730,8 +727,7 @@ schemi::scalar schemi::mixtureVanDerWaals::Cp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -776,19 +772,17 @@ schemi::scalar schemi::mixtureVanDerWaals::Fv(
 
 	const auto molecVolumeMixture { 1 / molecConc };
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixtureMolec { 0 }, bMixtureMolec { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
 		{
-			aMixture += X[k] * X[l] * aMatrix[k][l];
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
 		}
 
 	return vanDerWaalsFluid::Fmx(hPlanck, molecMass, kB, T, X,
-			molecVolumeMixture, aMixture / (NAvogardro * NAvogardro),
-			bMixture / NAvogardro) * molecConc;
+			molecVolumeMixture, aMixtureMolec, bMixtureMolec) * molecConc;
 }
 
 schemi::scalar schemi::mixtureVanDerWaals::Fvk(const scalar concentration,
@@ -811,14 +805,14 @@ schemi::scalar schemi::mixtureVanDerWaals::Sv(
 
 	const auto molecVolumeMixture { 1 / molecConc };
 
-	scalar bMixture { 0 };
+	scalar bMixtureMolec { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
-			bMixture += X[k] * X[l] * bMatrix[k][l];
+			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
 
 	return vanDerWaalsFluid::Smx(hPlanck, molecMass, kB, T, X,
-			molecVolumeMixture, bMixture / NAvogardro) * molecConc;
+			molecVolumeMixture, bMixtureMolec) * molecConc;
 }
 
 schemi::scalar schemi::mixtureVanDerWaals::Svk(const scalar concentration,

@@ -15,8 +15,8 @@ schemi::mixtureIdeal::mixtureIdeal() noexcept :
 }
 
 schemi::mixtureIdeal::mixtureIdeal(const scalar Rin, const scalar hPin,
-		const std::valarray<scalar> & Min, const std::valarray<scalar> & Cvin,
-		const std::valarray<scalar>&, const std::valarray<scalar>&) noexcept :
+		const std::valarray<scalar> & Min,
+		const std::valarray<scalar> & Cvin) noexcept :
 		abstractMixtureThermodynamics(Rin, hPin), M(Min), CvArr(Cvin), molecMass(
 				M / NAvogardro)
 {

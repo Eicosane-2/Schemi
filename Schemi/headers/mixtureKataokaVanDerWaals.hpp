@@ -1,29 +1,36 @@
 /*
- * mixtureIdeal.hpp
+ * mixtureKataokaVanDerWaals.hpp
  *
- *  Created on: 2020/02/18
+ *  Created on: 2024/02/23
  *      Author: Maxim Boldyrev
- *
- *      Class for ideal fluids mixture thermodynamics.
  */
 
-#ifndef MIXTUREIDEAL_HPP_
-#define MIXTUREIDEAL_HPP_
+#ifndef MIXTUREKATAOKAVANDERWAALS_HPP_
+#define MIXTUREKATAOKAVANDERWAALS_HPP_
 
 #include "abstractMixtureThermodynamics.hpp"
-#include "idealFluid.hpp"
+#include "KataokaVanDerWaalsFluid.hpp"
 
 namespace schemi
 {
-class mixtureIdeal: private idealFluid, public abstractMixtureThermodynamics
+class mixtureKataokaVanDerWaals: private KataokaVanDerWaalsFluid,
+		public abstractMixtureThermodynamics
 {
-	const std::valarray<scalar> M, CvArr, molecMass;
+	const std::valarray<scalar> M, CvArr, molecMass, Tcrit, Pcrit;
+	std::valarray<scalar> Vcrit /*per mole*/;
+	std::valarray<std::valarray<scalar>> V0Matrix, epsMatrix, bMatrix,
+			V0MatrixMolec, epsMatrixMolec, bMatrixMolec;
 public:
-	mixtureIdeal() noexcept;
+	mixtureKataokaVanDerWaals() noexcept;
 
-	mixtureIdeal(const scalar Rin, const scalar hPin,
+	mixtureKataokaVanDerWaals(const scalar Rin, const scalar hPin,
 			const std::valarray<scalar> & Min,
-			const std::valarray<scalar> & Cvin) noexcept;
+			const std::valarray<scalar> & Cvin,
+			const std::valarray<scalar> & Tcritin,
+			const std::valarray<scalar> & Pcritin,
+			const std::valarray<scalar> & epsilonLJ, /*J/mole*/
+			const std::valarray<scalar> & sigmaLJ, /*m*/
+			const std::pair<bool, scalar> & bCalcType) noexcept;
 
 	scalar Rv() const noexcept override;
 
@@ -38,19 +45,19 @@ public:
 
 	std::valarray<scalar> pFromUv(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
-			const std::valarray<scalar> & Uv) const noexcept override;
+			const std::valarray<scalar> & Uv) const override;
 
 	std::valarray<scalar> UvFromp(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
-			const std::valarray<scalar> & p) const noexcept override;
+			const std::valarray<scalar> & p) const override;
 
 	std::valarray<scalar> pcFromT(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
 			const std::valarray<scalar> & T) const noexcept override;
 
 	std::valarray<scalar> pcFromTk(const std::valarray<scalar> & concentration,
-			const std::valarray<scalar> & T, const std::size_t) const noexcept
-					override;
+			const std::valarray<scalar> & T,
+			const std::size_t componentIndex) const noexcept override;
 
 	std::valarray<scalar> UvcFromT(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
@@ -62,19 +69,19 @@ public:
 
 	std::valarray<scalar> TFromUv(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
-			const std::valarray<scalar> & Uv) const noexcept override;
+			const std::valarray<scalar> & Uv) const override;
 
 	std::valarray<scalar> dpdrho(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
-			const std::valarray<scalar>&) const noexcept override;
+			const std::valarray<scalar> & Uv) const override;
 
 	std::valarray<scalar> dpdUv(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
-			const std::valarray<scalar>&) const noexcept override;
+			const std::valarray<scalar> & Uv) const override;
 
 	std::valarray<scalar> nonIdeality(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
-			const std::valarray<scalar>&) const noexcept override;
+			const std::valarray<scalar> & T) const noexcept override;
 
 	std::valarray<scalar> sqSonicSpeed(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
@@ -84,9 +91,9 @@ public:
 
 	std::valarray<scalar> Cp(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
-			const std::valarray<scalar>&) const noexcept override;
+			const std::valarray<scalar> & T) const noexcept override;
 
-	std::valarray<scalar> Cpk(const std::valarray<scalar>&,
+	std::valarray<scalar> Cpk(const std::valarray<scalar> & concentration,
 			const std::valarray<scalar> & T,
 			const std::size_t componentIndex) const noexcept override;
 
@@ -119,43 +126,43 @@ public:
 			override;
 
 	scalar pFromUv(const std::valarray<scalar> & concentrations,
-			const scalar Uv) const noexcept override;
+			const scalar Uv) const override;
 
 	scalar UvFromp(const std::valarray<scalar> & concentrations,
-			const scalar p) const noexcept override;
+			const scalar p) const override;
 
-	scalar pcFromT(const std::valarray<scalar>&, const scalar T) const noexcept
-			override;
+	scalar pcFromT(const std::valarray<scalar> & concentrations,
+			const scalar T) const noexcept override;
 
-	scalar pcFromTk(const scalar, const scalar T,
-			const std::size_t) const noexcept override;
+	scalar pcFromTk(const scalar concentration, const scalar T,
+			const std::size_t componentIndex) const noexcept override;
 
 	scalar UvcFromT(const std::valarray<scalar> & concentrations,
 			const scalar T) const noexcept override;
 
-	scalar UvcFromTk(const scalar, const scalar T,
+	scalar UvcFromTk(const scalar concentration, const scalar T,
 			const std::size_t componentIndex) const noexcept override;
 
 	scalar TFromUv(const std::valarray<scalar> & concentrations,
-			const scalar Uv) const noexcept override;
+			const scalar Uv) const override;
 
-	scalar dpdrho(const std::valarray<scalar>&, const scalar) const noexcept
-			override;
+	scalar dpdrho(const std::valarray<scalar> & concentrations,
+			const scalar Uv) const override;
 
 	scalar dpdUv(const std::valarray<scalar> & concentrations,
-			const scalar) const noexcept override;
+			const scalar Uv) const override;
 
-	scalar nonIdeality(const std::valarray<scalar>&,
-			const scalar) const noexcept override;
+	scalar nonIdeality(const std::valarray<scalar> & concentrations,
+			const scalar T) const noexcept override;
 
 	scalar sqSonicSpeed(const std::valarray<scalar> & concentrations,
 			const scalar density, const scalar Uv,
 			const scalar pressure) const noexcept override;
 
 	scalar Cp(const std::valarray<scalar> & concentrations,
-			const scalar) const noexcept override;
+			const scalar T) const noexcept override;
 
-	scalar Cpk(const scalar, const scalar,
+	scalar Cpk(const scalar concentration, const scalar T,
 			const std::size_t componentIndex) const noexcept override;
 
 	scalar hT(const std::valarray<scalar> & concentrations,
@@ -178,4 +185,4 @@ public:
 };
 }  // namespace schemi
 
-#endif /* MIXTUREIDEAL_HPP_ */
+#endif /* MIXTUREKATAOKAVANDERWAALS_HPP_ */

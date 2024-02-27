@@ -7,8 +7,10 @@
 
 #include "vanDerWaalsFluid.hpp"
 
+#include "cubicEquationSolver.hpp"
 #include "globalConstants.hpp"
 #include "intExpPow.hpp"
+#include "secantMethod.hpp"
 
 schemi::scalar schemi::vanDerWaalsFluid::pFromUv(const scalar gamma1,
 		const scalar Uv, const scalar c, const scalar a,
@@ -43,7 +45,14 @@ schemi::scalar schemi::vanDerWaalsFluid::UvcFromT(const scalar Cv,
 schemi::scalar schemi::vanDerWaalsFluid::TFromUv(const scalar Cv,
 		const scalar Uv, const scalar c, const scalar a) const noexcept
 {
-	return (Uv + a * pow<scalar, 2>(c)) / (c * Cv);
+	return (Uv + a * pow<scalar, 2>(c)) / ((c + stabilizator) * Cv);
+}
+
+schemi::scalar schemi::vanDerWaalsFluid::cFrompT(const scalar R, const scalar p,
+		const scalar T, const scalar a, const scalar b) const
+{
+	return returnSinglePosValue(
+			cubicEquationSolver(a * b, -a, R * T + b * p, -p));
 }
 
 schemi::scalar schemi::vanDerWaalsFluid::dpdrho(const scalar gamma1,
@@ -93,7 +102,8 @@ schemi::scalar schemi::vanDerWaalsFluid::Fv(const scalar c, const scalar T,
 			(2 * Pi_number * M * R * T) / pow<scalar, 2>(NAvogardro * h)) };
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
-	return -c * R * T * (std::log(nQ * (1. / c - b) / NAvogardro) + 1)
+	return -c * R * T
+			* (std::log(nQ * (1. / (c + stabilizator) - b) / NAvogardro) + 1)
 			- a * c * c;
 }
 
@@ -105,7 +115,8 @@ schemi::scalar schemi::vanDerWaalsFluid::Sv(const scalar c, const scalar T,
 			(2 * Pi_number * M * R * T) / pow<scalar, 2>(NAvogardro * h)) };
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
-	return c * R * (log(nQ * (1. / c - b) / NAvogardro) + 5. / 2.);
+	return c * R
+			* (log(nQ * (1. / (c + stabilizator) - b) / NAvogardro) + 5. / 2.);
 }
 
 schemi::scalar schemi::vanDerWaalsFluid::Fmx(const scalar h,

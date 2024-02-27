@@ -17,7 +17,7 @@ class RichtmyerSolver: public abstractFlowSolver, private pressureStarClass
 {
 	const MPIHandler & parallelism;
 public:
-	RichtmyerSolver(const MPIHandler & parallelism_in) noexcept :
+	explicit RichtmyerSolver(const MPIHandler & parallelism_in) noexcept :
 			parallelism(parallelism_in)
 	{
 	}
