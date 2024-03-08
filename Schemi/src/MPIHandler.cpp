@@ -265,7 +265,7 @@ void schemi::MPIHandler::initialiseBuffersSize(
 		gathBufSize = gathBufSizeArr[0];
 	}
 	else
-		throw exception("Arrays were already initialized.", errors::MPIError);
+		throw exception("Arrays were already initialised.", errors::MPIError);
 #endif
 }
 
