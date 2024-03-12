@@ -27,7 +27,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		const MPIHandler & parallelism, const std::string & turbulenceONString,
 		const std::string & sourceTypeString,
 		const std::string & universalGasConstant,
-		const std::string & equationOfState, const std::size_t readDataPoint)
+		const std::string & equationOfState,
+		const std::pair<std::size_t, std::string> & readDataPoint)
 {
 	std::unique_ptr<homogeneousPhase<cubicCell>> phase { nullptr };
 	enthalpyFlow enthalpyFlowFlag;
@@ -1140,8 +1141,47 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		coordinatesOfZonesFile.close();
 	}
 
-	/*Set initial conditions for concentrations.*/
-	for (std::size_t k = 1; k < phase->concentration.v.size(); ++k)
+	if ((readDataPoint.second == "no")
+			|| (readDataPoint.second == "initialisation"))
+	{
+		/*Set initial conditions for concentrations.*/
+		for (std::size_t k = 1; k < phase->concentration.v.size(); ++k)
+			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
+			{
+				const vector & radiusOfCell { meshReference.cells()[i].rC() };
+				bool zoneFounded { false };
+
+				for (std::size_t j = 0; j < numberOfZones; ++j)
+				{
+					if ((std::get<0>(radiusOfCell())
+							>= std::get<0>(vectorsOfZones[2 * j]()))
+							&& (std::get<0>(radiusOfCell())
+									<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+							&& (std::get<1>(radiusOfCell())
+									>= std::get<1>(vectorsOfZones[2 * j]()))
+							&& (std::get<1>(radiusOfCell())
+									<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+							&& (std::get<2>(radiusOfCell())
+									>= std::get<2>(vectorsOfZones[2 * j]()))
+							&& (std::get<2>(radiusOfCell())
+									<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+					{
+						zoneFounded = true;
+						phase->concentration.v[k].r()[i] = std::stod(
+								matrixOfSubstancesConditions[k - 1][5 + j]);
+						break;
+					}
+				}
+
+				if (!zoneFounded)
+					throw exception(
+							"Cell " + std::to_string(i) + " of "
+									+ std::to_string(k)
+									+ " component concentration dropped out of all zones.",
+							errors::initialisationError);
+			}
+
+		/*Set initial conditions for velocity.*/
 		for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 		{
 			const vector & radiusOfCell { meshReference.cells()[i].rC() };
@@ -1163,227 +1203,193 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
 				{
 					zoneFounded = true;
-					phase->concentration.v[k].r()[i] = std::stod(
-							matrixOfSubstancesConditions[k - 1][5 + j]);
+					phase->velocity.r()[i] = vector(
+							std::stod(velocityConditions[3 * j]),
+							std::stod(velocityConditions[1 + 3 * j]),
+							std::stod(velocityConditions[2 + 3 * j]));
 					break;
 				}
 			}
 
 			if (!zoneFounded)
 				throw exception(
-						"Cell " + std::to_string(i) + " of " + std::to_string(k)
-								+ " component concentration dropped out of all zones.",
+						"Cell " + std::to_string(i)
+								+ " of velocity dropped out of all zones.",
 						errors::initialisationError);
 		}
 
-	/*Set initial conditions for velocity.*/
-	for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
-	{
-		const vector & radiusOfCell { meshReference.cells()[i].rC() };
-		bool zoneFounded { false };
-
-		for (std::size_t j = 0; j < numberOfZones; ++j)
+		/*Set initial conditions for pressure.*/
+		for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 		{
-			if ((std::get<0>(radiusOfCell())
-					>= std::get<0>(vectorsOfZones[2 * j]()))
-					&& (std::get<0>(radiusOfCell())
-							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<1>(radiusOfCell())
-							>= std::get<1>(vectorsOfZones[2 * j]()))
-					&& (std::get<1>(radiusOfCell())
-							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<2>(radiusOfCell())
-							>= std::get<2>(vectorsOfZones[2 * j]()))
-					&& (std::get<2>(radiusOfCell())
-							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+			const vector & radiusOfCell { meshReference.cells()[i].rC() };
+			bool zoneFounded { false };
+
+			for (std::size_t j = 0; j < numberOfZones; ++j)
 			{
-				zoneFounded = true;
-				phase->velocity.r()[i] = vector(
-						std::stod(velocityConditions[3 * j]),
-						std::stod(velocityConditions[1 + 3 * j]),
-						std::stod(velocityConditions[2 + 3 * j]));
-				break;
+				if ((std::get<0>(radiusOfCell())
+						>= std::get<0>(vectorsOfZones[2 * j]()))
+						&& (std::get<0>(radiusOfCell())
+								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<1>(radiusOfCell())
+								>= std::get<1>(vectorsOfZones[2 * j]()))
+						&& (std::get<1>(radiusOfCell())
+								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<2>(radiusOfCell())
+								>= std::get<2>(vectorsOfZones[2 * j]()))
+						&& (std::get<2>(radiusOfCell())
+								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				{
+					zoneFounded = true;
+					phase->pressure.r()[i] = std::stod(pressureConditions[j]);
+					break;
+				}
 			}
+			if (!zoneFounded)
+				throw exception(
+						"Cell " + std::to_string(i)
+								+ " of pressure dropped out of all zones.",
+						errors::initialisationError);
 		}
 
-		if (!zoneFounded)
-			throw exception(
-					"Cell " + std::to_string(i)
-							+ " of velocity dropped out of all zones.",
-					errors::initialisationError);
-	}
-
-	/*Set initial conditions for pressure.*/
-	for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
-	{
-		const vector & radiusOfCell { meshReference.cells()[i].rC() };
-		bool zoneFounded { false };
-
-		for (std::size_t j = 0; j < numberOfZones; ++j)
+		/*Set initial conditions for k.*/
+		for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 		{
-			if ((std::get<0>(radiusOfCell())
-					>= std::get<0>(vectorsOfZones[2 * j]()))
-					&& (std::get<0>(radiusOfCell())
-							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<1>(radiusOfCell())
-							>= std::get<1>(vectorsOfZones[2 * j]()))
-					&& (std::get<1>(radiusOfCell())
-							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<2>(radiusOfCell())
-							>= std::get<2>(vectorsOfZones[2 * j]()))
-					&& (std::get<2>(radiusOfCell())
-							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+			const vector & radiusOfCell { meshReference.cells()[i].rC() };
+			bool zoneFounded { false };
+
+			for (std::size_t j = 0; j < numberOfZones; ++j)
 			{
-				zoneFounded = true;
-				phase->pressure.r()[i] = std::stod(pressureConditions[j]);
-				break;
+				if ((std::get<0>(radiusOfCell())
+						>= std::get<0>(vectorsOfZones[2 * j]()))
+						&& (std::get<0>(radiusOfCell())
+								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<1>(radiusOfCell())
+								>= std::get<1>(vectorsOfZones[2 * j]()))
+						&& (std::get<1>(radiusOfCell())
+								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<2>(radiusOfCell())
+								>= std::get<2>(vectorsOfZones[2 * j]()))
+						&& (std::get<2>(radiusOfCell())
+								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				{
+					zoneFounded = true;
+					phase->kTurb.r()[i] = std::stod(kTurbConditions[j]);
+					break;
+				}
 			}
-		}
-		if (!zoneFounded)
-			throw exception(
-					"Cell " + std::to_string(i)
-							+ " of pressure dropped out of all zones.",
-					errors::initialisationError);
-	}
-
-	/*Set initial conditions for k.*/
-	for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
-	{
-		const vector & radiusOfCell { meshReference.cells()[i].rC() };
-		bool zoneFounded { false };
-
-		for (std::size_t j = 0; j < numberOfZones; ++j)
-		{
-			if ((std::get<0>(radiusOfCell())
-					>= std::get<0>(vectorsOfZones[2 * j]()))
-					&& (std::get<0>(radiusOfCell())
-							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<1>(radiusOfCell())
-							>= std::get<1>(vectorsOfZones[2 * j]()))
-					&& (std::get<1>(radiusOfCell())
-							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<2>(radiusOfCell())
-							>= std::get<2>(vectorsOfZones[2 * j]()))
-					&& (std::get<2>(radiusOfCell())
-							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
-			{
-				zoneFounded = true;
-				phase->kTurb.r()[i] = std::stod(kTurbConditions[j]);
-				break;
-			}
-		}
-		if (!zoneFounded)
-			throw exception(
-					"Cell " + std::to_string(i)
-							+ " of k dropped out of all zones.",
-					errors::initialisationError);
-	}
-
-	/*Set initial conditions for epsilon.*/
-	for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
-	{
-		const vector & radiusOfCell { meshReference.cells()[i].rC() };
-		bool zoneFounded { false };
-
-		for (std::size_t j = 0; j < numberOfZones; ++j)
-		{
-			if ((std::get<0>(radiusOfCell())
-					>= std::get<0>(vectorsOfZones[2 * j]()))
-					&& (std::get<0>(radiusOfCell())
-							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<1>(radiusOfCell())
-							>= std::get<1>(vectorsOfZones[2 * j]()))
-					&& (std::get<1>(radiusOfCell())
-							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<2>(radiusOfCell())
-							>= std::get<2>(vectorsOfZones[2 * j]()))
-					&& (std::get<2>(radiusOfCell())
-							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
-			{
-				zoneFounded = true;
-				phase->epsTurb.r()[i] = std::stod(epsTurbConditions[j]);
-				break;
-			}
-		}
-		if (!zoneFounded)
-			throw exception(
-					"Cell " + std::to_string(i)
-							+ " of epsilon dropped out of all zones.",
-					errors::initialisationError);
-	}
-
-	/*Set initial conditions for a.*/
-	for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
-	{
-		const vector & radiusOfCell { meshReference.cells()[i].rC() };
-		bool zoneFounded { false };
-
-		for (std::size_t j = 0; j < numberOfZones; ++j)
-		{
-			if ((std::get<0>(radiusOfCell())
-					>= std::get<0>(vectorsOfZones[2 * j]()))
-					&& (std::get<0>(radiusOfCell())
-							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<1>(radiusOfCell())
-							>= std::get<1>(vectorsOfZones[2 * j]()))
-					&& (std::get<1>(radiusOfCell())
-							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<2>(radiusOfCell())
-							>= std::get<2>(vectorsOfZones[2 * j]()))
-					&& (std::get<2>(radiusOfCell())
-							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
-			{
-				zoneFounded = true;
-				phase->aTurb.r()[i] = vector(std::stod(aTurbConditions[3 * j]),
-						std::stod(aTurbConditions[1 + 3 * j]),
-						std::stod(aTurbConditions[2 + 3 * j]));
-				break;
-			}
+			if (!zoneFounded)
+				throw exception(
+						"Cell " + std::to_string(i)
+								+ " of k dropped out of all zones.",
+						errors::initialisationError);
 		}
 
-		if (!zoneFounded)
-			throw exception(
-					"Cell " + std::to_string(i)
-							+ " of a dropped out of all zones.",
-					errors::initialisationError);
-	}
-
-	/*Set initial conditions for b.*/
-	for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
-	{
-		const vector & radiusOfCell { meshReference.cells()[i].rC() };
-		bool zoneFounded { false };
-
-		for (std::size_t j = 0; j < numberOfZones; ++j)
+		/*Set initial conditions for epsilon.*/
+		for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 		{
-			if ((std::get<0>(radiusOfCell())
-					>= std::get<0>(vectorsOfZones[2 * j]()))
-					&& (std::get<0>(radiusOfCell())
-							<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<1>(radiusOfCell())
-							>= std::get<1>(vectorsOfZones[2 * j]()))
-					&& (std::get<1>(radiusOfCell())
-							<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-					&& (std::get<2>(radiusOfCell())
-							>= std::get<2>(vectorsOfZones[2 * j]()))
-					&& (std::get<2>(radiusOfCell())
-							<= std::get<2>(vectorsOfZones[2 * j + 1]())))
-			{
-				zoneFounded = true;
-				phase->bTurb.r()[i] = std::stod(bTurbConditions[j]);
-				break;
-			}
-		}
-		if (!zoneFounded)
-			throw exception(
-					"Cell " + std::to_string(i)
-							+ " of b dropped out of all zones.",
-					errors::initialisationError);
-	}
+			const vector & radiusOfCell { meshReference.cells()[i].rC() };
+			bool zoneFounded { false };
 
-	if (readDataPoint)
+			for (std::size_t j = 0; j < numberOfZones; ++j)
+			{
+				if ((std::get<0>(radiusOfCell())
+						>= std::get<0>(vectorsOfZones[2 * j]()))
+						&& (std::get<0>(radiusOfCell())
+								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<1>(radiusOfCell())
+								>= std::get<1>(vectorsOfZones[2 * j]()))
+						&& (std::get<1>(radiusOfCell())
+								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<2>(radiusOfCell())
+								>= std::get<2>(vectorsOfZones[2 * j]()))
+						&& (std::get<2>(radiusOfCell())
+								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				{
+					zoneFounded = true;
+					phase->epsTurb.r()[i] = std::stod(epsTurbConditions[j]);
+					break;
+				}
+			}
+			if (!zoneFounded)
+				throw exception(
+						"Cell " + std::to_string(i)
+								+ " of epsilon dropped out of all zones.",
+						errors::initialisationError);
+		}
+
+		/*Set initial conditions for a.*/
+		for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
+		{
+			const vector & radiusOfCell { meshReference.cells()[i].rC() };
+			bool zoneFounded { false };
+
+			for (std::size_t j = 0; j < numberOfZones; ++j)
+			{
+				if ((std::get<0>(radiusOfCell())
+						>= std::get<0>(vectorsOfZones[2 * j]()))
+						&& (std::get<0>(radiusOfCell())
+								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<1>(radiusOfCell())
+								>= std::get<1>(vectorsOfZones[2 * j]()))
+						&& (std::get<1>(radiusOfCell())
+								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<2>(radiusOfCell())
+								>= std::get<2>(vectorsOfZones[2 * j]()))
+						&& (std::get<2>(radiusOfCell())
+								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				{
+					zoneFounded = true;
+					phase->aTurb.r()[i] = vector(
+							std::stod(aTurbConditions[3 * j]),
+							std::stod(aTurbConditions[1 + 3 * j]),
+							std::stod(aTurbConditions[2 + 3 * j]));
+					break;
+				}
+			}
+
+			if (!zoneFounded)
+				throw exception(
+						"Cell " + std::to_string(i)
+								+ " of a dropped out of all zones.",
+						errors::initialisationError);
+		}
+
+		/*Set initial conditions for b.*/
+		for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
+		{
+			const vector & radiusOfCell { meshReference.cells()[i].rC() };
+			bool zoneFounded { false };
+
+			for (std::size_t j = 0; j < numberOfZones; ++j)
+			{
+				if ((std::get<0>(radiusOfCell())
+						>= std::get<0>(vectorsOfZones[2 * j]()))
+						&& (std::get<0>(radiusOfCell())
+								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<1>(radiusOfCell())
+								>= std::get<1>(vectorsOfZones[2 * j]()))
+						&& (std::get<1>(radiusOfCell())
+								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
+						&& (std::get<2>(radiusOfCell())
+								>= std::get<2>(vectorsOfZones[2 * j]()))
+						&& (std::get<2>(radiusOfCell())
+								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				{
+					zoneFounded = true;
+					phase->bTurb.r()[i] = std::stod(bTurbConditions[j]);
+					break;
+				}
+			}
+			if (!zoneFounded)
+				throw exception(
+						"Cell " + std::to_string(i)
+								+ " of b dropped out of all zones.",
+						errors::initialisationError);
+		}
+	}
+	else
 	{
-		const auto noutputStr = std::to_string(readDataPoint);
+		const auto noutputStr = std::to_string(readDataPoint.first);
 		const std::size_t length_of_noutput = noutputStr.size();
 
 		if (lengthOfNumber < length_of_noutput)

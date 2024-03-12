@@ -43,6 +43,6 @@ star
 #Approximation_order
 SecondOrder
 #Start_From_Time-Step
-0
+no
 #Calculation_of_mixing_zone_width
 on

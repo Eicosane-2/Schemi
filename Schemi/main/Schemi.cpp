@@ -304,10 +304,11 @@ int main()
 			throw exception("Unknown flag for mixed zone width calculation.",
 					errors::initialisationError);
 
-		std::size_t readDataPoint;
-		if ((readFromOutput == "no") || (readFromOutput == "0"))
+		std::pair<std::size_t, std::string> readDataPoint;
+		if ((readFromOutput == "no") || (readFromOutput == "0")
+				|| (readFromOutput == "initialisation"))
 		{
-			readDataPoint = 0;
+			readDataPoint = { 0, readFromOutput };
 
 			if (parallelism.isRoot())
 			{
@@ -336,7 +337,8 @@ int main()
 		}
 		else
 		{
-			readDataPoint = std::stoul(readFromOutput);
+			readDataPoint = { std::stoul(readFromOutput), std::string(
+					"fromTimePoint") };
 
 			if (parallelism.isRoot())
 			{
@@ -361,7 +363,7 @@ int main()
 				{
 					lineNumberEnd++;
 
-					if ((lineNumberEnd - 1) == readDataPoint)
+					if ((lineNumberEnd - 1) == readDataPoint.first)
 					{
 						lineNumber = lineNumberEnd;
 
@@ -411,7 +413,7 @@ int main()
 							"Time of calculation lesser or equal than time of executed calculation.",
 							errors::initialisationError);
 
-				if (nouts != readDataPoint)
+				if (nouts != readDataPoint.first)
 					throw exception(
 							std::string(
 									"Number of output does not concur with <<readDataPoint>>."),
@@ -705,7 +707,7 @@ int main()
 
 		/*Write initial conditions.*/
 		{
-			if (!readDataPoint)
+			if ((!readDataPoint.first) && (readDataPoint.second != "0"))
 			{
 				structForOutput outputData(parallelism, mesh_,
 						numberOfComponents);
@@ -725,6 +727,8 @@ int main()
 			}
 			nouts++, noutsW++;
 		}
+		if (readDataPoint.second == "initialisation")
+			std::exit(EXIT_SUCCESS);
 
 		boundaryConditionValue boundaryConditionValueCalc(
 				*gasPhase->turbulenceSources->turbPar, *gasPhase,
