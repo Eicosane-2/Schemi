@@ -8,4 +8,7 @@
 /timeOfCalculation.tsv
 /gmon.out
 /fieldsOutput/
+/.settings/
+/.cproject
+/.project
 /.settings/language.settings.xml

@@ -28,9 +28,9 @@ struct field
 		if ((f.boundCond().size() != boundaryConditionInfo.size())
 				&& (boundaryConditionInfo.size() != 0))
 			throw exception("Fields have different boundary condition size.",
-					errors::fieldInitializationError);
+					errors::fieldInitialisationError);
 
-		valueField = f.ref();
+		valueField = f();
 		boundaryConditionInfo = f.boundCond();
 
 		fieldSize = f.size();
@@ -68,7 +68,7 @@ struct field
 		}
 		else
 			throw exception("Unknown type of field.",
-					errors::fieldInitializationError);
+					errors::fieldInitialisationError);
 	}
 
 	field(const mesh & meshIn, const typeOfValue & value,
@@ -184,14 +184,14 @@ struct field
 				for (std::size_t zone = 0; zone < bData1.size(); ++zone)
 				{
 					if (true
-							&& (surfaceCoord.v()[1]
-									>= bData1[zone].patchBeg.v()[1])
-							&& (surfaceCoord.v()[1]
-									<= bData1[zone].patchEnd.v()[1])
-							&& (surfaceCoord.v()[2]
-									>= bData1[zone].patchBeg.v()[2])
-							&& (surfaceCoord.v()[2]
-									<= bData1[zone].patchEnd.v()[2]))
+							&& (std::get<1>(surfaceCoord())
+									>= std::get<1>(bData1[zone].patchBeg()))
+							&& (std::get<1>(surfaceCoord())
+									<= std::get<1>(bData1[zone].patchEnd()))
+							&& (std::get<2>(surfaceCoord())
+									>= std::get<2>(bData1[zone].patchBeg()))
+							&& (std::get<2>(surfaceCoord())
+									<= std::get<2>(bData1[zone].patchEnd())))
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData1[zone].bType;
@@ -204,7 +204,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errors::initializationError);
+							errors::initialisationError);
 			}
 			prev += meshReference.tailNumber() + meshReference.innerNumber();
 
@@ -218,14 +218,14 @@ struct field
 				for (std::size_t zone = 0; zone < bData2.size(); ++zone)
 				{
 					if (true
-							&& (surfaceCoord.v()[1]
-									>= bData2[zone].patchBeg.v()[1])
-							&& (surfaceCoord.v()[1]
-									<= bData2[zone].patchEnd.v()[1])
-							&& (surfaceCoord.v()[2]
-									>= bData2[zone].patchBeg.v()[2])
-							&& (surfaceCoord.v()[2]
-									<= bData2[zone].patchEnd.v()[2]))
+							&& (std::get<1>(surfaceCoord())
+									>= std::get<1>(bData2[zone].patchBeg()))
+							&& (std::get<1>(surfaceCoord())
+									<= std::get<1>(bData2[zone].patchEnd()))
+							&& (std::get<2>(surfaceCoord())
+									>= std::get<2>(bData2[zone].patchBeg()))
+							&& (std::get<2>(surfaceCoord())
+									<= std::get<2>(bData2[zone].patchEnd())))
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData2[zone].bType;
@@ -238,7 +238,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errors::initializationError);
+							errors::initialisationError);
 			}
 			prev += meshReference.pointNumber();
 
@@ -251,13 +251,15 @@ struct field
 
 				for (std::size_t zone = 0; zone < bData3.size(); ++zone)
 				{
-					if ((surfaceCoord.v()[0] >= bData3[zone].patchBeg.v()[0])
-							&& (surfaceCoord.v()[0]
-									<= bData3[zone].patchEnd.v()[0])
-							&& (surfaceCoord.v()[1]
-									>= bData3[zone].patchBeg.v()[1])
-							&& (surfaceCoord.v()[1]
-									<= bData3[zone].patchEnd.v()[1]) && true)
+					if ((std::get<0>(surfaceCoord())
+							>= std::get<0>(bData3[zone].patchBeg()))
+							&& (std::get<0>(surfaceCoord())
+									<= std::get<0>(bData3[zone].patchEnd()))
+							&& (std::get<1>(surfaceCoord())
+									>= std::get<1>(bData3[zone].patchBeg()))
+							&& (std::get<1>(surfaceCoord())
+									<= std::get<1>(bData3[zone].patchEnd()))
+							&& true)
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData3[zone].bType;
@@ -270,7 +272,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errors::initializationError);
+							errors::initialisationError);
 			}
 			prev += meshReference.bottomNumber();
 
@@ -283,13 +285,15 @@ struct field
 
 				for (std::size_t zone = 0; zone < bData4.size(); ++zone)
 				{
-					if ((surfaceCoord.v()[0] >= bData4[zone].patchBeg.v()[0])
-							&& (surfaceCoord.v()[0]
-									<= bData4[zone].patchEnd.v()[0]) && true
-							&& (surfaceCoord.v()[2]
-									>= bData4[zone].patchBeg.v()[2])
-							&& (surfaceCoord.v()[2]
-									<= bData4[zone].patchEnd.v()[2]))
+					if ((std::get<0>(surfaceCoord())
+							>= std::get<0>(bData4[zone].patchBeg()))
+							&& (std::get<0>(surfaceCoord())
+									<= std::get<0>(bData4[zone].patchEnd()))
+							&& true
+							&& (std::get<2>(surfaceCoord())
+									>= std::get<2>(bData4[zone].patchBeg()))
+							&& (std::get<2>(surfaceCoord())
+									<= std::get<2>(bData4[zone].patchEnd())))
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData4[zone].bType;
@@ -302,7 +306,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errors::initializationError);
+							errors::initialisationError);
 			}
 			prev += meshReference.rightNumber();
 
@@ -315,13 +319,15 @@ struct field
 
 				for (std::size_t zone = 0; zone < bData5.size(); ++zone)
 				{
-					if ((surfaceCoord.v()[0] >= bData5[zone].patchBeg.v()[0])
-							&& (surfaceCoord.v()[0]
-									<= bData5[zone].patchEnd.v()[0]) && true
-							&& (surfaceCoord.v()[2]
-									>= bData5[zone].patchBeg.v()[2])
-							&& (surfaceCoord.v()[2]
-									<= bData5[zone].patchEnd.v()[2]))
+					if ((std::get<0>(surfaceCoord())
+							>= std::get<0>(bData5[zone].patchBeg()))
+							&& (std::get<0>(surfaceCoord())
+									<= std::get<0>(bData5[zone].patchEnd()))
+							&& true
+							&& (std::get<2>(surfaceCoord())
+									>= std::get<2>(bData5[zone].patchBeg()))
+							&& (std::get<2>(surfaceCoord())
+									<= std::get<2>(bData5[zone].patchEnd())))
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData5[zone].bType;
@@ -334,7 +340,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errors::initializationError);
+							errors::initialisationError);
 			}
 			prev += meshReference.leftNumber();
 
@@ -347,13 +353,15 @@ struct field
 
 				for (std::size_t zone = 0; zone < bData6.size(); ++zone)
 				{
-					if ((surfaceCoord.v()[0] >= bData6[zone].patchBeg.v()[0])
-							&& (surfaceCoord.v()[0]
-									<= bData6[zone].patchEnd.v()[0])
-							&& (surfaceCoord.v()[1]
-									>= bData6[zone].patchBeg.v()[1])
-							&& (surfaceCoord.v()[1]
-									<= bData6[zone].patchEnd.v()[1]) && true)
+					if ((std::get<0>(surfaceCoord())
+							>= std::get<0>(bData6[zone].patchBeg()))
+							&& (std::get<0>(surfaceCoord())
+									<= std::get<0>(bData6[zone].patchEnd()))
+							&& (std::get<1>(surfaceCoord())
+									>= std::get<1>(bData6[zone].patchBeg()))
+							&& (std::get<1>(surfaceCoord())
+									<= std::get<1>(bData6[zone].patchEnd()))
+							&& true)
 					{
 						zoneFounded = true;
 						boundaryConditionInfo[j].first = bData6[zone].bType;
@@ -366,7 +374,7 @@ struct field
 					throw exception(
 							"Surface " + std::to_string(j)
 									+ " of a dropped out of all zones.",
-							errors::initializationError);
+							errors::initialisationError);
 			}
 
 			fieldSize = meshReference.cellsSize();
@@ -398,17 +406,17 @@ struct field
 		}
 		else
 			throw exception("Unknown type of field.",
-					errors::fieldInitializationError);
+					errors::fieldInitialisationError);
 
 		boundaryConditionInfo = boundCondtIn;
 	}
 
-	const std::valarray<typeOfValue>& ref() const noexcept
+	const std::valarray<typeOfValue>& operator()() const noexcept
 	{
 		return valueField;
 	}
 
-	std::valarray<typeOfValue>& ref_r() noexcept
+	std::valarray<typeOfValue>& r() noexcept
 	{
 		return valueField;
 	}
@@ -440,9 +448,9 @@ private:
 
 	void is_mesh_initialised() const
 	{
-		if (!meshReference.is_initialized())
-			throw exception("Mesh has not yet been initialized.",
-					errors::fieldInitializationError);
+		if (!meshReference.is_initialised())
+			throw exception("Mesh has not yet been initialised.",
+					errors::fieldInitialisationError);
 	}
 
 	template<bool flag = false>

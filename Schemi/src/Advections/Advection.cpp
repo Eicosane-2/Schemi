@@ -25,31 +25,31 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 		scalar & timeForFlowCalculation, scalar & timeForTimeIntegration,
 		const MPIHandler & parallelism)
 {
-	auto & mesh { gasPhase.pressure.meshRef() };
+	auto & mesh_ { gasPhase.pressure.meshRef() };
 
 	/*Creating surface fields.*/
 	homogeneousPhase<quadraticSurface> surfaceOwnerSide { bunchOfFields<
 			quadraticSurface>(gasPhase),
-			transportCoefficients<quadraticSurface>(mesh),
+			transportCoefficients<quadraticSurface>(mesh_),
 			gasPhase.phaseThermodynamics, gasPhase.turbulenceSources,
 			gasPhase.transportModel };
 
 	homogeneousPhase<quadraticSurface> surfaceNeighbourSide { bunchOfFields<
 			quadraticSurface>(gasPhase),
-			transportCoefficients<quadraticSurface>(mesh),
+			transportCoefficients<quadraticSurface>(mesh_),
 			gasPhase.phaseThermodynamics, gasPhase.turbulenceSources,
 			gasPhase.transportModel };
 
 	/*Creating limited gradients.*/
 	std::vector<volumeField<vector>> concentrationTVDGradient {
-			gasPhase.phaseThermodynamics->Mv().size(), volumeField<vector>(mesh,
-					vector(0)) };
-	volumeField<tensor> velocityTVDGradient { mesh, tensor(0) };
-	volumeField<vector> pressureTVDGradient { mesh, vector(0) };
-	volumeField<vector> kTVDGradient { mesh, vector(0) };
-	volumeField<vector> epsilonTVDGradient { mesh, vector(0) };
-	volumeField<tensor> aTVDGradient { mesh, tensor(0) };
-	volumeField<vector> bTVDGradient { mesh, vector(0) };
+			gasPhase.phaseThermodynamics->Mv().size(), volumeField<vector>(
+					mesh_, vector(0)) };
+	volumeField<tensor> velocityTVDGradient { mesh_, tensor(0) };
+	volumeField<vector> pressureTVDGradient { mesh_, vector(0) };
+	volumeField<vector> kTVDGradient { mesh_, vector(0) };
+	volumeField<vector> epsilonTVDGradient { mesh_, vector(0) };
+	volumeField<tensor> aTVDGradient { mesh_, tensor(0) };
+	volumeField<vector> bTVDGradient { mesh_, vector(0) };
 
 	/*TVD Reconstruction.*/
 	const auto TVDStartTime = std::chrono::high_resolution_clock::now();
@@ -63,20 +63,20 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 
 			concentrationTVDGradient[k] = TVDLimiter(concentrationGradient_k,
 					gasPhase.concentration.v[k + 1], limiter,
-					boundaryConditionValueCalc, k + 1);
+					boundaryConditionValueCalc, parallelism, k + 1);
 		}
 
 		const auto velocityGradient = grad(gasPhase.velocity,
 				boundaryConditionValueCalc);
 
 		velocityTVDGradient = TVDLimiter(velocityGradient, gasPhase.velocity,
-				limiter, boundaryConditionValueCalc);
+				limiter, boundaryConditionValueCalc, parallelism);
 
 		const auto pressureGradient = grad(gasPhase.pressure,
 				boundaryConditionValueCalc);
 
 		pressureTVDGradient = TVDLimiter(pressureGradient, gasPhase.pressure,
-				limiter, boundaryConditionValueCalc);
+				limiter, boundaryConditionValueCalc, parallelism);
 
 		if (gasPhase.turbulenceSources->turbulence)
 		{
@@ -84,13 +84,13 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 					boundaryConditionValueCalc);
 
 			kTVDGradient = TVDLimiter(kGradient, gasPhase.kTurb, limiter,
-					boundaryConditionValueCalc);
+					boundaryConditionValueCalc, parallelism);
 
 			const auto epsilonGradient = grad(gasPhase.epsTurb,
 					boundaryConditionValueCalc);
 
 			epsilonTVDGradient = TVDLimiter(epsilonGradient, gasPhase.epsTurb,
-					limiter, boundaryConditionValueCalc);
+					limiter, boundaryConditionValueCalc, parallelism);
 
 			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
 					|| (gasPhase.turbulenceSources->model
@@ -102,7 +102,7 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 						boundaryConditionValueCalc);
 
 				aTVDGradient = TVDLimiter(aGradient, gasPhase.aTurb, limiter,
-						boundaryConditionValueCalc);
+						boundaryConditionValueCalc, parallelism);
 
 				if ((gasPhase.turbulenceSources->model
 						== turbulenceModel::BHRSource)
@@ -113,22 +113,22 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 							boundaryConditionValueCalc);
 
 					bTVDGradient = TVDLimiter(bGradient, gasPhase.bTurb,
-							limiter, boundaryConditionValueCalc);
+							limiter, boundaryConditionValueCalc, parallelism);
 				}
 			}
 		}
 
-		for (std::size_t i = 0; i < mesh.cellsSize(); ++i)
+		for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 		{
 			const std::vector<std::size_t> & surfacesOfCell_i {
-					mesh.surfacesOfCells()[i] };
+					mesh_.surfacesOfCells()[i] };
 
 			for (std::size_t j = 0; j < surfacesOfCell_i.size(); ++j)
 			{
 				const std::size_t surfaceIndex { surfacesOfCell_i[j] };
 
-				const vector deltaVector = mesh.surfaces()[surfaceIndex].rC()
-						- mesh.cells()[i].rC();
+				const vector deltaVector = mesh_.surfaces()[surfaceIndex].rC()
+						- mesh_.cells()[i].rC();
 
 				std::valarray<scalar> reconstructedConcentrationsValues(
 						gasPhase.phaseThermodynamics->Mv().size());
@@ -136,16 +136,16 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 				for (std::size_t k = 0;
 						k < reconstructedConcentrationsValues.size(); ++k)
 					reconstructedConcentrationsValues[k] =
-							(concentrationTVDGradient[k].ref()[i] & deltaVector)
-									+ gasPhase.concentration.v[k + 1].ref()[i];
+							(concentrationTVDGradient[k]()[i] & deltaVector)
+									+ gasPhase.concentration.v[k + 1]()[i];
 
 				const vector reconstructedVelocityValue =
-						(velocityTVDGradient.ref()[i] & deltaVector)
-								+ gasPhase.velocity.ref()[i];
+						(velocityTVDGradient()[i] & deltaVector)
+								+ gasPhase.velocity()[i];
 
 				const scalar reconstructedPressureValue {
-						(pressureTVDGradient.ref()[i] & deltaVector)
-								+ gasPhase.pressure.ref()[i] };
+						(pressureTVDGradient()[i] & deltaVector)
+								+ gasPhase.pressure()[i] };
 
 				scalar reconstructedkValue { 0 };
 				scalar reconstructedEpsilon { 0 };
@@ -153,11 +153,11 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 				scalar reconstructedbValue { 0 };
 				if (gasPhase.turbulenceSources->turbulence)
 				{
-					reconstructedkValue = (kTVDGradient.ref()[i] & deltaVector)
-							+ gasPhase.kTurb.ref()[i];
+					reconstructedkValue = (kTVDGradient()[i] & deltaVector)
+							+ gasPhase.kTurb()[i];
 
-					reconstructedEpsilon = (epsilonTVDGradient.ref()[i]
-							& deltaVector) + gasPhase.epsTurb.ref()[i];
+					reconstructedEpsilon = (epsilonTVDGradient()[i]
+							& deltaVector) + gasPhase.epsTurb()[i];
 
 					if ((gasPhase.turbulenceSources->model
 							== turbulenceModel::BHRSource)
@@ -166,37 +166,37 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 							|| (gasPhase.turbulenceSources->model
 									== turbulenceModel::kEpsASource))
 					{
-						reconstructedaValue = (aTVDGradient.ref()[i]
-								& deltaVector) + gasPhase.aTurb.ref()[i];
+						reconstructedaValue = (aTVDGradient()[i] & deltaVector)
+								+ gasPhase.aTurb()[i];
 
 						if ((gasPhase.turbulenceSources->model
 								== turbulenceModel::BHRSource)
 								|| (gasPhase.turbulenceSources->model
 										== turbulenceModel::BHRKLSource))
-							reconstructedbValue = (bTVDGradient.ref()[i]
-									& deltaVector) + gasPhase.bTurb.ref()[i];
+							reconstructedbValue = (bTVDGradient()[i]
+									& deltaVector) + gasPhase.bTurb()[i];
 					}
 				}
 
-				if (mesh.surfaceOwner()[surfaceIndex] == i)
+				if (mesh_.surfaceOwner()[surfaceIndex] == i)
 				{
 					for (std::size_t k = 0;
 							k < reconstructedConcentrationsValues.size(); ++k)
-						surfaceOwnerSide.concentration.v[k + 1].ref_r()[surfaceIndex] =
+						surfaceOwnerSide.concentration.v[k + 1].r()[surfaceIndex] =
 								reconstructedConcentrationsValues[k];
 
-					surfaceOwnerSide.velocity.ref_r()[surfaceIndex] =
+					surfaceOwnerSide.velocity.r()[surfaceIndex] =
 							reconstructedVelocityValue;
 
-					surfaceOwnerSide.pressure.ref_r()[surfaceIndex] =
+					surfaceOwnerSide.pressure.r()[surfaceIndex] =
 							reconstructedPressureValue;
 
 					if (gasPhase.turbulenceSources->turbulence)
 					{
-						surfaceOwnerSide.kTurb.ref_r()[surfaceIndex] =
+						surfaceOwnerSide.kTurb.r()[surfaceIndex] =
 								reconstructedkValue;
 
-						surfaceOwnerSide.epsTurb.ref_r()[surfaceIndex] =
+						surfaceOwnerSide.epsTurb.r()[surfaceIndex] =
 								reconstructedEpsilon;
 
 						if ((gasPhase.turbulenceSources->model
@@ -206,37 +206,37 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 								|| (gasPhase.turbulenceSources->model
 										== turbulenceModel::kEpsASource))
 						{
-							surfaceOwnerSide.aTurb.ref_r()[surfaceIndex] =
+							surfaceOwnerSide.aTurb.r()[surfaceIndex] =
 									reconstructedaValue;
 
 							if ((gasPhase.turbulenceSources->model
 									== turbulenceModel::BHRSource)
 									|| (gasPhase.turbulenceSources->model
 											== turbulenceModel::BHRKLSource))
-								surfaceOwnerSide.bTurb.ref_r()[surfaceIndex] =
+								surfaceOwnerSide.bTurb.r()[surfaceIndex] =
 										reconstructedbValue;
 						}
 					}
 				}
-				else if (mesh.surfaceNeighbour()[surfaceIndex] == i)
+				else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
 				{
 					for (std::size_t k = 0;
 							k < reconstructedConcentrationsValues.size(); ++k)
-						surfaceNeighbourSide.concentration.v[k + 1].ref_r()[surfaceIndex] =
+						surfaceNeighbourSide.concentration.v[k + 1].r()[surfaceIndex] =
 								reconstructedConcentrationsValues[k];
 
-					surfaceNeighbourSide.velocity.ref_r()[surfaceIndex] =
+					surfaceNeighbourSide.velocity.r()[surfaceIndex] =
 							reconstructedVelocityValue;
 
-					surfaceNeighbourSide.pressure.ref_r()[surfaceIndex] =
+					surfaceNeighbourSide.pressure.r()[surfaceIndex] =
 							reconstructedPressureValue;
 
 					if (gasPhase.turbulenceSources->turbulence)
 					{
-						surfaceNeighbourSide.kTurb.ref_r()[surfaceIndex] =
+						surfaceNeighbourSide.kTurb.r()[surfaceIndex] =
 								reconstructedkValue;
 
-						surfaceNeighbourSide.epsTurb.ref_r()[surfaceIndex] =
+						surfaceNeighbourSide.epsTurb.r()[surfaceIndex] =
 								reconstructedEpsilon;
 
 						if ((gasPhase.turbulenceSources->model
@@ -246,14 +246,14 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 								|| (gasPhase.turbulenceSources->model
 										== turbulenceModel::kEpsASource))
 						{
-							surfaceNeighbourSide.aTurb.ref_r()[surfaceIndex] =
+							surfaceNeighbourSide.aTurb.r()[surfaceIndex] =
 									reconstructedaValue;
 
 							if ((gasPhase.turbulenceSources->model
 									== turbulenceModel::BHRSource)
 									|| (gasPhase.turbulenceSources->model
 											== turbulenceModel::BHRKLSource))
-								surfaceNeighbourSide.bTurb.ref_r()[surfaceIndex] =
+								surfaceNeighbourSide.bTurb.r()[surfaceIndex] =
 										reconstructedbValue;
 						}
 					}
@@ -265,29 +265,28 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 		}
 
 		/*Recalculation of other quantities for owner side*/
-		surfaceOwnerSide.concentration.v[0].ref_r() = 0;
-		surfaceOwnerSide.density[0].ref_r() = 0;
+		surfaceOwnerSide.concentration.v[0].r() = 0;
+		surfaceOwnerSide.density[0].r() = 0;
 		for (std::size_t k = 1; k < surfaceOwnerSide.concentration.v.size();
 				++k)
 		{
-			surfaceOwnerSide.concentration.v[0].ref_r() +=
-					surfaceOwnerSide.concentration.v[k].ref();
+			surfaceOwnerSide.concentration.v[0].r() +=
+					surfaceOwnerSide.concentration.v[k]();
 
-			surfaceOwnerSide.density[k].ref_r() =
-					surfaceOwnerSide.concentration.v[k].ref()
+			surfaceOwnerSide.density[k].r() =
+					surfaceOwnerSide.concentration.v[k]()
 							* surfaceOwnerSide.phaseThermodynamics->Mv()[k - 1];
 
-			surfaceOwnerSide.density[0].ref_r() +=
-					surfaceOwnerSide.density[k].ref();
+			surfaceOwnerSide.density[0].r() += surfaceOwnerSide.density[k]();
 		}
 
 		if (gasPhase.turbulenceSources->turbulence)
 		{
-			surfaceOwnerSide.rhokTurb.ref_r() = astProduct(
-					surfaceOwnerSide.kTurb, surfaceOwnerSide.density[0]).ref();
+			surfaceOwnerSide.rhokTurb.r() = astProduct(surfaceOwnerSide.kTurb,
+					surfaceOwnerSide.density[0])();
 
-			surfaceOwnerSide.rhoepsTurb.ref_r() = surfaceOwnerSide.epsTurb.ref()
-					* surfaceOwnerSide.density[0].ref();
+			surfaceOwnerSide.rhoepsTurb.r() = surfaceOwnerSide.epsTurb()
+					* surfaceOwnerSide.density[0]();
 
 			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
 					|| (gasPhase.turbulenceSources->model
@@ -295,89 +294,85 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 					|| (gasPhase.turbulenceSources->model
 							== turbulenceModel::kEpsASource))
 			{
-				surfaceOwnerSide.rhoaTurb.ref_r() =
-						astProduct(surfaceOwnerSide.aTurb,
-								surfaceOwnerSide.density[0]).ref();
+				surfaceOwnerSide.rhoaTurb.r() = astProduct(
+						surfaceOwnerSide.aTurb, surfaceOwnerSide.density[0])();
 
 				if ((gasPhase.turbulenceSources->model
 						== turbulenceModel::BHRSource)
 						|| (gasPhase.turbulenceSources->model
 								== turbulenceModel::BHRKLSource))
-					surfaceOwnerSide.rhobTurb.ref_r() =
-							surfaceOwnerSide.bTurb.ref()
-									* surfaceOwnerSide.density[0].ref();
+					surfaceOwnerSide.rhobTurb.r() = surfaceOwnerSide.bTurb()
+							* surfaceOwnerSide.density[0]();
 			}
 		}
 
-		surfaceOwnerSide.internalEnergy.ref_r() =
+		surfaceOwnerSide.internalEnergy.r() =
 				surfaceOwnerSide.phaseThermodynamics->UvFromp(
 						surfaceOwnerSide.concentration.p,
-						surfaceOwnerSide.pressure.ref());
+						surfaceOwnerSide.pressure());
 
-		surfaceOwnerSide.temperature.ref_r() =
+		surfaceOwnerSide.temperature.r() =
 				surfaceOwnerSide.phaseThermodynamics->TFromUv(
 						surfaceOwnerSide.concentration.p,
-						surfaceOwnerSide.internalEnergy.ref());
+						surfaceOwnerSide.internalEnergy());
 
-		surfaceOwnerSide.momentum.ref_r() = astProduct(
-				surfaceOwnerSide.velocity, surfaceOwnerSide.density[0]).ref();
+		surfaceOwnerSide.momentum.r() = astProduct(surfaceOwnerSide.velocity,
+				surfaceOwnerSide.density[0])();
 
 		{
 			const auto v2 = ampProduct(surfaceOwnerSide.velocity,
 					surfaceOwnerSide.velocity);
 
-			surfaceOwnerSide.totalEnergy.ref_r() =
-					surfaceOwnerSide.internalEnergy.ref()
-							+ surfaceOwnerSide.density[0].ref() * v2.ref() * 0.5
-							+ surfaceOwnerSide.rhokTurb.ref();
+			surfaceOwnerSide.totalEnergy.r() = surfaceOwnerSide.internalEnergy()
+					+ surfaceOwnerSide.density[0]() * v2() * 0.5
+					+ surfaceOwnerSide.rhokTurb();
 		}
 
-		surfaceOwnerSide.HelmholtzEnergy.ref_r() =
+		surfaceOwnerSide.HelmholtzEnergy.r() =
 				surfaceOwnerSide.phaseThermodynamics->Fv(
 						surfaceOwnerSide.concentration.p,
-						surfaceOwnerSide.temperature.ref());
+						surfaceOwnerSide.temperature());
 
-		surfaceOwnerSide.entropy.ref_r() =
-				surfaceOwnerSide.phaseThermodynamics->Sv(
-						surfaceOwnerSide.concentration.p,
-						surfaceOwnerSide.temperature.ref());
+		surfaceOwnerSide.entropy.r() = surfaceOwnerSide.phaseThermodynamics->Sv(
+				surfaceOwnerSide.concentration.p,
+				surfaceOwnerSide.temperature());
 
 		/*Recalculation of other quantities for neighbour side*/
-		for (std::size_t i = 0; i < mesh.surfacesSize(); ++i)
+		for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
 		{
-			const std::size_t nonExistentCell = mesh.nonexistCell();
+			const std::size_t nonExistentCell = mesh_.nonexistCell();
 
-			if (mesh.surfaceNeighbour()[i] != nonExistentCell)
+			if (mesh_.surfaceNeighbour()[i] != nonExistentCell)
 			{
-				surfaceNeighbourSide.concentration.v[0].ref_r()[i] = 0;
-				surfaceNeighbourSide.density[0].ref_r()[i] = 0;
+				surfaceNeighbourSide.concentration.v[0].r()[i] = 0;
+				surfaceNeighbourSide.density[0].r()[i] = 0;
 				for (std::size_t k = 1;
 						k < surfaceNeighbourSide.concentration.v.size(); ++k)
 				{
-					surfaceNeighbourSide.concentration.v[0].ref_r()[i] +=
-							surfaceNeighbourSide.concentration.v[k].ref()[i];
+					surfaceNeighbourSide.concentration.v[0].r()[i] +=
+							surfaceNeighbourSide.concentration.v[k]()[i];
 
-					surfaceNeighbourSide.density[k].ref_r()[i] =
-							surfaceNeighbourSide.concentration.v[k].ref()[i]
+					surfaceNeighbourSide.density[k].r()[i] =
+							surfaceNeighbourSide.concentration.v[k]()[i]
 									* gasPhase.phaseThermodynamics->Mv()[k - 1];
 
-					surfaceNeighbourSide.density[0].ref_r()[i] +=
-							surfaceNeighbourSide.density[k].ref()[i];
+					surfaceNeighbourSide.density[0].r()[i] +=
+							surfaceNeighbourSide.density[k]()[i];
 				}
 
-				surfaceNeighbourSide.momentum.ref_r()[i] =
-						surfaceNeighbourSide.velocity.ref()[i]
-								* surfaceNeighbourSide.density[0].ref()[i];
+				surfaceNeighbourSide.momentum.r()[i] =
+						surfaceNeighbourSide.velocity()[i]
+								* surfaceNeighbourSide.density[0]()[i];
 
 				if (gasPhase.turbulenceSources->turbulence)
 				{
-					surfaceNeighbourSide.rhokTurb.ref_r()[i] =
-							surfaceNeighbourSide.kTurb.ref()[i]
-									* surfaceNeighbourSide.density[0].ref()[i];
+					surfaceNeighbourSide.rhokTurb.r()[i] =
+							surfaceNeighbourSide.kTurb()[i]
+									* surfaceNeighbourSide.density[0]()[i];
 
-					surfaceNeighbourSide.rhoepsTurb.ref_r()[i] =
-							surfaceNeighbourSide.epsTurb.ref()[i]
-									* surfaceNeighbourSide.density[0].ref()[i];
+					surfaceNeighbourSide.rhoepsTurb.r()[i] =
+							surfaceNeighbourSide.epsTurb()[i]
+									* surfaceNeighbourSide.density[0]()[i];
 
 					if ((gasPhase.turbulenceSources->model
 							== turbulenceModel::BHRSource)
@@ -386,17 +381,17 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 							|| (gasPhase.turbulenceSources->model
 									== turbulenceModel::kEpsASource))
 					{
-						surfaceNeighbourSide.rhoaTurb.ref_r()[i] =
-								surfaceNeighbourSide.aTurb.ref()[i]
-										* surfaceNeighbourSide.density[0].ref()[i];
+						surfaceNeighbourSide.rhoaTurb.r()[i] =
+								surfaceNeighbourSide.aTurb()[i]
+										* surfaceNeighbourSide.density[0]()[i];
 
 						if ((gasPhase.turbulenceSources->model
 								== turbulenceModel::BHRSource)
 								|| (gasPhase.turbulenceSources->model
 										== turbulenceModel::BHRKLSource))
-							surfaceNeighbourSide.rhobTurb.ref_r()[i] =
-									surfaceNeighbourSide.bTurb.ref()[i]
-											* surfaceNeighbourSide.density[0].ref()[i];
+							surfaceNeighbourSide.rhobTurb.r()[i] =
+									surfaceNeighbourSide.bTurb()[i]
+											* surfaceNeighbourSide.density[0]()[i];
 					}
 				}
 
@@ -404,36 +399,36 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 						surfaceNeighbourSide.concentration.v.size());
 				for (std::size_t k = 0; k < concentrations_i.size(); ++k)
 					concentrations_i[k] =
-							surfaceNeighbourSide.concentration.v[k].ref()[i];
+							surfaceNeighbourSide.concentration.v[k]()[i];
 
-				surfaceNeighbourSide.internalEnergy.ref_r()[i] =
+				surfaceNeighbourSide.internalEnergy.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->UvFromp(
 								concentrations_i,
-								surfaceNeighbourSide.pressure.ref()[i]);
+								surfaceNeighbourSide.pressure()[i]);
 
-				surfaceNeighbourSide.temperature.ref_r()[i] =
+				surfaceNeighbourSide.temperature.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->TFromUv(
 								concentrations_i,
-								surfaceNeighbourSide.internalEnergy.ref()[i]);
+								surfaceNeighbourSide.internalEnergy()[i]);
 
-				const scalar v2 { surfaceNeighbourSide.velocity.ref()[i]
-						& surfaceNeighbourSide.velocity.ref()[i] };
+				const scalar v2 { surfaceNeighbourSide.velocity()[i]
+						& surfaceNeighbourSide.velocity()[i] };
 
-				surfaceNeighbourSide.totalEnergy.ref_r()[i] =
-						surfaceNeighbourSide.internalEnergy.ref()[i]
-								+ surfaceNeighbourSide.density[0].ref()[i] * v2
+				surfaceNeighbourSide.totalEnergy.r()[i] =
+						surfaceNeighbourSide.internalEnergy()[i]
+								+ surfaceNeighbourSide.density[0]()[i] * v2
 										* 0.5
-								+ surfaceNeighbourSide.rhokTurb.ref()[i];
+								+ surfaceNeighbourSide.rhokTurb()[i];
 
-				surfaceNeighbourSide.HelmholtzEnergy.ref_r()[i] =
+				surfaceNeighbourSide.HelmholtzEnergy.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->Fv(
 								concentrations_i,
-								surfaceNeighbourSide.temperature.ref()[i]);
+								surfaceNeighbourSide.temperature()[i]);
 
-				surfaceNeighbourSide.entropy.ref_r()[i] =
+				surfaceNeighbourSide.entropy.r()[i] =
 						surfaceNeighbourSide.phaseThermodynamics->Sv(
 								concentrations_i,
-								surfaceNeighbourSide.temperature.ref()[i]);
+								surfaceNeighbourSide.temperature()[i]);
 			}
 		}
 	}
@@ -466,36 +461,36 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 	const auto TimeIntegrationStartTime =
 			std::chrono::high_resolution_clock::now();
 	{
-		const scalar timestep = mesh.timestep();
+		const scalar timestep = mesh_.timestep();
 
-		gasPhase.totalEnergy.ref_r() -=
-				divergence(NumFluxFlows.totalEnergy).ref() * timestep;
+		gasPhase.totalEnergy.r() -= divergence(NumFluxFlows.totalEnergy)()
+				* timestep;
 
-		gasPhase.momentum.ref_r() -= astProduct(
-				divergence(NumFluxFlows.momentum), timestep).ref();
+		gasPhase.momentum.r() -= astProduct(divergence(NumFluxFlows.momentum),
+				timestep)();
 
 		if (gravitation.first)
 		{
-			gasPhase.totalEnergy.ref_r() += gasPhase.density[0].ref()
-					* ampProduct(gasPhase.velocity, gravitation.second).ref()
+			gasPhase.totalEnergy.r() += gasPhase.density[0]()
+					* ampProduct(gasPhase.velocity, gravitation.second)()
 					* timestep;
 
-			gasPhase.momentum.ref_r() += astProduct(
+			gasPhase.momentum.r() += astProduct(
 					astProduct(gasPhase.density[0], gravitation.second),
-					timestep).ref();
+					timestep)();
 		}
 
 		for (std::size_t k = 0; k < gasPhase.density.size(); ++k)
-			gasPhase.density[k].ref_r() -=
-					divergence(NumFluxFlows.density[k]).ref() * timestep;
+			gasPhase.density[k].r() -= divergence(NumFluxFlows.density[k])()
+					* timestep;
 
 		if (gasPhase.turbulenceSources->turbulence)
 		{
-			gasPhase.rhokTurb.ref_r() -= divergence(NumFluxFlows.rhokTurb).ref()
+			gasPhase.rhokTurb.r() -= divergence(NumFluxFlows.rhokTurb)()
 					* timestep;
 
-			gasPhase.rhoepsTurb.ref_r() -=
-					divergence(NumFluxFlows.rhoepsTurb).ref() * timestep;
+			gasPhase.rhoepsTurb.r() -= divergence(NumFluxFlows.rhoepsTurb)()
+					* timestep;
 
 			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
 					|| (gasPhase.turbulenceSources->model
@@ -503,58 +498,55 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 					|| (gasPhase.turbulenceSources->model
 							== turbulenceModel::kEpsASource))
 			{
-				gasPhase.rhoaTurb.ref_r() -= astProduct(
-						divergence(NumFluxFlows.rhoaTurb), timestep).ref();
+				gasPhase.rhoaTurb.r() -= astProduct(
+						divergence(NumFluxFlows.rhoaTurb), timestep)();
 
 				if ((gasPhase.turbulenceSources->model
 						== turbulenceModel::BHRSource)
 						|| (gasPhase.turbulenceSources->model
 								== turbulenceModel::BHRKLSource))
-					gasPhase.rhobTurb.ref_r() -= divergence(
-							NumFluxFlows.rhobTurb).ref() * timestep;
+					gasPhase.rhobTurb.r() -= divergence(NumFluxFlows.rhobTurb)()
+							* timestep;
 			}
 		}
 
-		gasPhase.concentration.v[0].ref_r() = 0;
+		gasPhase.concentration.v[0].r() = 0;
 		for (std::size_t k = 1; k < gasPhase.concentration.v.size(); ++k)
 		{
-			gasPhase.concentration.v[k].ref_r() = gasPhase.density[k].ref()
+			gasPhase.concentration.v[k].r() = gasPhase.density[k]()
 					/ gasPhase.phaseThermodynamics->Mv()[k - 1];
 
-			gasPhase.concentration.v[0].ref_r() +=
-					gasPhase.concentration.v[k].ref();
+			gasPhase.concentration.v[0].r() += gasPhase.concentration.v[k]();
 		}
 
-		gasPhase.velocity.ref_r() = division(gasPhase.momentum,
-				gasPhase.density[0]).ref();
+		gasPhase.velocity.r() =
+				division(gasPhase.momentum, gasPhase.density[0])();
 
 		{
 			const auto v2 = ampProduct(gasPhase.velocity, gasPhase.velocity);
 
-			gasPhase.internalEnergy.ref_r() = gasPhase.totalEnergy.ref()
-					- gasPhase.density[0].ref() * v2.ref() * 0.5
-					- gasPhase.rhokTurb.ref();
+			gasPhase.internalEnergy.r() = gasPhase.totalEnergy()
+					- gasPhase.density[0]() * v2() * 0.5 - gasPhase.rhokTurb();
 		}
 
-		gasPhase.pressure.ref_r() = gasPhase.phaseThermodynamics->pFromUv(
-				gasPhase.concentration.p, gasPhase.internalEnergy.ref());
+		gasPhase.pressure.r() = gasPhase.phaseThermodynamics->pFromUv(
+				gasPhase.concentration.p, gasPhase.internalEnergy());
 
-		gasPhase.temperature.ref_r() = gasPhase.phaseThermodynamics->TFromUv(
-				gasPhase.concentration.p, gasPhase.internalEnergy.ref());
+		gasPhase.temperature.r() = gasPhase.phaseThermodynamics->TFromUv(
+				gasPhase.concentration.p, gasPhase.internalEnergy());
 
-		gasPhase.HelmholtzEnergy.ref_r() = gasPhase.phaseThermodynamics->Fv(
-				gasPhase.concentration.p, gasPhase.temperature.ref());
+		gasPhase.HelmholtzEnergy.r() = gasPhase.phaseThermodynamics->Fv(
+				gasPhase.concentration.p, gasPhase.temperature());
 
-		gasPhase.entropy.ref_r() = gasPhase.phaseThermodynamics->Sv(
-				gasPhase.concentration.p, gasPhase.temperature.ref());
+		gasPhase.entropy.r() = gasPhase.phaseThermodynamics->Sv(
+				gasPhase.concentration.p, gasPhase.temperature());
 
 		if (gasPhase.turbulenceSources->turbulence)
 		{
-			gasPhase.kTurb.ref_r() = gasPhase.rhokTurb.ref()
-					/ gasPhase.density[0].ref();
+			gasPhase.kTurb.r() = gasPhase.rhokTurb() / gasPhase.density[0]();
 
-			gasPhase.epsTurb.ref_r() = gasPhase.rhoepsTurb.ref()
-					/ gasPhase.density[0].ref();
+			gasPhase.epsTurb.r() = gasPhase.rhoepsTurb()
+					/ gasPhase.density[0]();
 
 			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
 					|| (gasPhase.turbulenceSources->model
@@ -562,15 +554,15 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 					|| (gasPhase.turbulenceSources->model
 							== turbulenceModel::kEpsASource))
 			{
-				gasPhase.aTurb.ref_r() = division(gasPhase.rhoaTurb,
-						gasPhase.density[0]).ref();
+				gasPhase.aTurb.r() = division(gasPhase.rhoaTurb,
+						gasPhase.density[0])();
 
 				if ((gasPhase.turbulenceSources->model
 						== turbulenceModel::BHRSource)
 						|| (gasPhase.turbulenceSources->model
 								== turbulenceModel::BHRKLSource))
-					gasPhase.bTurb.ref_r() = gasPhase.rhobTurb.ref()
-							/ gasPhase.density[0].ref();
+					gasPhase.bTurb.r() = gasPhase.rhobTurb()
+							/ gasPhase.density[0]();
 			}
 		}
 	}

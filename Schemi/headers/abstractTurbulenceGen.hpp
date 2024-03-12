@@ -31,6 +31,10 @@ class abstractTurbulenceGen
 public:
 	virtual ~abstractTurbulenceGen() noexcept =0;
 
+	static std::unique_ptr<abstractTurbulenceGen> createTurbulenceModel(
+			const mesh & meshIn, const std::string_view turbulenceONString,
+			const std::string_view sourceTypeString);
+
 	abstractTurbulenceGen(const bool turb_in,
 			const turbulenceModel tm_in) noexcept;
 

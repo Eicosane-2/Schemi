@@ -10,11 +10,15 @@
 schemi::tensor schemi::operator*(const vector & vector1,
 		const vector & vector2) noexcept
 {
-	return tensor { vector1.v()[0] * vector2.v()[0], vector1.v()[0]
-			* vector2.v()[1], vector1.v()[0] * vector2.v()[2], vector1.v()[1]
-			* vector2.v()[0], vector1.v()[1] * vector2.v()[1], vector1.v()[1]
-			* vector2.v()[2], vector1.v()[2] * vector2.v()[0], vector1.v()[2]
-			* vector2.v()[1], vector1.v()[2] * vector2.v()[2] };
+	return tensor { std::get<0>(vector1()) * std::get<0>(vector2()),
+			std::get<0>(vector1()) * std::get<1>(vector2()), std::get<0>(
+					vector1()) * std::get<2>(vector2()), std::get<1>(vector1())
+					* std::get<0>(vector2()), std::get<1>(vector1())
+					* std::get<1>(vector2()), std::get<1>(vector1())
+					* std::get<2>(vector2()), std::get<2>(vector1())
+					* std::get<0>(vector2()), std::get<2>(vector1())
+					* std::get<1>(vector2()), std::get<2>(vector1())
+					* std::get<2>(vector2()) };
 }
 
 schemi::tensor3 schemi::operator*(const tensor & inTensor,
@@ -22,26 +26,35 @@ schemi::tensor3 schemi::operator*(const tensor & inTensor,
 {
 	return tensor3 {
 
-	inTensor.v()[0] * inVector.v()[0], inTensor.v()[0] * inVector.v()[1],
-			inTensor.v()[0] * inVector.v()[2], inTensor.v()[1]
-					* inVector.v()[0], inTensor.v()[1] * inVector.v()[1],
-			inTensor.v()[1] * inVector.v()[2], inTensor.v()[2]
-					* inVector.v()[0], inTensor.v()[2] * inVector.v()[1],
-			inTensor.v()[2] * inVector.v()[2],
+	std::get<0>(inTensor()) * std::get<0>(inVector()), std::get<0>(inTensor())
+			* std::get<1>(inVector()), std::get<0>(inTensor())
+			* std::get<2>(inVector()), std::get<1>(inTensor())
+			* std::get<0>(inVector()), std::get<1>(inTensor())
+			* std::get<1>(inVector()), std::get<1>(inTensor())
+			* std::get<2>(inVector()), std::get<2>(inTensor())
+			* std::get<0>(inVector()), std::get<2>(inTensor())
+			* std::get<1>(inVector()), std::get<2>(inTensor())
+			* std::get<2>(inVector()),
 
-			inTensor.v()[3] * inVector.v()[0], inTensor.v()[3]
-					* inVector.v()[1], inTensor.v()[3] * inVector.v()[2],
-			inTensor.v()[4] * inVector.v()[0], inTensor.v()[4]
-					* inVector.v()[1], inTensor.v()[4] * inVector.v()[2],
-			inTensor.v()[5] * inVector.v()[0], inTensor.v()[5]
-					* inVector.v()[1], inTensor.v()[5] * inVector.v()[2],
+	std::get<3>(inTensor()) * std::get<0>(inVector()), std::get<3>(inTensor())
+			* std::get<1>(inVector()), std::get<3>(inTensor())
+			* std::get<2>(inVector()), std::get<4>(inTensor())
+			* std::get<0>(inVector()), std::get<4>(inTensor())
+			* std::get<1>(inVector()), std::get<4>(inTensor())
+			* std::get<2>(inVector()), std::get<5>(inTensor())
+			* std::get<0>(inVector()), std::get<5>(inTensor())
+			* std::get<1>(inVector()), std::get<5>(inTensor())
+			* std::get<2>(inVector()),
 
-			inTensor.v()[6] * inVector.v()[0], inTensor.v()[6]
-					* inVector.v()[1], inTensor.v()[6] * inVector.v()[2],
-			inTensor.v()[7] * inVector.v()[0], inTensor.v()[7]
-					* inVector.v()[1], inTensor.v()[7] * inVector.v()[2],
-			inTensor.v()[8] * inVector.v()[0], inTensor.v()[8]
-					* inVector.v()[1], inTensor.v()[8] * inVector.v()[2] };
+	std::get<6>(inTensor()) * std::get<0>(inVector()), std::get<6>(inTensor())
+			* std::get<1>(inVector()), std::get<6>(inTensor())
+			* std::get<2>(inVector()), std::get<7>(inTensor())
+			* std::get<0>(inVector()), std::get<7>(inTensor())
+			* std::get<1>(inVector()), std::get<7>(inTensor())
+			* std::get<2>(inVector()), std::get<8>(inTensor())
+			* std::get<0>(inVector()), std::get<8>(inTensor())
+			* std::get<1>(inVector()), std::get<8>(inTensor())
+			* std::get<2>(inVector()) };
 }
 
 schemi::tensor3 schemi::operator*(const vector & inVector,
@@ -49,24 +62,33 @@ schemi::tensor3 schemi::operator*(const vector & inVector,
 {
 	return tensor3 {
 
-	inVector.v()[0] * inTensor.v()[0], inVector.v()[0] * inTensor.v()[1],
-			inVector.v()[0] * inTensor.v()[2], inVector.v()[0]
-					* inTensor.v()[3], inVector.v()[0] * inTensor.v()[4],
-			inVector.v()[0] * inTensor.v()[5], inVector.v()[0]
-					* inTensor.v()[6], inVector.v()[0] * inTensor.v()[7],
-			inVector.v()[0] * inTensor.v()[8],
+	std::get<0>(inVector()) * std::get<0>(inTensor()), std::get<0>(inVector())
+			* std::get<1>(inTensor()), std::get<0>(inVector())
+			* std::get<2>(inTensor()), std::get<0>(inVector())
+			* std::get<3>(inTensor()), std::get<0>(inVector())
+			* std::get<4>(inTensor()), std::get<0>(inVector())
+			* std::get<5>(inTensor()), std::get<0>(inVector())
+			* std::get<6>(inTensor()), std::get<0>(inVector())
+			* std::get<7>(inTensor()), std::get<0>(inVector())
+			* std::get<8>(inTensor()),
 
-			inVector.v()[1] * inTensor.v()[0], inVector.v()[1]
-					* inTensor.v()[1], inVector.v()[1] * inTensor.v()[2],
-			inVector.v()[1] * inTensor.v()[3], inVector.v()[1]
-					* inTensor.v()[4], inVector.v()[1] * inTensor.v()[5],
-			inVector.v()[1] * inTensor.v()[6], inVector.v()[1]
-					* inTensor.v()[7], inVector.v()[1] * inTensor.v()[8],
+	std::get<1>(inVector()) * std::get<0>(inTensor()), std::get<1>(inVector())
+			* std::get<1>(inTensor()), std::get<1>(inVector())
+			* std::get<2>(inTensor()), std::get<1>(inVector())
+			* std::get<3>(inTensor()), std::get<1>(inVector())
+			* std::get<4>(inTensor()), std::get<1>(inVector())
+			* std::get<5>(inTensor()), std::get<1>(inVector())
+			* std::get<6>(inTensor()), std::get<1>(inVector())
+			* std::get<7>(inTensor()), std::get<1>(inVector())
+			* std::get<8>(inTensor()),
 
-			inVector.v()[2] * inTensor.v()[0], inVector.v()[2]
-					* inTensor.v()[1], inVector.v()[2] * inTensor.v()[2],
-			inVector.v()[2] * inTensor.v()[3], inVector.v()[2]
-					* inTensor.v()[4], inVector.v()[2] * inTensor.v()[5],
-			inVector.v()[2] * inTensor.v()[6], inVector.v()[2]
-					* inTensor.v()[7], inVector.v()[2] * inTensor.v()[8] };
+	std::get<2>(inVector()) * std::get<0>(inTensor()), std::get<2>(inVector())
+			* std::get<1>(inTensor()), std::get<2>(inVector())
+			* std::get<2>(inTensor()), std::get<2>(inVector())
+			* std::get<3>(inTensor()), std::get<2>(inVector())
+			* std::get<4>(inTensor()), std::get<2>(inVector())
+			* std::get<5>(inTensor()), std::get<2>(inVector())
+			* std::get<6>(inTensor()), std::get<2>(inVector())
+			* std::get<7>(inTensor()), std::get<2>(inVector())
+			* std::get<8>(inTensor()) };
 }

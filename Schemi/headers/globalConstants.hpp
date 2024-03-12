@@ -43,7 +43,9 @@ veryBig { 1E-3 * std::numeric_limits<scalar>::max() },
 
 		zeroMix { 0.01 },
 
-		kappaPPM { onethirds };
+		kappaPPM { onethirds },
+
+		convergenceToleranceGlobal { 1E-12 };
 
 constexpr std::size_t componentPlaceholder { static_cast<std::size_t>(-1) },
 		lengthOfNumber { 6 };

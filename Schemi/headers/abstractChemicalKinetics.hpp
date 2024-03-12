@@ -12,6 +12,7 @@
 #include <vector>
 #include <utility>
 
+#include "chemicalReactionsEnum.hpp"
 #include "cubicCell.hpp"
 #include "scalar.hpp"
 #include "homogeneousPhase.hpp"
@@ -23,7 +24,8 @@ class abstractChemicalKinetics
 protected:
 	typedef std::vector<std::pair<scalar, std::size_t>> triangleList;
 
-	constexpr static scalar convergenceTolerance { 1E-10 };
+	constexpr static scalar convergenceTolerance { 100
+			* convergenceToleranceGlobal };
 	constexpr static scalar massFracTolerance { 1E-2 };
 	std::size_t maxIterationNumber { 0 };
 	const scalar minTimestep { 0 };
@@ -57,12 +59,19 @@ protected:
 		}
 	};
 
+	static void normalize(std::valarray<scalar> & res) noexcept;
+
 public:
 	const bool chemicalReaction;
 
 	abstractChemicalKinetics(const bool flag, const scalar mt) noexcept;
 
 	virtual ~abstractChemicalKinetics() noexcept =0;
+
+	static std::unique_ptr<abstractChemicalKinetics> createChemicalKinetics(
+			const homogeneousPhase<cubicCell> & phaseIn,
+			const chemicalReactions chemReactFlag,
+			const scalar minimalTimestep) noexcept;
 
 	virtual void solveChemicalKinetics(homogeneousPhase<cubicCell>&) const =0;
 };

@@ -42,5 +42,7 @@ Courant-Source=0.25,0.5
 star
 #Approximation_order
 SecondOrder
-#StartFromTimeStep
-0
+#Start_From_Time-Step
+no
+#Calculation_of_mixing_zone_width
+on

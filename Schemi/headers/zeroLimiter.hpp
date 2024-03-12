@@ -26,13 +26,13 @@ public:
 	virtual tensor3 calculate(const tensor3&, const tensor3&) const noexcept
 			override;
 
-	virtual vector calculateNoRightLimit(const vector&,
-			const vector&) const noexcept override;
+	virtual vector calculate3OLimit(const vector&, const vector&) const noexcept
+			override;
 
-	virtual tensor calculateNoRightLimit(const tensor&,
-			const tensor&) const noexcept override;
+	virtual tensor calculate3OLimit(const tensor&, const tensor&) const noexcept
+			override;
 
-	virtual tensor3 calculateNoRightLimit(const tensor3&,
+	virtual tensor3 calculate3OLimit(const tensor3&,
 			const tensor3&) const noexcept override;
 };
 }  // namespace schemi

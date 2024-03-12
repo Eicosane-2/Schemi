@@ -80,9 +80,9 @@ schemi::mesh* schemi::mesh::instance()
 				errors::meshGenerationError);
 }
 
-bool schemi::mesh::is_initialized() const noexcept
+bool schemi::mesh::is_initialised() const noexcept
 {
-	return initialized;
+	return initialised;
 }
 
 const std::vector<schemi::cubicCell>& schemi::mesh::cells() const noexcept
@@ -201,7 +201,7 @@ schemi::scalar& schemi::mesh::timestepSourceRef() noexcept
 }
 
 void schemi::mesh::oneDParallelepiped(
-		const std::pair<vector, scalar> & vectorOfParallelepiped,
+		const std::pair<vector, vector> & vectorOfParallelepiped,
 		const std::size_t N_x,
 		const std::vector<boundaryConditionType> & commonConditions)
 {
@@ -209,31 +209,39 @@ void schemi::mesh::oneDParallelepiped(
 
 	n_cells = { N_x, 1, 1 };
 
-	const scalar dx { vectorOfParallelepiped.first.v()[0] / N_x };
+	const scalar dx { std::get<0>(vectorOfParallelepiped.first()) / N_x };
 
 	/*Add cells*/
 	for (std::size_t i = 0; i < N_x; ++i)
 	{
-		cellsA.push_back(cubicCell());
+		cellsA.emplace_back(cubicCell());
 		cubicCell & cell = cellsA[i];
 
-		cell.r000_r() = vector(vectorOfParallelepiped.second + dx * i, 0., 0.);
-		cell.rX00_r() = vector(vectorOfParallelepiped.second + dx * (i + 1), 0.,
+		cell.r000_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * i, 0., 0.);
+		cell.rX00_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * (i + 1), 0.,
 				0.);
-		cell.r0Y0_r() = vector(vectorOfParallelepiped.second + dx * i,
-				vectorOfParallelepiped.first.v()[1], 0.);
-		cell.rXY0_r() = vector(vectorOfParallelepiped.second + dx * (i + 1),
-				vectorOfParallelepiped.first.v()[1], 0.);
-		cell.r00Z_r() = vector(vectorOfParallelepiped.second + dx * i, 0.,
-				vectorOfParallelepiped.first.v()[2]);
-		cell.rX0Z_r() = vector(vectorOfParallelepiped.second + dx * (i + 1), 0.,
-				vectorOfParallelepiped.first.v()[2]);
-		cell.r0YZ_r() = vector(vectorOfParallelepiped.second + dx * i,
-				vectorOfParallelepiped.first.v()[1],
-				vectorOfParallelepiped.first.v()[2]);
-		cell.rXYZ_r() = vector(vectorOfParallelepiped.second + dx * (i + 1),
-				vectorOfParallelepiped.first.v()[1],
-				vectorOfParallelepiped.first.v()[2]);
+		cell.r0Y0_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * i,
+				std::get<1>(vectorOfParallelepiped.first()), 0.);
+		cell.rXY0_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * (i + 1),
+				std::get<1>(vectorOfParallelepiped.first()), 0.);
+		cell.r00Z_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * i, 0.,
+				std::get<2>(vectorOfParallelepiped.first()));
+		cell.rX0Z_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * (i + 1), 0.,
+				std::get<2>(vectorOfParallelepiped.first()));
+		cell.r0YZ_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * i,
+				std::get<1>(vectorOfParallelepiped.first()),
+				std::get<2>(vectorOfParallelepiped.first()));
+		cell.rXYZ_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * (i + 1),
+				std::get<1>(vectorOfParallelepiped.first()),
+				std::get<2>(vectorOfParallelepiped.first()));
 
 		cell.rC_r() = (cell.r000() + cell.rX00() + cell.r0Y0() + cell.rXY0()
 				+ cell.r00Z() + cell.rX0Z() + cell.r0YZ() + cell.rXYZ()) / 8.;
@@ -246,19 +254,23 @@ void schemi::mesh::oneDParallelepiped(
 	/*Add tail surface*/
 	if (commonConditions[0] == boundaryConditionType::calculated)
 	{
-		surfacesA.push_back(quadraticSurface());
-		surfaceBoundaryCondition.push_back(commonConditions[0]);
+		surfacesA.emplace_back(quadraticSurface());
+		surfaceBoundaryCondition.emplace_back(commonConditions[0]);
 		tailSurfacesNumber++;
 		quadraticSurface & surface = surfacesA[0];
 
-		surface.r00_r() = vector(vectorOfParallelepiped.second + 0., 0., 0.);
-		surface.rX0_r() = vector(vectorOfParallelepiped.second + 0., 0.,
-				vectorOfParallelepiped.first.v()[2]);
-		surface.r0Y_r() = vector(vectorOfParallelepiped.second + 0.,
-				vectorOfParallelepiped.first.v()[1], 0.);
-		surface.rXY_r() = vector(vectorOfParallelepiped.second + 0.,
-				vectorOfParallelepiped.first.v()[1],
-				vectorOfParallelepiped.first.v()[2]);
+		surface.r00_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + 0., 0., 0.);
+		surface.rX0_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + 0., 0.,
+				std::get<2>(vectorOfParallelepiped.first()));
+		surface.r0Y_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + 0.,
+				std::get<1>(vectorOfParallelepiped.first()), 0.);
+		surface.rXY_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + 0.,
+				std::get<1>(vectorOfParallelepiped.first()),
+				std::get<2>(vectorOfParallelepiped.first()));
 
 		surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 				+ surface.rXY()) / 4.;
@@ -272,20 +284,24 @@ void schemi::mesh::oneDParallelepiped(
 	/*Add inner surfaces*/
 	for (std::size_t i = 1; i < N_x; ++i)
 	{
-		surfacesA.push_back(quadraticSurface());
-		surfaceBoundaryCondition.push_back(boundaryConditionType::innerSurface);
+		surfacesA.emplace_back(quadraticSurface());
+		surfaceBoundaryCondition.emplace_back(
+				boundaryConditionType::innerSurface);
 		innerSurfacesNumber++;
 		quadraticSurface & surface = surfacesA[i];
 
-		surface.r00_r() = vector(vectorOfParallelepiped.second + dx * i, 0.,
-				0.);
-		surface.rX0_r() = vector(vectorOfParallelepiped.second + dx * i, 0.,
-				vectorOfParallelepiped.first.v()[2]);
-		surface.r0Y_r() = vector(vectorOfParallelepiped.second + dx * i,
-				vectorOfParallelepiped.first.v()[1], 0.);
-		surface.rXY_r() = vector(vectorOfParallelepiped.second + dx * i,
-				vectorOfParallelepiped.first.v()[1],
-				vectorOfParallelepiped.first.v()[2]);
+		surface.r00_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * i, 0., 0.);
+		surface.rX0_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * i, 0.,
+				std::get<2>(vectorOfParallelepiped.first()));
+		surface.r0Y_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * i,
+				std::get<1>(vectorOfParallelepiped.first()), 0.);
+		surface.rXY_r() = vector(
+				std::get<0>(vectorOfParallelepiped.second()) + dx * i,
+				std::get<1>(vectorOfParallelepiped.first()),
+				std::get<2>(vectorOfParallelepiped.first()));
 
 		surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 				+ surface.rXY()) / 4.;
@@ -296,27 +312,27 @@ void schemi::mesh::oneDParallelepiped(
 	/*Add point surface*/
 	if (commonConditions[1] == boundaryConditionType::calculated)
 	{
-		surfacesA.push_back(quadraticSurface());
-		surfaceBoundaryCondition.push_back(commonConditions[1]);
+		surfacesA.emplace_back(quadraticSurface());
+		surfaceBoundaryCondition.emplace_back(commonConditions[1]);
 		pointSurfacesNumber++;
 		quadraticSurface & surface = surfacesA[N_x];
 
 		surface.r00_r() = vector(
-				vectorOfParallelepiped.second
-						+ vectorOfParallelepiped.first.v()[0], 0., 0.);
+				std::get<0>(vectorOfParallelepiped.second())
+						+ std::get<0>(vectorOfParallelepiped.first()), 0., 0.);
 		surface.rX0_r() = vector(
-				vectorOfParallelepiped.second
-						+ vectorOfParallelepiped.first.v()[0], 0.,
-				vectorOfParallelepiped.first.v()[2]);
+				std::get<0>(vectorOfParallelepiped.second())
+						+ std::get<0>(vectorOfParallelepiped.first()), 0.,
+				std::get<2>(vectorOfParallelepiped.first()));
 		surface.r0Y_r() = vector(
-				vectorOfParallelepiped.second
-						+ vectorOfParallelepiped.first.v()[0],
-				vectorOfParallelepiped.first.v()[1], 0.);
+				std::get<0>(vectorOfParallelepiped.second())
+						+ std::get<0>(vectorOfParallelepiped.first()),
+				std::get<1>(vectorOfParallelepiped.first()), 0.);
 		surface.rXY_r() = vector(
-				vectorOfParallelepiped.second
-						+ vectorOfParallelepiped.first.v()[0],
-				vectorOfParallelepiped.first.v()[1],
-				vectorOfParallelepiped.first.v()[2]);
+				std::get<0>(vectorOfParallelepiped.second())
+						+ std::get<0>(vectorOfParallelepiped.first()),
+				std::get<1>(vectorOfParallelepiped.first()),
+				std::get<2>(vectorOfParallelepiped.first()));
 
 		surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 				+ surface.rXY()) / 4.;
@@ -330,7 +346,7 @@ void schemi::mesh::oneDParallelepiped(
 	/*Set surfaces of cell*/
 	for (std::size_t i = 0; i < cellsA.size(); ++i)
 	{
-		surfacesOfCellsA.push_back(std::vector<std::size_t>());
+		surfacesOfCellsA.emplace_back(std::vector<std::size_t>());
 		surfacesOfCellsA[i].resize(2);
 		surfacesOfCellsA[i][0] = i;
 		surfacesOfCellsA[i][1] = i + 1;
@@ -338,39 +354,39 @@ void schemi::mesh::oneDParallelepiped(
 
 	/*Set environment cells*/
 	/*First cell*/
-	neighboursOfCellsA.push_back(std::vector<std::size_t>());
+	neighboursOfCellsA.emplace_back(std::vector<std::size_t>());
 	neighboursOfCellsA[0].resize(1);
 	neighboursOfCellsA[0][0] = 1;
 
 	/*Other cells*/
 	for (std::size_t i = 1; i < (N_x - 1); ++i)
 	{
-		neighboursOfCellsA.push_back(std::vector<std::size_t>());
+		neighboursOfCellsA.emplace_back(std::vector<std::size_t>());
 		neighboursOfCellsA[i].resize(2);
 		neighboursOfCellsA[i][0] = i - 1;
 		neighboursOfCellsA[i][1] = i + 1;
 	}
 
 	/*Last cell*/
-	neighboursOfCellsA.push_back(std::vector<std::size_t>());
+	neighboursOfCellsA.emplace_back(std::vector<std::size_t>());
 	neighboursOfCellsA[N_x - 1].resize(1);
 	neighboursOfCellsA[N_x - 1][0] = N_x - 2;
 
 	/*Set surface's owner*/
 	{
 		/*Tail surface*/
-		surfaceOwnerA.push_back(std::size_t());
+		surfaceOwnerA.emplace_back(std::size_t());
 		surfaceOwnerA[0] = 0;
 
 		/*Inner surfaces*/
 		for (std::size_t i = 1; i < N_x; ++i)
 		{
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[i] = i - 1;
 		}
 
 		/*Point surface*/
-		surfaceOwnerA.push_back(std::size_t());
+		surfaceOwnerA.emplace_back(std::size_t());
 		surfaceOwnerA[N_x] = N_x - 1;
 	}
 
@@ -379,18 +395,18 @@ void schemi::mesh::oneDParallelepiped(
 		nonexistentCell = cellsA.size() + 1;
 
 		/*Tail surface*/
-		surfaceNeighbourA.push_back(std::size_t());
+		surfaceNeighbourA.emplace_back(std::size_t());
 		surfaceNeighbourA[0] = nonexistentCell;
 
 		/*Inner surfaces*/
 		for (std::size_t i = 1; i < N_x; ++i)
 		{
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[i] = i;
 		}
 
 		/*Point surface*/
-		surfaceNeighbourA.push_back(std::size_t());
+		surfaceNeighbourA.emplace_back(std::size_t());
 		surfaceNeighbourA[N_x] = nonexistentCell;
 	}
 
@@ -399,11 +415,11 @@ void schemi::mesh::oneDParallelepiped(
 	cellsNumber = cellsA.size();
 	surfacesNumber = surfacesA.size();
 
-	initialized = true;
+	initialised = true;
 }
 
 void schemi::mesh::twoDParallelepiped(
-		const std::pair<vector, scalar> & vectorOfParallelepiped,
+		const std::pair<vector, vector> & vectorOfParallelepiped,
 		const std::size_t N_x, const std::size_t N_y,
 		const std::vector<boundaryConditionType> & commonConditions)
 {
@@ -411,8 +427,8 @@ void schemi::mesh::twoDParallelepiped(
 
 	n_cells = { N_x, N_y, 1 };
 
-	const scalar dx { vectorOfParallelepiped.first.v()[0] / N_x };
-	const scalar dy { vectorOfParallelepiped.first.v()[1] / N_y };
+	const scalar dx { std::get<0>(vectorOfParallelepiped.first()) / N_x };
+	const scalar dy { std::get<1>(vectorOfParallelepiped.first()) / N_y };
 
 	std::size_t prev;
 
@@ -423,29 +439,47 @@ void schemi::mesh::twoDParallelepiped(
 			{
 				prev = cellsA.size();
 
-				cellsA.push_back(cubicCell());
+				cellsA.emplace_back(cubicCell());
 				cubicCell & cell = cellsA[prev];
 
-				cell.r000_r() = vector(vectorOfParallelepiped.second + dx * i,
-						dy * j, 0.);
-				cell.rX00_r() = vector(
-						vectorOfParallelepiped.second + dx * (i + 1), dy * j,
+				cell.r000_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + dx * i,
+						std::get<1>(vectorOfParallelepiped.second()) + dy * j,
 						0.);
-				cell.r0Y0_r() = vector(vectorOfParallelepiped.second + dx * i,
-						dy * (j + 1), 0.);
+				cell.rX00_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (i + 1),
+						std::get<1>(vectorOfParallelepiped.second()) + dy * j,
+						0.);
+				cell.r0Y0_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + dx * i,
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (j + 1), 0.);
 				cell.rXY0_r() = vector(
-						vectorOfParallelepiped.second + dx * (i + 1),
-						dy * (j + 1), 0.);
-				cell.r00Z_r() = vector(vectorOfParallelepiped.second + dx * i,
-						dy * j, vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (i + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (j + 1), 0.);
+				cell.r00Z_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + dx * i,
+						std::get<1>(vectorOfParallelepiped.second()) + dy * j,
+						std::get<2>(vectorOfParallelepiped.first()));
 				cell.rX0Z_r() = vector(
-						vectorOfParallelepiped.second + dx * (i + 1), dy * j,
-						vectorOfParallelepiped.first.v()[2]);
-				cell.r0YZ_r() = vector(vectorOfParallelepiped.second + dx * i,
-						dy * (j + 1), vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (i + 1),
+						std::get<1>(vectorOfParallelepiped.second()) + dy * j,
+						std::get<2>(vectorOfParallelepiped.first()));
+				cell.r0YZ_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + dx * i,
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (j + 1),
+						std::get<2>(vectorOfParallelepiped.first()));
 				cell.rXYZ_r() = vector(
-						vectorOfParallelepiped.second + dx * (i + 1),
-						dy * (j + 1), vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (i + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (j + 1),
+						std::get<2>(vectorOfParallelepiped.first()));
 
 				cell.rC_r() = (cell.r000() + cell.rX00() + cell.r0Y0()
 						+ cell.rXY0() + cell.r00Z() + cell.rX0Z() + cell.r0YZ()
@@ -465,19 +499,28 @@ void schemi::mesh::twoDParallelepiped(
 			{
 				prev = surfacesA.size();
 
-				surfacesA.push_back(quadraticSurface());
-				surfaceBoundaryCondition.push_back(commonConditions[0]);
+				surfacesA.emplace_back(quadraticSurface());
+				surfaceBoundaryCondition.emplace_back(commonConditions[0]);
 				tailSurfacesNumber++;
 				quadraticSurface & surface = surfacesA[prev];
 
-				surface.r00_r() = vector(vectorOfParallelepiped.second + 0.,
-						dy * j, 0.);
-				surface.rX0_r() = vector(vectorOfParallelepiped.second + 0.,
-						dy * j, vectorOfParallelepiped.first.v()[2]);
-				surface.r0Y_r() = vector(vectorOfParallelepiped.second + 0.,
-						dy * (j + 1), 0.);
-				surface.rXY_r() = vector(vectorOfParallelepiped.second + 0.,
-						dy * (j + 1), vectorOfParallelepiped.first.v()[2]);
+				surface.r00_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + 0.,
+						std::get<1>(vectorOfParallelepiped.second()) + dy * j,
+						0.);
+				surface.rX0_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + 0.,
+						std::get<1>(vectorOfParallelepiped.second()) + dy * j,
+						std::get<2>(vectorOfParallelepiped.first()));
+				surface.r0Y_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + 0.,
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (j + 1), 0.);
+				surface.rXY_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + 0.,
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (j + 1),
+						std::get<2>(vectorOfParallelepiped.first()));
 
 				surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 						+ surface.rXY()) / 4.;
@@ -501,27 +544,34 @@ void schemi::mesh::twoDParallelepiped(
 			{
 				prev = surfacesA.size();
 
-				surfacesA.push_back(quadraticSurface());
-				surfaceBoundaryCondition.push_back(
+				surfacesA.emplace_back(quadraticSurface());
+				surfaceBoundaryCondition.emplace_back(
 						boundaryConditionType::innerSurface);
 				innerSurfacesNumber++;
 				quadraticSurface & surface = surfacesA[prev];
 
 				surface.r00_r() = vector(
-						vectorOfParallelepiped.second
-								+ dx * (index_in_layer + 1), dy * layer_n, 0.);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (index_in_layer + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * layer_n, 0.);
 				surface.rX0_r() = vector(
-						vectorOfParallelepiped.second
-								+ dx * (index_in_layer + 1), dy * layer_n,
-						vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (index_in_layer + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * layer_n,
+						std::get<2>(vectorOfParallelepiped.first()));
 				surface.r0Y_r() = vector(
-						vectorOfParallelepiped.second
-								+ dx * (index_in_layer + 1), dy * (layer_n + 1),
-						0.);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (index_in_layer + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (layer_n + 1), 0.);
 				surface.rXY_r() = vector(
-						vectorOfParallelepiped.second
-								+ dx * (index_in_layer + 1), dy * (layer_n + 1),
-						vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (index_in_layer + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (layer_n + 1),
+						std::get<2>(vectorOfParallelepiped.first()));
 
 				surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 						+ surface.rXY()) / 4.;
@@ -540,24 +590,34 @@ void schemi::mesh::twoDParallelepiped(
 
 			prev = surfacesA.size();
 
-			surfacesA.push_back(quadraticSurface());
-			surfaceBoundaryCondition.push_back(
+			surfacesA.emplace_back(quadraticSurface());
+			surfaceBoundaryCondition.emplace_back(
 					boundaryConditionType::innerSurface);
 			innerSurfacesNumber++;
 			quadraticSurface & surface = surfacesA[prev];
 
 			surface.r00_r() = vector(
-					vectorOfParallelepiped.second + dx * index_in_layer,
-					dy * (layer_n + 1), 0.);
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * index_in_layer,
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_n + 1), 0.);
 			surface.rX0_r() = vector(
-					vectorOfParallelepiped.second + dx * (index_in_layer + 1),
-					dy * (layer_n + 1), 0.);
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * (index_in_layer + 1),
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_n + 1), 0.);
 			surface.r0Y_r() = vector(
-					vectorOfParallelepiped.second + dx * index_in_layer,
-					dy * (layer_n + 1), vectorOfParallelepiped.first.v()[2]);
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * index_in_layer,
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_n + 1),
+					std::get<2>(vectorOfParallelepiped.first()));
 			surface.rXY_r() = vector(
-					vectorOfParallelepiped.second + dx * (index_in_layer + 1),
-					dy * (layer_n + 1), vectorOfParallelepiped.first.v()[2]);
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * (index_in_layer + 1),
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_n + 1),
+					std::get<2>(vectorOfParallelepiped.first()));
 
 			surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 					+ surface.rXY()) / 4.;
@@ -574,27 +634,32 @@ void schemi::mesh::twoDParallelepiped(
 			{
 				prev = surfacesA.size();
 
-				surfacesA.push_back(quadraticSurface());
-				surfaceBoundaryCondition.push_back(commonConditions[1]);
+				surfacesA.emplace_back(quadraticSurface());
+				surfaceBoundaryCondition.emplace_back(commonConditions[1]);
 				pointSurfacesNumber++;
 				quadraticSurface & surface = surfacesA[prev];
 
 				surface.r00_r() = vector(
-						vectorOfParallelepiped.second
-								+ vectorOfParallelepiped.first.v()[0], dy * j,
+						std::get<0>(vectorOfParallelepiped.second())
+								+ std::get<0>(vectorOfParallelepiped.first()),
+						std::get<1>(vectorOfParallelepiped.second()) + dy * j,
 						0.);
 				surface.rX0_r() = vector(
-						vectorOfParallelepiped.second
-								+ vectorOfParallelepiped.first.v()[0], dy * j,
-						vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ std::get<0>(vectorOfParallelepiped.first()),
+						std::get<1>(vectorOfParallelepiped.second()) + dy * j,
+						std::get<2>(vectorOfParallelepiped.first()));
 				surface.r0Y_r() = vector(
-						vectorOfParallelepiped.second
-								+ vectorOfParallelepiped.first.v()[0],
-						dy * (j + 1), 0.);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ std::get<0>(vectorOfParallelepiped.first()),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (j + 1), 0.);
 				surface.rXY_r() = vector(
-						vectorOfParallelepiped.second
-								+ vectorOfParallelepiped.first.v()[0],
-						dy * (j + 1), vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ std::get<0>(vectorOfParallelepiped.first()),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (j + 1),
+						std::get<2>(vectorOfParallelepiped.first()));
 
 				surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 						+ surface.rXY()) / 4.;
@@ -615,20 +680,27 @@ void schemi::mesh::twoDParallelepiped(
 			{
 				prev = surfacesA.size();
 
-				surfacesA.push_back(quadraticSurface());
-				surfaceBoundaryCondition.push_back(commonConditions[3]);
+				surfacesA.emplace_back(quadraticSurface());
+				surfaceBoundaryCondition.emplace_back(commonConditions[3]);
 				rightSurfacesNumber++;
 				quadraticSurface & surface = surfacesA[prev];
 
-				surface.r00_r() = vector(vectorOfParallelepiped.second + dx * j,
-						0., 0.);
-				surface.rX0_r() = vector(vectorOfParallelepiped.second + dx * j,
-						0., vectorOfParallelepiped.first.v()[2]);
+				surface.r00_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + dx * j,
+						std::get<1>(vectorOfParallelepiped.second()) + 0., 0.);
+				surface.rX0_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + dx * j,
+						std::get<1>(vectorOfParallelepiped.second()) + 0.,
+						std::get<2>(vectorOfParallelepiped.first()));
 				surface.r0Y_r() = vector(
-						vectorOfParallelepiped.second + dx * (j + 1), 0., 0.);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (j + 1),
+						std::get<1>(vectorOfParallelepiped.second()) + 0., 0.);
 				surface.rXY_r() = vector(
-						vectorOfParallelepiped.second + dx * (j + 1), 0.,
-						vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (j + 1),
+						std::get<1>(vectorOfParallelepiped.second()) + 0.,
+						std::get<2>(vectorOfParallelepiped.first()));
 
 				surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 						+ surface.rXY()) / 4.;
@@ -649,23 +721,33 @@ void schemi::mesh::twoDParallelepiped(
 			{
 				prev = surfacesA.size();
 
-				surfacesA.push_back(quadraticSurface());
-				surfaceBoundaryCondition.push_back(commonConditions[4]);
+				surfacesA.emplace_back(quadraticSurface());
+				surfaceBoundaryCondition.emplace_back(commonConditions[4]);
 				leftSurfacesNumber++;
 				quadraticSurface & surface = surfacesA[prev];
 
-				surface.r00_r() = vector(vectorOfParallelepiped.second + dx * j,
-						vectorOfParallelepiped.first.v()[1], 0.);
-				surface.rX0_r() = vector(vectorOfParallelepiped.second + dx * j,
-						vectorOfParallelepiped.first.v()[1],
-						vectorOfParallelepiped.first.v()[2]);
+				surface.r00_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + dx * j,
+						std::get<1>(vectorOfParallelepiped.second())
+								+ std::get<1>(vectorOfParallelepiped.first()),
+						0.);
+				surface.rX0_r() = vector(
+						std::get<0>(vectorOfParallelepiped.second()) + dx * j,
+						std::get<1>(vectorOfParallelepiped.second())
+								+ std::get<1>(vectorOfParallelepiped.first()),
+						std::get<2>(vectorOfParallelepiped.first()));
 				surface.r0Y_r() = vector(
-						vectorOfParallelepiped.second + dx * (j + 1),
-						vectorOfParallelepiped.first.v()[1], 0.);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (j + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ std::get<1>(vectorOfParallelepiped.first()),
+						0.);
 				surface.rXY_r() = vector(
-						vectorOfParallelepiped.second + dx * (j + 1),
-						vectorOfParallelepiped.first.v()[1],
-						vectorOfParallelepiped.first.v()[2]);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (j + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ std::get<1>(vectorOfParallelepiped.first()),
+						std::get<2>(vectorOfParallelepiped.first()));
 
 				surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 						+ surface.rXY()) / 4.;
@@ -684,7 +766,7 @@ void schemi::mesh::twoDParallelepiped(
 		const std::size_t layer_n = i / N_x;
 		const std::size_t index_in_layer = (i - layer_n * N_x);
 
-		surfacesOfCellsA.push_back(std::vector<std::size_t>());
+		surfacesOfCellsA.emplace_back(std::vector<std::size_t>());
 		surfacesOfCellsA[i].resize(4);
 
 		/*First layer*/
@@ -802,7 +884,7 @@ void schemi::mesh::twoDParallelepiped(
 		const std::size_t i = (c - j * N_x);
 
 		prev = neighboursOfCellsA.size();
-		neighboursOfCellsA.push_back(std::vector<std::size_t>());
+		neighboursOfCellsA.emplace_back(std::vector<std::size_t>());
 
 		if (j == 0)
 		{
@@ -881,7 +963,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_y; ++i)
 		{
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = i * N_x;
 		}
 
@@ -894,7 +976,7 @@ void schemi::mesh::twoDParallelepiped(
 			if (i != (N_x - 1))
 			{
 				prev = surfaceOwnerA.size();
-				surfaceOwnerA.push_back(std::size_t());
+				surfaceOwnerA.emplace_back(std::size_t());
 				surfaceOwnerA[prev] = c;
 			}
 		}
@@ -907,7 +989,7 @@ void schemi::mesh::twoDParallelepiped(
 			if (j != (N_y - 1))
 			{
 				prev = surfaceOwnerA.size();
-				surfaceOwnerA.push_back(std::size_t());
+				surfaceOwnerA.emplace_back(std::size_t());
 				surfaceOwnerA[prev] = c;
 			}
 		}
@@ -916,7 +998,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_y; ++i)
 		{
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = (i + 1) * N_x - 1;
 		}
 
@@ -924,7 +1006,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_x; ++i)
 		{
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = i;
 		}
 
@@ -932,7 +1014,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_x; ++i)
 		{
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = (N_y - 1) * N_x + i;
 		}
 	}
@@ -945,7 +1027,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_y; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 
@@ -958,7 +1040,7 @@ void schemi::mesh::twoDParallelepiped(
 			if (i != 0)
 			{
 				prev = surfaceNeighbourA.size();
-				surfaceNeighbourA.push_back(std::size_t());
+				surfaceNeighbourA.emplace_back(std::size_t());
 				surfaceNeighbourA[prev] = c;
 			}
 		}
@@ -971,7 +1053,7 @@ void schemi::mesh::twoDParallelepiped(
 			if (j != 0)
 			{
 				prev = surfaceNeighbourA.size();
-				surfaceNeighbourA.push_back(std::size_t());
+				surfaceNeighbourA.emplace_back(std::size_t());
 				surfaceNeighbourA[prev] = c;
 			}
 		}
@@ -980,7 +1062,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_y; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 
@@ -988,7 +1070,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_x; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 
@@ -996,7 +1078,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_x; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 	}
@@ -1006,11 +1088,11 @@ void schemi::mesh::twoDParallelepiped(
 	cellsNumber = cellsA.size();
 	surfacesNumber = surfacesA.size();
 
-	initialized = true;
+	initialised = true;
 }
 
 void schemi::mesh::threeDParallelepiped(
-		const std::pair<vector, scalar> & vectorOfParallelepiped,
+		const std::pair<vector, vector> & vectorOfParallelepiped,
 		const std::size_t N_x, const std::size_t N_y, const std::size_t N_z,
 		const std::vector<boundaryConditionType> & commonConditions)
 {
@@ -1018,9 +1100,9 @@ void schemi::mesh::threeDParallelepiped(
 
 	n_cells = { N_x, N_y, N_z };
 
-	const scalar dx { vectorOfParallelepiped.first.v()[0] / N_x };
-	const scalar dy { vectorOfParallelepiped.first.v()[1] / N_y };
-	const scalar dz { vectorOfParallelepiped.first.v()[1] / N_z };
+	const scalar dx { std::get<0>(vectorOfParallelepiped.first()) / N_x };
+	const scalar dy { std::get<1>(vectorOfParallelepiped.first()) / N_y };
+	const scalar dz { std::get<1>(vectorOfParallelepiped.first()) / N_z };
 
 	std::size_t prev;
 
@@ -1032,33 +1114,65 @@ void schemi::mesh::threeDParallelepiped(
 				{
 					prev = cellsA.size();
 
-					cellsA.push_back(cubicCell());
+					cellsA.emplace_back(cubicCell());
 					cubicCell & cell = cellsA[prev];
 
 					cell.r000_r() = vector(
-							vectorOfParallelepiped.second + dx * i, dy * j,
-							dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * i,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					cell.rX00_r() = vector(
-							vectorOfParallelepiped.second + dx * (i + 1),
-							dy * j, dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (i + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					cell.r0Y0_r() = vector(
-							vectorOfParallelepiped.second + dx * i,
-							dy * (j + 1), dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * i,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					cell.rXY0_r() = vector(
-							vectorOfParallelepiped.second + dx * (i + 1),
-							dy * (j + 1), dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (i + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					cell.r00Z_r() = vector(
-							vectorOfParallelepiped.second + dx * i, dy * j,
-							dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * i,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 					cell.rX0Z_r() = vector(
-							vectorOfParallelepiped.second + dx * (i + 1),
-							dy * j, dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (i + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 					cell.r0YZ_r() = vector(
-							vectorOfParallelepiped.second + dx * i,
-							dy * (j + 1), dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * i,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 					cell.rXYZ_r() = vector(
-							vectorOfParallelepiped.second + dx * (i + 1),
-							dy * (j + 1), dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (i + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 
 					cell.rC_r() = (cell.r000() + cell.rX00() + cell.r0Y0()
 							+ cell.rXY0() + cell.r00Z() + cell.rX0Z()
@@ -1079,19 +1193,35 @@ void schemi::mesh::threeDParallelepiped(
 				{
 					prev = surfacesA.size();
 
-					surfacesA.push_back(quadraticSurface());
-					surfaceBoundaryCondition.push_back(commonConditions[0]);
+					surfacesA.emplace_back(quadraticSurface());
+					surfaceBoundaryCondition.emplace_back(commonConditions[0]);
 					tailSurfacesNumber++;
 					quadraticSurface & surface = surfacesA[prev];
 
-					surface.r00_r() = vector(vectorOfParallelepiped.second + 0.,
-							dy * j, dz * k);
-					surface.rX0_r() = vector(vectorOfParallelepiped.second + 0.,
-							dy * j, dz * (k + 1));
-					surface.r0Y_r() = vector(vectorOfParallelepiped.second + 0.,
-							dy * (j + 1), dz * k);
-					surface.rXY_r() = vector(vectorOfParallelepiped.second + 0.,
-							dy * (j + 1), dz * (k + 1));
+					surface.r00_r() = vector(
+							std::get<0>(vectorOfParallelepiped.second()) + 0.,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
+					surface.rX0_r() = vector(
+							std::get<0>(vectorOfParallelepiped.second()) + 0.,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
+					surface.r0Y_r() = vector(
+							std::get<0>(vectorOfParallelepiped.second()) + 0.,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
+					surface.rXY_r() = vector(
+							std::get<0>(vectorOfParallelepiped.second()) + 0.,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 
 					surface.rC_r() = (surface.r00() + surface.rX0()
 							+ surface.r0Y() + surface.rXY()) / 4.;
@@ -1118,28 +1248,40 @@ void schemi::mesh::threeDParallelepiped(
 			{
 				prev = surfacesA.size();
 
-				surfacesA.push_back(quadraticSurface());
-				surfaceBoundaryCondition.push_back(
+				surfacesA.emplace_back(quadraticSurface());
+				surfaceBoundaryCondition.emplace_back(
 						boundaryConditionType::innerSurface);
 				innerSurfacesNumber++;
 				quadraticSurface & surface = surfacesA[prev];
 
 				surface.r00_r() = vector(
-						vectorOfParallelepiped.second
-								+ dx * (index_in_layer + 1), dy * layer_y,
-						dz * layer_z);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (index_in_layer + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * layer_y,
+						std::get<2>(vectorOfParallelepiped.second())
+								+ dz * layer_z);
 				surface.rX0_r() = vector(
-						vectorOfParallelepiped.second
-								+ dx * (index_in_layer + 1), dy * layer_y,
-						dz * (layer_z + 1));
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (index_in_layer + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * layer_y,
+						std::get<2>(vectorOfParallelepiped.second())
+								+ dz * (layer_z + 1));
 				surface.r0Y_r() = vector(
-						vectorOfParallelepiped.second
-								+ dx * (index_in_layer + 1), dy * (layer_y + 1),
-						dz * layer_z);
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (index_in_layer + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (layer_y + 1),
+						std::get<2>(vectorOfParallelepiped.second())
+								+ dz * layer_z);
 				surface.rXY_r() = vector(
-						vectorOfParallelepiped.second
-								+ dx * (index_in_layer + 1), dy * (layer_y + 1),
-						dz * (layer_z + 1));
+						std::get<0>(vectorOfParallelepiped.second())
+								+ dx * (index_in_layer + 1),
+						std::get<1>(vectorOfParallelepiped.second())
+								+ dy * (layer_y + 1),
+						std::get<2>(vectorOfParallelepiped.second())
+								+ dz * (layer_z + 1));
 
 				surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 						+ surface.rXY()) / 4.;
@@ -1160,24 +1302,40 @@ void schemi::mesh::threeDParallelepiped(
 
 			prev = surfacesA.size();
 
-			surfacesA.push_back(quadraticSurface());
-			surfaceBoundaryCondition.push_back(
+			surfacesA.emplace_back(quadraticSurface());
+			surfaceBoundaryCondition.emplace_back(
 					boundaryConditionType::innerSurface);
 			innerSurfacesNumber++;
 			quadraticSurface & surface = surfacesA[prev];
 
 			surface.r00_r() = vector(
-					vectorOfParallelepiped.second + dx * index_in_layer,
-					dy * (layer_y + 1), dz * layer_z);
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * index_in_layer,
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_y + 1),
+					std::get<2>(vectorOfParallelepiped.second())
+							+ dz * layer_z);
 			surface.rX0_r() = vector(
-					vectorOfParallelepiped.second + dx * (index_in_layer + 1),
-					dy * (layer_y + 1), dz * layer_z);
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * (index_in_layer + 1),
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_y + 1),
+					std::get<2>(vectorOfParallelepiped.second())
+							+ dz * layer_z);
 			surface.r0Y_r() = vector(
-					vectorOfParallelepiped.second + dx * index_in_layer,
-					dy * (layer_y + 1), dz * (layer_z + 1));
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * index_in_layer,
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_y + 1),
+					std::get<2>(vectorOfParallelepiped.second())
+							+ dz * (layer_z + 1));
 			surface.rXY_r() = vector(
-					vectorOfParallelepiped.second + dx * (index_in_layer + 1),
-					dy * (layer_y + 1), dz * (layer_z + 1));
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * (index_in_layer + 1),
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_y + 1),
+					std::get<2>(vectorOfParallelepiped.second())
+							+ dz * (layer_z + 1));
 
 			surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 					+ surface.rXY()) / 4.;
@@ -1197,24 +1355,38 @@ void schemi::mesh::threeDParallelepiped(
 
 			prev = surfacesA.size();
 
-			surfacesA.push_back(quadraticSurface());
-			surfaceBoundaryCondition.push_back(
+			surfacesA.emplace_back(quadraticSurface());
+			surfaceBoundaryCondition.emplace_back(
 					boundaryConditionType::innerSurface);
 			innerSurfacesNumber++;
 			quadraticSurface & surface = surfacesA[prev];
 
 			surface.r00_r() = vector(
-					vectorOfParallelepiped.second + dx * index_in_layer,
-					dy * layer_y, dz * (layer_z + 1));
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * index_in_layer,
+					std::get<1>(vectorOfParallelepiped.second()) + dy * layer_y,
+					std::get<2>(vectorOfParallelepiped.second())
+							+ dz * (layer_z + 1));
 			surface.rX0_r() = vector(
-					vectorOfParallelepiped.second + dx * (index_in_layer + 1),
-					dy * layer_y, dz * (layer_z + 1));
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * (index_in_layer + 1),
+					std::get<1>(vectorOfParallelepiped.second()) + dy * layer_y,
+					std::get<2>(vectorOfParallelepiped.second())
+							+ dz * (layer_z + 1));
 			surface.r0Y_r() = vector(
-					vectorOfParallelepiped.second + dx * index_in_layer,
-					dy * (layer_y + 1), dz * (layer_z + 1));
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * index_in_layer,
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_y + 1),
+					std::get<2>(vectorOfParallelepiped.second())
+							+ dz * (layer_z + 1));
 			surface.rXY_r() = vector(
-					vectorOfParallelepiped.second + dx * (index_in_layer + 1),
-					dy * (layer_y + 1), dz * (layer_z + 1));
+					std::get<0>(vectorOfParallelepiped.second())
+							+ dx * (index_in_layer + 1),
+					std::get<1>(vectorOfParallelepiped.second())
+							+ dy * (layer_y + 1),
+					std::get<2>(vectorOfParallelepiped.second())
+							+ dz * (layer_z + 1));
 
 			surface.rC_r() = (surface.r00() + surface.rX0() + surface.r0Y()
 					+ surface.rXY()) / 4.;
@@ -1232,27 +1404,43 @@ void schemi::mesh::threeDParallelepiped(
 				{
 					prev = surfacesA.size();
 
-					surfacesA.push_back(quadraticSurface());
-					surfaceBoundaryCondition.push_back(commonConditions[1]);
+					surfacesA.emplace_back(quadraticSurface());
+					surfaceBoundaryCondition.emplace_back(commonConditions[1]);
 					pointSurfacesNumber++;
 					quadraticSurface & surface = surfacesA[prev];
 
 					surface.r00_r() = vector(
-							vectorOfParallelepiped.second
-									+ vectorOfParallelepiped.first.v()[0],
-							dy * j, dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ std::get<0>(
+											vectorOfParallelepiped.first()),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					surface.rX0_r() = vector(
-							vectorOfParallelepiped.second
-									+ vectorOfParallelepiped.first.v()[0],
-							dy * j, dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ std::get<0>(
+											vectorOfParallelepiped.first()),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 					surface.r0Y_r() = vector(
-							vectorOfParallelepiped.second
-									+ vectorOfParallelepiped.first.v()[0],
-							dy * (j + 1), dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ std::get<0>(
+											vectorOfParallelepiped.first()),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					surface.rXY_r() = vector(
-							vectorOfParallelepiped.second
-									+ vectorOfParallelepiped.first.v()[0],
-							dy * (j + 1), dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ std::get<0>(
+											vectorOfParallelepiped.first()),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 
 					surface.rC_r() = (surface.r00() + surface.rX0()
 							+ surface.r0Y() + surface.rXY()) / 4.;
@@ -1274,22 +1462,35 @@ void schemi::mesh::threeDParallelepiped(
 				{
 					prev = surfacesA.size();
 
-					surfacesA.push_back(quadraticSurface());
-					surfaceBoundaryCondition.push_back(commonConditions[2]);
+					surfacesA.emplace_back(quadraticSurface());
+					surfaceBoundaryCondition.emplace_back(commonConditions[2]);
 					bottomSurfacesNumber++;
 					quadraticSurface & surface = surfacesA[prev];
 
 					surface.r00_r() = vector(
-							vectorOfParallelepiped.second + dx * i, dy * j, 0.);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * i,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second()) + 0.);
 					surface.rX0_r() = vector(
-							vectorOfParallelepiped.second + dx * (i + 1),
-							dy * j, 0.);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (i + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second()) + 0.);
 					surface.r0Y_r() = vector(
-							vectorOfParallelepiped.second + dx * i,
-							dy * (j + 1), 0.);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * i,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second()) + 0.);
 					surface.rXY_r() = vector(
-							vectorOfParallelepiped.second + dx * (i + 1),
-							dy * (j + 1), 0.);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (i + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second()) + 0.);
 
 					surface.rC_r() = (surface.r00() + surface.rX0()
 							+ surface.r0Y() + surface.rXY()) / 4.;
@@ -1311,22 +1512,35 @@ void schemi::mesh::threeDParallelepiped(
 				{
 					prev = surfacesA.size();
 
-					surfacesA.push_back(quadraticSurface());
-					surfaceBoundaryCondition.push_back(commonConditions[3]);
+					surfacesA.emplace_back(quadraticSurface());
+					surfaceBoundaryCondition.emplace_back(commonConditions[3]);
 					rightSurfacesNumber++;
 					quadraticSurface & surface = surfacesA[prev];
 
 					surface.r00_r() = vector(
-							vectorOfParallelepiped.second + dx * j, 0., dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * j,
+							std::get<1>(vectorOfParallelepiped.second()) + 0.,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					surface.rX0_r() = vector(
-							vectorOfParallelepiped.second + dx * j, 0.,
-							dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * j,
+							std::get<1>(vectorOfParallelepiped.second()) + 0.,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 					surface.r0Y_r() = vector(
-							vectorOfParallelepiped.second + dx * (j + 1), 0.,
-							dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (j + 1),
+							std::get<1>(vectorOfParallelepiped.second()) + 0.,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					surface.rXY_r() = vector(
-							vectorOfParallelepiped.second + dx * (j + 1), 0.,
-							dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (j + 1),
+							std::get<1>(vectorOfParallelepiped.second()) + 0.,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 
 					surface.rC_r() = (surface.r00() + surface.rX0()
 							+ surface.r0Y() + surface.rXY()) / 4.;
@@ -1348,23 +1562,43 @@ void schemi::mesh::threeDParallelepiped(
 				{
 					prev = surfacesA.size();
 
-					surfacesA.push_back(quadraticSurface());
-					surfaceBoundaryCondition.push_back(commonConditions[4]);
+					surfacesA.emplace_back(quadraticSurface());
+					surfaceBoundaryCondition.emplace_back(commonConditions[4]);
 					leftSurfacesNumber++;
 					quadraticSurface & surface = surfacesA[prev];
 
 					surface.r00_r() = vector(
-							vectorOfParallelepiped.second + dx * j,
-							vectorOfParallelepiped.first.v()[1], dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * j,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ std::get<1>(
+											vectorOfParallelepiped.first()),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					surface.rX0_r() = vector(
-							vectorOfParallelepiped.second + dx * j,
-							vectorOfParallelepiped.first.v()[1], dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * j,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ std::get<1>(
+											vectorOfParallelepiped.first()),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 					surface.r0Y_r() = vector(
-							vectorOfParallelepiped.second + dx * (j + 1),
-							vectorOfParallelepiped.first.v()[1], dz * k);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (j + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ std::get<1>(
+											vectorOfParallelepiped.first()),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * k);
 					surface.rXY_r() = vector(
-							vectorOfParallelepiped.second + dx * (j + 1),
-							vectorOfParallelepiped.first.v()[1], dz * (k + 1));
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (j + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ std::get<1>(
+											vectorOfParallelepiped.first()),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ dz * (k + 1));
 
 					surface.rC_r() = (surface.r00() + surface.rX0()
 							+ surface.r0Y() + surface.rXY()) / 4.;
@@ -1386,23 +1620,43 @@ void schemi::mesh::threeDParallelepiped(
 				{
 					prev = surfacesA.size();
 
-					surfacesA.push_back(quadraticSurface());
-					surfaceBoundaryCondition.push_back(commonConditions[5]);
+					surfacesA.emplace_back(quadraticSurface());
+					surfaceBoundaryCondition.emplace_back(commonConditions[5]);
 					topSurfacesNumber++;
 					quadraticSurface & surface = surfacesA[prev];
 
 					surface.r00_r() = vector(
-							vectorOfParallelepiped.second + dx * i, dy * j,
-							vectorOfParallelepiped.first.v()[2]);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * i,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ std::get<2>(
+											vectorOfParallelepiped.first()));
 					surface.rX0_r() = vector(
-							vectorOfParallelepiped.second + dx * (i + 1),
-							dy * j, vectorOfParallelepiped.first.v()[2]);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (i + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * j,
+							std::get<2>(vectorOfParallelepiped.second())
+									+ std::get<2>(
+											vectorOfParallelepiped.first()));
 					surface.r0Y_r() = vector(
-							vectorOfParallelepiped.second + dx * i,
-							dy * (j + 1), vectorOfParallelepiped.first.v()[2]);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * i,
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ std::get<2>(
+											vectorOfParallelepiped.first()));
 					surface.rXY_r() = vector(
-							vectorOfParallelepiped.second + dx * (i + 1),
-							dy * (j + 1), vectorOfParallelepiped.first.v()[2]);
+							std::get<0>(vectorOfParallelepiped.second())
+									+ dx * (i + 1),
+							std::get<1>(vectorOfParallelepiped.second())
+									+ dy * (j + 1),
+							std::get<2>(vectorOfParallelepiped.second())
+									+ std::get<2>(
+											vectorOfParallelepiped.first()));
 
 					surface.rC_r() = (surface.r00() + surface.rX0()
 							+ surface.r0Y() + surface.rXY()) / 4.;
@@ -1423,7 +1677,7 @@ void schemi::mesh::threeDParallelepiped(
 		const std::size_t index_in_layer = (i - layer_z * N_y * N_x
 				- layer_y * N_x);
 
-		surfacesOfCellsA.push_back(std::vector<std::size_t>());
+		surfacesOfCellsA.emplace_back(std::vector<std::size_t>());
 		surfacesOfCellsA[i].resize(6);
 
 		if (layer_z == 0)
@@ -2064,7 +2318,7 @@ void schemi::mesh::threeDParallelepiped(
 				- layer_y * N_x);
 
 		prev = neighboursOfCellsA.size();
-		neighboursOfCellsA.push_back(std::vector<std::size_t>());
+		neighboursOfCellsA.emplace_back(std::vector<std::size_t>());
 
 		if (layer_z == 0)
 		{
@@ -2438,7 +2692,7 @@ void schemi::mesh::threeDParallelepiped(
 			const std::size_t layer_y = i - layer_z * N_y;
 
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = layer_z * N_y * N_x + layer_y * N_x;
 		}
 
@@ -2453,7 +2707,7 @@ void schemi::mesh::threeDParallelepiped(
 			if (index_in_layer != (N_x - 1))
 			{
 				prev = surfaceOwnerA.size();
-				surfaceOwnerA.push_back(std::size_t());
+				surfaceOwnerA.emplace_back(std::size_t());
 				surfaceOwnerA[prev] = c;
 			}
 		}
@@ -2467,7 +2721,7 @@ void schemi::mesh::threeDParallelepiped(
 			if (layer_y != (N_y - 1))
 			{
 				prev = surfaceOwnerA.size();
-				surfaceOwnerA.push_back(std::size_t());
+				surfaceOwnerA.emplace_back(std::size_t());
 				surfaceOwnerA[prev] = c;
 			}
 		}
@@ -2480,7 +2734,7 @@ void schemi::mesh::threeDParallelepiped(
 			if (layer_z != (N_z - 1))
 			{
 				prev = surfaceOwnerA.size();
-				surfaceOwnerA.push_back(std::size_t());
+				surfaceOwnerA.emplace_back(std::size_t());
 				surfaceOwnerA[prev] = c;
 			}
 		}
@@ -2492,7 +2746,7 @@ void schemi::mesh::threeDParallelepiped(
 			const std::size_t layer_y = i - layer_z * N_y;
 
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = layer_z * N_y * N_x + (layer_y + 1) * N_x - 1;
 		}
 
@@ -2500,7 +2754,7 @@ void schemi::mesh::threeDParallelepiped(
 		for (std::size_t i = 0; i < N_y * N_x; ++i)
 		{
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = i;
 		}
 
@@ -2511,7 +2765,7 @@ void schemi::mesh::threeDParallelepiped(
 			const std::size_t index_in_layer = i - layer_z * N_x;
 
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = layer_z * N_y * N_x + index_in_layer;
 		}
 
@@ -2522,7 +2776,7 @@ void schemi::mesh::threeDParallelepiped(
 			const std::size_t index_in_layer = i - layer_z * N_x;
 
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = layer_z * N_y * N_x + (N_y - 1) * N_x
 					+ index_in_layer;
 		}
@@ -2531,7 +2785,7 @@ void schemi::mesh::threeDParallelepiped(
 		for (std::size_t i = 0; i < N_y * N_x; ++i)
 		{
 			prev = surfaceOwnerA.size();
-			surfaceOwnerA.push_back(std::size_t());
+			surfaceOwnerA.emplace_back(std::size_t());
 			surfaceOwnerA[prev] = i + (N_z - 1) * N_y * N_x;
 		}
 	}
@@ -2544,7 +2798,7 @@ void schemi::mesh::threeDParallelepiped(
 		for (std::size_t i = 0; i < N_z * N_y; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 
@@ -2559,7 +2813,7 @@ void schemi::mesh::threeDParallelepiped(
 			if (index_in_layer != 0)
 			{
 				prev = surfaceNeighbourA.size();
-				surfaceNeighbourA.push_back(std::size_t());
+				surfaceNeighbourA.emplace_back(std::size_t());
 				surfaceNeighbourA[prev] = c;
 			}
 		}
@@ -2573,7 +2827,7 @@ void schemi::mesh::threeDParallelepiped(
 			if (layer_y != 0)
 			{
 				prev = surfaceNeighbourA.size();
-				surfaceNeighbourA.push_back(std::size_t());
+				surfaceNeighbourA.emplace_back(std::size_t());
 				surfaceNeighbourA[prev] = c;
 			}
 		}
@@ -2586,7 +2840,7 @@ void schemi::mesh::threeDParallelepiped(
 			if (layer_z != 0)
 			{
 				prev = surfaceNeighbourA.size();
-				surfaceNeighbourA.push_back(std::size_t());
+				surfaceNeighbourA.emplace_back(std::size_t());
 				surfaceNeighbourA[prev] = c;
 			}
 		}
@@ -2595,7 +2849,7 @@ void schemi::mesh::threeDParallelepiped(
 		for (std::size_t i = 0; i < N_z * N_y; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 
@@ -2603,7 +2857,7 @@ void schemi::mesh::threeDParallelepiped(
 		for (std::size_t i = 0; i < N_y * N_x; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 
@@ -2611,7 +2865,7 @@ void schemi::mesh::threeDParallelepiped(
 		for (std::size_t i = 0; i < N_z * N_x; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 
@@ -2619,7 +2873,7 @@ void schemi::mesh::threeDParallelepiped(
 		for (std::size_t i = 0; i < N_z * N_x; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 
@@ -2627,7 +2881,7 @@ void schemi::mesh::threeDParallelepiped(
 		for (std::size_t i = 0; i < N_y * N_x; ++i)
 		{
 			prev = surfaceNeighbourA.size();
-			surfaceNeighbourA.push_back(std::size_t());
+			surfaceNeighbourA.emplace_back(std::size_t());
 			surfaceNeighbourA[prev] = nonexistentCell;
 		}
 	}
@@ -2637,7 +2891,7 @@ void schemi::mesh::threeDParallelepiped(
 	cellsNumber = cellsA.size();
 	surfacesNumber = surfacesA.size();
 
-	initialized = true;
+	initialised = true;
 }
 
 schemi::mesh * schemi::mesh::pInstance = nullptr;

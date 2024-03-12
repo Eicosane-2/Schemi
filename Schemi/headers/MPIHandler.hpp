@@ -64,20 +64,46 @@ public:
 
 private:
 	constexpr static std::size_t tailSurfaceStart = 0;
-	std::size_t tailSurfaceEnd = 0, pointSurfaceStart = 0, pointSurfaceEnd = 0,
-			gathBufSize = 0, localCellSize[1] { 0 };
+	std::size_t tailSurfaceEnd = 0,
+
+	pointSurfaceStart = 0, pointSurfaceEnd = 0,
+
+	bottomSurfaceStart = 0, bottomSurfaceEnd = 0,
+
+	rightSurfaceStart = 0, rightSurfaceEnd = 0,
+
+	leftSurfaceStart = 0, leftSurfaceEnd = 0,
+
+	topSurfaceStart = 0, topSurfaceEnd = 0,
+
+	gathBufSize = 0, localCellSize[1] { 0 };
 
 	std::unique_ptr<mpi_scalar> tailData_to_send { nullptr },
-			pointData_to_send { nullptr }, tailData_to_rec { nullptr },
-			pointData_to_rec { nullptr }, gathBuf { nullptr }, cellSendBuf {
-					nullptr };
+			pointData_to_send { nullptr }, bottomData_to_send { nullptr },
+			rightData_to_send { nullptr }, leftData_to_send { nullptr },
+			topData_to_send { nullptr }, tailData_to_rec { nullptr },
+			pointData_to_rec { nullptr }, bottomData_to_rec { nullptr },
+			rightData_to_rec { nullptr }, leftData_to_rec { nullptr },
+			topData_to_rec { nullptr },
+
+			gathBuf { nullptr }, cellSendBuf { nullptr };
+
+	std::array<std::size_t, 3> rankDir { 0, 0, 0 }, rankDirMax { 0, 0, 0 };
 
 	bool arraysInit = false;
 
 	enum class MPITags
 	{
-		left_process, right_process
+		tail, point, bottom, right, left, top
 	};
+
+	struct
+	{
+		int & tail { a[0] }, & point { a[1] }, & bottom { a[2] },
+				& right { a[3] }, & left { a[4] }, & top { a[5] };
+	private:
+		std::array<int, 6> a { -1, -1, -1, -1, -1, -1 };
+	} envNodes;
 
 public:
 	const std::size_t mpi_rank, mpi_size, root = 0;
@@ -91,17 +117,17 @@ public:
 
 	const surfaceField<vector>& cSdR() const;
 
-	MPIHandler(std::size_t mpi_rank_in, std::size_t mpi_size_in) noexcept;
+	MPIHandler(std::size_t mpi_rank_in, std::size_t mpi_size_in);
 
 	MPIHandler(const MPIHandler&) = delete;
 	auto& operator=(const MPIHandler&) = delete;
 
-	std::pair<vector, scalar> correctParallelepipedVector(
+	std::pair<vector, vector> correctParallelepipedVector(
 			const vector & parallelepiped) const noexcept;
 
-	void initialiseBuffersSize([[maybe_unused]] const mesh & mesh);
+	void initialiseBuffersSize([[maybe_unused]] const mesh & mesh_);
 
-	void initializeParalleMeshData(const mesh & meshOb);
+	void initialiseParalleMeshData(const mesh & mesh_);
 
 	void correctBoundaryValues(
 			[[maybe_unused]] volumeField<scalar> & corField) const noexcept;
@@ -133,16 +159,40 @@ public:
 			[[maybe_unused]] std::array<std::vector<subPatchData<T>>, 6> & conditionsArray) const noexcept
 	{
 #ifdef MPI_VERSION
-		if (mpi_rank != 0)
+		if (!(envNodes.tail < 0))
 		{
 			auto & conditionsArray_0 = conditionsArray[0];
 			for (auto & subp : conditionsArray_0)
 				subp.bType = boundaryConditionType::calculatedParallelBoundary;
 		}
-		if (mpi_rank != (mpi_size - 1))
+		if (!(envNodes.point < 0))
 		{
 			auto & conditionsArray_1 = conditionsArray[1];
 			for (auto & subp : conditionsArray_1)
+				subp.bType = boundaryConditionType::calculatedParallelBoundary;
+		}
+		if (!(envNodes.bottom < 0))
+		{
+			auto & conditionsArray_2 = conditionsArray[2];
+			for (auto & subp : conditionsArray_2)
+				subp.bType = boundaryConditionType::calculatedParallelBoundary;
+		}
+		if (!(envNodes.right < 0))
+		{
+			auto & conditionsArray_3 = conditionsArray[3];
+			for (auto & subp : conditionsArray_3)
+				subp.bType = boundaryConditionType::calculatedParallelBoundary;
+		}
+		if (!(envNodes.left < 0))
+		{
+			auto & conditionsArray_4 = conditionsArray[4];
+			for (auto & subp : conditionsArray_4)
+				subp.bType = boundaryConditionType::calculatedParallelBoundary;
+		}
+		if (!(envNodes.top < 0))
+		{
+			auto & conditionsArray_5 = conditionsArray[5];
+			for (auto & subp : conditionsArray_5)
 				subp.bType = boundaryConditionType::calculatedParallelBoundary;
 		}
 #endif
@@ -153,12 +203,28 @@ public:
 			[[maybe_unused]] volumeField<typeOfValue> & corField) const noexcept
 	{
 #ifdef MPI_VERSION
-		if (mpi_rank != 0)
+		if (!(envNodes.tail < 0))
 			for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
 				corField.boundCond_r()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
-		if (mpi_rank != (mpi_size - 1))
+		if (!(envNodes.point < 0))
 			for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd; ++i)
+				corField.boundCond_r()[i].first =
+						boundaryConditionType::calculatedParallelBoundary;
+		if (!(envNodes.bottom < 0))
+			for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd; ++i)
+				corField.boundCond_r()[i].first =
+						boundaryConditionType::calculatedParallelBoundary;
+		if (!(envNodes.right < 0))
+			for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd; ++i)
+				corField.boundCond_r()[i].first =
+						boundaryConditionType::calculatedParallelBoundary;
+		if (!(envNodes.left < 0))
+			for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
+				corField.boundCond_r()[i].first =
+						boundaryConditionType::calculatedParallelBoundary;
+		if (!(envNodes.top < 0))
+			for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
 				corField.boundCond_r()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 #endif
@@ -169,12 +235,28 @@ public:
 			[[maybe_unused]] surfaceField<typeOfValue> & corField) const noexcept
 	{
 #ifdef MPI_VERSION
-		if (mpi_rank != 0)
+		if (!(envNodes.tail < 0))
 			for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
 				corField.boundCond_r()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
-		if (mpi_rank != (mpi_size - 1))
+		if (!(envNodes.point < 0))
 			for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd; ++i)
+				corField.boundCond_r()[i].first =
+						boundaryConditionType::calculatedParallelBoundary;
+		if (!(envNodes.bottom < 0))
+			for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd; ++i)
+				corField.boundCond_r()[i].first =
+						boundaryConditionType::calculatedParallelBoundary;
+		if (!(envNodes.right < 0))
+			for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd; ++i)
+				corField.boundCond_r()[i].first =
+						boundaryConditionType::calculatedParallelBoundary;
+		if (!(envNodes.left < 0))
+			for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
+				corField.boundCond_r()[i].first =
+						boundaryConditionType::calculatedParallelBoundary;
+		if (!(envNodes.top < 0))
+			for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
 				corField.boundCond_r()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 #endif
@@ -202,7 +284,9 @@ public:
 
 	bool isRoot();
 
-public:
+	const std::array<std::size_t, 3>& rankDirection() const noexcept;
+	const std::array<std::size_t, 3>& rankDirectionMax() const noexcept;
+
 	const bool parallel;
 };
 }  // namespace schemi

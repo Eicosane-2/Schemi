@@ -21,7 +21,9 @@ class turbulentParametersKEPS: public abstractTurbulentParameters
 public:
 	explicit turbulentParametersKEPS(
 
-	const scalar CmuI = 0.09,
+	const mesh & meshIn,
+
+	const scalar CmuIn = 0.09,
 
 	const scalar C0In = 0.95,
 

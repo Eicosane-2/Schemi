@@ -1,0 +1,36 @@
+#Molar_mass_(kg/mol)
+0.0709
+#Molar_isohoric_heat_capacity_(J/T/mol)
+25.635
+#Critical_temperature_(K)
+416.9
+#Critical_pressure_(Pa)
+7.9773E6
+#Kinetic_diameter_(A)
+3.2
+#Tail_boundary_condition
+subPatches 11
+slip ( 0 0 0 )( 0 0.003 1 )
+fixedValueCell ( 0 0.003 0 )( 0 0.0035 1 ) 1E-9
+slip ( 0 0.0035 0 )( 0 0.004 1 )
+fixedValueCell ( 0 0.0040 0 )( 0 0.0048 1 ) 721.8
+fixedValueCell ( 0 0.0048 0 )( 0 0.0056 1 ) 761.9
+fixedValueCell ( 0 0.0056 0 )( 0 0.0064 1 ) 802
+fixedValueCell ( 0 0.0064 0 )( 0 0.0072 1 ) 761.9
+fixedValueCell ( 0 0.0072 0 )( 0 0.0080 1 ) 721.8
+slip ( 0 0.008 0 )( 0 0.0085 1 )
+fixedValueCell ( 0 0.0085 0 )( 0 0.009 1 ) 1E-9
+slip ( 0 0.009 0 )( 0 0.012 1 )
+#Point_boundary_condition
+freeBoundary
+#Bottom_boundary_condition
+blank
+#Right_boundary_condition
+slip
+#Left_boundary_condition
+slip
+#Top_boundary_condition
+blank
+#Values_in_zones
+1E-9
+1E-9

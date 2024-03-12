@@ -27,9 +27,9 @@ public:
 			const scalar VYXin, const scalar VYYin, const scalar VYZin,
 			const scalar VZXin, const scalar VZYin, const scalar VZZin) noexcept;
 
-	const std::array<scalar, 9>& v() const noexcept;
+	const std::array<scalar, 9>& operator()() const noexcept;
 
-	std::array<scalar, 9>& v_r() noexcept;
+	std::array<scalar, 9>& r() noexcept;
 
 	scalar trace() const noexcept;
 

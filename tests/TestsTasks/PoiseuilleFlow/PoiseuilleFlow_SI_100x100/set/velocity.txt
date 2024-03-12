@@ -5,9 +5,9 @@ freeBoundary
 #Bottom_boundary_condition
 blank
 #Right_boundary_condition
-fixedValue
+fixedValueCell 0 0 0
 #Left_boundary_condition
-fixedValue
+fixedValueCell 0 0 0
 #Top_boundary_condition
 blank
 #Values_in_zones

@@ -18,7 +18,7 @@ schemi::scalar schemi::operator&(const schemi::vector & inVector1,
 	scalar result = 0;
 
 	for (std::size_t i = 0; i < vector::vsize; ++i)
-		result += inVector1.v()[i] * inVector2.v()[i];
+		result += inVector1()[i] * inVector2()[i];
 
 	return result;
 }

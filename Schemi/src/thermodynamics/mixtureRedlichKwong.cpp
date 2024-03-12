@@ -107,8 +107,8 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::pFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., pressureOutput.size());
-	std::valarray<scalar> bMixture(0., pressureOutput.size());
+	std::valarray<scalar> aMixture(0., pressureOutput.size()), bMixture(0.,
+			pressureOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -137,8 +137,8 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::UvFromp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., UvOutput.size());
-	std::valarray<scalar> bMixture(0., UvOutput.size());
+	std::valarray<scalar> aMixture(0., UvOutput.size()), bMixture(0.,
+			UvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -163,8 +163,8 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::pcFromT(
 
 	const auto X = calcMolarFrac(concentrations);
 
-	std::valarray<scalar> aMixture(0., pressureConcentrationRatioOutput.size());
-	std::valarray<scalar> bMixture(0., pressureConcentrationRatioOutput.size());
+	std::valarray<scalar> aMixture(0., pressureConcentrationRatioOutput.size()),
+			bMixture(0., pressureConcentrationRatioOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -214,8 +214,7 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::UvcFromT(
 		CvMixture += X[k] * CvArr[k];
 
 	std::valarray<scalar> aMixture(0.,
-			InternalEnergyConcentrationRatioOutput.size());
-	std::valarray<scalar> bMixture(0.,
+			InternalEnergyConcentrationRatioOutput.size()), bMixture(0.,
 			InternalEnergyConcentrationRatioOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
@@ -268,8 +267,8 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::TFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., TemperatureOutput.size());
-	std::valarray<scalar> bMixture(0., TemperatureOutput.size());
+	std::valarray<scalar> aMixture(0., TemperatureOutput.size()), bMixture(0.,
+			TemperatureOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -302,8 +301,8 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdrho(
 		MMixture += X[k] * M[k];
 	}
 
-	std::valarray<scalar> aMixture(0., dpdrhoOutput.size());
-	std::valarray<scalar> bMixture(0., dpdrhoOutput.size());
+	std::valarray<scalar> aMixture(0., dpdrhoOutput.size()), bMixture(0.,
+			dpdrhoOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -313,9 +312,9 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdrho(
 		}
 
 	for (std::size_t i = 0; i < dpdrhoOutput.size(); ++i)
-		dpdrhoOutput[i] = RedlichKwongFluid::dpdrho(CvMixture[i],
-				R / CvMixture[i], Uv[i], (*concentrations[0])[i], MMixture[i],
-				aMixture[i], bMixture[i]);
+		dpdrhoOutput[i] = RedlichKwongFluid::dpdrho(CvMixture[i], Uv[i],
+				(*concentrations[0])[i], MMixture[i], aMixture[i], bMixture[i],
+				R);
 
 	return dpdrhoOutput;
 }
@@ -333,8 +332,8 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., dpdUvOutput.size());
-	std::valarray<scalar> bMixture(0., dpdUvOutput.size());
+	std::valarray<scalar> aMixture(0., dpdUvOutput.size()), bMixture(0.,
+			dpdUvOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -345,8 +344,7 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdUv(
 
 	for (std::size_t i = 0; i < dpdUvOutput.size(); ++i)
 		dpdUvOutput[i] = RedlichKwongFluid::dpdUv(CvMixture[i],
-				R / CvMixture[i], (*concentrations[0])[i], Uv[i], aMixture[i],
-				bMixture[i]);
+				(*concentrations[0])[i], Uv[i], aMixture[i], bMixture[i], R);
 
 	return dpdUvOutput;
 }
@@ -359,8 +357,8 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::nonIdeality(
 
 	const auto X = calcMolarFrac(concentrations);
 
-	std::valarray<scalar> aMixture(0., nonIdealityOutput.size());
-	std::valarray<scalar> bMixture(0., nonIdealityOutput.size());
+	std::valarray<scalar> aMixture(0., nonIdealityOutput.size()), bMixture(0.,
+			nonIdealityOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -398,8 +396,8 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Cp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	std::valarray<scalar> aMixture(0., CpMixOutput.size());
-	std::valarray<scalar> bMixture(0., CpMixOutput.size());
+	std::valarray<scalar> aMixture(0., CpMixOutput.size()), bMixture(0.,
+			CpMixOutput.size());
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -461,9 +459,20 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Fv(
 
 	const auto rearX = rearrangeMolFrac(X);
 
+	std::valarray<scalar> aMixtureMolec(0., FvOutput.size()), bMixtureMolec(0.,
+			FvOutput.size());
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+		{
+			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
+		}
+
 	for (std::size_t i = 0; i < FvOutput.size(); ++i)
 		FvOutput[i] = RedlichKwongFluid::Fmx(hPlanck, molecMass, kB, T[i],
-				rearX[i], molecVolumeMixture[i], aMatrixMolec, bMatrixMolec);
+				rearX[i], molecVolumeMixture[i], aMixtureMolec[i],
+				bMixtureMolec[i]);
 
 	return FvOutput * molecConc;
 }
@@ -501,9 +510,20 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::Sv(
 
 	const auto rearX = rearrangeMolFrac(X);
 
+	std::valarray<scalar> aMixtureMolec(0., SvOutput.size()), bMixtureMolec(0.,
+			SvOutput.size());
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+		{
+			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
+		}
+
 	for (std::size_t i = 0; i < SvOutput.size(); ++i)
 		SvOutput[i] = RedlichKwongFluid::Smx(hPlanck, molecMass, kB, T[i],
-				rearX[i], molecVolumeMixture[i], aMatrixMolec, bMatrixMolec);
+				rearX[i], molecVolumeMixture[i], aMixtureMolec[i],
+				bMixtureMolec[i]);
 
 	return SvOutput * molecConc;
 }
@@ -550,8 +570,7 @@ schemi::scalar schemi::mixtureRedlichKwong::pFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -574,8 +593,7 @@ schemi::scalar schemi::mixtureRedlichKwong::UvFromp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -594,8 +612,7 @@ schemi::scalar schemi::mixtureRedlichKwong::pcFromT(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -628,8 +645,7 @@ schemi::scalar schemi::mixtureRedlichKwong::UvcFromT(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -664,8 +680,7 @@ schemi::scalar schemi::mixtureRedlichKwong::TFromUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -683,8 +698,7 @@ schemi::scalar schemi::mixtureRedlichKwong::dpdrho(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar CvMixture { 0 };
-	scalar MMixture { 0 };
+	scalar CvMixture { 0 }, MMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 	{
@@ -692,8 +706,7 @@ schemi::scalar schemi::mixtureRedlichKwong::dpdrho(
 		MMixture += X[k] * M[k];
 	}
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -702,8 +715,8 @@ schemi::scalar schemi::mixtureRedlichKwong::dpdrho(
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::dpdrho(CvMixture, R / CvMixture, Uv,
-			concentrations[0], MMixture, aMixture, bMixture);
+	return RedlichKwongFluid::dpdrho(CvMixture, Uv, concentrations[0], MMixture,
+			aMixture, bMixture, R);
 }
 
 schemi::scalar schemi::mixtureRedlichKwong::dpdUv(
@@ -716,8 +729,7 @@ schemi::scalar schemi::mixtureRedlichKwong::dpdUv(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -726,8 +738,8 @@ schemi::scalar schemi::mixtureRedlichKwong::dpdUv(
 			bMixture += X[k] * X[l] * bMatrix[k][l];
 		}
 
-	return RedlichKwongFluid::dpdUv(CvMixture, R / CvMixture, concentrations[0],
-			Uv, aMixture, bMixture);
+	return RedlichKwongFluid::dpdUv(CvMixture, concentrations[0], Uv, aMixture,
+			bMixture, R);
 }
 
 schemi::scalar schemi::mixtureRedlichKwong::nonIdeality(
@@ -736,8 +748,7 @@ schemi::scalar schemi::mixtureRedlichKwong::nonIdeality(
 {
 	const auto X = calcMolarFrac(concentrations);
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -769,8 +780,7 @@ schemi::scalar schemi::mixtureRedlichKwong::Cp(
 	for (std::size_t k = 0; k < X.size(); ++k)
 		CvMixture += X[k] * CvArr[k];
 
-	scalar aMixture { 0 };
-	scalar bMixture { 0 };
+	scalar aMixture { 0 }, bMixture { 0 };
 
 	for (std::size_t k = 0; k < X.size(); ++k)
 		for (std::size_t l = 0; l < X.size(); ++l)
@@ -815,8 +825,17 @@ schemi::scalar schemi::mixtureRedlichKwong::Fv(
 
 	const auto molecVolumeMixture { 1 / molecConc };
 
+	scalar aMixtureMolec { 0 }, bMixtureMolec { 0 };
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+		{
+			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
+		}
+
 	return RedlichKwongFluid::Fmx(hPlanck, molecMass, kB, T, X,
-			molecVolumeMixture, aMatrixMolec, bMatrixMolec) * molecConc;
+			molecVolumeMixture, aMixtureMolec, bMixtureMolec) * molecConc;
 }
 
 schemi::scalar schemi::mixtureRedlichKwong::Fvk(const scalar concentration,
@@ -839,8 +858,17 @@ schemi::scalar schemi::mixtureRedlichKwong::Sv(
 
 	const auto molecVolumeMixture { 1 / molecConc };
 
+	scalar aMixtureMolec { 0 }, bMixtureMolec { 0 };
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+		{
+			aMixtureMolec += X[k] * X[l] * aMatrixMolec[k][l];
+			bMixtureMolec += X[k] * X[l] * bMatrixMolec[k][l];
+		}
+
 	return RedlichKwongFluid::Smx(hPlanck, molecMass, kB, T, X,
-			molecVolumeMixture, aMatrixMolec, bMatrixMolec) * molecConc;
+			molecVolumeMixture, aMixtureMolec, bMixtureMolec) * molecConc;
 }
 
 schemi::scalar schemi::mixtureRedlichKwong::Svk(const scalar concentration,

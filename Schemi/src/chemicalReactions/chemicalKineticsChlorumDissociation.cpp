@@ -24,7 +24,7 @@ void schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::reactionMa
 			const std::size_t iNew = jAbsOld;
 			const std::size_t jNew = i;
 
-			RightTriangleNew[iNew].push_back( { Avalue, jNew });
+			RightTriangleNew[iNew].emplace_back(Avalue, jNew);
 		}
 
 		for (std::size_t j = 0; j < RightTriangle[i].size(); ++j)
@@ -35,20 +35,12 @@ void schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::reactionMa
 			const std::size_t iNew = jAbsOld;
 			const std::size_t jNew = i;
 
-			LeftTriangleNew[iNew].push_back( { Avalue, jNew });
+			LeftTriangleNew[iNew].emplace_back(Avalue, jNew);
 		}
 	}
 
 	LeftTriangle = LeftTriangleNew;
 	RightTriangle = RightTriangleNew;
-}
-
-void schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::normalize(
-		std::valarray<scalar> & res) const noexcept
-{
-	for (auto & i : res)
-		if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
-			i = 0;
 }
 
 schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::cellReactionMatrix() noexcept :
@@ -71,14 +63,14 @@ schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::cellReactionMat
 	const scalar A22 { (1 / timeStep + 2 * k_recomb * C_Cl_0 * M_0) / molMass[1] };
 	const scalar B2 { C_Cl_0 / (rho_0 * timeStep) };
 
-	matrix.Diagonale[0] = A11;
-	matrix.Diagonale[1] = A22;
+	std::get<0>(matrix.Diagonale) = A11;
+	std::get<1>(matrix.Diagonale) = A22;
 
-	matrix.RightTriangle[0][0].first = A12;
-	matrix.LeftTriangle[1][0].first = A21;
+	std::get<0>(matrix.RightTriangle)[0].first = A12;
+	std::get<1>(matrix.LeftTriangle)[0].first = A21;
 
-	matrix.FreeTerm[0] = B1;
-	matrix.FreeTerm[1] = B2;
+	std::get<0>(matrix.FreeTerm) = B1;
+	std::get<1>(matrix.FreeTerm) = B2;
 }
 
 std::valarray<schemi::scalar> schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::matrixDotProduct(
@@ -396,7 +388,6 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJCG(
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, 2>
 {
-
 	reactionMatrix JacobiPreconditioner;
 
 	JacobiPreconditioner.Diagonale = { 1. / (matrix.Diagonale[0]), 1.
@@ -583,7 +574,7 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solve(
 		break;
 	default:
 		throw exception("Unknown chemical iterative solver type.",
-				errors::initializationError);
+				errors::initialisationError);
 		break;
 	}
 }
@@ -600,9 +591,9 @@ schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix schemi::chemical
 	const scalar k_backw = A_backw * std::pow(T, n_backw)
 			* std::exp(-E_backw / (R * T));
 
-	const scalar & Cl2 = concentrations[1];
-	const scalar & Cl = concentrations[2];
-	const scalar & M = concentrations[0];
+	const scalar & Cl2 = std::get<1>(concentrations);
+	const scalar & Cl = std::get<2>(concentrations);
+	const scalar & M = std::get<0>(concentrations);
 
 	return cellReactionMatrix(timestep, k_forw, k_backw, Cl2, Cl, M, rho,
 			molarMasses, itSolv);
@@ -625,13 +616,13 @@ void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
 				phaseN.density.size() - 1);
 
 		for (std::size_t k = 0; k < concs.size(); ++k)
-			concs[k] = phaseN.concentration.v[k].ref()[i];
+			concs[k] = phaseN.concentration.v[k]()[i];
 
 		for (std::size_t k = 0; k < dens.size(); ++k)
-			dens[k] = phaseN.density[k + 1].ref()[i];
+			dens[k] = phaseN.density[k + 1]()[i];
 
-		const cellReactingFields oldValues(phaseN.internalEnergy.ref()[i],
-				phaseN.temperature.ref()[i], concs, dens);
+		const cellReactingFields oldValues(phaseN.internalEnergy()[i],
+				phaseN.temperature()[i], concs, dens);
 
 		cellReactingFields newValues(oldValues);
 
@@ -643,11 +634,9 @@ void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
 
 				for (std::size_t st = 0; st < subItNum; ++st)
 				{
-					scalar deltaU { 0 };
-
 					const std::array<scalar, 2> oldMassFraction {
-							newValues.density[0] / phaseN.density[0].ref()[i],
-							newValues.density[1] / phaseN.density[0].ref()[i] };
+							newValues.density[0] / phaseN.density[0]()[i],
+							newValues.density[1] / phaseN.density[0]()[i] };
 
 					const scalar sumFracOld = std::accumulate(
 							oldMassFraction.begin(), oldMassFraction.end(), 0.);
@@ -656,54 +645,50 @@ void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
 						continue;
 
 					const auto cellReactionVel = velocityCalculation(
-							subTimeStep, phaseN.temperature.ref()[i],
+							subTimeStep, phaseN.temperature()[i],
 							{ newValues.concentration[0],
 									newValues.concentration[1],
 									newValues.concentration[2] },
 							{ phaseN.phaseThermodynamics->Mv()[0],
 									phaseN.phaseThermodynamics->Mv()[1] },
-							phaseN.density[0].ref()[i],
+							phaseN.density[0]()[i],
 							phaseN.phaseThermodynamics->Rv());
 
-					auto [newCl2, newCl] = cellReactionVel.solve(
-							oldMassFraction, maxIterationNumber);
+					auto reactionResult = cellReactionVel.solve(oldMassFraction,
+							maxIterationNumber);
 
-					newCl2 = std::max(static_cast<scalar>(0.), newCl2);
-					newCl = std::max(static_cast<scalar>(0.), newCl);
+					for (auto & w_k : reactionResult)
+						w_k = std::max(static_cast<scalar>(0.), w_k);
 
-					const auto sumFracNew = newCl2 + newCl;
+					const scalar sumFracNew = std::accumulate(
+							reactionResult.begin(), reactionResult.end(), 0.);
 
 					if (std::abs(sumFracNew - sumFracOld) > massFracTolerance)
 						throw exception(
 								std::string(
-										"Error in mass fraction is too big. Delta is ")
+										"Difference in mass fraction is too big. Delta is ")
 										+ std::to_string(
 												std::abs(
 														sumFracNew
 																- sumFracOld))
 										+ '.', errors::systemError);
 
-					newCl2 /= (sumFracNew + stabilizator);
-					newCl /= (sumFracNew + stabilizator);
+					for (auto & w_k : reactionResult)
+					{
+						w_k /= sumFracNew;
+						w_k *= sumFracOld;
+					}
 
-					newCl2 *= sumFracOld;
-					newCl *= sumFracOld;
-
-					const auto newCCl2 = newCl2 * phaseN.density[0].ref()[i]
-							/ phaseN.phaseThermodynamics->Mv()[0];
-					const auto newCCl = newCl * phaseN.density[0].ref()[i]
-							/ phaseN.phaseThermodynamics->Mv()[1];
-
-					newValues.concentration[1] = newCCl2;
-					newValues.concentration[2] = newCCl;
+					for (std::size_t k = 0; k < 2; ++k)
+						newValues.concentration[k + 1] = reactionResult[k]
+								* phaseN.density[0]()[i]
+								/ phaseN.phaseThermodynamics->Mv()[k];
 
 					newValues.concentration[0] = 0;
 					for (std::size_t k = 1; k < newValues.concentration.size();
 							++k)
 						newValues.concentration[0] +=
 								newValues.concentration[k];
-
-					newValues.internalEnergy += deltaU;
 
 					newValues.temperature = phaseN.phaseThermodynamics->TFromUv(
 							newValues.concentration, newValues.internalEnergy);
@@ -734,12 +719,12 @@ void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
 			}
 		}
 
-		phaseN.internalEnergy.ref_r()[i] = newValues.internalEnergy;
-		phaseN.temperature.ref_r()[i] = newValues.temperature;
+		phaseN.internalEnergy.r()[i] = newValues.internalEnergy;
+		phaseN.temperature.r()[i] = newValues.temperature;
 		for (std::size_t k = 0; k < newValues.concentration.size(); ++k)
-			phaseN.concentration.v[k].ref_r()[i] = newValues.concentration[k];
+			phaseN.concentration.v[k].r()[i] = newValues.concentration[k];
 		for (std::size_t k = 0; k < newValues.density.size(); ++k)
-			phaseN.density[k + 1].ref_r()[i] = newValues.density[k];
+			phaseN.density[k + 1].r()[i] = newValues.density[k];
 	}
 }
 
@@ -749,7 +734,7 @@ schemi::chemicalKineticsChlorumDissociation::chemicalKineticsChlorumDissociation
 {
 	if (phaseIn.concentration.v.size() < 3)
 		throw exception("Wrong number of substances.",
-				errors::initializationError);
+				errors::initialisationError);
 
 	std::string skipBuffer;
 
@@ -758,8 +743,7 @@ schemi::chemicalKineticsChlorumDissociation::chemicalKineticsChlorumDissociation
 	if (chem.is_open())
 		std::cout << "./set/chemicalKinetics.txt is opened." << std::endl;
 	else
-		throw exception("./set/chemicalKinetics.txt not found.",
-				errors::initializationError);
+		throw std::ifstream::failure("./set/chemicalKinetics.txt not found.");
 
 	chem >> skipBuffer >> skipBuffer;
 
@@ -787,9 +771,11 @@ schemi::chemicalKineticsChlorumDissociation::chemicalKineticsChlorumDissociation
 		itSolv = iterativeSolver::GaussElimination;
 	else
 		throw exception("Unknown type of chemical iterative solver.",
-				errors::initializationError);
+				errors::initialisationError);
 
 	chem >> skipBuffer >> maxIterationNumber;
+
+	chem.close();
 }
 
 void schemi::chemicalKineticsChlorumDissociation::solveChemicalKinetics(
@@ -801,21 +787,20 @@ void schemi::chemicalKineticsChlorumDissociation::solveChemicalKinetics(
 
 	timeStepIntegration(phaseN1);
 
-	phaseN1.pressure.ref_r() = phaseN1.phaseThermodynamics->pFromUv(
-			phaseN1.concentration.p, phaseN1.internalEnergy.ref());
+	phaseN1.pressure.r() = phaseN1.phaseThermodynamics->pFromUv(
+			phaseN1.concentration.p, phaseN1.internalEnergy());
 
-	phaseN1.HelmholtzEnergy.ref_r() = phaseN1.phaseThermodynamics->Fv(
-			phaseN1.concentration.p, phaseN1.temperature.ref());
+	phaseN1.HelmholtzEnergy.r() = phaseN1.phaseThermodynamics->Fv(
+			phaseN1.concentration.p, phaseN1.temperature());
 
-	phaseN1.entropy.ref_r() = phaseN1.phaseThermodynamics->Sv(
-			phaseN1.concentration.p, phaseN1.temperature.ref());
+	phaseN1.entropy.r() = phaseN1.phaseThermodynamics->Sv(
+			phaseN1.concentration.p, phaseN1.temperature());
 
 	{
 		const auto v2 = ampProduct(phaseN1.velocity, phaseN1.velocity);
 
-		phaseN1.totalEnergy.ref_r() = phaseN1.internalEnergy.ref()
-				+ phaseN1.density[0].ref() * v2.ref() * 0.5
-				+ phaseN1.rhokTurb.ref();
+		phaseN1.totalEnergy.r() = phaseN1.internalEnergy()
+				+ phaseN1.density[0]() * v2() * 0.5 + phaseN1.rhokTurb();
 	}
 
 	phaseIn.average(phaseN1, *phaseIn.phaseThermodynamics, 0.5);

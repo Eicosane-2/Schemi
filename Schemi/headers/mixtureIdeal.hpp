@@ -23,8 +23,7 @@ public:
 
 	mixtureIdeal(const scalar Rin, const scalar hPin,
 			const std::valarray<scalar> & Min,
-			const std::valarray<scalar> & Cvin, const std::valarray<scalar>&,
-			const std::valarray<scalar>&) noexcept;
+			const std::valarray<scalar> & Cvin) noexcept;
 
 	scalar Rv() const noexcept override;
 

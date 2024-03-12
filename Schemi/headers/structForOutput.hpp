@@ -85,11 +85,11 @@ private:
 	MPIHandler & parallelismRef;
 	const mesh & meshRef;
 
-	const std::size_t nodeCellN, localSlice, globalSlice, k_n, j_n, i_n;
+	void rearrange2D() noexcept;
 
-	void rearrange() noexcept;
+	void rearrange3D() noexcept;
 
-	void rearrange_cell(std::valarray<scalar> & to,
+	void copy_cell(std::valarray<scalar> & to,
 			const std::valarray<scalar> & from, const std::size_t copyToIndex,
 			const std::size_t copyFromIndex) const noexcept;
 };

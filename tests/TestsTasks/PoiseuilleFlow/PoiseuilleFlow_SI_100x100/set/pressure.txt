@@ -1,5 +1,5 @@
 #Tail_boundary_condition
-fixedValue 101325
+fixedValueCell 101325
 #Point_boundary_condition
 freeBoundary
 #Bottom_boundary_condition

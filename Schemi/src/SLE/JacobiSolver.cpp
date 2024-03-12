@@ -12,7 +12,7 @@
 std::valarray<schemi::scalar> schemi::JacobiSolver::algorithm(
 		const std::valarray<scalar> & oldField,
 		const SLEMatrix::SLEMatrixStorage & matrix,
-		const std::string & name) const noexcept
+		const std::string_view name) const noexcept
 {
 	std::valarray<scalar> oldIteration(oldField);
 
@@ -88,8 +88,7 @@ std::valarray<schemi::scalar> schemi::JacobiSolver::algorithm(
 		else if (nIterations >= maxIterationNumber)
 		{
 			std::clog << name << std::endl;
-			std::clog
-					<< "Gauss-Seidel algorithm did not converged. Difference is: "
+			std::clog << "Jacobi algorithm did not converged. Difference is: "
 					<< diff << std::endl;
 
 			normalize(newIteration);
@@ -124,12 +123,12 @@ std::valarray<schemi::vector> schemi::JacobiSolver::solve(
 		std::valarray<scalar> v_j_buf(oldField.size());
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			v_j_buf[i] = oldField[i].v()[j];
+			v_j_buf[i] = oldField[i]()[j];
 
 		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].v_r()[j] = v_j_buf[i];
+			result[i].r()[j] = v_j_buf[i];
 	}
 
 	return result;
@@ -146,12 +145,12 @@ std::valarray<schemi::tensor> schemi::JacobiSolver::solve(
 		std::valarray<scalar> v_j_buf(oldField.size());
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			v_j_buf[i] = oldField[i].v()[j];
+			v_j_buf[i] = oldField[i]()[j];
 
 		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].v_r()[j] = v_j_buf[i];
+			result[i].r()[j] = v_j_buf[i];
 	}
 
 	return result;

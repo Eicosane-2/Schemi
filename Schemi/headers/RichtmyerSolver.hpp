@@ -15,7 +15,13 @@ namespace schemi
 {
 class RichtmyerSolver: public abstractFlowSolver, private pressureStarClass
 {
+	const MPIHandler & parallelism;
 public:
+	explicit RichtmyerSolver(const MPIHandler & parallelism_in) noexcept :
+			parallelism(parallelism_in)
+	{
+	}
+
 	std::tuple<conservativeFlows, starFields> calculateFlows(
 			const homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 			const homogeneousPhase<quadraticSurface> & surfaceNeighbourSide) const

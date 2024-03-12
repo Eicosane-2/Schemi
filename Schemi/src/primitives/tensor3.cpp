@@ -7,6 +7,7 @@
 
 #include "tensor3.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 schemi::tensor3::tensor3(const scalar inValue) noexcept :
@@ -44,19 +45,19 @@ schemi::tensor3::tensor3(const scalar VXXXin, const scalar VXXYin,
 {
 }
 
-const std::array<schemi::scalar, 27>& schemi::tensor3::v() const noexcept
+const std::array<schemi::scalar, 27>& schemi::tensor3::operator()() const noexcept
 {
 	return value;
 }
 
-std::array<schemi::scalar, 27>& schemi::tensor3::v_r() noexcept
+std::array<schemi::scalar, 27>& schemi::tensor3::r() noexcept
 {
 	return value;
 }
 
 schemi::scalar schemi::tensor3::trace() const noexcept
 {
-	return value[0] + value[13] + value[26];
+	return std::get<0>(value) + std::get<13>(value) + std::get<26>(value);
 }
 
 schemi::scalar schemi::tensor3::mag() const noexcept
@@ -95,7 +96,7 @@ schemi::tensor3 schemi::tensor3::operator+(
 {
 	tensor3 sum(inTensor);
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.v_r()[i] += value[i];
+		sum.r()[i] += value[i];
 
 	return sum;
 }
@@ -103,7 +104,7 @@ schemi::tensor3 schemi::tensor3::operator+(
 schemi::tensor3& schemi::tensor3::operator+=(const tensor3 & inTensor) noexcept
 {
 	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] += inTensor.v()[i];
+		value[i] += inTensor()[i];
 
 	return *this;
 }
@@ -113,7 +114,7 @@ schemi::tensor3 schemi::tensor3::operator-(
 {
 	tensor3 sum(inTensor * (-1.));
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.v_r()[i] += value[i];
+		sum.r()[i] += value[i];
 
 	return sum;
 }
@@ -121,59 +122,68 @@ schemi::tensor3 schemi::tensor3::operator-(
 schemi::tensor3& schemi::tensor3::operator-=(const tensor3 & inTensor) noexcept
 {
 	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] -= inTensor.v()[i];
+		value[i] -= inTensor()[i];
 
 	return *this;
 }
 
 schemi::tensor3 schemi::tensor3::operator*(const scalar inScalar) const noexcept
 {
-	return tensor3(value[0] * inScalar, value[1] * inScalar,
-			value[2] * inScalar, value[3] * inScalar, value[4] * inScalar,
-			value[5] * inScalar, value[6] * inScalar, value[7] * inScalar,
-			value[8] * inScalar, value[9] * inScalar, value[10] * inScalar,
-			value[11] * inScalar, value[12] * inScalar, value[13] * inScalar,
-			value[14] * inScalar, value[15] * inScalar, value[16] * inScalar,
-			value[17] * inScalar, value[18] * inScalar, value[19] * inScalar,
-			value[20] * inScalar, value[21] * inScalar, value[22] * inScalar,
-			value[23] * inScalar, value[24] * inScalar, value[25] * inScalar,
-			value[26] * inScalar);
+	return tensor3(std::get<0>(value) * inScalar, std::get<1>(value) * inScalar,
+			std::get<2>(value) * inScalar, std::get<3>(value) * inScalar,
+			std::get<4>(value) * inScalar, std::get<5>(value) * inScalar,
+			std::get<6>(value) * inScalar, std::get<7>(value) * inScalar,
+			std::get<8>(value) * inScalar, std::get<9>(value) * inScalar,
+			std::get<10>(value) * inScalar, std::get<11>(value) * inScalar,
+			std::get<12>(value) * inScalar, std::get<13>(value) * inScalar,
+			std::get<14>(value) * inScalar, std::get<15>(value) * inScalar,
+			std::get<16>(value) * inScalar, std::get<17>(value) * inScalar,
+			std::get<18>(value) * inScalar, std::get<19>(value) * inScalar,
+			std::get<20>(value) * inScalar, std::get<21>(value) * inScalar,
+			std::get<22>(value) * inScalar, std::get<23>(value) * inScalar,
+			std::get<24>(value) * inScalar, std::get<25>(value) * inScalar,
+			std::get<26>(value) * inScalar);
 }
 
 schemi::tensor3& schemi::tensor3::operator*=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] *= inScalar;
+	std::transform(value.begin(), value.end(), value.begin(),
+			[inScalar](const auto i) 
+			{	return i *inScalar;});
 
 	return *this;
 }
 
 schemi::tensor3 schemi::tensor3::operator/(const scalar inScalar) const noexcept
 {
-	return tensor3(value[0] / inScalar, value[1] / inScalar,
-			value[2] / inScalar, value[3] / inScalar, value[4] / inScalar,
-			value[5] / inScalar, value[6] / inScalar, value[7] / inScalar,
-			value[8] / inScalar, value[9] / inScalar, value[10] / inScalar,
-			value[11] / inScalar, value[12] / inScalar, value[13] / inScalar,
-			value[14] / inScalar, value[15] / inScalar, value[16] / inScalar,
-			value[17] / inScalar, value[18] / inScalar, value[19] / inScalar,
-			value[20] / inScalar, value[21] / inScalar, value[22] / inScalar,
-			value[23] / inScalar, value[24] / inScalar, value[25] / inScalar,
-			value[26] / inScalar);
+	return tensor3(std::get<0>(value) / inScalar, std::get<1>(value) / inScalar,
+			std::get<2>(value) / inScalar, std::get<3>(value) / inScalar,
+			std::get<4>(value) / inScalar, std::get<5>(value) / inScalar,
+			std::get<6>(value) / inScalar, std::get<7>(value) / inScalar,
+			std::get<8>(value) / inScalar, std::get<9>(value) / inScalar,
+			std::get<10>(value) / inScalar, std::get<11>(value) / inScalar,
+			std::get<12>(value) / inScalar, std::get<13>(value) / inScalar,
+			std::get<14>(value) / inScalar, std::get<15>(value) / inScalar,
+			std::get<16>(value) / inScalar, std::get<17>(value) / inScalar,
+			std::get<18>(value) / inScalar, std::get<19>(value) / inScalar,
+			std::get<20>(value) / inScalar, std::get<21>(value) / inScalar,
+			std::get<22>(value) / inScalar, std::get<23>(value) / inScalar,
+			std::get<24>(value) / inScalar, std::get<25>(value) / inScalar,
+			std::get<26>(value) / inScalar);
 }
 
 schemi::tensor3& schemi::tensor3::operator/=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] /= inScalar;
+	std::transform(value.begin(), value.end(), value.begin(),
+			[inScalar](const auto i) 
+			{	return i /inScalar;});
 
 	return *this;
 }
 
 schemi::tensor3& schemi::tensor3::operator=(const scalar inScalar) noexcept
 {
-	for (std::size_t i = 0; i < value.size(); ++i)
-		value[i] = inScalar;
+	value.fill(inScalar);
 
 	return *this;
 }

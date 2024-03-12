@@ -6,10 +6,10 @@
 126.2
 #Critical_pressure_(Pa)
 3.9E6
-#Kinetic_diametr_(A)
+#Kinetic_diameter_(A)
 3.64
 #Tail_boundary_condition
-fixedValue 1E-9
+fixedValueCell 1E-9
 #Point_boundary_condition
 freeBoundary
 #Bottom_boundary_condition

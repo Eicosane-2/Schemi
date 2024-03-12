@@ -37,7 +37,13 @@ schemi::scalar schemi::idealFluid::UvcFromT(const scalar Cv,
 schemi::scalar schemi::idealFluid::TFromUv(const scalar Cv, const scalar Uv,
 		const scalar c) const noexcept
 {
-	return Uv / (c * Cv);
+	return Uv / ((c + stabilizator) * Cv);
+}
+
+schemi::scalar schemi::idealFluid::cFrompT(const scalar R, const scalar p,
+		const scalar T) const noexcept
+{
+	return p / (R * T);
 }
 
 schemi::scalar schemi::idealFluid::dpdrho() const noexcept
@@ -68,7 +74,7 @@ schemi::scalar schemi::idealFluid::Fv(const scalar c, const scalar T,
 			(2 * Pi_number * M * R * T) / pow<scalar, 2>(NAvogardro * h)) };
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
-	return -c * R * T * (std::log(nQ / (c * NAvogardro)) + 1);
+	return -c * R * T * (std::log(nQ / ((c + stabilizator) * NAvogardro)) + 1);
 }
 
 schemi::scalar schemi::idealFluid::Sv(const scalar c, const scalar T,
@@ -78,7 +84,7 @@ schemi::scalar schemi::idealFluid::Sv(const scalar c, const scalar T,
 			(2 * Pi_number * M * R * T) / pow<scalar, 2>(NAvogardro * h)) };
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
-	return c * R * (log(nQ / (c * NAvogardro)) + 5. / 2.);
+	return c * R * (log(nQ / ((c + stabilizator) * NAvogardro)) + 5. / 2.);
 }
 
 schemi::scalar schemi::idealFluid::Fmx(const scalar h,

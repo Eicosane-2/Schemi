@@ -10,10 +10,15 @@
 #include <fstream>
 #include <iostream>
 #include <cmath>
+
+#include "boundaryConditionValue.hpp"
 #include "errorsEnum.hpp"
 #include "exception.hpp"
 #include "vectorVectorDotProduct.hpp"
 #include "intExpPow.hpp"
+#include "gradient.hpp"
+#include "SLEMatrix.hpp"
+#include "conjugateGradientSolver.hpp"
 
 schemi::scalar schemi::abstractTurbulentParameters::Cmu() const noexcept
 {
@@ -94,6 +99,8 @@ schemi::scalar schemi::abstractTurbulentParameters::CMS_B() const noexcept
 
 schemi::abstractTurbulentParameters::abstractTurbulentParameters(
 
+const mesh & meshIn,
+
 const scalar CmuI,
 
 const scalar C0In,
@@ -168,7 +175,9 @@ const scalar CMS_B_In) noexcept :
 
 		CMS_D_ { CMS_D_In },
 
-		CMS_B_ { CMS_B_In }
+		CMS_B_ { CMS_B_In },
+
+		y { meshIn }
 {
 }
 
@@ -193,8 +202,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 		thetaB_pointer = [this](const vector & a, const scalar k,
 				const scalar /*epsilon*/, const vector& /*gradMav_n*/,
 				const scalar /*a_s2*/,
-				const std::pair<scalar, vector>& /*rho, gradRho*/,
-				const std::pair<scalar, vector>& /*p, gradP*/,
+				const std::pair<scalar, vector>&& /*rho, gradRho*/,
+				const std::pair<scalar, vector>&& /*p, gradP*/,
 				const scalar /*nu_t*/) 
 				{
 					return 1. / std::sqrt(1 + (a & a) / (CMS_B() * k));
@@ -207,8 +216,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 		thetaB_pointer = [this](const vector & a, const scalar k,
 				const scalar /*epsilon*/, const vector& /*gradMav_n*/,
 				const scalar /*a_s2*/,
-				const std::pair<scalar, vector>& /*rho, gradRho*/,
-				const std::pair<scalar, vector>& /*p, gradP*/,
+				const std::pair<scalar, vector>&& /*rho, gradRho*/,
+				const std::pair<scalar, vector>&& /*p, gradP*/,
 				const scalar /*nu_t*/) 
 				{
 					return 1. / std::cbrt(1 + (a & a) / (CMS_B() * k));
@@ -222,8 +231,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 				[this](const vector& /*a*/, const scalar k,
 						const scalar epsilon, const vector & gradMav_n,
 						const scalar /*a_s2*/,
-						const std::pair<scalar, vector>& /*rho, gradRho*/,
-						const std::pair<scalar, vector>& /*p, gradP*/,
+						const std::pair<scalar, vector>&& /*rho, gradRho*/,
+						const std::pair<scalar, vector>&& /*p, gradP*/,
 						const scalar /*nu_t*/) 
 						{
 							const auto k3eps2 = pow<scalar, 3>(k) / pow<scalar, 2>(epsilon);
@@ -240,8 +249,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 				[this](const vector& /*a*/, const scalar k,
 						const scalar /*epsilon*/, const vector& /*gradMav_n*/,
 						const scalar a_s2,
-						const std::pair<scalar, vector> & rhoGradRho,
-						const std::pair<scalar, vector> & pGradP,
+						const std::pair<scalar, vector> && rhoGradRho,
+						const std::pair<scalar, vector> && pGradP,
 						const scalar nu_t) 
 						{
 							const auto wD = -nu_t * (rhoGradRho.second/rhoGradRho.first -pGradP.second/(rhoGradRho.first * a_s2));
@@ -259,8 +268,8 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 				[this](const vector& /*a*/, const scalar k,
 						const scalar epsilon, const vector & gradMav_n,
 						const scalar /*a_s2*/,
-						const std::pair<scalar, vector> & rhoGradRho,
-						const std::pair<scalar, vector> & pGradP,
+						const std::pair<scalar, vector> && rhoGradRho,
+						const std::pair<scalar, vector> && pGradP,
 						const scalar /*nu_t*/) 
 						{
 							const auto k4eps2 = pow<scalar, 4>(k) / pow<scalar, 2>(epsilon);
@@ -271,12 +280,47 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 				<< "thetaB is calculated with gradient of average molar mass and density gradient function."
 				<< std::endl;
 	}
+	else if (thetaBType == "gradMavGradP")
+	{
+		thetaB_pointer =
+				[this](const vector& /*a*/, const scalar k,
+						const scalar epsilon, const vector & gradMav_n,
+						const scalar /*a_s2*/,
+						const std::pair<scalar, vector>&&,
+						const std::pair<scalar, vector> && pGradP,
+						const scalar /*nu_t*/) 
+						{
+							const auto k3eps2 = pow<scalar, 3>(k) / pow<scalar, 2>(epsilon);
+							return 1. / std::sqrt(1 + std::abs(gradMav_n & (pGradP.second/pGradP.first)) * k3eps2 / CMS_B());
+						};
+
+		std::cout
+				<< "thetaB is calculated with gradient of average molar mass and pressure gradient function."
+				<< std::endl;
+	}
+	else if (thetaBType == "gradMavGradRhoA")
+	{
+		thetaB_pointer =
+				[this](const vector & a, const scalar, const scalar epsilon,
+						const vector & gradMav_n, const scalar /*a_s2*/,
+						const std::pair<scalar, vector> && rhoGradRho,
+						const std::pair<scalar, vector> && pGradP,
+						const scalar /*nu_t*/) 
+						{
+							const auto k4eps2 = pow<scalar, 4>(a&a) / pow<scalar, 2>(epsilon);
+							return 1. / std::sqrt(1 + std::abs(gradMav_n & rhoGradRho.second)/pGradP.first * k4eps2 / CMS_B());
+						};
+
+		std::cout
+				<< "thetaB is calculated with gradient of average molar mass and density gradient function and vector a."
+				<< std::endl;
+	}
 	else if (thetaBType == "no")
 		std::cout << "thetaB is 1." << std::endl;
 	else
 		throw exception(
 				"Wrong type of thetaB function. Must be <<sqrt>> or <<cbrt>> or <<gradMav>> or <<wD>> or <<gradMavGradRho>> or <<no>>.",
-				errors::initializationError);
+				errors::initialisationError);
 }
 
 schemi::scalar schemi::abstractTurbulentParameters::thetaS(
@@ -287,12 +331,83 @@ schemi::scalar schemi::abstractTurbulentParameters::thetaS(
 
 schemi::scalar schemi::abstractTurbulentParameters::thetaB(const vector & a,
 		const scalar k, const scalar epsilon, const vector & gradMav_n,
-		const scalar a_s2, const std::pair<scalar, vector> & rhoGradRho,
-		const std::pair<scalar, vector> & pGradP,
+		const scalar a_s2, const std::pair<scalar, vector> && rhoGradRho,
+		const std::pair<scalar, vector> && pGradP,
 		const scalar nu_t) const noexcept
 {
-	return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2, rhoGradRho, pGradP,
-			nu_t);
+	return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2, std::move(rhoGradRho),
+			std::move(pGradP), nu_t);
+}
+
+void schemi::abstractTurbulentParameters::calculateNearWallDistance(
+		const volumeField<scalar> & eps,
+		const boundaryConditionValue & boundCond)
+{
+	constexpr static scalar phiInit = 1;
+	constexpr static scalar convergenceTolerance { convergenceToleranceGlobal };
+
+	volumeField<scalar> phiOld = eps;
+
+	phiOld.r() = phiInit;
+	for (auto & b_i : phiOld.boundCond_r())
+		if (b_i.first == boundaryConditionType::slip)
+		{
+			b_i.first = boundaryConditionType::fixedValueSurface;
+			b_i.second = 0.;
+		}
+		else if ((b_i.first == boundaryConditionType::fixedValueCell)
+				|| (b_i.first == boundaryConditionType::fixedValueSurface))
+			b_i.first = boundaryConditionType::freeBoundary;
+
+	boundCond.parallelism.correctBoundaryValues(phiOld);
+
+	volumeField<scalar> phiNew = phiOld;
+
+	std::size_t it { 0 };
+	while (true)
+	{
+		it++;
+
+		const scalar delta = std::abs((phiNew() - phiOld()) / phiOld()).max();
+
+		if (((delta < convergenceTolerance) && (it > 1)) || (it > 10000))
+			break;
+
+		phiOld = phiNew;
+
+		phiNew.r() = solveMatrix(phiOld, boundCond);
+
+		boundCond.parallelism.correctBoundaryValues(phiNew);
+	}
+
+	const volumeField<vector> gradPhi = grad(phiNew, boundCond);
+
+	volumeField<scalar> distance(phiNew.meshRef());
+
+	for (std::size_t i = 0; i < distance.size(); ++i)
+		distance.r()[i] = -gradPhi()[i].mag()
+				+ std::sqrt(
+						pow<scalar, 2>(gradPhi()[i].mag()) + 2 * phiNew()[i]);
+
+	y = distance;
+}
+
+std::valarray<schemi::scalar> schemi::abstractTurbulentParameters::solveMatrix(
+		const volumeField<scalar> & phi,
+		const boundaryConditionValue & boundCond) const
+{
+	const auto & mesh_ = phi.meshRef();
+
+	SLEMatrix wallDistanceMatrix(std::string("wallDistance"));
+
+	wallDistanceMatrix.generateLaplacianSurfaceBoundary(phi,
+			surfaceField<scalar>(mesh_, 1.0), boundCond);
+
+	wallDistanceMatrix.SLE[0].freeTerm += 1;
+
+	conjugateGradientSovler solv(100000, matrixSolver::conjugateGradient);
+
+	return solv.solve(phi(), wallDistanceMatrix);
 }
 
 schemi::abstractTurbulentParameters::~abstractTurbulentParameters() noexcept

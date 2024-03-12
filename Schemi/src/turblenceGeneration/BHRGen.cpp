@@ -12,10 +12,11 @@
 #include "turbulentParametersKEPS.hpp"
 #include "doubleDotProduct.hpp"
 
-schemi::BHRGen::BHRGen(const bool turb_in, const turbulenceModel tm_in) noexcept :
+schemi::BHRGen::BHRGen(const mesh & meshIn, const bool turb_in,
+		const turbulenceModel tm_in) noexcept :
 		abstractTurbulenceGen(turb_in, tm_in)
 {
-	turbPar = std::make_unique<turbulentParametersKEPS>();
+	turbPar = std::make_unique<turbulentParametersKEPS>(meshIn);
 }
 
 std::tuple<schemi::volumeField<schemi::scalar>,
@@ -40,7 +41,7 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 	volumeField<vector> sigmaSourcea(mesh_, vector(0));
 	volumeField<scalar> sigmaSourceb(mesh_, 0);
 
-	std::valarray<scalar> modeps(diffFieldsOld.eps.ref());
+	std::valarray<scalar> modeps(diffFieldsOld.eps());
 	const scalar maxeps { modeps.max() };
 	std::replace_if(std::begin(modeps), std::end(modeps),
 			[maxeps](const scalar value) 
@@ -49,79 +50,75 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 			}, veryBig);
 
 	volumeField<vector> divaa(mesh_, vector(0));
-	divaa.ref_r() = astProduct(diffFieldsOld.a, diva).ref()
-			+ ampProduct(diffFieldsOld.a, grada).ref();
+	divaa.r() = astProduct(diffFieldsOld.a, diva)()
+			+ ampProduct(diffFieldsOld.a, grada)();
 
 	const auto a_s2 = mixture.sqSonicSpeed(cellFields.concentration.p,
-			cellFields.density[0].ref(), cellFields.internalEnergy.ref(),
-			cellFields.pressure.ref());
+			cellFields.density[0](), cellFields.internalEnergy(),
+			cellFields.pressure());
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
-		const scalar ek { diffFieldsOld.eps.ref()[i] / diffFieldsOld.k.ref()[i] };
+		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
 
-		const auto thetaS_i = turbPar->thetaS_R(gradV.ref()[i].trace(),
-				diffFieldsOld.k.ref()[i], diffFieldsOld.eps.ref()[i]);
+		const auto thetaS_i = turbPar->thetaS_R(gradV()[i].trace(),
+				diffFieldsOld.k()[i], diffFieldsOld.eps()[i]);
 
-		const auto thetaB_i = turbPar->thetaB(diffFieldsOld.a.ref()[i],
-				diffFieldsOld.k.ref()[i], diffFieldsOld.eps.ref()[i],
-				gradMav_n.ref()[i], a_s2[i],
-				std::pair<scalar, vector>(cellFields.density[0].ref()[i],
-						gradRho.ref()[i]),
-				std::pair<scalar, vector>(cellFields.pressure.ref()[i],
-						gradP.ref()[i]), nu_t.ref()[i]);
+		const auto thetaB_i = turbPar->thetaB(diffFieldsOld.a()[i],
+				diffFieldsOld.k()[i], diffFieldsOld.eps()[i], gradMav_n()[i],
+				a_s2[i],
+				std::pair<scalar, vector>(cellFields.density[0]()[i],
+						gradRho()[i]),
+				std::pair<scalar, vector>(cellFields.pressure()[i], gradP()[i]),
+				nu_t()[i]);
 
-		const scalar rhoSpherRGen = spherR.ref()[i] && gradV.ref()[i];
+		const scalar rhoSpherRGen = spherR()[i] && gradV()[i];
 
-		const scalar rhoDevRGen = thetaS_i * devR.ref()[i] && gradV.ref()[i];
+		const scalar rhoDevRGen = thetaS_i * devR()[i] && gradV()[i];
 
-		const scalar gravGen { diffFieldsOld.a.ref()[i]
-				& (gradP.ref()[i] - divDevPhysVisc.ref()[i]) };
+		const scalar gravGen { diffFieldsOld.a()[i]
+				& (gradP()[i] - divDevPhysVisc()[i]) };
 
-		const scalar dissip(-cellFields.rhoepsTurb.ref()[i]);
+		const scalar dissip(-cellFields.rhoepsTurb()[i]);
 
-		sigmaSourcek.ref_r()[i] = rhoSpherRGen + rhoDevRGen + gravGen + dissip;
+		sigmaSourcek.r()[i] = rhoSpherRGen + rhoDevRGen + gravGen + dissip;
 
-		sigmaSourceeps.ref_r()[i] = turbPar->C1() * ek * rhoDevRGen
+		sigmaSourceeps.r()[i] = turbPar->C1() * ek * rhoDevRGen
 				+ turbPar->C3() * ek * rhoSpherRGen
 				+ turbPar->C0() / thetaB_i * ek * gravGen
 				+ turbPar->C2() * ek * dissip;
 
 		/*Time-step calculation*/
-		modeps[i] =
-				std::abs(
-						sourceTimestepCoeff * modeps[i]
-								/ (sigmaSourceeps.ref()[i]
-										/ cellFields.density[0].ref()[i]
-										+ stabilizator));
+		modeps[i] = std::abs(
+				sourceTimestepCoeff * modeps[i]
+						/ (sigmaSourceeps()[i] / cellFields.density[0]()[i]
+								+ stabilizator));
 
 		const vector bGradP(
-				(gradP.ref()[i] - divDevPhysVisc.ref()[i])
-						* diffFieldsOld.b.ref()[i]);
+				(gradP()[i] - divDevPhysVisc()[i]) * diffFieldsOld.b()[i]);
 
 		const vector tauGradRho(
-				(devR.ref()[i] * thetaS_i + spherR.ref()[i])
-						/ cellFields.density[0].ref()[i] & gradRho.ref()[i]);
+				(devR()[i] * thetaS_i + spherR()[i])
+						/ cellFields.density[0]()[i] & gradRho()[i]);
 
 		const vector rhoAgradV(
-				cellFields.rhoaTurb.ref()[i]
-						& (grada.ref()[i] - gradV.ref()[i]));
+				cellFields.rhoaTurb()[i] & (grada()[i] - gradV()[i]));
 
-		//const vector redistribution_a = cellFields.density[0].ref()[i]
-		//		* divaa.ref()[i];
+		//const vector redistribution_a = cellFields.density[0]()[i]
+		//		* divaa()[i];
 
-		sigmaSourcea.ref_r()[i] = bGradP + tauGradRho + rhoAgradV
+		sigmaSourcea.r()[i] = bGradP + tauGradRho + rhoAgradV
 		//+ redistribution_a
-				- cellFields.rhoaTurb.ref()[i] * ek * turbPar->Ca1();
+				- cellFields.rhoaTurb()[i] * ek * turbPar->Ca1();
 
-		const scalar bagradRho { -2. * (diffFieldsOld.b.ref()[i] + 1.)
-				* (diffFieldsOld.a.ref()[i] & gradRho.ref()[i]) };
+		const scalar bagradRho { -2. * (diffFieldsOld.b()[i] + 1.)
+				* (diffFieldsOld.a()[i] & gradRho()[i]) };
 
-		//const scalar redistribution_b = 2. * cellFields.rhoaTurb.ref()[i]
-		//		& gradb.ref()[i];
+		//const scalar redistribution_b = 2. * cellFields.rhoaTurb()[i]
+		//		& gradb()[i];
 
-		sigmaSourceb.ref_r()[i] = bagradRho		//+ redistribution_b
-		- cellFields.rhobTurb.ref()[i] * ek * turbPar->Cb1();
+		sigmaSourceb.r()[i] = bagradRho		//+ redistribution_b
+		- cellFields.rhobTurb()[i] * ek * turbPar->Cb1();
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());

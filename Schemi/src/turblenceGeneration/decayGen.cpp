@@ -11,11 +11,11 @@
 
 #include "turbulentParametersKEPS.hpp"
 
-schemi::decayGen::decayGen(const bool turb_in,
+schemi::decayGen::decayGen(const mesh & meshIn, const bool turb_in,
 		const turbulenceModel tm_in) noexcept :
 		abstractTurbulenceGen(turb_in, tm_in)
 {
-	turbPar = std::make_unique<turbulentParametersKEPS>();
+	turbPar = std::make_unique<turbulentParametersKEPS>(meshIn);
 }
 
 std::tuple<schemi::volumeField<schemi::scalar>,
@@ -38,7 +38,7 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 	volumeField<vector> sigmaSourcea(mesh_, vector(0));
 	volumeField<scalar> sigmaSourceb(mesh_, 0);
 
-	std::valarray<scalar> modeps(diffFieldsOld.eps.ref());
+	std::valarray<scalar> modeps(diffFieldsOld.eps());
 	const scalar maxeps { modeps.max() };
 	std::replace_if(std::begin(modeps), std::end(modeps),
 			[maxeps](const scalar value) 
@@ -48,27 +48,24 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
-		const scalar ek { diffFieldsOld.eps.ref()[i] / diffFieldsOld.k.ref()[i] };
+		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
 
-		const scalar dissip(-cellFields.rhoepsTurb.ref()[i]);
+		const scalar dissip(-cellFields.rhoepsTurb()[i]);
 
-		sigmaSourcek.ref_r()[i] = dissip;
+		sigmaSourcek.r()[i] = dissip;
 
-		sigmaSourceeps.ref_r()[i] = turbPar->C2() * ek * dissip;
+		sigmaSourceeps.r()[i] = turbPar->C2() * ek * dissip;
 
 		/*Time-step calculation*/
-		modeps[i] =
-				std::abs(
-						sourceTimestepCoeff * modeps[i]
-								/ (sigmaSourceeps.ref()[i]
-										/ cellFields.density[0].ref()[i]
-										+ stabilizator));
+		modeps[i] = std::abs(
+				sourceTimestepCoeff * modeps[i]
+						/ (sigmaSourceeps()[i] / cellFields.density[0]()[i]
+								+ stabilizator));
 
-		sigmaSourcea.ref_r()[i] = (-1.) * cellFields.rhoaTurb.ref()[i] * ek
+		sigmaSourcea.r()[i] = (-1.) * cellFields.rhoaTurb()[i] * ek
 				* turbPar->Ca1();
 
-		sigmaSourceb.ref_r()[i] = -cellFields.rhobTurb.ref()[i] * ek
-				* turbPar->Cb1();
+		sigmaSourceb.r()[i] = -cellFields.rhobTurb()[i] * ek * turbPar->Cb1();
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());

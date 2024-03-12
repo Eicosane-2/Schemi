@@ -25,7 +25,7 @@ namespace schemi
 class abstractMatrixSolver
 {
 protected:
-	constexpr static scalar convergenceTolerance { 1E-12 };
+	constexpr static scalar convergenceTolerance { convergenceToleranceGlobal };
 	const std::size_t maxIterationNumber;
 
 	scalar relativeIterationDifference(const std::valarray<scalar> & oldField,
@@ -34,6 +34,11 @@ protected:
 	void normalize(std::valarray<scalar> & res) const noexcept;
 public:
 	virtual ~abstractMatrixSolver() noexcept =0;
+
+	static std::pair<std::unique_ptr<abstractMatrixSolver>,
+			std::unique_ptr<abstractMatrixSolver>> createMatrixSolver(
+			const std::string_view name, const std::string_view dim,
+			const std::size_t iter);
 
 	abstractMatrixSolver(const std::size_t maxIt_in,
 			const matrixSolver type_in) noexcept;
