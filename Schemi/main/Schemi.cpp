@@ -305,8 +305,7 @@ int main()
 					errors::initialisationError);
 
 		std::pair<std::size_t, std::string> readDataPoint;
-		if ((readFromOutput == "no") || (readFromOutput == "0")
-				|| (readFromOutput == "initialisation"))
+		if ((readFromOutput == "no") || (readFromOutput == "initialisation"))
 		{
 			readDataPoint = { 0, readFromOutput };
 
@@ -707,7 +706,8 @@ int main()
 
 		/*Write initial conditions.*/
 		{
-			if ((!readDataPoint.first) && (readDataPoint.second != "0"))
+			if ((!readDataPoint.first)
+					&& (readDataPoint.second != "fromTimePoint"))
 			{
 				structForOutput outputData(parallelism, mesh_,
 						numberOfComponents);
