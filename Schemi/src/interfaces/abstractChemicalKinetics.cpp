@@ -10,6 +10,7 @@
 #include "chemicalKineticsChlorumDissociation.hpp"
 #include "chemicalKineticsChlorumHydrogeniumDissociation.hpp"
 #include "chemicalKineticsH2Cl2Combustion.hpp"
+#include "chemicalKineticsH2O2Combustion.hpp"
 #include "chemicalKineticsNO2Disproportionation.hpp"
 #include "chemicalKineticsNoReaction.hpp"
 
@@ -44,6 +45,10 @@ std::unique_ptr<schemi::abstractChemicalKinetics> schemi::abstractChemicalKineti
 		break;
 	case chemicalReactions::NO2Disproportionation:
 		return std::make_unique<chemicalKineticsNO2Disproportionation>(phaseIn,
+				minimalTimestep);
+		break;
+	case chemicalReactions::H2O2Combustion:
+		return std::make_unique<chemicalKineticsH2O2Combustion>(phaseIn,
 				minimalTimestep);
 		break;
 	case chemicalReactions::noReaction:

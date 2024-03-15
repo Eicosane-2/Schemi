@@ -693,6 +693,8 @@ int main()
 				chemReactionFlag = chemicalReactions::H2Cl2Combustion;
 			else if (reactionName == "NO2Disproportionation")
 				chemReactionFlag = chemicalReactions::NO2Disproportionation;
+			else if (reactionName == "H2O2Combustion")
+				chemReactionFlag = chemicalReactions::H2O2Combustion;
 			else
 				throw exception("Unknown chemical reaction model.",
 						errors::initialisationError);
