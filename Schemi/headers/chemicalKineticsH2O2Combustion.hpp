@@ -14,39 +14,41 @@ namespace schemi
 {
 class chemicalKineticsH2O2Combustion: public abstractChemicalKinetics
 {
-	scalar A_R1 { 2.2E13 };
+	/*(/ 1E6) --- cm^3/mole/s converted to m^3/mole/s*/
+	/*(/ 1E12) --- cm^6/mole^2/s converted to m^6/mole^2/s*/
+	scalar A_R1 { 2.2E13 / 1E6 };
 	scalar n_R1 { 0.5 };
 	scalar E_R1 { 21500 * R_SI };
 
-	scalar A_R2 { 7.6E13 };
+	scalar A_R2 { 7.6E13 / 1E6 };
 	scalar n_R2 { 0.5 };
 	scalar E_R2 { 29500 * R_SI };
 
-	scalar A_R3 { 2.2E12 };
+	scalar A_R3 { 2.2E12 / 1E6 };
 	scalar n_R3 { 0.5 };
 	scalar E_R3 { 46600 * R_SI };
 
-	scalar A_R4 { 1.8E11 };
+	scalar A_R4 { 1.8E11 / 1E6 };
 	scalar n_R4 { 0.5 };
 	scalar E_R4 { 48100 * R_SI };
 
-	scalar A_R5 { 1.81E10 };
+	scalar A_R5 { 1.81E10 / 1E6 };
 	scalar n_R5 { 1 };
 	scalar E_R5 { 4480 * R_SI };
 
-	scalar A_R6 { 1.4E14 };
+	scalar A_R6 { 1.4E14 / 1E6 };
 	scalar n_R6 { 0 };
 	scalar E_R6 { 8250 * R_SI };
 
-	scalar A_R7 { 6.02E11 };
+	scalar A_R7 { 6.02E11 / 1E6 };
 	scalar n_R7 { 0 };
 	scalar E_R7 { 9440 * R_SI };
 
-	scalar A_R8 { 7.25E15 };
+	scalar A_R8 { 7.25E15 / 1E12 };
 	scalar n_R8 { 0 };
 	scalar E_R8 { 500 * R_SI };
 
-	scalar A_R9 { 1.14E9 };
+	scalar A_R9 { 1.14E9 / 1E6 };
 	scalar n_R9 { 1.3 };
 	scalar E_R9 { 1825 * R_SI };
 

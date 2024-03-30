@@ -16,11 +16,11 @@ namespace schemi
 class chemicalKineticsNO2Disproportionation: public abstractChemicalKinetics
 {
 	// (/ 1E6) --- cm^3/mole/s converted to m^3/mole/s
-	scalar A_forward { 5.36 * 1E-50 * NAvogardro * NAvogardro / 1E12 };
+	scalar A_forward { 5.36E-50 * NAvogardro * NAvogardro / 1E12 };
 	scalar n_forward { 3.95 };
 	scalar E_forward { -1825 * R_SI };
 
-	scalar A_backward { 3.31 * 1E-19 / 1E6 * NAvogardro };
+	scalar A_backward { 3.31E-19 / 1E6 * NAvogardro };
 	scalar n_backward { 2.478 };
 	scalar E_backward { 3199 * R_SI };
 

@@ -14,36 +14,37 @@ namespace schemi
 {
 class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 {
-	// (/ 1E6) --- cm^3/mole/s converted to m^3/mole/s
-	scalar A_Cl2_diss { 5.74 * 1E15 / 1E6 };
+	/*(/ 1E6) --- cm^3/mole/s converted to m^3/mole/s*/
+	/*(/ 1E12) --- cm^6/mole^2/s converted to m^6/mole^2/s*/
+	scalar A_Cl2_diss { 5.74E15 / 1E6 };
 	scalar n_Cl2_diss { 0 };
 	scalar E_Cl2_diss { 55.596 * 1000 * 4.184 };
 
-	scalar A_Cl_recomb { 2.3 * 1E19 / 1E12 };
+	scalar A_Cl_recomb { 2.3E19 / 1E12 };
 	scalar n_Cl_recomb { -1.5 };
 	scalar E_Cl_recomb { 0 };
 
-	scalar A_H2_diss { 1.8 * 1E17 / 1E6 };
+	scalar A_H2_diss { 1.8E17 / 1E6 };
 	scalar n_H2_diss { -0.5 };
 	scalar E_H2_diss { 454 * 1000 };
 
-	scalar A_H_recomb { 6.53 * 1E17 / 1E12 };
+	scalar A_H_recomb { 6.53E17 / 1E12 };
 	scalar n_H_recomb { -1 };
 	scalar E_H_recomb { 0 };
 
-	scalar A_Cl_H2_prop { 2.88 * 1E8 / 1E6 };
+	scalar A_Cl_H2_prop { 2.88E8 / 1E6 };
 	scalar n_Cl_H2_prop { 1.58 };
 	scalar E_Cl_H2_prop { 3.199 * 1000 * 4.184 };
 
-	scalar A_H_Cl2_prop { 9.64 * 1E13 / 1E6 };
+	scalar A_H_Cl2_prop { 9.64E13 / 1E6 };
 	scalar n_H_Cl2_prop { 0 };
 	scalar E_H_Cl2_prop { 1.68 * 1000 * 4.184 };
 
-	scalar A_H_Cl_recomb { 2 * 1E23 / 1E12 };
+	scalar A_H_Cl_recomb { 2E23 / 1E12 };
 	scalar n_H_Cl_recomb { -2.45 };
 	scalar E_H_Cl_recomb { 0 };
 
-	scalar A_HCl_diss { 4.4 * 1E13 / 1E6 };
+	scalar A_HCl_diss { 4.4E13 / 1E6 };
 	scalar n_HCl_diss { 0 };
 	scalar E_HCl_diss { 81.753 * 1000 * 4.184 };
 
