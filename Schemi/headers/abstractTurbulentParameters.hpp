@@ -181,8 +181,8 @@ public:
 
 	scalar thetaB(const vector & a, const scalar k, const scalar epsilon,
 			const vector & gradMav_n, const scalar a_s2,
-			const std::pair<scalar, vector> && rhoGradRho,
-			const std::pair<scalar, vector> && pGradP,
+			std::pair<scalar, vector> && rhoGradRho,
+			std::pair<scalar, vector> && pGradP,
 			const scalar nu_t) const noexcept;
 
 	template<typename typeOfField>

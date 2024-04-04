@@ -62,7 +62,7 @@ std::array<schemi::scalar, 3> schemi::cubicEquationSolver(const scalar Ain,
 										/ (std::sqrt(pow<cScalar, 3>(Q))
 												+ stabilizator)) };
 
-				x1 = -2 * sign(R) * std::sqrt(Q) * std::cosh(phi)
+				x1 = -2. * sign(R) * std::sqrt(Q) * std::cosh(phi)
 						- a * onethirds;
 			}
 			else if ((Q < zeroLevel) && (Q >= -zeroLevel))
@@ -75,7 +75,7 @@ std::array<schemi::scalar, 3> schemi::cubicEquationSolver(const scalar Ain,
 										/ (std::sqrt(
 												std::abs(pow<cScalar, 3>(Q)))
 												+ stabilizator)) };
-				x1 = -2 * sign(R) * std::sqrt(std::abs(Q)) * std::sinh(phi)
+				x1 = -2. * sign(R) * std::sqrt(std::abs(Q)) * std::sinh(phi)
 						- a * onethirds;
 			}
 			else

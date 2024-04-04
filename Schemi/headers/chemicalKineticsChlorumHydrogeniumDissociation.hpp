@@ -26,7 +26,7 @@ class chemicalKineticsChlorumHydrogeniumDissociation: public abstractChemicalKin
 
 	scalar A_H2_forw { 1.8E17 / 1E6 };
 	scalar n_H2_forw { -0.5 };
-	scalar E_H2_forw { 454 * 1000 };
+	scalar E_H2_forw { 454.0 * 1000 };
 
 	scalar A_H2_backw { 6.53E17 / 1E12 };
 	scalar n_H2_backw { -1 };
