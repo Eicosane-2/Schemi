@@ -767,8 +767,6 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	{
 		auto & nonConstMesh = const_cast<mesh&>(mesh_);
 
-		//std::tie(sigmaSourcek, sigmaSourceeps, sigmaSourcea, sigmaSourceb);
-
 		const auto [SourcekSuSp, SourceepsSuSp, SourceaSuSp, SourcebSuSp] =
 				gasPhase.turbulenceSources->calculate(
 						nonConstMesh.timestepSourceRef(), timestepCoeffs.first,
