@@ -20,9 +20,16 @@ public:
 	arithmeticAGen(const mesh & meshIn, const bool turb_in,
 			const turbulenceModel tm_in) noexcept;
 
-	std::tuple<volumeField<scalar>, volumeField<scalar>, volumeField<vector>,
-			volumeField<scalar>> calculate(scalar & sourceTimestep,
-			const scalar sourceTimestepCoeff,
+	std::tuple<
+			std::pair<schemi::volumeField<schemi::scalar>,
+					schemi::volumeField<schemi::scalar>>,
+			std::pair<schemi::volumeField<schemi::scalar>,
+					schemi::volumeField<schemi::scalar>>,
+			std::pair<schemi::volumeField<schemi::vector>,
+					schemi::volumeField<schemi::vector>>,
+			std::pair<schemi::volumeField<schemi::scalar>,
+					schemi::volumeField<schemi::scalar>>> calculate(
+			scalar & sourceTimestep, const scalar sourceTimestepCoeff,
 			const bunchOfFields<cubicCell> & cellFields,
 			const diffusiveFields & diffFieldsOld,
 			const volumeField<tensor> & gradV,

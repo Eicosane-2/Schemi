@@ -2003,13 +2003,81 @@ void schemi::SLEMatrix::generateDTimeExplicitLaplacian(
 			SLE[j].freeTerm[i] -= divFlow()[i]()[j];
 }
 
+void schemi::SLEMatrix::freeSourceTerm(
+		const volumeField<scalar> & source) noexcept
+{
+	SLE[0].freeTerm += source();
+}
+
+void schemi::SLEMatrix::freeSourceTerm(
+		const volumeField<vector> & source) noexcept
+{
+	for (std::size_t j = 0; j < vector::vsize; j++)
+		for (std::size_t i = 0; i < source.size(); ++i)
+			SLE[j].freeTerm[i] += source()[i]()[j];
+}
+
+void schemi::SLEMatrix::freeSourceTerm(
+		const volumeField<tensor> & source) noexcept
+{
+	for (std::size_t j = 0; j < tensor::vsize; j++)
+		for (std::size_t i = 0; i < source.size(); ++i)
+			SLE[j].freeTerm[i] += source()[i]()[j];
+}
+
 void schemi::SLEMatrix::distributeSourceTerm(const volumeField<scalar> & source,
-		const volumeField<scalar> & basicField, const scalar timestep) noexcept
+		const volumeField<scalar> & basicField) noexcept
 {
 	for (std::size_t i = 0; i < source.size(); ++i)
 		if (source()[i] >= 0.)
 			SLE[0].freeTerm[i] += source()[i];
 		else
-			SLE[0].centralDiagonale[i] -= source()[i] * timestep
+			SLE[0].centralDiagonale[i] -= source()[i]
 					/ (basicField()[i] + stabilizator);
+}
+
+void schemi::SLEMatrix::distributeSourceTerm(const volumeField<vector> & source,
+		const volumeField<vector> & basicField) noexcept
+{
+	for (std::size_t j = 0; j < vector::vsize; j++)
+		for (std::size_t i = 0; i < source.size(); ++i)
+			if (source()[i]()[j] >= 0.)
+				SLE[j].freeTerm[i] += source()[i]()[j];
+			else
+				SLE[j].centralDiagonale[i] -= source()[i]()[j]
+						/ (basicField()[i]()[j] + stabilizator);
+}
+
+void schemi::SLEMatrix::distributeSourceTerm(const volumeField<tensor> & source,
+		const volumeField<tensor> & basicField) noexcept
+{
+	for (std::size_t j = 0; j < tensor::vsize; j++)
+		for (std::size_t i = 0; i < source.size(); ++i)
+			if (source()[i]()[j] >= 0.)
+				SLE[j].freeTerm[i] += source()[i]()[j];
+			else
+				SLE[j].centralDiagonale[i] -= source()[i]()[j]
+						/ (basicField()[i]()[j] + stabilizator);
+}
+
+void schemi::SLEMatrix::diagonaleSourceTerm(
+		const volumeField<scalar> & source) noexcept
+{
+	SLE[0].centralDiagonale -= source();
+}
+
+void schemi::SLEMatrix::diagonaleSourceTerm(
+		const volumeField<vector> & source) noexcept
+{
+	for (std::size_t j = 0; j < vector::vsize; j++)
+		for (std::size_t i = 0; i < source.size(); ++i)
+			SLE[j].centralDiagonale[i] -= source()[i]()[j];
+}
+
+void schemi::SLEMatrix::diagonaleSourceTerm(
+		const volumeField<tensor> & source) noexcept
+{
+	for (std::size_t j = 0; j < tensor::vsize; j++)
+		for (std::size_t i = 0; i < source.size(); ++i)
+			SLE[j].centralDiagonale[i] -= source()[i]()[j];
 }

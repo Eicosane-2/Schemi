@@ -334,8 +334,11 @@ schemi::scalar schemi::abstractTurbulentParameters::thetaB(const vector & a,
 		const scalar a_s2, std::pair<scalar, vector> && rhoGradRho,
 		std::pair<scalar, vector> && pGradP, const scalar nu_t) const noexcept
 {
-	return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2, std::move(rhoGradRho),
-			std::move(pGradP), nu_t);
+	if ((a & a) / k >= 1.0)
+		return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2,
+				std::move(rhoGradRho), std::move(pGradP), nu_t);
+	else
+		return 1.0;
 }
 
 void schemi::abstractTurbulentParameters::calculateNearWallDistance(

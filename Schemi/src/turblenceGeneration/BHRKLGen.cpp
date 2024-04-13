@@ -9,8 +9,8 @@
 
 #include <algorithm>
 
-#include "turbulentParametersKL.hpp"
 #include "doubleDotProduct.hpp"
+#include "turbulentParametersKL.hpp"
 
 schemi::BHRKLGen::BHRKLGen(const mesh & meshIn, const bool turb_in,
 		const turbulenceModel tm_in) noexcept :
@@ -19,9 +19,15 @@ schemi::BHRKLGen::BHRKLGen(const mesh & meshIn, const bool turb_in,
 	turbPar = std::make_unique<turbulentParametersKL>(meshIn);
 }
 
-std::tuple<schemi::volumeField<schemi::scalar>,
-		schemi::volumeField<schemi::scalar>,
-		schemi::volumeField<schemi::vector>, schemi::volumeField<schemi::scalar>> schemi::BHRKLGen::calculate(
+std::tuple<
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>,
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>,
+		std::pair<schemi::volumeField<schemi::vector>,
+				schemi::volumeField<schemi::vector>>,
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>> schemi::BHRKLGen::calculate(
 		scalar & sourceTimestep, const scalar sourceTimestepCoeff,
 		const bunchOfFields<cubicCell> & cellFields,
 		const diffusiveFields & diffFieldsOld,
@@ -36,10 +42,14 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 {
 	auto & mesh_ { cellFields.pressure.meshRef() };
 
-	volumeField<scalar> sigmaSourcek(mesh_, 0);
-	volumeField<scalar> sigmaSourceeps(mesh_, 0);
-	volumeField<vector> sigmaSourcea(mesh_, vector(0));
-	volumeField<scalar> sigmaSourceb(mesh_, 0);
+	std::pair<volumeField<scalar>, volumeField<scalar>> Sourcek { volumeField<
+			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	std::pair<volumeField<scalar>, volumeField<scalar>> Sourceeps { volumeField<
+			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	std::pair<volumeField<vector>, volumeField<vector>> Sourcea { volumeField<
+			vector>(mesh_, vector(0)), volumeField<vector>(mesh_, vector(0)) };
+	std::pair<volumeField<scalar>, volumeField<scalar>> Sourceb { volumeField<
+			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
 
 	std::valarray<scalar> modeps(diffFieldsOld.eps());
 	const scalar maxeps { modeps.max() };
@@ -60,7 +70,7 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
 		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
-		const scalar sqrke { std::sqrt(diffFieldsOld.k()[i])
+		const scalar sqrtke { std::sqrt(diffFieldsOld.k()[i])
 				/ diffFieldsOld.eps()[i] };
 
 		const auto thetaS_i = turbPar->thetaS_R(gradV()[i].trace(),
@@ -82,20 +92,24 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 				& (gradP()[i] - divDevPhysVisc()[i]) };
 
 		const scalar dissip(
-				-cellFields.density[0]()[i] * diffFieldsOld.k()[i] * sqrke);
+				-cellFields.density[0]()[i] * diffFieldsOld.k()[i] * sqrtke);
 
-		sigmaSourcek.r()[i] = rhoSpherRGen + rhoDevRGen + gravGen + dissip;
+		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen + gravGen;
+		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
 
-		sigmaSourceeps.r()[i] = turbPar->C1() * ek * rhoDevRGen
+		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen
 				+ turbPar->C3() * ek * rhoSpherRGen
-				+ turbPar->C0() / thetaB_i * ek * gravGen
-				+ turbPar->C2() * ek * dissip;
+				+ turbPar->C0() / thetaB_i * ek * gravGen;
+		Sourceeps.second.r()[i] = turbPar->C2() * dissip
+				/ cellFields.kTurb()[i];
 
 		/*Time-step calculation*/
 		modeps[i] = std::abs(
 				sourceTimestepCoeff * modeps[i]
-						/ (sigmaSourceeps()[i] / cellFields.density[0]()[i]
-								+ stabilizator));
+						/ ((Sourceeps.first()[i]
+								+ Sourceeps.second()[i]
+										* cellFields.epsTurb()[i])
+								/ cellFields.density[0]()[i] + stabilizator));
 
 		const vector bGradP(
 				(gradP()[i] - divDevPhysVisc()[i]) * diffFieldsOld.b()[i]);
@@ -110,9 +124,9 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 		//const vector redistribution_a = cellFields.density[0]()[i]
 		//		* divaa()[i];
 
-		sigmaSourcea.r()[i] = bGradP + tauGradRho + rhoAgradV
-		//+ redistribution_a
-				- cellFields.rhoaTurb()[i] * sqrke * turbPar->Ca1();
+		Sourcea.first.r()[i] = bGradP + tauGradRho + rhoAgradV;	//+ redistribution_a
+		Sourcea.second.r()[i] = -cellFields.density[0]()[i] * sqrtke
+				* turbPar->Ca1();
 
 		const scalar bagradRho { -2. * (diffFieldsOld.b()[i] + 1.)
 				* (diffFieldsOld.a()[i] & gradRho()[i]) };
@@ -120,12 +134,14 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 		//const scalar redistribution_b = 2. * cellFields.rhoaTurb()[i]
 		//		& gradb()[i];
 
-		sigmaSourceb.r()[i] = bagradRho		//+ redistribution_b
-		- cellFields.rhobTurb()[i] * sqrke * turbPar->Cb1();
+		const auto & bi = cellFields.bTurb()[i];
+
+		Sourceb.first.r()[i] = bagradRho;	//+ redistribution_b
+		Sourceb.second.r()[i] = -cellFields.density[0]()[i] * std::max(1.0, bi)
+				* sqrtke * turbPar->Cb1();
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());
 
-	return std::make_tuple(sigmaSourcek, sigmaSourceeps, sigmaSourcea,
-			sigmaSourceb);
+	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb);
 }
