@@ -1,7 +1,5 @@
 #Tail_boundary_condition
 slip
-#Tail_boundary_condition_value
-0
 #Point_boundary_condition
 slip
 #Bottom_boundary_condition
