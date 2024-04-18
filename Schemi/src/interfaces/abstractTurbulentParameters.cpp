@@ -335,8 +335,11 @@ schemi::scalar schemi::abstractTurbulentParameters::thetaB(const vector & a,
 		std::pair<scalar, vector> && pGradP, const scalar nu_t) const noexcept
 {
 	if ((a & a) / k >= 1.0)
-		return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2,
-				std::move(rhoGradRho), std::move(pGradP), nu_t);
+		return 1
+				/ pow<scalar, 2>(
+						thetaB_pointer(a, k, epsilon, gradMav_n, a_s2,
+								std::move(rhoGradRho), std::move(pGradP), nu_t))
+				- 1; //TODO Needs testing.
 	else
 		return 1.0;
 }

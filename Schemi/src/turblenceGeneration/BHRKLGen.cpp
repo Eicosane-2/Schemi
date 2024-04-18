@@ -88,8 +88,8 @@ std::tuple<
 
 		const scalar rhoDevRGen = thetaS_i * devR()[i] && gradV()[i];
 
-		const scalar gravGen { diffFieldsOld.a()[i]
-				& (gradP()[i] - divDevPhysVisc()[i]) };
+		const scalar gravGen { (diffFieldsOld.a()[i]
+				& (gradP()[i] - divDevPhysVisc()[i])) };
 
 		const scalar dissip(
 				-cellFields.density[0]()[i] * diffFieldsOld.k()[i] * sqrtke);
@@ -99,7 +99,7 @@ std::tuple<
 
 		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen
 				+ turbPar->C3() * ek * rhoSpherRGen
-				+ turbPar->C0() / thetaB_i * ek * gravGen;
+				+ turbPar->C0() * ek * gravGen;
 		Sourceeps.second.r()[i] = turbPar->C2() * dissip
 				/ cellFields.kTurb()[i];
 
@@ -126,7 +126,7 @@ std::tuple<
 
 		Sourcea.first.r()[i] = bGradP + tauGradRho + rhoAgradV;	//+ redistribution_a
 		Sourcea.second.r()[i] = -cellFields.density[0]()[i] * sqrtke
-				* turbPar->Ca1();
+				* turbPar->Ca1() * thetaB_i;
 
 		const scalar bagradRho { -2. * (diffFieldsOld.b()[i] + 1.)
 				* (diffFieldsOld.a()[i] & gradRho()[i]) };
