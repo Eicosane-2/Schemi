@@ -42,6 +42,7 @@ class abstractTurbulentParameters
 
 	scalar Cmu_;
 	scalar C0_;
+	scalar C0_max;
 	scalar C1_;
 	scalar C2_;
 	scalar C3_;
@@ -53,12 +54,14 @@ class abstractTurbulentParameters
 	scalar sigmaa_;
 	scalar sigmab_;
 	scalar Ca1_;
+	scalar Ca1_max;
 	scalar Cb1_;
 	scalar mink_;
 	scalar mineps_;
 	scalar CMS_R_;
 	scalar CMS_D_;
 	scalar CMS_B_;
+	scalar CMS_A_;
 
 	volumeField<scalar> y;
 
@@ -68,6 +71,7 @@ class abstractTurbulentParameters
 public:
 	scalar Cmu() const noexcept;
 	scalar C0() const noexcept;
+	scalar C0max() const noexcept;
 	scalar C1() const noexcept;
 	scalar C2() const noexcept;
 	scalar C3() const noexcept;
@@ -79,12 +83,14 @@ public:
 	scalar sigmaa() const noexcept;
 	scalar sigmab() const noexcept;
 	scalar Ca1() const noexcept;
+	scalar Ca1max() const noexcept;
 	scalar Cb1() const noexcept;
 	scalar mink() const noexcept;
 	scalar mineps() const noexcept;
 	scalar CMS_R() const noexcept;
 	scalar CMS_D() const noexcept;
 	scalar CMS_B() const noexcept;
+	scalar CMS_A() const noexcept;
 
 	virtual ~abstractTurbulentParameters() noexcept =0;
 
@@ -95,6 +101,8 @@ public:
 	const scalar CmuI,
 
 	const scalar C0In,
+
+	const scalar C0maxIn,
 
 	const scalar C1In,
 
@@ -118,6 +126,8 @@ public:
 
 	const scalar Ca1In,
 
+	const scalar Ca1maxIn,
+
 	const scalar Cb1In,
 
 	const scalar minkIn,
@@ -128,7 +138,9 @@ public:
 
 	const scalar CMS_D_In,
 
-	const scalar CMS_B_In) noexcept;
+	const scalar CMS_B_In,
+
+	const scalar CMS_A_In) noexcept;
 
 	virtual std::valarray<scalar> calculateNut(
 			const std::valarray<scalar>& /*k*/,
@@ -185,6 +197,9 @@ public:
 			std::pair<scalar, vector> && pGradP,
 			const scalar nu_t) const noexcept;
 
+	scalar thetaA(const vector & a, const scalar k,
+			const scalar b) const noexcept;
+
 	template<typename typeOfField>
 	field<scalar, typeOfField> thetaB(const field<vector, typeOfField> & a,
 			const field<scalar, typeOfField> & k,
@@ -200,12 +215,19 @@ public:
 		field<scalar, typeOfField> returnField { a.meshP(), 0. };
 
 		for (std::size_t i = 0; i < returnField.size(); ++i)
-			returnField.r()[i] = thetaB(a()[i], k()[i], epsilon()[i],
-					gradMav_n()[i], a_s2[i],
-					std::pair<scalar, vector>(rhoGradRho.first()[i],
-							rhoGradRho.second()[i]),
-					std::pair<scalar, vector>(pGradP.first()[i],
-							pGradP.second()[i]), nu_t()[i]);
+			returnField.r()[i] = thetaB(a()[i], k()[i]);
+
+		return returnField;
+	}
+
+	template<typename typeOfField>
+	field<scalar, typeOfField> thetaA(const field<vector, typeOfField> & a,
+			const field<scalar, typeOfField> & k) const noexcept
+	{
+		field<scalar, typeOfField> returnField { a.meshP(), 0. };
+
+		for (std::size_t i = 0; i < returnField.size(); ++i)
+			returnField.r()[i] = thetaA(a()[i], k()[i]);
 
 		return returnField;
 	}

@@ -1,22 +1,22 @@
 /*
- * BHRKLGen.cpp
+ * BHR2Gen.cpp
  *
- *  Created on: 2023/06/04
+ *  Created on: 2024/05/01
  *      Author: Maxim Boldyrev
  */
 
-#include "BHRKLGen.hpp"
+#include "BHR2Gen.hpp"
 
 #include <algorithm>
 
 #include "doubleDotProduct.hpp"
-#include "turbulentParametersKL.hpp"
+#include "turbulentParametersKEPS.hpp"
 
-schemi::BHRKLGen::BHRKLGen(const mesh & meshIn, const bool turb_in,
+schemi::BHR2Gen::BHR2Gen(const mesh & meshIn, const bool turb_in,
 		const turbulenceModel tm_in) noexcept :
 		abstractTurbulenceGen(turb_in, tm_in)
 {
-	turbPar = std::make_unique<turbulentParametersKL>(meshIn);
+	turbPar = std::make_unique<turbulentParametersKEPS>(meshIn);
 }
 
 std::tuple<
@@ -28,7 +28,7 @@ std::tuple<
 				schemi::volumeField<schemi::vector>>,
 		std::pair<schemi::volumeField<schemi::scalar>,
 				schemi::volumeField<schemi::scalar>>,
-		schemi::volumeField<schemi::scalar>> schemi::BHRKLGen::calculate(
+		schemi::volumeField<schemi::scalar>> schemi::BHR2Gen::calculate(
 		scalar & sourceTimestep, const scalar sourceTimestepCoeff,
 		const bunchOfFields<cubicCell> & cellFields,
 		const diffusiveFields & diffFieldsOld,
@@ -36,7 +36,7 @@ std::tuple<
 		const volumeField<vector> & divDevPhysVisc,
 		const volumeField<vector> & gradP, const volumeField<vector> & gradRho,
 		const volumeField<tensor> & grada, const volumeField<scalar>&,
-		const volumeField<vector>&, const volumeField<tensor> & spherR,
+		const volumeField<vector> & gradb, const volumeField<tensor> & spherR,
 		const volumeField<tensor> & devR, const volumeField<vector> & gradMav_n,
 		const abstractMixtureThermodynamics & mixture,
 		const volumeField<scalar> & nu_t) const noexcept
@@ -68,15 +68,13 @@ std::tuple<
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
 		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
-		const scalar sqrtke { std::sqrt(diffFieldsOld.k()[i])
-				/ diffFieldsOld.eps()[i] };
 
 		const auto thetaS_i = turbPar->thetaS_R(gradV()[i].trace(),
 				diffFieldsOld.k()[i], diffFieldsOld.eps()[i]);
 
-		[[maybe_unused]] const auto thetaB_i = turbPar->thetaB(
-				diffFieldsOld.a()[i], diffFieldsOld.k()[i],
-				diffFieldsOld.eps()[i], gradMav_n()[i], a_s2[i],
+		const auto thetaB_i = turbPar->thetaB(diffFieldsOld.a()[i],
+				diffFieldsOld.k()[i], diffFieldsOld.eps()[i], gradMav_n()[i],
+				a_s2[i],
 				std::pair<scalar, vector>(cellFields.density[0]()[i],
 						gradRho()[i]),
 				std::pair<scalar, vector>(cellFields.pressure()[i], gradP()[i]),
@@ -93,14 +91,16 @@ std::tuple<
 				& (gradP()[i] - divDevPhysVisc()[i])) };
 
 		const scalar dissip(
-				-cellFields.density[0]()[i] * diffFieldsOld.k()[i] * sqrtke);
+				-cellFields.rhoepsTurb()[i]
+						* (1 + 2 * diffFieldsOld.k()[i] / a_s2[i]));
 
 		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen + gravGen;
 		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
 
 		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen
 				+ turbPar->C3() * ek * rhoSpherRGen
-				+ turbPar->C0() * ek * gravGen;
+				+ std::min(turbPar->C0() / (thetaB_i + stabilizator),
+						turbPar->C0max()) * ek * gravGen;
 		Sourceeps.second.r()[i] = turbPar->C2() * dissip
 				/ cellFields.kTurb()[i];
 
@@ -122,15 +122,18 @@ std::tuple<
 		const vector rhoAgradV(
 				cellFields.rhoaTurb()[i] & (grada()[i] - gradV()[i]));
 
-		Sourcea.first.r()[i] = bGradP + tauGradRho + rhoAgradV;	//+ redistribution_a
-		Sourcea.second.r()[i] = -cellFields.density[0]()[i] * sqrtke
+		Sourcea.first.r()[i] = bGradP + tauGradRho + rhoAgradV;
+		Sourcea.second.r()[i] = -cellFields.density[0]()[i] * ek
 				* turbPar->Ca1() * thetaA_i;
 
-		const scalar bagradRho { -2. * (diffFieldsOld.b()[i] + 1.)
+		const scalar bagradRho { -2 * (diffFieldsOld.b()[i] + 1.)
 				* (diffFieldsOld.a()[i] & gradRho()[i]) };
 
-		Sourceb.first.r()[i] = bagradRho;	//+ redistribution_b
-		Sourceb.second.r()[i] = -cellFields.density[0]()[i] * sqrtke
+		const scalar redistribution_b = 2
+				* (cellFields.rhoaTurb()[i] & gradb()[i]);
+
+		Sourceb.first.r()[i] = bagradRho + redistribution_b;
+		Sourceb.second.r()[i] = -cellFields.density[0]()[i] * ek
 				* turbPar->Cb1() * thetaA_i;
 
 		gravGenField.r()[i] = gravGen;

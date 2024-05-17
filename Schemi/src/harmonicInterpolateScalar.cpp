@@ -23,13 +23,10 @@ schemi::surfaceField<schemi::scalar> schemi::harmonicInterpolate(
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 			const std::size_t neiIndex { mesh_.surfaceNeighbour()[i] };
-			const scalar surfOwnR { (mesh_.surfaces()[i].rC()
-					- mesh_.cells()[ownIndex].rC()).mag() };
-			const scalar surfNeiR { (mesh_.surfaces()[i].rC()
-					- mesh_.cells()[neiIndex].rC()).mag() };
 
-			const scalar reversedValue = (surfNeiR / inField()[ownIndex]
-					+ surfOwnR / inField()[neiIndex]) / (surfOwnR + surfNeiR);
+			const scalar reversedValue = mesh_.surfOwnW()[i]
+					/ inField()[ownIndex]
+					+ mesh_.surfNeiW()[i] / inField()[neiIndex];
 
 			retSurfField.r()[i] = 1. / reversedValue;
 		}

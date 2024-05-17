@@ -26,7 +26,8 @@ std::tuple<
 		std::pair<schemi::volumeField<schemi::vector>,
 				schemi::volumeField<schemi::vector>>,
 		std::pair<schemi::volumeField<schemi::scalar>,
-				schemi::volumeField<schemi::scalar>>> schemi::decayGen::calculate(
+				schemi::volumeField<schemi::scalar>>,
+		schemi::volumeField<schemi::scalar>> schemi::decayGen::calculate(
 		scalar & sourceTimestep, const scalar sourceTimestepCoeff,
 		const bunchOfFields<cubicCell> & cellFields,
 		const diffusiveFields & diffFieldsOld, const volumeField<tensor>&,
@@ -47,6 +48,7 @@ std::tuple<
 			vector>(mesh_, vector(0)), volumeField<vector>(mesh_, vector(0)) };
 	std::pair<volumeField<scalar>, volumeField<scalar>> Sourceb { volumeField<
 			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const volumeField<scalar> gravGenField(mesh_, 0);
 
 	std::valarray<scalar> modeps(diffFieldsOld.eps());
 	const scalar maxeps { modeps.max() };
@@ -88,5 +90,5 @@ std::tuple<
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());
 
-	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb);
+	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb, gravGenField);
 }

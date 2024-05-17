@@ -1,23 +1,23 @@
 /*
- * BHRKLGen.hpp
+ * BHR2Gen.hpp
  *
- *  Created on: 2020/03/12
+ *  Created on: 2024/05/01
  *      Author: Maxim Boldyrev
  *
- *      Class for k-L-a-b model turbulence generation.
+ *      Class for k-epsilon-a-b model turbulence generation. Second version.
  */
 
-#ifndef BHRKLGEN_HPP_
-#define BHRKLGEN_HPP_
+#ifndef BHR2GEN_HPP_
+#define BHR2GEN_HPP_
 
 #include "abstractTurbulenceGen.hpp"
 
 namespace schemi
 {
-class BHRKLGen: public abstractTurbulenceGen
+class BHR2Gen: public abstractTurbulenceGen
 {
 public:
-	BHRKLGen(const mesh & meshIn, const bool turb_in,
+	BHR2Gen(const mesh & meshIn, const bool turb_in,
 			const turbulenceModel tm_in) noexcept;
 
 	std::tuple<std::pair<volumeField<scalar>, volumeField<scalar>>,
@@ -41,4 +41,4 @@ public:
 };
 }  // namespace schemi
 
-#endif /* BHRKLGEN_HPP_ */
+#endif /* BHR2GEN_HPP_ */

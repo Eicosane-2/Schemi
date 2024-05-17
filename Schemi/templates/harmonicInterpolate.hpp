@@ -26,19 +26,16 @@ volumeField<typeOfValue> harmonicInterpolate(
 	for (std::size_t i = 0; i < retVolField.size(); ++i)
 	{
 		const vector & cellR { mesh_.cells()[i].rC() };
-		scalar sumOfVecMag { 0 };
 
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
 		{
 			const std::size_t surfIndex { mesh_.surfacesOfCells()[i][j] };
-			const vector & surfaceR { mesh_.surfaces()[surfIndex].rC() };
-			const scalar deltaRMag1 { 1. / (surfaceR - cellR).mag() };
 
-			retVolField.r()[i] += inField()[surfIndex] * deltaRMag1;
-			sumOfVecMag += deltaRMag1;
+			retVolField.r()[i] += inField()[surfIndex]
+					* mesh_.cellSurfaceDistancesR()[i].second[j];
 		}
 
-		retVolField.r()[i] /= sumOfVecMag;
+		retVolField.r()[i] /= mesh_.cellSurfaceDistancesR()[i].first;
 	}
 
 	return retVolField;

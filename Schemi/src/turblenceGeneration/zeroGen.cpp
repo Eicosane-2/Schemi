@@ -24,7 +24,8 @@ std::tuple<
 		std::pair<schemi::volumeField<schemi::vector>,
 				schemi::volumeField<schemi::vector>>,
 		std::pair<schemi::volumeField<schemi::scalar>,
-				schemi::volumeField<schemi::scalar>>> schemi::zeroGen::calculate(
+				schemi::volumeField<schemi::scalar>>,
+		schemi::volumeField<schemi::scalar>> schemi::zeroGen::calculate(
 		scalar & sourceTimestep, const scalar,
 		const bunchOfFields<cubicCell> & cellFields, const diffusiveFields&,
 		const volumeField<tensor>&, const volumeField<vector>&,
@@ -37,16 +38,18 @@ std::tuple<
 {
 	auto & mesh_ { cellFields.pressure.meshRef() };
 
-	std::pair<volumeField<scalar>, volumeField<scalar>> Sourcek { volumeField<
-			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
-	std::pair<volumeField<scalar>, volumeField<scalar>> Sourceeps { volumeField<
-			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
-	std::pair<volumeField<vector>, volumeField<vector>> Sourcea { volumeField<
-			vector>(mesh_, vector(0)), volumeField<vector>(mesh_, vector(0)) };
-	std::pair<volumeField<scalar>, volumeField<scalar>> Sourceb { volumeField<
-			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const std::pair<volumeField<scalar>, volumeField<scalar>> Sourcek {
+			volumeField<scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const std::pair<volumeField<scalar>, volumeField<scalar>> Sourceeps {
+			volumeField<scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const std::pair<volumeField<vector>, volumeField<vector>> Sourcea {
+			volumeField<vector>(mesh_, vector(0)), volumeField<vector>(mesh_,
+					vector(0)) };
+	const std::pair<volumeField<scalar>, volumeField<scalar>> Sourceb {
+			volumeField<scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const volumeField<scalar> gravGenField(mesh_, 0);
 
 	sourceTimestep = std::min(mesh_.timestepSource(), veryBig);
 
-	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb);
+	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb, gravGenField);
 }

@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "BHRGen.hpp"
+#include "BHR2Gen.hpp"
 #include "decayGen.hpp"
 #include "shearGen.hpp"
 #include "arithmeticAGen.hpp"
@@ -19,7 +20,20 @@
 
 schemi::abstractTurbulenceGen::abstractTurbulenceGen(const bool turb_in,
 		const turbulenceModel tm_in) noexcept :
-		turbulence(turb_in), model(tm_in)
+		turbulence(turb_in), model(tm_in), aField(
+				[](const turbulenceModel modelType)
+				{
+					return ((modelType == turbulenceModel::BHRSource)
+							|| (modelType == turbulenceModel::BHRKLSource)
+							|| (modelType == turbulenceModel::kEpsASource)
+							|| (modelType == turbulenceModel::BHR2Source));
+				}(model)), bField(
+				[](const turbulenceModel modelType)
+				{
+					return ((modelType == turbulenceModel::BHRSource)
+							|| (modelType == turbulenceModel::BHRKLSource)
+							|| (modelType == turbulenceModel::BHR2Source));
+				}(model))
 {
 }
 
@@ -59,6 +73,8 @@ std::unique_ptr<schemi::abstractTurbulenceGen> schemi::abstractTurbulenceGen::cr
 		turbulenceModelFlag = turbulenceModel::arithmeticA3Source;
 	else if (sourceTypeString == "BHRKL")
 		turbulenceModelFlag = turbulenceModel::BHRKLSource;
+	else if (sourceTypeString == "BHR2")
+		turbulenceModelFlag = turbulenceModel::BHR2Source;
 	else
 		throw exception("Unknown source generation flag.",
 				errors::initialisationError);
@@ -90,6 +106,10 @@ std::unique_ptr<schemi::abstractTurbulenceGen> schemi::abstractTurbulenceGen::cr
 		break;
 	case turbulenceModel::BHRKLSource:
 		turbulenceSources = std::make_unique<BHRKLGen>(meshIn, turbulenceFlag,
+				turbulenceModelFlag);
+		break;
+	case turbulenceModel::BHR2Source:
+		turbulenceSources = std::make_unique<BHR2Gen>(meshIn, turbulenceFlag,
 				turbulenceModelFlag);
 		break;
 	default:

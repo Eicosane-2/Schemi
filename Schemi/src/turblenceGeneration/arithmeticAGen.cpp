@@ -29,14 +29,15 @@ std::tuple<
 		std::pair<schemi::volumeField<schemi::vector>,
 				schemi::volumeField<schemi::vector>>,
 		std::pair<schemi::volumeField<schemi::scalar>,
-				schemi::volumeField<schemi::scalar>>> schemi::arithmeticAGen::calculate(
+				schemi::volumeField<schemi::scalar>>,
+		schemi::volumeField<schemi::scalar>> schemi::arithmeticAGen::calculate(
 		scalar & sourceTimestep, const scalar sourceTimestepCoeff,
 		const bunchOfFields<cubicCell> & cellFields,
 		const diffusiveFields & diffFieldsOld,
 		const volumeField<tensor> & gradV,
 		const volumeField<vector> & divDevPhysVisc,
 		const volumeField<vector> & gradP, const volumeField<vector>&,
-		const volumeField<tensor> & grada, const volumeField<scalar> & diva,
+		const volumeField<tensor>&, const volumeField<scalar>&,
 		const volumeField<vector>&, const volumeField<tensor> & spherR,
 		const volumeField<tensor> & devR, const volumeField<vector>&,
 		const abstractMixtureThermodynamics&,
@@ -52,6 +53,7 @@ std::tuple<
 			vector>(mesh_, vector(0)), volumeField<vector>(mesh_, vector(0)) };
 	std::pair<volumeField<scalar>, volumeField<scalar>> Sourceb { volumeField<
 			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	volumeField<scalar> gravGenField(mesh_, 0);
 
 	std::valarray<scalar> modeps(diffFieldsOld.eps());
 	const scalar maxeps { modeps.max() };
@@ -60,10 +62,6 @@ std::tuple<
 			{
 				return value < 1E-3 * maxeps;
 			}, veryBig);
-
-	volumeField<vector> divaa(mesh_, vector(0));
-	divaa.r() = astProduct(diffFieldsOld.a, diva)()
-			+ ampProduct(diffFieldsOld.a, grada)();
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
@@ -94,9 +92,11 @@ std::tuple<
 								+ Sourceeps.second()[i]
 										* cellFields.epsTurb()[i])
 								/ cellFields.density[0]()[i] + stabilizator));
+
+		gravGenField.r()[i] = gravGen;
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());
 
-	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb);
+	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb, gravGenField);
 }

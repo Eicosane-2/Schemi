@@ -168,7 +168,7 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 	}
 
 	field<scalar, typeOfEntity> maxValue(const bool turbulenceFlag,
-			const turbulenceModel sourceFlag) const noexcept
+			const bool aField, const bool bField) const noexcept
 	{
 		auto maxFieldVal = this->physKappa;
 
@@ -195,16 +195,13 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 				maxFieldVal.r()[i] = std::max(maxFieldVal()[i],
 						this->eps_D()[i]);
 
-			if ((sourceFlag == turbulenceModel::BHRSource)
-					|| (sourceFlag == turbulenceModel::BHRKLSource)
-					|| (sourceFlag == turbulenceModel::kEpsASource))
+			if (aField)
 			{
 				for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
 					maxFieldVal.r()[i] = std::max(maxFieldVal()[i],
 							this->a_D()[i]);
 
-				if ((sourceFlag == turbulenceModel::BHRSource)
-						|| (sourceFlag == turbulenceModel::BHRKLSource))
+				if (bField)
 					for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
 						maxFieldVal.r()[i] = std::max(maxFieldVal()[i],
 								this->b_D()[i]);
@@ -233,12 +230,11 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 
 			rhoDk.r() = this->physMu() + rho() * this->k_D();
 			rhoDeps.r() = this->physMu() + rho() * this->eps_D();
-			if ((t.model == turbulenceModel::BHRSource)
-					|| (t.model == turbulenceModel::BHRKLSource)
-					|| (t.model == turbulenceModel::kEpsASource))
+			if (t.aField)
 			{
 				rhoDa.r() = this->physMu() + rho() * this->a_D();
-				rhoDb.r() = this->physMu() + rho() * this->b_D();
+				if (t.bField)
+					rhoDb.r() = this->physMu() + rho() * this->b_D();
 			}
 		}
 		else
