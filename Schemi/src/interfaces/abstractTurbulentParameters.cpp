@@ -391,7 +391,7 @@ schemi::scalar schemi::abstractTurbulentParameters::thetaB(const vector & a,
 schemi::scalar schemi::abstractTurbulentParameters::thetaA(const vector & a,
 		const scalar k, const scalar b) const noexcept
 {
-	return (a & a) / (2 * k) < CMS_A() && b < CMS_A() ?
+	return (a & a) / (2 * k) < CMS_A() && b < CMS_A() && (a & a) / (2 * k) < b ?
 			1 : Ca1max() / std::min(Ca1(), Cb1());
 }
 
