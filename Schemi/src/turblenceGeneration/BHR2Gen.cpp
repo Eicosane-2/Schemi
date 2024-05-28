@@ -90,12 +90,11 @@ std::tuple<
 		const scalar gravGen { (diffFieldsOld.a()[i]
 				& (gradP()[i] - divDevPhysVisc()[i])) };
 
-		const scalar dissip(
-				-cellFields.rhoepsTurb()[i]
-						* (1 + 2 * diffFieldsOld.k()[i] / a_s2[i]));
+		const scalar dissip(-cellFields.rhoepsTurb()[i]);
 
 		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen + gravGen;
-		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
+		Sourcek.second.r()[i] = (1 + 2 * diffFieldsOld.k()[i] / a_s2[i])
+				* dissip / cellFields.kTurb()[i];
 
 		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen
 				+ turbPar->C3() * ek * rhoSpherRGen
