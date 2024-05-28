@@ -92,21 +92,14 @@ schemi::starFields schemi::Advection3dOrder(
 			epsilonTVDGradient = thirdOrderLimiter(surfaceepsilonGradient,
 					limiter);
 
-			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
-					|| (gasPhase.turbulenceSources->model
-							== turbulenceModel::BHRKLSource)
-					|| (gasPhase.turbulenceSources->model
-							== turbulenceModel::kEpsASource))
+			if (gasPhase.turbulenceSources->aField)
 			{
 				const auto surfaceaGradient = surfGrad(gasPhase.aTurb,
 						boundaryConditionValueCalc);
 
 				aTVDGradient = thirdOrderLimiter(surfaceaGradient, limiter);
 
-				if ((gasPhase.turbulenceSources->model
-						== turbulenceModel::BHRSource)
-						|| (gasPhase.turbulenceSources->model
-								== turbulenceModel::BHRKLSource))
+				if (gasPhase.turbulenceSources->bField)
 				{
 					const auto surfacebGradient = surfGrad(gasPhase.bTurb,
 							boundaryConditionValueCalc);
@@ -157,20 +150,12 @@ schemi::starFields schemi::Advection3dOrder(
 					reconstructedEpsilon = (epsilonTVDGradient()[i][j]
 							& deltaVector) + gasPhase.epsTurb()[i];
 
-					if ((gasPhase.turbulenceSources->model
-							== turbulenceModel::BHRSource)
-							|| (gasPhase.turbulenceSources->model
-									== turbulenceModel::BHRKLSource)
-							|| (gasPhase.turbulenceSources->model
-									== turbulenceModel::kEpsASource))
+					if (gasPhase.turbulenceSources->aField)
 					{
 						reconstructedaValue = (aTVDGradient()[i][j]
 								& deltaVector) + gasPhase.aTurb()[i];
 
-						if ((gasPhase.turbulenceSources->model
-								== turbulenceModel::BHRSource)
-								|| (gasPhase.turbulenceSources->model
-										== turbulenceModel::BHRKLSource))
+						if (gasPhase.turbulenceSources->bField)
 							reconstructedbValue = (bTVDGradient()[i][j]
 									& deltaVector) + gasPhase.bTurb()[i];
 					}
@@ -197,20 +182,12 @@ schemi::starFields schemi::Advection3dOrder(
 						surfaceOwnerSide.epsTurb.r()[surfaceIndex] =
 								reconstructedEpsilon;
 
-						if ((gasPhase.turbulenceSources->model
-								== turbulenceModel::BHRSource)
-								|| (gasPhase.turbulenceSources->model
-										== turbulenceModel::BHRKLSource)
-								|| (gasPhase.turbulenceSources->model
-										== turbulenceModel::kEpsASource))
+						if (gasPhase.turbulenceSources->aField)
 						{
 							surfaceOwnerSide.aTurb.r()[surfaceIndex] =
 									reconstructedaValue;
 
-							if ((gasPhase.turbulenceSources->model
-									== turbulenceModel::BHRSource)
-									|| (gasPhase.turbulenceSources->model
-											== turbulenceModel::BHRKLSource))
+							if (gasPhase.turbulenceSources->bField)
 								surfaceOwnerSide.bTurb.r()[surfaceIndex] =
 										reconstructedbValue;
 						}
@@ -237,20 +214,12 @@ schemi::starFields schemi::Advection3dOrder(
 						surfaceNeighbourSide.epsTurb.r()[surfaceIndex] =
 								reconstructedEpsilon;
 
-						if ((gasPhase.turbulenceSources->model
-								== turbulenceModel::BHRSource)
-								|| (gasPhase.turbulenceSources->model
-										== turbulenceModel::BHRKLSource)
-								|| (gasPhase.turbulenceSources->model
-										== turbulenceModel::kEpsASource))
+						if (gasPhase.turbulenceSources->aField)
 						{
 							surfaceNeighbourSide.aTurb.r()[surfaceIndex] =
 									reconstructedaValue;
 
-							if ((gasPhase.turbulenceSources->model
-									== turbulenceModel::BHRSource)
-									|| (gasPhase.turbulenceSources->model
-											== turbulenceModel::BHRKLSource))
+							if (gasPhase.turbulenceSources->bField)
 								surfaceNeighbourSide.bTurb.r()[surfaceIndex] =
 										reconstructedbValue;
 						}
@@ -286,19 +255,12 @@ schemi::starFields schemi::Advection3dOrder(
 			surfaceOwnerSide.rhoepsTurb.r() = surfaceOwnerSide.epsTurb()
 					* surfaceOwnerSide.density[0]();
 
-			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
-					|| (gasPhase.turbulenceSources->model
-							== turbulenceModel::BHRKLSource)
-					|| (gasPhase.turbulenceSources->model
-							== turbulenceModel::kEpsASource))
+			if (gasPhase.turbulenceSources->aField)
 			{
 				surfaceOwnerSide.rhoaTurb.r() = astProduct(
 						surfaceOwnerSide.aTurb, surfaceOwnerSide.density[0])();
 
-				if ((gasPhase.turbulenceSources->model
-						== turbulenceModel::BHRSource)
-						|| (gasPhase.turbulenceSources->model
-								== turbulenceModel::BHRKLSource))
+				if (gasPhase.turbulenceSources->bField)
 					surfaceOwnerSide.rhobTurb.r() = surfaceOwnerSide.bTurb()
 							* surfaceOwnerSide.density[0]();
 			}
@@ -370,21 +332,13 @@ schemi::starFields schemi::Advection3dOrder(
 							surfaceNeighbourSide.epsTurb()[i]
 									* surfaceNeighbourSide.density[0]()[i];
 
-					if ((gasPhase.turbulenceSources->model
-							== turbulenceModel::BHRSource)
-							|| (gasPhase.turbulenceSources->model
-									== turbulenceModel::BHRKLSource)
-							|| (gasPhase.turbulenceSources->model
-									== turbulenceModel::kEpsASource))
+					if (gasPhase.turbulenceSources->aField)
 					{
 						surfaceNeighbourSide.rhoaTurb.r()[i] =
 								surfaceNeighbourSide.aTurb()[i]
 										* surfaceNeighbourSide.density[0]()[i];
 
-						if ((gasPhase.turbulenceSources->model
-								== turbulenceModel::BHRSource)
-								|| (gasPhase.turbulenceSources->model
-										== turbulenceModel::BHRKLSource))
+						if (gasPhase.turbulenceSources->bField)
 							surfaceNeighbourSide.rhobTurb.r()[i] =
 									surfaceNeighbourSide.bTurb()[i]
 											* surfaceNeighbourSide.density[0]()[i];
@@ -502,12 +456,7 @@ schemi::starFields schemi::Advection3dOrder(
 						surfaceNeighbourSide.density[0]()[i]
 								* surfaceNeighbourSide.epsTurb()[i];
 
-				if ((surfaceNeighbourSide.turbulenceSources->model
-						== turbulenceModel::BHRSource)
-						|| (surfaceNeighbourSide.turbulenceSources->model
-								== turbulenceModel::BHRKLSource)
-						|| (surfaceNeighbourSide.turbulenceSources->model
-								== turbulenceModel::kEpsASource))
+				if (surfaceNeighbourSide.turbulenceSources->aField)
 				{
 					surfaceNeighbourSide.aTurb.r()[i] =
 							boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -519,10 +468,7 @@ schemi::starFields schemi::Advection3dOrder(
 							surfaceNeighbourSide.aTurb.r()[i]
 									* surfaceNeighbourSide.density[0]()[i];
 
-					if ((surfaceNeighbourSide.turbulenceSources->model
-							== turbulenceModel::BHRSource)
-							|| (surfaceNeighbourSide.turbulenceSources->model
-									== turbulenceModel::BHRKLSource))
+					if (surfaceNeighbourSide.turbulenceSources->bField)
 					{
 						surfaceNeighbourSide.bTurb.r()[i] =
 								boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -658,19 +604,12 @@ schemi::starFields schemi::Advection3dOrder(
 								return value < gasPhase.turbulenceSources->turbPar->mineps();
 							}, gasPhase.turbulenceSources->turbPar->mineps());
 
-			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
-					|| (gasPhase.turbulenceSources->model
-							== turbulenceModel::BHRKLSource)
-					|| (gasPhase.turbulenceSources->model
-							== turbulenceModel::kEpsASource))
+			if (gasPhase.turbulenceSources->aField)
 			{
 				gasPhase.rhoaTurb.r() -= astProduct(
 						divergence(NumFluxFlows.rhoaTurb), timestep)();
 
-				if ((gasPhase.turbulenceSources->model
-						== turbulenceModel::BHRSource)
-						|| (gasPhase.turbulenceSources->model
-								== turbulenceModel::BHRKLSource))
+				if (gasPhase.turbulenceSources->bField)
 				{
 					gasPhase.rhobTurb.r() -= divergence(NumFluxFlows.rhobTurb)()
 							* timestep;
@@ -725,19 +664,12 @@ schemi::starFields schemi::Advection3dOrder(
 			gasPhase.epsTurb.r() = gasPhase.rhoepsTurb()
 					/ gasPhase.density[0]();
 
-			if ((gasPhase.turbulenceSources->model == turbulenceModel::BHRSource)
-					|| (gasPhase.turbulenceSources->model
-							== turbulenceModel::BHRKLSource)
-					|| (gasPhase.turbulenceSources->model
-							== turbulenceModel::kEpsASource))
+			if (gasPhase.turbulenceSources->aField)
 			{
 				gasPhase.aTurb.r() = division(gasPhase.rhoaTurb,
 						gasPhase.density[0])();
 
-				if ((gasPhase.turbulenceSources->model
-						== turbulenceModel::BHRSource)
-						|| (gasPhase.turbulenceSources->model
-								== turbulenceModel::BHRKLSource))
+				if (gasPhase.turbulenceSources->bField)
 					gasPhase.bTurb.r() = gasPhase.rhobTurb()
 							/ gasPhase.density[0]();
 			}

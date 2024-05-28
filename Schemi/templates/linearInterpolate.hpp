@@ -24,26 +24,6 @@ volumeField<typeOfValue> linearInterpolate(
 
 	volumeField<typeOfValue> retVolField { mesh_, typeOfValue { 0 } };
 
-	volumeField<std::pair<scalar, std::vector<scalar>> > cellDistances { mesh_,
-			std::pair<scalar, std::vector<scalar>>(0., 0) };
-
-	for (std::size_t i = 0; i < retVolField.size(); ++i)
-	{
-		const vector & cellR { mesh_.cells()[i].rC() };
-
-		cellDistances.r()[i].second.resize(mesh_.surfacesOfCells()[i].size());
-
-		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
-		{
-			const std::size_t surfIndex { mesh_.surfacesOfCells()[i][j] };
-			const vector & surfaceR { mesh_.surfaces()[surfIndex].rC() };
-			const scalar deltaRMag { (surfaceR - cellR).mag() };
-
-			cellDistances.r()[i].second[j] = deltaRMag;
-			cellDistances.r()[i].first += deltaRMag;
-		}
-	}
-
 	for (std::size_t i = 0; i < retVolField.size(); ++i)
 	{
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
@@ -52,8 +32,8 @@ volumeField<typeOfValue> linearInterpolate(
 
 			retVolField.r()[i] += inField()[surfIndex]
 					* (1
-							- cellDistances()[i].second[j]
-									/ cellDistances()[i].first);
+							- mesh_.cellSurfaceDistances()[i].second[j]
+									/ mesh_.cellSurfaceDistances()[i].first);
 		}
 	}
 
@@ -79,12 +59,9 @@ surfaceField<typeOfValue> linearInterpolate(
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 			const std::size_t neiIndex { mesh_.surfaceNeighbour()[i] };
-			const scalar surfOwnR { (mesh_.surfaces()[i].rC()
-					- mesh_.cells()[ownIndex].rC()).mag() };
-			const scalar surfNeiR { (mesh_.surfaces()[i].rC()
-					- mesh_.cells()[neiIndex].rC()).mag() };
-			retSurfField.r()[i] = (inField()[ownIndex] * surfNeiR
-					+ inField()[neiIndex] * surfOwnR) / (surfOwnR + surfNeiR);
+
+			retSurfField.r()[i] = inField()[ownIndex] * mesh_.surfOwnW()[i]
+					+ inField()[neiIndex] * mesh_.surfNeiW()[i];
 		}
 			break;
 		default:
@@ -119,12 +96,9 @@ surfaceField<T> divergenceLinearInterpolate(const volumeField<T> & inField,
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 			const std::size_t neiIndex { mesh_.surfaceNeighbour()[i] };
-			const scalar surfOwnR { (mesh_.surfaces()[i].rC()
-					- mesh_.cells()[ownIndex].rC()).mag() };
-			const scalar surfNeiR { (mesh_.surfaces()[i].rC()
-					- mesh_.cells()[neiIndex].rC()).mag() };
-			retSurfField.r()[i] = (inField()[ownIndex] * surfNeiR
-					+ inField()[neiIndex] * surfOwnR) / (surfOwnR + surfNeiR);
+
+			retSurfField.r()[i] = inField()[ownIndex] * mesh_.surfOwnW()[i]
+					+ inField()[neiIndex] * mesh_.surfNeiW()[i];
 		}
 			break;
 		case boundaryConditionType::calculatedParallelBoundary:
@@ -194,12 +168,9 @@ surfaceField<T> gradientLinearInterpolate(const volumeField<T> & inField,
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 			const std::size_t neiIndex { mesh_.surfaceNeighbour()[i] };
-			const scalar surfOwnR { (mesh_.surfaces()[i].rC()
-					- mesh_.cells()[ownIndex].rC()).mag() };
-			const scalar surfNeiR { (mesh_.surfaces()[i].rC()
-					- mesh_.cells()[neiIndex].rC()).mag() };
-			retSurfField.r()[i] = (inField()[ownIndex] * surfNeiR
-					+ inField()[neiIndex] * surfOwnR) / (surfOwnR + surfNeiR);
+
+			retSurfField.r()[i] = inField()[ownIndex] * mesh_.surfOwnW()[i]
+					+ inField()[neiIndex] * mesh_.surfNeiW()[i];
 		}
 			break;
 		case boundaryConditionType::calculatedParallelBoundary:

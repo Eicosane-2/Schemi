@@ -22,7 +22,8 @@ enum class turbulenceModel
 	arithmeticA2Source,
 	kEpsASource,
 	arithmeticA3Source,
-	BHRKLSource
+	BHRKLSource,
+	BHR2Source,
 };
 }  // namespace schemi
 

@@ -9,8 +9,8 @@
 
 #include <algorithm>
 
-#include "turbulentParametersKEPS.hpp"
 #include "doubleDotProduct.hpp"
+#include "turbulentParametersKEPS.hpp"
 
 schemi::shearGen::shearGen(const mesh & meshIn, const bool turb_in,
 		const turbulenceModel tm_in) noexcept :
@@ -19,9 +19,16 @@ schemi::shearGen::shearGen(const mesh & meshIn, const bool turb_in,
 	turbPar = std::make_unique<turbulentParametersKEPS>(meshIn);
 }
 
-std::tuple<schemi::volumeField<schemi::scalar>,
-		schemi::volumeField<schemi::scalar>,
-		schemi::volumeField<schemi::vector>, schemi::volumeField<schemi::scalar>> schemi::shearGen::calculate(
+std::tuple<
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>,
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>,
+		std::pair<schemi::volumeField<schemi::vector>,
+				schemi::volumeField<schemi::vector>>,
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>,
+		schemi::volumeField<schemi::scalar>> schemi::shearGen::calculate(
 		scalar & sourceTimestep, const scalar sourceTimestepCoeff,
 		const bunchOfFields<cubicCell> & cellFields,
 		const diffusiveFields & diffFieldsOld,
@@ -35,10 +42,16 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 {
 	auto & mesh_ { cellFields.pressure.meshRef() };
 
-	volumeField<scalar> sigmaSourcek(mesh_, 0);
-	volumeField<scalar> sigmaSourceeps(mesh_, 0);
-	volumeField<vector> sigmaSourcea(mesh_, vector(0));
-	volumeField<scalar> sigmaSourceb(mesh_, 0);
+	std::pair<volumeField<scalar>, volumeField<scalar>> Sourcek { volumeField<
+			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	std::pair<volumeField<scalar>, volumeField<scalar>> Sourceeps { volumeField<
+			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const std::pair<volumeField<vector>, volumeField<vector>> Sourcea {
+			volumeField<vector>(mesh_, vector(0)), volumeField<vector>(mesh_,
+					vector(0)) };
+	const std::pair<volumeField<scalar>, volumeField<scalar>> Sourceb {
+			volumeField<scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const volumeField<scalar> gravGenField(mesh_, 0);
 
 	std::valarray<scalar> modeps(diffFieldsOld.eps());
 	const scalar maxeps { modeps.max() };
@@ -58,21 +71,24 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 
 		const scalar dissip(-cellFields.rhoepsTurb()[i]);
 
-		sigmaSourcek.r()[i] = rhoSpherRGen + rhoDevRGen + dissip;
+		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen;
+		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
 
-		sigmaSourceeps.r()[i] = turbPar->C1() * ek * rhoDevRGen
-				+ turbPar->C3() * ek * rhoSpherRGen
-				+ turbPar->C2() * ek * dissip;
+		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen
+				+ turbPar->C3() * ek * rhoSpherRGen;
+		Sourceeps.second.r()[i] = turbPar->C2() * dissip
+				/ cellFields.kTurb()[i];
 
 		/*Time-step calculation*/
 		modeps[i] = std::abs(
 				sourceTimestepCoeff * modeps[i]
-						/ (sigmaSourceeps()[i] / cellFields.density[0]()[i]
-								+ stabilizator));
+						/ ((Sourceeps.first()[i]
+								+ Sourceeps.second()[i]
+										* cellFields.epsTurb()[i])
+								/ cellFields.density[0]()[i] + stabilizator));
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());
 
-	return std::make_tuple(sigmaSourcek, sigmaSourceeps, sigmaSourcea,
-			sigmaSourceb);
+	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb, gravGenField);
 }

@@ -27,6 +27,8 @@ public:
 
 	const scalar C0In = 0.95,
 
+	const scalar C0maxIn = 1.3,
+
 	const scalar C1In = 1.44,
 
 	const scalar C2In = 1.92,
@@ -49,6 +51,8 @@ public:
 
 	const scalar Ca1In = 3.0,
 
+	const scalar Ca1maxIn = 30.0,
+
 	const scalar Cb1In = 3.0,
 
 	const scalar minkIn = 1E-15,
@@ -59,7 +63,9 @@ public:
 
 	const scalar CMS_D_In = 1.0,
 
-	const scalar CMS_B_In = 0.01) noexcept;
+	const scalar CMS_B_In = 0.01,
+
+	const scalar CMS_A_In = 1.0) noexcept;
 
 	std::valarray<scalar> calculateNut(const std::valarray<scalar> & k,
 			const std::valarray<scalar> & eps) const noexcept override;

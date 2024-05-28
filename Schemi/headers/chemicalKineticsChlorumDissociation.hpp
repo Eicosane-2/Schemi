@@ -14,12 +14,13 @@ namespace schemi
 {
 class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
 {
-	// (/ 1E6) --- cm^3/mole/s converted to m^3/mole/s
-	scalar A_forw { 5.74 * 1E15 / 1E6 };
+	/*(/ 1E6) --- cm^3/mole/s converted to m^3/mole/s*/
+	/*(/ 1E12) --- cm^6/mole^2/s converted to m^6/mole^2/s*/
+	scalar A_forw { 5.74E15 / 1E6 };
 	scalar n_forw { 0 };
 	scalar E_forw { 55.596 * 1000 * 4.184 };
 
-	scalar A_backw { 2.3 * 1E19 / 1E12 };
+	scalar A_backw { 2.3E19 / 1E12 };
 	scalar n_backw { -1.5 };
 	scalar E_backw { 0 };
 

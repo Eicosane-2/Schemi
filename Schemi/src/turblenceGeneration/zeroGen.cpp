@@ -16,9 +16,16 @@ schemi::zeroGen::zeroGen(const mesh & meshIn, const bool turb_in,
 	turbPar = std::make_unique<turbulentParametersKEPS>(meshIn);
 }
 
-std::tuple<schemi::volumeField<schemi::scalar>,
-		schemi::volumeField<schemi::scalar>,
-		schemi::volumeField<schemi::vector>, schemi::volumeField<schemi::scalar>> schemi::zeroGen::calculate(
+std::tuple<
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>,
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>,
+		std::pair<schemi::volumeField<schemi::vector>,
+				schemi::volumeField<schemi::vector>>,
+		std::pair<schemi::volumeField<schemi::scalar>,
+				schemi::volumeField<schemi::scalar>>,
+		schemi::volumeField<schemi::scalar>> schemi::zeroGen::calculate(
 		scalar & sourceTimestep, const scalar,
 		const bunchOfFields<cubicCell> & cellFields, const diffusiveFields&,
 		const volumeField<tensor>&, const volumeField<vector>&,
@@ -31,13 +38,18 @@ std::tuple<schemi::volumeField<schemi::scalar>,
 {
 	auto & mesh_ { cellFields.pressure.meshRef() };
 
-	volumeField<scalar> sigmaSourcek(mesh_, 0);
-	volumeField<scalar> sigmaSourceeps(mesh_, 0);
-	volumeField<vector> sigmaSourcea(mesh_, vector(0));
-	volumeField<scalar> sigmaSourceb(mesh_, 0);
+	const std::pair<volumeField<scalar>, volumeField<scalar>> Sourcek {
+			volumeField<scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const std::pair<volumeField<scalar>, volumeField<scalar>> Sourceeps {
+			volumeField<scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const std::pair<volumeField<vector>, volumeField<vector>> Sourcea {
+			volumeField<vector>(mesh_, vector(0)), volumeField<vector>(mesh_,
+					vector(0)) };
+	const std::pair<volumeField<scalar>, volumeField<scalar>> Sourceb {
+			volumeField<scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
+	const volumeField<scalar> gravGenField(mesh_, 0);
 
 	sourceTimestep = std::min(mesh_.timestepSource(), veryBig);
 
-	return std::make_tuple(sigmaSourcek, sigmaSourceeps, sigmaSourcea,
-			sigmaSourceb);
+	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb, gravGenField);
 }

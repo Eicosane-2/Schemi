@@ -20,7 +20,10 @@ public:
 	BHRGen(const mesh & meshIn, const bool turb_in,
 			const turbulenceModel tm_in) noexcept;
 
-	std::tuple<volumeField<scalar>, volumeField<scalar>, volumeField<vector>,
+	std::tuple<std::pair<volumeField<scalar>, volumeField<scalar>>,
+			std::pair<volumeField<scalar>, volumeField<scalar>>,
+			std::pair<volumeField<vector>, volumeField<vector>>,
+			std::pair<volumeField<scalar>, volumeField<scalar>>,
 			volumeField<scalar>> calculate(scalar & sourceTimestep,
 			const scalar sourceTimestepCoeff,
 			const bunchOfFields<cubicCell> & cellFields,

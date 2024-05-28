@@ -53,10 +53,73 @@ void schemi::mesh::calculateNormales() noexcept
 	}
 }
 
+void schemi::mesh::calculateWeights() noexcept
+{
+	surfOwnWA.resize(surfacesNumber), surfNeiWA.resize(surfacesNumber);
+
+	for (std::size_t i = 0; i < surfacesNumber; ++i)
+	{
+		switch (surfaceBoundaryCondition[i])
+		{
+		case boundaryConditionType::innerSurface:
+		{
+			const std::size_t ownIndex { surfaceOwnerA[i] };
+			const std::size_t neiIndex { surfaceNeighbourA[i] };
+			const scalar surfOwnR {
+					(surfacesA[i].rC() - cellsA[ownIndex].rC()).mag() };
+			const scalar surfNeiR {
+					(surfacesA[i].rC() - cellsA[neiIndex].rC()).mag() };
+
+			const scalar sumR = surfOwnR + surfNeiR;
+
+			surfOwnWA[i] = surfNeiR / sumR;
+			surfNeiWA[i] = surfOwnR / sumR;
+		}
+			break;
+		default:
+		{
+			surfOwnWA[i] = 1.0;
+			surfNeiWA[i] = 0.0;
+		}
+			break;
+		}
+	}
+}
+
+void schemi::mesh::calculateCellSurfaceDistances() noexcept
+{
+	cellSurfaceDistancesA.resize(cellsNumber,
+			std::pair<scalar, std::vector<scalar>>(0., 0)), cellSurfaceDistancesRA.resize(
+			cellsNumber, std::pair<scalar, std::vector<scalar>>(0., 0));
+
+	for (std::size_t i = 0; i < cellsNumber; ++i)
+	{
+		const vector & cellR { cellsA[i].rC() };
+
+		cellSurfaceDistancesA[i].second.resize(surfacesOfCellsA[i].size());
+		cellSurfaceDistancesRA[i].second.resize(surfacesOfCellsA[i].size());
+
+		for (std::size_t j = 0; j < surfacesOfCellsA[i].size(); ++j)
+		{
+			const std::size_t surfIndex { surfacesOfCellsA[i][j] };
+			const vector & surfaceR { surfacesA[surfIndex].rC() };
+			const scalar deltaRMag { (surfaceR - cellR).mag() };
+			const scalar deltaRMag1 { 1. / deltaRMag };
+
+			cellSurfaceDistancesA[i].second[j] = deltaRMag;
+			cellSurfaceDistancesA[i].first += deltaRMag;
+
+			cellSurfaceDistancesRA[i].second[j] = deltaRMag1;
+			cellSurfaceDistancesRA[i].first += deltaRMag1;
+		}
+	}
+}
+
 schemi::mesh::mesh() noexcept :
 		cellsA(0), surfacesA(0), surfacesOfCellsA(0), neighboursOfCellsA(0), surfaceOwnerA(
-				0), surfaceNeighbourA(0), surfaceBoundaryCondition(0), timestep_val(
-				veryBig), timestepSource_val(veryBig)
+				0), surfaceNeighbourA(0), surfaceBoundaryCondition(0), surfOwnWA(
+				0), surfNeiWA(0), cellSurfaceDistancesA(0), cellSurfaceDistancesRA(
+				0), timestep_val(veryBig), timestepSource_val(veryBig)
 {
 }
 
@@ -118,6 +181,26 @@ const std::vector<std::vector<std::size_t>>& schemi::mesh::neighboursOfCells() c
 const std::vector<schemi::boundaryConditionType>& schemi::mesh::bndType() const noexcept
 {
 	return surfaceBoundaryCondition;
+}
+
+const std::vector<schemi::scalar>& schemi::mesh::surfOwnW() const noexcept
+{
+	return surfOwnWA;
+}
+
+const std::vector<schemi::scalar>& schemi::mesh::surfNeiW() const noexcept
+{
+	return surfNeiWA;
+}
+
+const std::vector<std::pair<schemi::scalar, std::vector<schemi::scalar>>>& schemi::mesh::cellSurfaceDistances() const noexcept
+{
+	return cellSurfaceDistancesA;
+}
+
+const std::vector<std::pair<schemi::scalar, std::vector<schemi::scalar>>>& schemi::mesh::cellSurfaceDistancesR() const noexcept
+{
+	return cellSurfaceDistancesRA;
 }
 
 std::size_t schemi::mesh::tailNumber() const noexcept
@@ -416,6 +499,9 @@ void schemi::mesh::oneDParallelepiped(
 	surfacesNumber = surfacesA.size();
 
 	initialised = true;
+
+	calculateWeights();
+	calculateCellSurfaceDistances();
 }
 
 void schemi::mesh::twoDParallelepiped(
@@ -1089,6 +1175,9 @@ void schemi::mesh::twoDParallelepiped(
 	surfacesNumber = surfacesA.size();
 
 	initialised = true;
+
+	calculateWeights();
+	calculateCellSurfaceDistances();
 }
 
 void schemi::mesh::threeDParallelepiped(
@@ -2892,6 +2981,9 @@ void schemi::mesh::threeDParallelepiped(
 	surfacesNumber = surfacesA.size();
 
 	initialised = true;
+
+	calculateWeights();
+	calculateCellSurfaceDistances();
 }
 
 schemi::mesh * schemi::mesh::pInstance = nullptr;

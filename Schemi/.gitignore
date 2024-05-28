@@ -1,8 +1,6 @@
 /Debug/
 /Debug_MPI/
 /Debug_O3/
-/Release/
-/Release_cpp20/
 /result/
 /set/
 /timeOfCalculation.tsv
@@ -11,3 +9,5 @@
 /.settings/
 /.cproject
 /.project
+/Release_17/
+/Release_20/

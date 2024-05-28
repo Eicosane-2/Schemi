@@ -38,9 +38,12 @@ public:
 	abstractTurbulenceGen(const bool turb_in,
 			const turbulenceModel tm_in) noexcept;
 
-	virtual std::tuple<volumeField<scalar>, volumeField<scalar>,
-			volumeField<vector>, volumeField<scalar>> calculate(
-			scalar& /*sourceTimestep*/, const scalar /*sourceTimestepCoeff*/,
+	virtual std::tuple<std::pair<volumeField<scalar>, volumeField<scalar>>,
+			std::pair<volumeField<scalar>, volumeField<scalar>>,
+			std::pair<volumeField<vector>, volumeField<vector>>,
+			std::pair<volumeField<scalar>, volumeField<scalar>>,
+			volumeField<scalar>> calculate(scalar& /*sourceTimestep*/,
+			const scalar /*sourceTimestepCoeff*/,
 			const bunchOfFields<cubicCell>& /*cellFields*/,
 			const diffusiveFields& /*diffFieldsOld*/,
 			const volumeField<tensor>& /*gradV*/,
@@ -58,6 +61,7 @@ public:
 
 	const bool turbulence;
 	const turbulenceModel model;
+	const bool aField, bField;
 
 	std::unique_ptr<abstractTurbulentParameters> turbPar = nullptr;
 };

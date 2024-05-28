@@ -14,20 +14,21 @@ namespace schemi
 {
 class chemicalKineticsChlorumHydrogeniumDissociation: public abstractChemicalKinetics
 {
-	// (/ 1E6) --- cm^3/mole/s converted to m^3/mole/s
-	scalar A_Cl2_forw { 5.74 * 1E15 / 1E6 };
+	/*(/ 1E6) --- cm^3/mole/s converted to m^3/mole/s*/
+	/*(/ 1E12) --- cm^6/mole^2/s converted to m^6/mole^2/s*/
+	scalar A_Cl2_forw { 5.74E15 / 1E6 };
 	scalar n_Cl2_forw { 0 };
 	scalar E_Cl2_forw { 55.596 * 1000 * 4.184 };
 
-	scalar A_Cl_backw { 2.3 * 1E19 / 1E12 };
+	scalar A_Cl_backw { 2.3E19 / 1E12 };
 	scalar n_Cl_backw { -1.5 };
 	scalar E_Cl_backw { 0 };
 
-	scalar A_H2_forw { 1.8 * 1E17 / 1E6 };
+	scalar A_H2_forw { 1.8E17 / 1E6 };
 	scalar n_H2_forw { -0.5 };
-	scalar E_H2_forw { 454 * 1000 };
+	scalar E_H2_forw { 454.0 * 1000 };
 
-	scalar A_H2_backw { 6.53 * 1E17 / 1E12 };
+	scalar A_H2_backw { 6.53E17 / 1E12 };
 	scalar n_H2_backw { -1 };
 	scalar E_H2_backw { 0 };
 

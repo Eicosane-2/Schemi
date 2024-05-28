@@ -51,6 +51,12 @@ class mesh
 
 	std::vector<boundaryConditionType> surfaceBoundaryCondition;
 
+	std::vector<scalar> surfOwnWA;
+	std::vector<scalar> surfNeiWA;
+
+	std::vector<std::pair<scalar, std::vector<scalar>>> cellSurfaceDistancesA;
+	std::vector<std::pair<scalar, std::vector<scalar>>> cellSurfaceDistancesRA;
+
 	std::size_t tailSurfacesNumber = 0;
 	std::size_t innerSurfacesNumber = 0;
 	std::size_t pointSurfacesNumber = 0;
@@ -73,6 +79,10 @@ class mesh
 	scalar timestep_val, timestepSource_val;
 
 	void calculateNormales() noexcept;
+
+	void calculateWeights() noexcept;
+
+	void calculateCellSurfaceDistances() noexcept;
 
 	mesh() noexcept;
 
@@ -101,6 +111,12 @@ public:
 	const std::vector<std::vector<std::size_t>>& neighboursOfCells() const noexcept;
 
 	const std::vector<boundaryConditionType>& bndType() const noexcept;
+
+	const std::vector<scalar>& surfOwnW() const noexcept;
+	const std::vector<scalar>& surfNeiW() const noexcept;
+
+	const std::vector<std::pair<scalar, std::vector<scalar>>>& cellSurfaceDistances() const noexcept;
+	const std::vector<std::pair<scalar, std::vector<scalar>>>& cellSurfaceDistancesR() const noexcept;
 
 	std::size_t tailNumber() const noexcept;
 

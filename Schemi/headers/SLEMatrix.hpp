@@ -119,10 +119,26 @@ public:
 			const boundaryConditionValue & bncCalc, const std::size_t compt =
 					componentPlaceholder);
 
-	/*Such distribution is only possible for non-negative scalars, so no overloads for vector and tensor.*/
+	void freeSourceTerm(const volumeField<scalar> & source) noexcept;
+
+	void freeSourceTerm(const volumeField<vector> & source) noexcept;
+
+	void freeSourceTerm(const volumeField<tensor> & source) noexcept;
+
 	void distributeSourceTerm(const volumeField<scalar> & source,
-			const volumeField<scalar> & basicField,
-			const scalar timestep) noexcept;
+			const volumeField<scalar> & basicField) noexcept;
+
+	void distributeSourceTerm(const volumeField<vector> & source,
+			const volumeField<vector> & basicField) noexcept;
+
+	void distributeSourceTerm(const volumeField<tensor> & source,
+			const volumeField<tensor> & basicField) noexcept;
+
+	void diagonaleSourceTerm(const volumeField<scalar> & source) noexcept;
+
+	void diagonaleSourceTerm(const volumeField<vector> & source) noexcept;
+
+	void diagonaleSourceTerm(const volumeField<tensor> & source) noexcept;
 };
 }  // namespace schemi
 
