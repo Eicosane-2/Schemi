@@ -1,0 +1,12 @@
+#Transport_coefficient_model
+constant
+#Viscosity_coefficient
+2E-5
+#Diffusion_coefficient
+2E-5
+#Heat_conduction_coefficient
+2E-2
+#Flag_for_enthalpy_flow_solution
+explicit
+#Flag_for_molar_mass_diffusion_correction
+on
