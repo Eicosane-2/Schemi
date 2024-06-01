@@ -72,9 +72,9 @@ std::tuple<
 		const auto thetaS_i = turbPar->thetaS_R(gradV()[i].trace(),
 				diffFieldsOld.k()[i], diffFieldsOld.eps()[i]);
 
-		const auto thetaB_i = turbPar->thetaB(diffFieldsOld.a()[i],
-				diffFieldsOld.k()[i], diffFieldsOld.eps()[i], gradMav_n()[i],
-				a_s2[i],
+		[[maybe_unused]] const auto thetaB_i = turbPar->thetaB(
+				diffFieldsOld.a()[i], diffFieldsOld.k()[i],
+				diffFieldsOld.eps()[i], gradMav_n()[i], a_s2[i],
 				std::pair<scalar, vector>(cellFields.density[0]()[i],
 						gradRho()[i]),
 				std::pair<scalar, vector>(cellFields.pressure()[i], gradP()[i]),
@@ -97,8 +97,7 @@ std::tuple<
 
 		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen
 				+ turbPar->C3() * ek * rhoSpherRGen
-				+ std::min(turbPar->C0() / (thetaB_i + stabilizator),
-						turbPar->C0max()) * ek * gravGen;
+				+ turbPar->C0() * ek * gravGen;
 		Sourceeps.second.r()[i] = turbPar->C2() * dissip
 				/ cellFields.kTurb()[i];
 
