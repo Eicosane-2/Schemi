@@ -12,7 +12,7 @@
 
 void schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::reactionMatrix::transpose() noexcept
 {
-	std::array<triangleList, 7> LeftTriangleNew, RightTriangleNew;
+	std::array<triangleList, N> LeftTriangleNew, RightTriangleNew;
 
 	for (std::size_t i = 0; i < Diagonale.size(); ++i)
 	{
@@ -56,7 +56,7 @@ schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::cellReactionMatrix(
 		const scalar k_R12, const scalar C_O2_0, const scalar C_O_0,
 		const scalar C_H2_0, const scalar C_H_0, const scalar C_OH_0,
 		const scalar C_HO2_0, const scalar C_H2O_0, const scalar M_0,
-		const scalar rho_0, const std::array<scalar, 7> & molMass,
+		const scalar rho_0, const std::array<scalar, N> & molMass,
 		const iterativeSolver solverType) :
 		solverFlag(solverType), matrix()
 {
@@ -212,9 +212,9 @@ std::valarray<schemi::scalar> schemi::chemicalKineticsH2O2Combustion::cellReacti
 }
 
 auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveJ(
-		const std::array<scalar, 7> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 7>
+		scalar, N>
 {
 	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2],
 			oldField[3], oldField[4], oldField[5], oldField[6] };
@@ -312,9 +312,9 @@ auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveJ(
 }
 
 auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveGS(
-		const std::array<scalar, 7> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 7>
+		scalar, N>
 {
 	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2],
 			oldField[3], oldField[4], oldField[5], oldField[6] };
@@ -409,9 +409,9 @@ auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveGS(
 }
 
 auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveCG(
-		const std::array<scalar, 7> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 7>
+		scalar, N>
 {
 	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2],
 			oldField[3], oldField[4], oldField[5], oldField[6] };
@@ -493,9 +493,9 @@ auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveCG(
 }
 
 auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveJCG(
-		const std::array<scalar, 7> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 7>
+		scalar, N>
 {
 	reactionMatrix JacobiPreconditioner;
 
@@ -591,10 +591,8 @@ auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveJCG(
 }
 
 auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solveGE() const ->
-std::array<scalar, 7>
+std::array<scalar, N>
 {
-	constexpr std::size_t N { 7 };
-
 	scalar A[N][N] { { 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0 }, { 0, 0,
 			0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0 }, {
 			0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0 } };
@@ -643,7 +641,7 @@ std::array<scalar, 7>
 			b[i] = b[i] - ratio * b[k];
 		}
 
-	std::valarray<scalar> phi(7);
+	std::valarray<scalar> phi(N);
 
 	phi[N - 1] = b[N - 1] / A[N - 1][N - 1];
 
@@ -667,9 +665,9 @@ std::array<scalar, 7>
 }
 
 auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solve(
-		const std::array<scalar, 7> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 7>
+		scalar, N>
 {
 	switch (solverFlag)
 	{
@@ -697,8 +695,8 @@ auto schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix::solve(
 
 schemi::chemicalKineticsH2O2Combustion::cellReactionMatrix schemi::chemicalKineticsH2O2Combustion::velocityCalculation(
 		const scalar timestep, const scalar T,
-		const std::array<scalar, 8> & concentrations,
-		const std::array<scalar, 7> & molarMasses, const scalar rho,
+		const std::array<scalar, N + 1> & concentrations,
+		const std::array<scalar, N> & molarMasses, const scalar rho,
 		const scalar R) const noexcept
 {
 	const scalar k_R1 = A_R1 * std::pow(T, n_R1) * std::exp(-E_R1 / (R * T));
@@ -768,7 +766,7 @@ void schemi::chemicalKineticsH2O2Combustion::timeStepIntegration(
 				{
 					scalar deltaU { 0 };
 
-					const std::array<scalar, 7> oldMassFraction {
+					const std::array<scalar, N> oldMassFraction {
 							newValues.density[0] / phaseN.density[0]()[i],
 							newValues.density[1] / phaseN.density[0]()[i],
 							newValues.density[2] / phaseN.density[0]()[i],
@@ -844,7 +842,7 @@ void schemi::chemicalKineticsH2O2Combustion::timeStepIntegration(
 								* deltaC_H2O;
 					}
 
-					for (std::size_t k = 0; k < 7; ++k)
+					for (std::size_t k = 0; k < N; ++k)
 						newValues.concentration[k + 1] = reactionResult[k]
 								* phaseN.density[0]()[i]
 								/ phaseN.phaseThermodynamics->Mv()[k];
@@ -899,7 +897,7 @@ schemi::chemicalKineticsH2O2Combustion::chemicalKineticsH2O2Combustion(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
 		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
 {
-	if (phaseIn.concentration.v.size() < 8)
+	if (phaseIn.concentration.v.size() < N + 1)
 		throw exception("Wrong number of substances.",
 				errors::initialisationError);
 

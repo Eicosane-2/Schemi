@@ -1,30 +1,34 @@
 /*
- * chemicalKineticsСhlorumDissociation.hpp
+ * chemicalKineticsRober.hpp
  *
- *  Created on: 2023/05/09
+ *  Created on: 2024/06/01
  *      Author: Maxim Boldyrev
  */
 
-#ifndef CHEMICALKINETICSCHLORUMDISSOCIATION_
-#define CHEMICALKINETICSCHLORUMDISSOCIATION_
+#ifndef CHEMICALKINETICSROBER_HPP_
+#define CHEMICALKINETICSROBER_HPP_
 
 #include "abstractChemicalKinetics.hpp"
 
 namespace schemi
 {
-class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
+class chemicalKineticsRober: public abstractChemicalKinetics
 {
-	static constexpr std::size_t N { 2 };
+	static constexpr std::size_t N { 3 };
 
 	/*(/ 1E6) --- cm^3/mole/s converted to m^3/mole/s*/
 	/*(/ 1E12) --- cm^6/mole^2/s converted to m^6/mole^2/s*/
-	scalar A_forw { 5.74E15 / 1E6 };
-	scalar n_forw { 0 };
-	scalar E_forw { 55.596 * 1000 * 4.184 };
+	scalar A_1 { 0.04 };
+	scalar n_1 { 0 };
+	scalar E_1 { 0 };
 
-	scalar A_backw { 2.3E19 / 1E12 };
-	scalar n_backw { -1.5 };
-	scalar E_backw { 0 };
+	scalar A_2 { 3E7 };
+	scalar n_2 { 0 };
+	scalar E_2 { 0 };
+
+	scalar A_3 { 1E4 };
+	scalar n_3 { 0 };
+	scalar E_3 { 0 };
 
 	iterativeSolver itSolv;
 
@@ -34,25 +38,29 @@ class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
 
 		struct reactionMatrix
 		{
-			std::array<scalar, N> Diagonale { 0.0, 0.0 };
+			std::array<scalar, N> Diagonale { 0.0, 0.0, 0.0 };
 
 			std::array<triangleList, N> LeftTriangle {
 
 			triangleList(0),
 
-			triangleList(1, std::make_pair(0.0, 0))
+			triangleList(1, std::make_pair(0.0, 0)),
+
+			triangleList(1, std::make_pair(0.0, 1))
 
 			};
 
 			std::array<triangleList, N> RightTriangle {
 
-			triangleList(1, std::make_pair(0.0, 1)),
+			triangleList( { std::make_pair(0.0, 1), std::make_pair(0.0, 2) }),
+
+			triangleList(1, std::make_pair(0.0, 2)),
 
 			triangleList(0)
 
 			};
 
-			std::array<scalar, N> FreeTerm { 0.0, 0.0 };
+			std::array<scalar, N> FreeTerm { 0.0, 0.0, 0.0 };
 
 			void transpose() noexcept;
 		} matrix;
@@ -80,10 +88,10 @@ class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
 	public:
 		cellReactionMatrix() noexcept;
 
-		cellReactionMatrix(const scalar timeStep, const scalar k_diss,
-				const scalar k_recomb, const scalar C_Cl2_0,
-				const scalar C_Cl_0, const scalar M_0, const scalar rho_0,
-				const std::array<scalar, N> & molMass,
+		cellReactionMatrix(const scalar timeStep, const scalar k_1,
+				const scalar k_2, const scalar k_3, const scalar C_1_0,
+				const scalar C_2_0, const scalar C_3_0, const scalar M_0,
+				const scalar rho_0, const std::array<scalar, N> & molMass,
 				const iterativeSolver solverType);
 
 		auto solve(const std::array<scalar, N> & oldField,
@@ -98,12 +106,12 @@ class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
 public:
-	chemicalKineticsChlorumDissociation(
-			const homogeneousPhase<cubicCell> & phaseIn, const scalar mt);
+	chemicalKineticsRober(const homogeneousPhase<cubicCell> & phaseIn,
+			const scalar mt);
 
 	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
 			override;
 };
 }  // namespace schemi
 
-#endif /* CHEMICALKINETICSCHLORUMDISSOCIATION_ */
+#endif /* CHEMICALKINETICSROBER_HPP_ */

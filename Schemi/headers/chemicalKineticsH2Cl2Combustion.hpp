@@ -14,6 +14,8 @@ namespace schemi
 {
 class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 {
+	static constexpr std::size_t N { 5 };
+
 	/*(/ 1E6) --- cm^3/mole/s converted to m^3/mole/s*/
 	/*(/ 1E12) --- cm^6/mole^2/s converted to m^6/mole^2/s*/
 	scalar A_Cl2_diss { 5.74E15 / 1E6 };
@@ -60,9 +62,9 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 
 		struct reactionMatrix
 		{
-			std::array<scalar, 5> Diagonale { 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<scalar, N> Diagonale { 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-			std::array<triangleList, 5> LeftTriangle {
+			std::array<triangleList, N> LeftTriangle {
 
 			triangleList(0), // A1
 
@@ -78,7 +80,7 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 
 			};
 
-			std::array<triangleList, 5> RightTriangle {
+			std::array<triangleList, N> RightTriangle {
 
 			triangleList { std::make_pair(0.0, 1), std::make_pair(0.0, 3) }, // A1
 
@@ -93,7 +95,7 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 
 			};
 
-			std::array<scalar, 5> FreeTerm { 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<scalar, N> FreeTerm { 0.0, 0.0, 0.0, 0.0, 0.0 };
 
 			void transpose() noexcept;
 		} matrix;
@@ -101,23 +103,23 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 		std::valarray<scalar> matrixDotProduct(const reactionMatrix & m,
 				const std::valarray<scalar> & v) const noexcept;
 
-		auto solveJ(const std::array<scalar, 5> & oldField,
+		auto solveJ(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, 5>;
+						std::array<scalar, N>;
 
-		auto solveGS(const std::array<scalar, 5> & oldField,
+		auto solveGS(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, 5>;
+						std::array<scalar, N>;
 
-		auto solveCG(const std::array<scalar, 5> & oldField,
+		auto solveCG(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, 5>;
+						std::array<scalar, N>;
 
-		auto solveJCG(const std::array<scalar, 5> & oldField,
+		auto solveJCG(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, 5>;
+						std::array<scalar, N>;
 
-		auto solveGE() const -> std::array<scalar, 5>;
+		auto solveGE() const -> std::array<scalar, N>;
 	public:
 		cellReactionMatrix() noexcept;
 
@@ -128,17 +130,17 @@ class chemicalKineticsH2Cl2Combustion: public abstractChemicalKinetics
 				const scalar k_diss_HCl, const scalar C_Cl2_0,
 				const scalar C_Cl_0, const scalar C_H2_0, const scalar C_H_0,
 				const scalar C_HCl_0, const scalar M_0, const scalar rho_0,
-				const std::array<scalar, 5> & molMass,
+				const std::array<scalar, N> & molMass,
 				const iterativeSolver solverType);
 
-		auto solve(const std::array<scalar, 5> & oldField,
+		auto solve(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, 5>;
+						std::array<scalar, N>;
 	};
 
 	cellReactionMatrix velocityCalculation(const scalar timestep,
-			const scalar T, const std::array<scalar, 6> & concentrations,
-			const std::array<scalar, 5> & molarMasses, const scalar rho,
+			const scalar T, const std::array<scalar, N + 1> & concentrations,
+			const std::array<scalar, N> & molarMasses, const scalar rho,
 			const scalar R) const noexcept;
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;

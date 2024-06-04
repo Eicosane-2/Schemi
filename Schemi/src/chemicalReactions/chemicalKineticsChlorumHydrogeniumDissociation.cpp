@@ -12,7 +12,7 @@
 
 void schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::reactionMatrix::transpose() noexcept
 {
-	std::array<triangleList, 4> LeftTriangleNew, RightTriangleNew;
+	std::array<triangleList, N> LeftTriangleNew, RightTriangleNew;
 
 	for (std::size_t i = 0; i < Diagonale.size(); ++i)
 	{
@@ -53,7 +53,7 @@ schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::cell
 		const scalar k_recomb_Cl2, const scalar k_diss_H2,
 		const scalar k_recomb_H2, const scalar C_Cl2_0, const scalar C_Cl_0,
 		const scalar C_H2_0, const scalar C_H_0, const scalar M_0,
-		const scalar rho_0, const std::array<scalar, 4> & molMass,
+		const scalar rho_0, const std::array<scalar, N> & molMass,
 		const iterativeSolver solverType) :
 		solverFlag(solverType), matrix()
 {
@@ -127,9 +127,9 @@ std::valarray<schemi::scalar> schemi::chemicalKineticsChlorumHydrogeniumDissocia
 }
 
 auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::solveJ(
-		const std::array<scalar, 4> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 4>
+		scalar, N>
 {
 	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2],
 			oldField[3] };
@@ -226,9 +226,9 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 }
 
 auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::solveGS(
-		const std::array<scalar, 4> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 4>
+		scalar, N>
 {
 	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2],
 			oldField[3] };
@@ -323,9 +323,9 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 }
 
 auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::solveCG(
-		const std::array<scalar, 4> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 4>
+		scalar, N>
 {
 	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2],
 			oldField[3] };
@@ -407,9 +407,9 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 }
 
 auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::solveJCG(
-		const std::array<scalar, 4> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 4>
+		scalar, N>
 {
 	reactionMatrix JacobiPreconditioner;
 
@@ -503,10 +503,8 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 }
 
 auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::solveGE() const ->
-std::array<scalar, 4>
+std::array<scalar, N>
 {
-	constexpr std::size_t N { 4 };
-
 	scalar A[N][N] { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0,
 			0 } };
 
@@ -554,7 +552,7 @@ std::array<scalar, 4>
 			b[i] = b[i] - ratio * b[k];
 		}
 
-	std::valarray<scalar> phi(4);
+	std::valarray<scalar> phi(N);
 
 	phi[N - 1] = b[N - 1] / A[N - 1][N - 1];
 
@@ -578,9 +576,9 @@ std::array<scalar, 4>
 }
 
 auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix::solve(
-		const std::array<scalar, 4> & oldField,
+		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, 4>
+		scalar, N>
 {
 	switch (solverFlag)
 	{
@@ -608,8 +606,8 @@ auto schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix:
 
 schemi::chemicalKineticsChlorumHydrogeniumDissociation::cellReactionMatrix schemi::chemicalKineticsChlorumHydrogeniumDissociation::velocityCalculation(
 		const scalar timestep, const scalar T,
-		const std::array<scalar, 5> & concentrations,
-		const std::array<scalar, 4> & molarMasses, const scalar rho,
+		const std::array<scalar, N + 1> & concentrations,
+		const std::array<scalar, N> & molarMasses, const scalar rho,
 		const scalar R) const noexcept
 {
 	const scalar k_Cl2_forw = A_Cl2_forw * std::pow(T, n_Cl2_forw)
@@ -669,7 +667,7 @@ void schemi::chemicalKineticsChlorumHydrogeniumDissociation::timeStepIntegration
 
 				for (std::size_t st = 0; st < subItNum; ++st)
 				{
-					const std::array<scalar, 4> oldMassFraction {
+					const std::array<scalar, N> oldMassFraction {
 							newValues.density[0] / phaseN.density[0]()[i],
 							newValues.density[1] / phaseN.density[0]()[i],
 							newValues.density[2] / phaseN.density[0]()[i],
@@ -720,7 +718,7 @@ void schemi::chemicalKineticsChlorumHydrogeniumDissociation::timeStepIntegration
 						w_k *= sumFracOld;
 					}
 
-					for (std::size_t k = 0; k < 4; ++k)
+					for (std::size_t k = 0; k < N; ++k)
 						newValues.concentration[k + 1] = reactionResult[k]
 								* phaseN.density[0]()[i]
 								/ phaseN.phaseThermodynamics->Mv()[k];
@@ -773,7 +771,7 @@ schemi::chemicalKineticsChlorumHydrogeniumDissociation::chemicalKineticsChlorumH
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
 		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
 {
-	if (phaseIn.concentration.v.size() < 5)
+	if (phaseIn.concentration.v.size() < N + 1)
 		throw exception("Wrong number of substances.",
 				errors::initialisationError);
 

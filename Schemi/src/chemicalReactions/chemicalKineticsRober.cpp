@@ -1,16 +1,16 @@
 /*
- * chemicalKineticsChlorumDissociation.cpp
+ * chemicalKineticsRober.cpp
  *
- *  Created on: 2023/06/04
+ *  Created on: 2024/06/01
  *      Author: Maxim Boldyrev
  */
 
-#include "chemicalKineticsChlorumDissociation.hpp"
+#include "chemicalKineticsRober.hpp"
 
 #include <iostream>
 #include <numeric>
 
-void schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::reactionMatrix::transpose() noexcept
+void schemi::chemicalKineticsRober::cellReactionMatrix::reactionMatrix::transpose() noexcept
 {
 	std::array<triangleList, N> LeftTriangleNew, RightTriangleNew;
 
@@ -43,37 +43,53 @@ void schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::reactionMa
 	RightTriangle = RightTriangleNew;
 }
 
-schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::cellReactionMatrix() noexcept :
+schemi::chemicalKineticsRober::cellReactionMatrix::cellReactionMatrix() noexcept :
 		solverFlag(iterativeSolver::noSolver), matrix()
 {
 }
 
-schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::cellReactionMatrix(
-		const scalar timeStep, const scalar k_diss, const scalar k_recomb,
-		const scalar C_Cl2_0, const scalar C_Cl_0, const scalar M_0,
+schemi::chemicalKineticsRober::cellReactionMatrix::cellReactionMatrix(
+		const scalar timeStep, const scalar k_1, const scalar k_2,
+		const scalar k_3, const scalar C_1_0, const scalar C_2_0,
+		const scalar C_3_0, [[maybe_unused]] const scalar M_0,
 		const scalar rho_0, const std::array<scalar, N> & molMass,
 		const iterativeSolver solverType) :
 		solverFlag(solverType), matrix()
 {
-	const scalar A11 { (1 / timeStep + k_diss * M_0) / molMass[0] };
-	const scalar A12 { (-k_recomb * C_Cl_0 * M_0) / molMass[1] };
-	const scalar B1 { C_Cl2_0 / (rho_0 * timeStep) };
+	const scalar A11 { (1 / timeStep + k_1) / molMass[0] };
+	const scalar A12 { (-0.5 * k_3 * C_3_0) / molMass[1] };
+	const scalar A13 { (-0.5 * k_3 * C_2_0) / molMass[2] };
+	const scalar B1 { C_1_0 / (rho_0 * timeStep) };
 
-	const scalar A21 { (-2 * k_diss * M_0) / molMass[0] };
-	const scalar A22 { (1 / timeStep + 2 * k_recomb * C_Cl_0 * M_0) / molMass[1] };
-	const scalar B2 { C_Cl_0 / (rho_0 * timeStep) };
+	const scalar A21 { (-k_1) / molMass[0] };
+	const scalar A22 { (1 / timeStep + k_2 * C_2_0 + 0.5 * k_3 * C_3_0)
+			/ molMass[1] };
+	const scalar A23 { (0.5 * k_3 * C_2_0) / molMass[2] };
+	const scalar B2 { C_2_0 / (rho_0 * timeStep) };
+
+	const scalar A32 { (-k_3 * C_2_0) / molMass[1] };
+	const scalar A33 { (1 / timeStep) / molMass[2] };
+	const scalar B3 { C_3_0 / (rho_0 * timeStep) };
 
 	std::get<0>(matrix.Diagonale) = A11;
 	std::get<1>(matrix.Diagonale) = A22;
+	std::get<2>(matrix.Diagonale) = A33;
+
+	std::get<1>(matrix.LeftTriangle)[0].first = A21;
+
+	std::get<2>(matrix.LeftTriangle)[0].first = A32;
 
 	std::get<0>(matrix.RightTriangle)[0].first = A12;
-	std::get<1>(matrix.LeftTriangle)[0].first = A21;
+	std::get<0>(matrix.RightTriangle)[1].first = A13;
+
+	std::get<1>(matrix.RightTriangle)[0].first = A23;
 
 	std::get<0>(matrix.FreeTerm) = B1;
 	std::get<1>(matrix.FreeTerm) = B2;
+	std::get<2>(matrix.FreeTerm) = B3;
 }
 
-std::valarray<schemi::scalar> schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::matrixDotProduct(
+std::valarray<schemi::scalar> schemi::chemicalKineticsRober::cellReactionMatrix::matrixDotProduct(
 		const reactionMatrix & m,
 		const std::valarray<scalar> & v) const noexcept
 {
@@ -107,12 +123,12 @@ std::valarray<schemi::scalar> schemi::chemicalKineticsChlorumDissociation::cellR
 	return result;
 }
 
-auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJ(
+auto schemi::chemicalKineticsRober::cellReactionMatrix::solveJ(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
 {
-	std::valarray<scalar> oldIteration { oldField[0], oldField[1] };
+	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2] };
 
 	std::valarray<scalar> newIteration(oldIteration);
 
@@ -184,33 +200,32 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJ(
 		{
 			normalize(newIteration);
 			return
-			{	newIteration[0], newIteration[1]};
+			{	newIteration[0], newIteration[1], newIteration[2]};
 		}
 		else if (nIterations >= maxIterationNumber)
 		{
 			std::clog
-					<< "Jacobi algorithm for Cl2 dissociation did not converged. Difference is: "
+					<< "Jacobi algorithm for Rober did not converged. Difference is: "
 					<< diff << std::endl;
 
-			throw exception(
-					"Jacobi algorithm for Cl2 dissociation did not converged.",
+			throw exception("Jacobi algorithm for Rober did not converged.",
 					errors::systemError);
 
 			normalize(newIteration);
 			return
-			{	newIteration[0], newIteration[1]};
+			{	newIteration[0], newIteration[1], newIteration[2]};
 		}
 		else
 			oldIteration = newIteration;
 	}
 }
 
-auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveGS(
+auto schemi::chemicalKineticsRober::cellReactionMatrix::solveGS(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
 {
-	std::valarray<scalar> oldIteration { oldField[0], oldField[1] };
+	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2] };
 
 	std::valarray<scalar> newIteration(oldIteration);
 
@@ -280,33 +295,33 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveGS(
 		{
 			normalize(newIteration);
 			return
-			{	newIteration[0], newIteration[1]};
+			{	newIteration[0], newIteration[1], newIteration[2]};
 		}
 		else if (nIterations >= maxIterationNumber)
 		{
 			std::clog
-					<< "Gauss-Seidel algorithm for Cl2 dissociation did not converged. Difference is: "
+					<< "Gauss-Seidel algorithm for Rober did not converged. Difference is: "
 					<< diff << std::endl;
 
 			throw exception(
-					"Gauss-Seidel algorithm for Cl2 dissociation did not converged.",
+					"Gauss-Seidel algorithm for Rober did not converged.",
 					errors::systemError);
 
 			normalize(newIteration);
 			return
-			{	newIteration[0], newIteration[1]};
+			{	newIteration[0], newIteration[1], newIteration[2]};
 		}
 		else
 			oldIteration = newIteration;
 	}
 }
 
-auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveCG(
+auto schemi::chemicalKineticsRober::cellReactionMatrix::solveCG(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
 {
-	std::valarray<scalar> oldIteration { oldField[0], oldField[1] };
+	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2] };
 
 	std::valarray<scalar> newIteration(oldIteration);
 
@@ -316,7 +331,8 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveCG(
 	std::size_t nIterations { 0 };
 
 	std::valarray<scalar> rf_n { std::valarray<scalar> { matrix.FreeTerm[0],
-			matrix.FreeTerm[1] } - matrixDotProduct(matrix, oldIteration) };
+			matrix.FreeTerm[1], matrix.FreeTerm[2] }
+			- matrixDotProduct(matrix, oldIteration) };
 	std::valarray<scalar> df_n = rf_n;
 
 	auto rs_n = rf_n;
@@ -337,21 +353,21 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveCG(
 		{
 			normalize(newIteration);
 			return
-			{	newIteration[0], newIteration[1]};
+			{	newIteration[0], newIteration[1], newIteration[2]};
 		}
 		else if (nIterations >= maxIterationNumber)
 		{
 			std::clog
-					<< "Conjugate gradient algorithm did not converged for chemical reaction Cl2 dissociation. Difference is: "
+					<< "Conjugate gradient algorithm did not converged for chemical reaction Rober. Difference is: "
 					<< diff << std::endl;
 
 			throw exception(
-					"Conjugate gradient algorithm did not converged for chemical reaction Cl2 dissociation.",
+					"Conjugate gradient algorithm did not converged for chemical reaction Rober.",
 					errors::systemError);
 
 			normalize(newIteration);
 			return
-			{	newIteration[0], newIteration[1]};
+			{	newIteration[0], newIteration[1], newIteration[2]};
 		}
 		else
 		{
@@ -383,7 +399,7 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveCG(
 	}
 }
 
-auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJCG(
+auto schemi::chemicalKineticsRober::cellReactionMatrix::solveJCG(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -391,9 +407,9 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJCG(
 	reactionMatrix JacobiPreconditioner;
 
 	JacobiPreconditioner.Diagonale = { 1. / (matrix.Diagonale[0]), 1.
-			/ (matrix.Diagonale[1]) };
+			/ (matrix.Diagonale[1]), 1. / (matrix.Diagonale[2]) };
 
-	std::valarray<scalar> oldIteration { oldField[0], oldField[1] };
+	std::valarray<scalar> oldIteration { oldField[0], oldField[1], oldField[2] };
 
 	std::valarray<scalar> newIteration(oldIteration);
 
@@ -403,7 +419,8 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJCG(
 	std::size_t nIterations { 0 };
 
 	std::valarray<scalar> rf_n { std::valarray<scalar> { matrix.FreeTerm[0],
-			matrix.FreeTerm[1] } - matrixDotProduct(matrix, oldIteration) };
+			matrix.FreeTerm[1], matrix.FreeTerm[2] }
+			- matrixDotProduct(matrix, oldIteration) };
 	std::valarray<scalar> df_n = matrixDotProduct(JacobiPreconditioner, rf_n);
 
 	auto rs_n = rf_n;
@@ -424,21 +441,21 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJCG(
 		{
 			normalize(newIteration);
 			return
-			{	newIteration[0], newIteration[1]};
+			{	newIteration[0], newIteration[1], newIteration[2]};
 		}
 		else if (nIterations >= maxIterationNumber)
 		{
 			std::clog
-					<< "Jacobi preconditioned conjugate gradient algorithm did not converged for chemical reaction Cl2 dissociation. Difference is: "
+					<< "Jacobi preconditioned conjugate gradient algorithm did not converged for chemical reaction Rober. Difference is: "
 					<< diff << std::endl;
 
 			throw exception(
-					"Jacobi preconditioned conjugate gradient algorithm did not converged for chemical reaction Cl2 dissociation.",
+					"Jacobi preconditioned conjugate gradient algorithm did not converged for chemical reaction Rober.",
 					errors::systemError);
 
 			normalize(newIteration);
 			return
-			{	newIteration[0], newIteration[1]};
+			{	newIteration[0], newIteration[1], newIteration[2]};
 		}
 		else
 		{
@@ -476,10 +493,10 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveJCG(
 	}
 }
 
-auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solveGE() const ->
+auto schemi::chemicalKineticsRober::cellReactionMatrix::solveGE() const ->
 std::array<scalar, N>
 {
-	scalar A[N][N] { { 0, 0 }, { 0, 0 } };
+	scalar A[N][N] { { 0, 0 }, { 0, 0 }, { 0, 0 } };
 
 	auto b = matrix.FreeTerm;
 
@@ -545,10 +562,10 @@ std::array<scalar, N>
 	normalize(phi);
 
 	return
-	{	phi[0], phi[1]};
+	{	phi[0], phi[1], phi[2]};
 }
 
-auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solve(
+auto schemi::chemicalKineticsRober::cellReactionMatrix::solve(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -577,27 +594,28 @@ auto schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix::solve(
 	}
 }
 
-schemi::chemicalKineticsChlorumDissociation::cellReactionMatrix schemi::chemicalKineticsChlorumDissociation::velocityCalculation(
+schemi::chemicalKineticsRober::cellReactionMatrix schemi::chemicalKineticsRober::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
 		const scalar R) const noexcept
 {
-	const scalar k_forw = A_forw * std::pow(T, n_forw)
-			* std::exp(-E_forw / (R * T));
+	const scalar k_1 = A_1 * std::pow(T, n_1) * std::exp(-E_1 / (R * T));
 
-	const scalar k_backw = A_backw * std::pow(T, n_backw)
-			* std::exp(-E_backw / (R * T));
+	const scalar k_2 = A_2 * std::pow(T, n_2) * std::exp(-E_2 / (R * T));
 
-	const scalar & Cl2 = std::get<1>(concentrations);
-	const scalar & Cl = std::get<2>(concentrations);
+	const scalar k_3 = A_3 * std::pow(T, n_3) * std::exp(-E_3 / (R * T));
+
+	const scalar & C_1 = std::get<1>(concentrations);
+	const scalar & C_2 = std::get<2>(concentrations);
+	const scalar & C_3 = std::get<3>(concentrations);
 	const scalar & M = std::get<0>(concentrations);
 
-	return cellReactionMatrix(timestep, k_forw, k_backw, Cl2, Cl, M, rho,
+	return cellReactionMatrix(timestep, k_1, k_2, k_3, C_1, C_2, C_3, M, rho,
 			molarMasses, itSolv);
 }
 
-void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
+void schemi::chemicalKineticsRober::timeStepIntegration(
 		homogeneousPhase<cubicCell> & phaseN) const
 {
 	auto & mesh_ = phaseN.pressure.meshRef();
@@ -634,7 +652,8 @@ void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
 				{
 					const std::array<scalar, N> oldMassFraction {
 							newValues.density[0] / phaseN.density[0]()[i],
-							newValues.density[1] / phaseN.density[0]()[i] };
+							newValues.density[1] / phaseN.density[0]()[i],
+							newValues.density[2] / phaseN.density[0]()[i] };
 
 					const scalar sumFracOld = std::accumulate(
 							oldMassFraction.begin(), oldMassFraction.end(), 0.);
@@ -646,9 +665,11 @@ void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
 							subTimeStep, phaseN.temperature()[i],
 							{ newValues.concentration[0],
 									newValues.concentration[1],
-									newValues.concentration[2] },
+									newValues.concentration[2],
+									newValues.concentration[3] },
 							{ phaseN.phaseThermodynamics->Mv()[0],
-									phaseN.phaseThermodynamics->Mv()[1] },
+									phaseN.phaseThermodynamics->Mv()[1],
+									phaseN.phaseThermodynamics->Mv()[2] },
 							phaseN.density[0]()[i],
 							phaseN.phaseThermodynamics->Rv());
 
@@ -726,7 +747,7 @@ void schemi::chemicalKineticsChlorumDissociation::timeStepIntegration(
 	}
 }
 
-schemi::chemicalKineticsChlorumDissociation::chemicalKineticsChlorumDissociation(
+schemi::chemicalKineticsRober::chemicalKineticsRober(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
 		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
 {
@@ -745,13 +766,17 @@ schemi::chemicalKineticsChlorumDissociation::chemicalKineticsChlorumDissociation
 
 	chem >> skipBuffer >> skipBuffer;
 
-	chem >> skipBuffer >> A_forw;
-	chem >> skipBuffer >> n_forw;
-	chem >> skipBuffer >> E_forw;
+	chem >> skipBuffer >> A_1;
+	chem >> skipBuffer >> n_1;
+	chem >> skipBuffer >> E_1;
 
-	chem >> skipBuffer >> A_backw;
-	chem >> skipBuffer >> n_backw;
-	chem >> skipBuffer >> E_backw;
+	chem >> skipBuffer >> A_2;
+	chem >> skipBuffer >> n_2;
+	chem >> skipBuffer >> E_2;
+
+	chem >> skipBuffer >> A_3;
+	chem >> skipBuffer >> n_3;
+	chem >> skipBuffer >> E_3;
 
 	std::string solverName;
 
@@ -776,7 +801,7 @@ schemi::chemicalKineticsChlorumDissociation::chemicalKineticsChlorumDissociation
 	chem.close();
 }
 
-void schemi::chemicalKineticsChlorumDissociation::solveChemicalKinetics(
+void schemi::chemicalKineticsRober::solveChemicalKinetics(
 		homogeneousPhase<cubicCell> & phaseIn) const
 {
 	auto phaseN1 = phaseIn;
