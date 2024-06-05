@@ -12,7 +12,9 @@
 
 namespace schemi
 {
-class chemicalKineticsH2O2Combustion: public abstractChemicalKinetics
+namespace chemicalKinetics
+{
+class H2O2Combustion: public abstractChemicalKinetics
 {
 	static constexpr std::size_t N { 7 };
 
@@ -173,12 +175,13 @@ class chemicalKineticsH2O2Combustion: public abstractChemicalKinetics
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
 public:
-	chemicalKineticsH2O2Combustion(const homogeneousPhase<cubicCell> & phaseIn,
+	H2O2Combustion(const homogeneousPhase<cubicCell> & phaseIn,
 			const scalar mt);
 
 	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
 			override;
 };
+}
 }  // namespace schemi
 
 #endif /* CHEMICALKINETICSH2O2COMBUSTION_HPP_ */

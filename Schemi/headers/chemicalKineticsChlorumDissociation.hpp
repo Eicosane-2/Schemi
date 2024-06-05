@@ -12,7 +12,9 @@
 
 namespace schemi
 {
-class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
+namespace chemicalKinetics
+{
+class ChlorumDissociation: public abstractChemicalKinetics
 {
 	static constexpr std::size_t N { 2 };
 
@@ -98,12 +100,13 @@ class chemicalKineticsChlorumDissociation: public abstractChemicalKinetics
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
 public:
-	chemicalKineticsChlorumDissociation(
-			const homogeneousPhase<cubicCell> & phaseIn, const scalar mt);
+	ChlorumDissociation(const homogeneousPhase<cubicCell> & phaseIn,
+			const scalar mt);
 
 	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
 			override;
 };
+}
 }  // namespace schemi
 
 #endif /* CHEMICALKINETICSCHLORUMDISSOCIATION_ */

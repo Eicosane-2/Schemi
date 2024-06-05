@@ -10,7 +10,7 @@
 #include <iostream>
 #include <numeric>
 
-void schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::reactionMatrix::transpose() noexcept
+void schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::reactionMatrix::transpose() noexcept
 {
 	std::array<triangleList, N> LeftTriangleNew, RightTriangleNew;
 
@@ -43,12 +43,12 @@ void schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::reaction
 	RightTriangle = RightTriangleNew;
 }
 
-schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::cellReactionMatrix() noexcept :
+schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactionMatrix() noexcept :
 		solverFlag(iterativeSolver::noSolver), matrix()
 {
 }
 
-schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::cellReactionMatrix(
+schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactionMatrix(
 		const scalar timeStep, const scalar k_f, const scalar k_b,
 		const scalar C_NO2_0, const scalar C_H2O_0, const scalar C_HNO2_0,
 		const scalar C_HNO3_0, const scalar rho_0,
@@ -118,7 +118,7 @@ schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::cellReactionM
 	std::get<3>(matrix.FreeTerm) = B4;
 }
 
-std::valarray<schemi::scalar> schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::matrixDotProduct(
+std::valarray<schemi::scalar> schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::matrixDotProduct(
 		const reactionMatrix & m,
 		const std::valarray<scalar> & v) const noexcept
 {
@@ -152,7 +152,7 @@ std::valarray<schemi::scalar> schemi::chemicalKineticsNO2Disproportionation::cel
 	return result;
 }
 
-auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveJ(
+auto schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::solveJ(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		schemi::scalar, N>
@@ -251,7 +251,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveJ(
 	}
 }
 
-auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveGS(
+auto schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::solveGS(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		schemi::scalar, N>
@@ -348,7 +348,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveGS(
 	}
 }
 
-auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveCG(
+auto schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::solveCG(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -432,7 +432,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveCG(
 	}
 }
 
-auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveJCG(
+auto schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::solveJCG(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -528,7 +528,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveJCG
 	}
 }
 
-auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solveGE() const ->
+auto schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::solveGE() const ->
 std::array<scalar, N>
 {
 	scalar A[N][N] { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0,
@@ -601,7 +601,7 @@ std::array<scalar, N>
 	{	phi[0], phi[1], phi[2], phi[3]};
 }
 
-auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solve(
+auto schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::solve(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -630,7 +630,7 @@ auto schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix::solve(
 	}
 }
 
-schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix schemi::chemicalKineticsNO2Disproportionation::velocityCalculation(
+schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix schemi::chemicalKinetics::NO2Disproportionation::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
@@ -651,7 +651,7 @@ schemi::chemicalKineticsNO2Disproportionation::cellReactionMatrix schemi::chemic
 			HNO3, rho, molarMasses, itSolv);
 }
 
-void schemi::chemicalKineticsNO2Disproportionation::timeStepIntegration(
+void schemi::chemicalKinetics::NO2Disproportionation::timeStepIntegration(
 		homogeneousPhase<cubicCell> & phaseN) const
 {
 	auto & mesh_ = phaseN.pressure.meshRef();
@@ -806,7 +806,7 @@ void schemi::chemicalKineticsNO2Disproportionation::timeStepIntegration(
 	}
 }
 
-schemi::chemicalKineticsNO2Disproportionation::chemicalKineticsNO2Disproportionation(
+schemi::chemicalKinetics::NO2Disproportionation::NO2Disproportionation(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
 		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
 {
@@ -860,7 +860,7 @@ schemi::chemicalKineticsNO2Disproportionation::chemicalKineticsNO2Disproportiona
 	chem.close();
 }
 
-void schemi::chemicalKineticsNO2Disproportionation::solveChemicalKinetics(
+void schemi::chemicalKinetics::NO2Disproportionation::solveChemicalKinetics(
 		homogeneousPhase<cubicCell> & phaseIn) const
 {
 	auto phaseN1 = phaseIn;

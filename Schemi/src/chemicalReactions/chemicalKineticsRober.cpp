@@ -10,7 +10,7 @@
 #include <iostream>
 #include <numeric>
 
-void schemi::chemicalKineticsRober::cellReactionMatrix::reactionMatrix::transpose() noexcept
+void schemi::chemicalKinetics::Rober::cellReactionMatrix::reactionMatrix::transpose() noexcept
 {
 	std::array<triangleList, N> LeftTriangleNew, RightTriangleNew;
 
@@ -43,12 +43,12 @@ void schemi::chemicalKineticsRober::cellReactionMatrix::reactionMatrix::transpos
 	RightTriangle = RightTriangleNew;
 }
 
-schemi::chemicalKineticsRober::cellReactionMatrix::cellReactionMatrix() noexcept :
+schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix() noexcept :
 		solverFlag(iterativeSolver::noSolver), matrix()
 {
 }
 
-schemi::chemicalKineticsRober::cellReactionMatrix::cellReactionMatrix(
+schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix(
 		const scalar timeStep, const scalar k_1, const scalar k_2,
 		const scalar k_3, const scalar C_1_0, const scalar C_2_0,
 		const scalar C_3_0, [[maybe_unused]] const scalar M_0,
@@ -89,7 +89,7 @@ schemi::chemicalKineticsRober::cellReactionMatrix::cellReactionMatrix(
 	std::get<2>(matrix.FreeTerm) = B3;
 }
 
-std::valarray<schemi::scalar> schemi::chemicalKineticsRober::cellReactionMatrix::matrixDotProduct(
+std::valarray<schemi::scalar> schemi::chemicalKinetics::Rober::cellReactionMatrix::matrixDotProduct(
 		const reactionMatrix & m,
 		const std::valarray<scalar> & v) const noexcept
 {
@@ -123,7 +123,7 @@ std::valarray<schemi::scalar> schemi::chemicalKineticsRober::cellReactionMatrix:
 	return result;
 }
 
-auto schemi::chemicalKineticsRober::cellReactionMatrix::solveJ(
+auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solveJ(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -220,7 +220,7 @@ auto schemi::chemicalKineticsRober::cellReactionMatrix::solveJ(
 	}
 }
 
-auto schemi::chemicalKineticsRober::cellReactionMatrix::solveGS(
+auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solveGS(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -316,7 +316,7 @@ auto schemi::chemicalKineticsRober::cellReactionMatrix::solveGS(
 	}
 }
 
-auto schemi::chemicalKineticsRober::cellReactionMatrix::solveCG(
+auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solveCG(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -399,7 +399,7 @@ auto schemi::chemicalKineticsRober::cellReactionMatrix::solveCG(
 	}
 }
 
-auto schemi::chemicalKineticsRober::cellReactionMatrix::solveJCG(
+auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solveJCG(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -493,7 +493,7 @@ auto schemi::chemicalKineticsRober::cellReactionMatrix::solveJCG(
 	}
 }
 
-auto schemi::chemicalKineticsRober::cellReactionMatrix::solveGE() const ->
+auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solveGE() const ->
 std::array<scalar, N>
 {
 	scalar A[N][N] { { 0, 0 }, { 0, 0 }, { 0, 0 } };
@@ -565,7 +565,7 @@ std::array<scalar, N>
 	{	phi[0], phi[1], phi[2]};
 }
 
-auto schemi::chemicalKineticsRober::cellReactionMatrix::solve(
+auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solve(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) const -> std::array<
 		scalar, N>
@@ -594,7 +594,7 @@ auto schemi::chemicalKineticsRober::cellReactionMatrix::solve(
 	}
 }
 
-schemi::chemicalKineticsRober::cellReactionMatrix schemi::chemicalKineticsRober::velocityCalculation(
+schemi::chemicalKinetics::Rober::cellReactionMatrix schemi::chemicalKinetics::Rober::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
@@ -615,7 +615,7 @@ schemi::chemicalKineticsRober::cellReactionMatrix schemi::chemicalKineticsRober:
 			molarMasses, itSolv);
 }
 
-void schemi::chemicalKineticsRober::timeStepIntegration(
+void schemi::chemicalKinetics::Rober::timeStepIntegration(
 		homogeneousPhase<cubicCell> & phaseN) const
 {
 	auto & mesh_ = phaseN.pressure.meshRef();
@@ -747,7 +747,7 @@ void schemi::chemicalKineticsRober::timeStepIntegration(
 	}
 }
 
-schemi::chemicalKineticsRober::chemicalKineticsRober(
+schemi::chemicalKinetics::Rober::Rober(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
 		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
 {
@@ -801,7 +801,7 @@ schemi::chemicalKineticsRober::chemicalKineticsRober(
 	chem.close();
 }
 
-void schemi::chemicalKineticsRober::solveChemicalKinetics(
+void schemi::chemicalKinetics::Rober::solveChemicalKinetics(
 		homogeneousPhase<cubicCell> & phaseIn) const
 {
 	auto phaseN1 = phaseIn;

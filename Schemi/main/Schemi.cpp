@@ -704,9 +704,9 @@ int main()
 			chem.close();
 		}
 
-		std::unique_ptr<abstractChemicalKinetics> chmk(
-				abstractChemicalKinetics::createChemicalKinetics(*gasPhase,
-						chemReactionFlag, minTime));
+		std::unique_ptr<chemicalKinetics::abstractChemicalKinetics> chmk(
+				chemicalKinetics::abstractChemicalKinetics::createChemicalKinetics(
+						*gasPhase, chemReactionFlag, minTime));
 
 		/*Write initial conditions.*/
 		{

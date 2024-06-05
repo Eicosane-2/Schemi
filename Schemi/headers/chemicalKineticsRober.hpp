@@ -12,7 +12,9 @@
 
 namespace schemi
 {
-class chemicalKineticsRober: public abstractChemicalKinetics
+namespace chemicalKinetics
+{
+class Rober: public abstractChemicalKinetics
 {
 	static constexpr std::size_t N { 3 };
 
@@ -106,12 +108,12 @@ class chemicalKineticsRober: public abstractChemicalKinetics
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
 public:
-	chemicalKineticsRober(const homogeneousPhase<cubicCell> & phaseIn,
-			const scalar mt);
+	Rober(const homogeneousPhase<cubicCell> & phaseIn, const scalar mt);
 
 	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
 			override;
 };
+}
 }  // namespace schemi
 
 #endif /* CHEMICALKINETICSROBER_HPP_ */

@@ -13,7 +13,9 @@
 
 namespace schemi
 {
-class chemicalKineticsNO2Disproportionation: public abstractChemicalKinetics
+namespace chemicalKinetics
+{
+class NO2Disproportionation: public abstractChemicalKinetics
 {
 	static constexpr std::size_t N { 4 };
 
@@ -112,12 +114,13 @@ class chemicalKineticsNO2Disproportionation: public abstractChemicalKinetics
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
 public:
-	chemicalKineticsNO2Disproportionation(
-			const homogeneousPhase<cubicCell> & phaseIn, const scalar mt);
+	NO2Disproportionation(const homogeneousPhase<cubicCell> & phaseIn,
+			const scalar mt);
 
 	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
 			override;
 };
+}
 }  // namespace schemi
 
 #endif /* CHEMICALKINETICSNO2DISPROPORTIONATION_HPP_ */

@@ -15,17 +15,17 @@
 #include "chemicalKineticsNoReaction.hpp"
 #include "chemicalKineticsRober.hpp"
 
-schemi::abstractChemicalKinetics::abstractChemicalKinetics(const bool flag,
-		const scalar mt) noexcept :
+schemi::chemicalKinetics::abstractChemicalKinetics::abstractChemicalKinetics(
+		const bool flag, const scalar mt) noexcept :
 		minTimestep(mt), chemicalReaction(flag)
 {
 }
 
-schemi::abstractChemicalKinetics::~abstractChemicalKinetics() noexcept
+schemi::chemicalKinetics::abstractChemicalKinetics::~abstractChemicalKinetics() noexcept
 {
 }
 
-std::unique_ptr<schemi::abstractChemicalKinetics> schemi::abstractChemicalKinetics::createChemicalKinetics(
+std::unique_ptr<schemi::chemicalKinetics::abstractChemicalKinetics> schemi::chemicalKinetics::abstractChemicalKinetics::createChemicalKinetics(
 		const homogeneousPhase<cubicCell> & phaseIn,
 		const chemicalReactions chemReactFlag,
 		const scalar minimalTimestep) noexcept
@@ -33,36 +33,37 @@ std::unique_ptr<schemi::abstractChemicalKinetics> schemi::abstractChemicalKineti
 	switch (chemReactFlag)
 	{
 	case chemicalReactions::Cl2Dissociation:
-		return std::make_unique<chemicalKineticsChlorumDissociation>(phaseIn,
+		return std::make_unique<chemicalKinetics::ChlorumDissociation>(phaseIn,
 				minimalTimestep);
 		break;
 	case chemicalReactions::Cl2H2Dissociation:
-		return std::make_unique<chemicalKineticsChlorumHydrogeniumDissociation>(
+		return std::make_unique<chemicalKinetics::ChlorumHydrogeniumDissociation>(
 				phaseIn, minimalTimestep);
 		break;
 	case chemicalReactions::H2Cl2Combustion:
-		return std::make_unique<chemicalKineticsH2Cl2Combustion>(phaseIn,
+		return std::make_unique<chemicalKinetics::H2Cl2Combustion>(phaseIn,
 				minimalTimestep);
 		break;
 	case chemicalReactions::NO2Disproportionation:
-		return std::make_unique<chemicalKineticsNO2Disproportionation>(phaseIn,
-				minimalTimestep);
+		return std::make_unique<chemicalKinetics::NO2Disproportionation>(
+				phaseIn, minimalTimestep);
 		break;
 	case chemicalReactions::H2O2Combustion:
-		return std::make_unique<chemicalKineticsH2O2Combustion>(phaseIn,
+		return std::make_unique<chemicalKinetics::H2O2Combustion>(phaseIn,
 				minimalTimestep);
 		break;
 	case chemicalReactions::Rober:
-		return std::make_unique<chemicalKineticsRober>(phaseIn, minimalTimestep);
+		return std::make_unique<chemicalKinetics::Rober>(phaseIn,
+				minimalTimestep);
 		break;
 	case chemicalReactions::noReaction:
 	default:
-		return std::make_unique<chemicalKineticsNoReaction>();
+		return std::make_unique<chemicalKinetics::NoReaction>();
 		break;
 	}
 }
 
-void schemi::abstractChemicalKinetics::normalize(
+void schemi::chemicalKinetics::abstractChemicalKinetics::normalize(
 		std::valarray<scalar> & res) noexcept
 {
 	for (auto & i : res)

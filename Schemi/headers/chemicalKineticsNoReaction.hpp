@@ -12,13 +12,16 @@
 
 namespace schemi
 {
-class chemicalKineticsNoReaction: public abstractChemicalKinetics
+namespace chemicalKinetics
+{
+class NoReaction: public abstractChemicalKinetics
 {
 public:
-	chemicalKineticsNoReaction() noexcept;
+	NoReaction() noexcept;
 
 	void solveChemicalKinetics(homogeneousPhase<cubicCell>&) const override;
 };
+}
 }  // namespace schemi
 
 #endif /* CHEMICALKINETICSNOREACTION_HPP_ */

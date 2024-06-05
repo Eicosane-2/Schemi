@@ -12,7 +12,9 @@
 
 namespace schemi
 {
-class chemicalKineticsChlorumHydrogeniumDissociation: public abstractChemicalKinetics
+namespace chemicalKinetics
+{
+class ChlorumHydrogeniumDissociation: public abstractChemicalKinetics
 {
 	static constexpr std::size_t N { 4 };
 
@@ -116,12 +118,13 @@ class chemicalKineticsChlorumHydrogeniumDissociation: public abstractChemicalKin
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
 public:
-	chemicalKineticsChlorumHydrogeniumDissociation(
-			const homogeneousPhase<cubicCell> & phaseIn, const scalar mt);
+	ChlorumHydrogeniumDissociation(const homogeneousPhase<cubicCell> & phaseIn,
+			const scalar mt);
 
 	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
 			override;
 };
+}
 }  // namespace schemi
 
 #endif /* CHEMICALKINETICSCHLORUMHYDROGENIUMDISSOCIATION_HPP_ */
