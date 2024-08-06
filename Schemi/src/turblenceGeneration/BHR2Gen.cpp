@@ -37,9 +37,10 @@ std::tuple<
 		const volumeField<vector> & gradP, const volumeField<vector> & gradRho,
 		const volumeField<tensor> & grada, const volumeField<scalar>&,
 		const volumeField<vector> & gradb, const volumeField<tensor> & spherR,
-		const volumeField<tensor> & devR, const volumeField<vector> & gradMav_n,
+		const volumeField<tensor> & devR,
+		[[maybe_unused]] const volumeField<vector> & gradMav_n,
 		const abstractMixtureThermodynamics & mixture,
-		const volumeField<scalar> & nu_t) const noexcept
+		[[maybe_unused]] const volumeField<scalar> & nu_t) const noexcept
 {
 	auto & mesh_ { cellFields.pressure.meshRef() };
 
@@ -72,14 +73,6 @@ std::tuple<
 		const auto thetaS_i = turbPar->thetaS_R(gradV()[i].trace(),
 				diffFieldsOld.k()[i], diffFieldsOld.eps()[i]);
 
-		[[maybe_unused]] const auto thetaB_i = turbPar->thetaB(
-				diffFieldsOld.a()[i], diffFieldsOld.k()[i],
-				diffFieldsOld.eps()[i], gradMav_n()[i], a_s2[i],
-				std::pair<scalar, vector>(cellFields.density[0]()[i],
-						gradRho()[i]),
-				std::pair<scalar, vector>(cellFields.pressure()[i], gradP()[i]),
-				nu_t()[i]);
-
 		const auto thetaA_i = turbPar->thetaA(diffFieldsOld.a()[i],
 				diffFieldsOld.k()[i], diffFieldsOld.b()[i]);
 
@@ -94,7 +87,7 @@ std::tuple<
 
 		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen + gravGen;
 		Sourcek.second.r()[i] = (1
-				+ 2 * turbPar->CMS_B() * diffFieldsOld.k()[i] / a_s2[i])
+				+ turbPar->CMS_M() * 2 * diffFieldsOld.k()[i] / a_s2[i])
 				* dissip / cellFields.kTurb()[i];
 
 		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen

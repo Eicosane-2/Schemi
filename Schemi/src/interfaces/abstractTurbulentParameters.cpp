@@ -28,10 +28,6 @@ schemi::scalar schemi::abstractTurbulentParameters::C0() const noexcept
 {
 	return C0_;
 }
-schemi::scalar schemi::abstractTurbulentParameters::C0max() const noexcept
-{
-	return C0_max;
-}
 schemi::scalar schemi::abstractTurbulentParameters::C1() const noexcept
 {
 	return C1_;
@@ -100,14 +96,13 @@ schemi::scalar schemi::abstractTurbulentParameters::CMS_D() const noexcept
 {
 	return CMS_D_;
 }
-schemi::scalar schemi::abstractTurbulentParameters::CMS_B() const noexcept
-{
-	return CMS_B_;
-}
-
 schemi::scalar schemi::abstractTurbulentParameters::CMS_A() const noexcept
 {
 	return CMS_A_;
+}
+schemi::scalar schemi::abstractTurbulentParameters::CMS_M() const noexcept
+{
+	return CMS_M_;
 }
 
 schemi::abstractTurbulentParameters::abstractTurbulentParameters(
@@ -117,8 +112,6 @@ const mesh & meshIn,
 const scalar CmuI,
 
 const scalar C0In,
-
-const scalar C0maxIn,
 
 const scalar C1In,
 
@@ -154,15 +147,13 @@ const scalar CMS_R_In,
 
 const scalar CMS_D_In,
 
-const scalar CMS_B_In,
+const scalar CMS_A_In,
 
-const scalar CMS_A_In) noexcept :
+const scalar CMS_M_In) noexcept :
 
 		Cmu_ { CmuI },
 
 		C0_ { C0In },
-
-		C0_max { C0maxIn },
 
 		C1_ { C1In },
 
@@ -198,9 +189,9 @@ const scalar CMS_A_In) noexcept :
 
 		CMS_D_ { CMS_D_In },
 
-		CMS_B_ { CMS_B_In },
-
 		CMS_A_ { CMS_A_In },
+
+		CMS_M_ { CMS_M_In },
 
 		y { meshIn }
 {
@@ -211,166 +202,15 @@ void schemi::abstractTurbulentParameters::readTurbulentParameters(
 {
 	std::string skipBuffer;
 
-	std::string thetaBType;
-
 	turbulentParametersFile >> skipBuffer >> Cmu_ >> skipBuffer >> C0_
-			>> skipBuffer >> C0_max >> skipBuffer >> C1_ >> skipBuffer >> C2_
-			>> skipBuffer >> C3_ >> skipBuffer >> sigmaSc_ >> skipBuffer
-			>> sigmaT_ >> skipBuffer >> sigmaE_ >> skipBuffer >> sigmaK_
-			>> skipBuffer >> sigmaEps_ >> skipBuffer >> sigmaa_ >> skipBuffer
-			>> sigmab_ >> skipBuffer >> Ca1_ >> skipBuffer >> Ca1_max
-			>> skipBuffer >> Cb1_ >> skipBuffer >> mink_ >> skipBuffer
-			>> mineps_ >> skipBuffer >> CMS_R_ >> skipBuffer >> CMS_D_
-			>> skipBuffer >> CMS_B_ >> skipBuffer >> CMS_A_ >> skipBuffer
-			>> thetaBType;
-
-	if (thetaBType == "sqrt")
-	{
-		thetaB_pointer = [this](const vector & a, const scalar k,
-				const scalar /*epsilon*/, const vector& /*gradMav_n*/,
-				const scalar /*a_s2*/,
-				const std::pair<scalar, vector>&& /*rhoGradRho*/,
-				const std::pair<scalar, vector>&& /*pGradP*/,
-				const scalar /*nu_t*/) 
-				{
-					return 1. / std::sqrt(1 + (a & a) / (CMS_B() * k));
-				};
-
-		std::cout << "thetaB is calculated with sqrt function." << std::endl;
-	}
-	else if (thetaBType == "cbrt")
-	{
-		thetaB_pointer = [this](const vector & a, const scalar k,
-				const scalar /*epsilon*/, const vector& /*gradMav_n*/,
-				const scalar /*a_s2*/,
-				const std::pair<scalar, vector>&& /*rhoGradRho*/,
-				const std::pair<scalar, vector>&& /*pGradP*/,
-				const scalar /*nu_t*/) 
-				{
-					return 1. / std::cbrt(1 + (a & a) / (CMS_B() * k));
-				};
-
-		std::cout << "thetaB is calculated with cbrt function." << std::endl;
-	}
-	else if (thetaBType == "gradMav")
-	{
-		thetaB_pointer =
-				[this](const vector& /*a*/, const scalar k,
-						const scalar epsilon, const vector & gradMav_n,
-						const scalar /*a_s2*/,
-						const std::pair<scalar, vector>&& /*rhoGradRho*/,
-						const std::pair<scalar, vector>&& /*pGradP*/,
-						const scalar /*nu_t*/) 
-						{
-							const auto k3eps2 = pow<scalar, 3>(k) / pow<scalar, 2>(epsilon);
-							return 1. / std::sqrt(1 + (gradMav_n & gradMav_n) * k3eps2 / CMS_B());
-						};
-
-		std::cout
-				<< "thetaB is calculated with gradient of average molar mass function."
-				<< std::endl;
-	}
-	else if (thetaBType == "wD")
-	{
-		thetaB_pointer =
-				[this](const vector& /*a*/, const scalar k,
-						const scalar /*epsilon*/, const vector& /*gradMav_n*/,
-						const scalar a_s2,
-						const std::pair<scalar, vector> && rhoGradRho,
-						const std::pair<scalar, vector> && pGradP,
-						const scalar nu_t) 
-						{
-							const auto wD = -nu_t * (rhoGradRho.second/rhoGradRho.first -pGradP.second/(rhoGradRho.first * a_s2));
-
-							return 1. / std::sqrt(1 + (wD & wD) / (CMS_B()*k));
-						};
-
-		std::cout
-				<< "thetaB is calculated with algebraically calculated turbulent mass flux."
-				<< std::endl;
-	}
-	else if (thetaBType == "gradMavGradRho")
-	{
-		thetaB_pointer =
-				[this](const vector& /*a*/, const scalar k,
-						const scalar epsilon, const vector & gradMav_n,
-						const scalar /*a_s2*/,
-						const std::pair<scalar, vector> && rhoGradRho,
-						const std::pair<scalar, vector> && pGradP,
-						const scalar /*nu_t*/) 
-						{
-							const auto k4eps2 = pow<scalar, 4>(k) / pow<scalar, 2>(epsilon);
-							return 1. / std::sqrt(1 + std::abs(gradMav_n & rhoGradRho.second)/pGradP.first * k4eps2 / CMS_B());
-						};
-
-		std::cout
-				<< "thetaB is calculated with gradient of average molar mass and density gradient function."
-				<< std::endl;
-	}
-	else if (thetaBType == "gradMavGradP")
-	{
-		thetaB_pointer =
-				[this](const vector& /*a*/, const scalar k,
-						const scalar epsilon, const vector & gradMav_n,
-						const scalar /*a_s2*/,
-						const std::pair<scalar, vector>&& /*rhoGradRho*/,
-						const std::pair<scalar, vector> && pGradP,
-						const scalar /*nu_t*/) 
-						{
-							const auto k3eps2 = pow<scalar, 3>(k) / pow<scalar, 2>(epsilon);
-							return 1. / std::sqrt(1 + std::abs(gradMav_n & (pGradP.second/pGradP.first)) * k3eps2 / CMS_B());
-						};
-
-		std::cout
-				<< "thetaB is calculated with gradient of average molar mass and pressure gradient function."
-				<< std::endl;
-	}
-	else if (thetaBType == "gradMavGradRhoA")
-	{
-		thetaB_pointer =
-				[this](const vector & a, const scalar /*k*/,
-						const scalar epsilon, const vector & gradMav_n,
-						const scalar /*a_s2*/,
-						const std::pair<scalar, vector> && rhoGradRho,
-						const std::pair<scalar, vector> && pGradP,
-						const scalar /*nu_t*/) 
-						{
-							const auto k4eps2 = pow<scalar, 4>(a&a) / pow<scalar, 2>(epsilon);
-							return 1. / std::sqrt(1 + std::abs(gradMav_n & rhoGradRho.second)/pGradP.first * k4eps2 / CMS_B());
-						};
-
-		std::cout
-				<< "thetaB is calculated with gradient of average molar mass and density gradient function and vector a."
-				<< std::endl;
-	}
-	else if (thetaBType == "sourceA")
-	{
-		thetaB_pointer = [this](const vector & a, const scalar /*k*/,
-				const scalar epsilon, const vector& /*gradMav_n*/,
-				const scalar /*a_s2*/,
-				const std::pair<scalar, vector> && rhoGradRho,
-				const std::pair<scalar, vector> && pGradP,
-				const scalar /*nu_t*/) 
-				{
-					auto num
-					{	(a & pGradP.second) /rhoGradRho.first};
-					num = std::max(0., num);
-					const auto denom
-					{	epsilon * CMS_B()};
-
-					return 1. / std::sqrt(1 + num / denom);
-				};
-
-		std::cout
-				<< "thetaB is calculated with gradient of average molar mass and density gradient function and vector a."
-				<< std::endl;
-	}
-	else if (thetaBType == "no")
-		std::cout << "thetaB is 1." << std::endl;
-	else
-		throw exception(
-				"Wrong type of thetaB function. Must be <<sqrt>> or <<cbrt>> or <<gradMav>> or <<wD>> or <<gradMavGradRho>> or <<no>>.",
-				errors::initialisationError);
+			>> skipBuffer >> C1_ >> skipBuffer >> C2_ >> skipBuffer >> C3_
+			>> skipBuffer >> sigmaSc_ >> skipBuffer >> sigmaT_ >> skipBuffer
+			>> sigmaE_ >> skipBuffer >> sigmaK_ >> skipBuffer >> sigmaEps_
+			>> skipBuffer >> sigmaa_ >> skipBuffer >> sigmab_ >> skipBuffer
+			>> Ca1_ >> skipBuffer >> Ca1_max >> skipBuffer >> Cb1_ >> skipBuffer
+			>> mink_ >> skipBuffer >> mineps_ >> skipBuffer >> CMS_R_
+			>> skipBuffer >> CMS_D_ >> skipBuffer >> CMS_A_ >> skipBuffer
+			>> CMS_M_;
 }
 
 schemi::scalar schemi::abstractTurbulentParameters::thetaS(
@@ -379,19 +219,12 @@ schemi::scalar schemi::abstractTurbulentParameters::thetaS(
 	return (divV > -CMS_R());
 }
 
-schemi::scalar schemi::abstractTurbulentParameters::thetaB(const vector & a,
-		const scalar k, const scalar epsilon, const vector & gradMav_n,
-		const scalar a_s2, std::pair<scalar, vector> && rhoGradRho,
-		std::pair<scalar, vector> && pGradP, const scalar nu_t) const noexcept
-{
-	return thetaB_pointer(a, k, epsilon, gradMav_n, a_s2, std::move(rhoGradRho),
-			std::move(pGradP), nu_t);
-}
-
 schemi::scalar schemi::abstractTurbulentParameters::thetaA(const vector & a,
 		const scalar k, const scalar b) const noexcept
 {
-	return (a & a) / (2 * k) < CMS_A() && b < CMS_A() && (a & a) / (2 * k) < b ?
+	const auto aa = (a & a);
+
+	return aa / (2 * k) < CMS_A() && b < CMS_A() && aa / (2 * k) < b ?
 			1 : Ca1max() / std::min(Ca1(), Cb1());
 }
 

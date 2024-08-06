@@ -26,23 +26,8 @@ class boundaryConditionValue;
 
 class abstractTurbulentParameters
 {
-	std::function<
-			scalar(const vector& /*a*/, const scalar /*k*/,
-					const scalar /*epsilon*/, const vector& /*gradMav_n*/,
-					const scalar /*a_s2*/,
-					const std::pair<scalar, vector>&& /*rho, gradRho*/,
-					const std::pair<scalar, vector>&& /*p, gradP*/,
-					const scalar /*nu_t*/)> thetaB_pointer = [this](
-			const vector&, const scalar, const scalar, const vector&,
-			const scalar, const std::pair<scalar, vector>&&,
-			const std::pair<scalar, vector>&&, const scalar) 
-			{
-				return 1.;
-			};
-
 	scalar Cmu_;
 	scalar C0_;
-	scalar C0_max;
 	scalar C1_;
 	scalar C2_;
 	scalar C3_;
@@ -60,8 +45,8 @@ class abstractTurbulentParameters
 	scalar mineps_;
 	scalar CMS_R_;
 	scalar CMS_D_;
-	scalar CMS_B_;
 	scalar CMS_A_;
+	scalar CMS_M_;
 
 	volumeField<scalar> y;
 
@@ -71,7 +56,6 @@ class abstractTurbulentParameters
 public:
 	scalar Cmu() const noexcept;
 	scalar C0() const noexcept;
-	scalar C0max() const noexcept;
 	scalar C1() const noexcept;
 	scalar C2() const noexcept;
 	scalar C3() const noexcept;
@@ -89,8 +73,8 @@ public:
 	scalar mineps() const noexcept;
 	scalar CMS_R() const noexcept;
 	scalar CMS_D() const noexcept;
-	scalar CMS_B() const noexcept;
 	scalar CMS_A() const noexcept;
+	scalar CMS_M() const noexcept;
 
 	virtual ~abstractTurbulentParameters() noexcept =0;
 
@@ -101,8 +85,6 @@ public:
 	const scalar CmuI,
 
 	const scalar C0In,
-
-	const scalar C0maxIn,
 
 	const scalar C1In,
 
@@ -138,9 +120,9 @@ public:
 
 	const scalar CMS_D_In,
 
-	const scalar CMS_B_In,
+	const scalar CMS_A_In,
 
-	const scalar CMS_A_In) noexcept;
+	const scalar CMS_M_In) noexcept;
 
 	virtual std::valarray<scalar> calculateNut(
 			const std::valarray<scalar>& /*k*/,
@@ -191,34 +173,8 @@ public:
 		return returnField;
 	}
 
-	scalar thetaB(const vector & a, const scalar k, const scalar epsilon,
-			const vector & gradMav_n, const scalar a_s2,
-			std::pair<scalar, vector> && rhoGradRho,
-			std::pair<scalar, vector> && pGradP,
-			const scalar nu_t) const noexcept;
-
 	scalar thetaA(const vector & a, const scalar k,
 			const scalar b) const noexcept;
-
-	template<typename typeOfField>
-	field<scalar, typeOfField> thetaB(const field<vector, typeOfField> & a,
-			const field<scalar, typeOfField> & k,
-			const field<scalar, typeOfField> & epsilon,
-			const field<vector, typeOfField> & gradMav_n,
-			const std::valarray<scalar> & a_s2,
-			const std::pair<field<scalar, typeOfField>,
-					field<vector, typeOfField>> & rhoGradRho,
-			const std::pair<field<scalar, typeOfField>,
-					field<vector, typeOfField>> & pGradP,
-			const field<scalar, typeOfField> & nu_t) const noexcept
-	{
-		field<scalar, typeOfField> returnField { a.meshP(), 0. };
-
-		for (std::size_t i = 0; i < returnField.size(); ++i)
-			returnField.r()[i] = thetaB(a()[i], k()[i]);
-
-		return returnField;
-	}
 
 	template<typename typeOfField>
 	field<scalar, typeOfField> thetaA(const field<vector, typeOfField> & a,

@@ -31,8 +31,6 @@ const scalar CmuIn,
 
 const scalar C0In,
 
-const scalar C0maxIn,
-
 const scalar C1In,
 
 const scalar C2In,
@@ -67,13 +65,13 @@ const scalar CMS_R_In,
 
 const scalar CMS_D_In,
 
-const scalar CMS_B_In,
+const scalar CMS_A_In,
 
-const scalar CMS_A_In) noexcept :
-		abstractTurbulentParameters(meshIn, CmuIn, C0In, C0maxIn, C1In, C2In,
-				C3In, sigmaScIn, sigmaTIn, sigmaEIn, sigmakIn, sigmaepsIn,
-				sigmaaIn, sigmabIn, Ca1In, Ca1maxIn, Cb1In, minkIn, mienpsIn,
-				CMS_R_In, CMS_D_In, CMS_B_In, CMS_A_In)
+const scalar CMS_M_In) noexcept :
+		abstractTurbulentParameters(meshIn, CmuIn, C0In, C1In, C2In, C3In,
+				sigmaScIn, sigmaTIn, sigmaEIn, sigmakIn, sigmaepsIn, sigmaaIn,
+				sigmabIn, Ca1In, Ca1maxIn, Cb1In, minkIn, mienpsIn, CMS_R_In,
+				CMS_D_In, CMS_A_In, CMS_M_In)
 {
 }
 
