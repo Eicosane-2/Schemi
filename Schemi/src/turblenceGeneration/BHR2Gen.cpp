@@ -92,7 +92,7 @@ std::tuple<
 
 		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen
 				+ turbPar->C3() * ek * rhoSpherRGen
-				+ turbPar->C0() * ek * gravGen;
+				+ turbPar->C0() * ek * std::max(gravGen, 0.0);
 		Sourceeps.second.r()[i] = turbPar->C2() * dissip
 				/ cellFields.kTurb()[i];
 

@@ -27,7 +27,7 @@ public:
 
 	const scalar CmuI = 0.28,
 
-	const scalar C0In = 1.5 - 1.05,
+	const scalar C0In = 1.5 - 0.98,
 
 	const scalar C1In = 1.5 - 1.2,
 
