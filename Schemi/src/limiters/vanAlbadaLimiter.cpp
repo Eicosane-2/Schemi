@@ -129,7 +129,7 @@ schemi::tensor3 schemi::vanAlbadaLimiter::calculate(const tensor3 & r,
 					vanAlbada()) * std::get<26>(gradient()) };
 }
 
-schemi::vector schemi::vanAlbadaLimiter::calculate3OLimit(const vector & r,
+schemi::vector schemi::vanAlbadaLimiter::calculateNoRSLimit(const vector & r,
 		const vector & gradient) const noexcept
 {
 	vector vanAlbada;
@@ -149,7 +149,7 @@ schemi::vector schemi::vanAlbadaLimiter::calculate3OLimit(const vector & r,
 					vanAlbada()) * std::get<2>(gradient()) };
 }
 
-schemi::tensor schemi::vanAlbadaLimiter::calculate3OLimit(const tensor & r,
+schemi::tensor schemi::vanAlbadaLimiter::calculateNoRSLimit(const tensor & r,
 		const tensor & gradient) const noexcept
 {
 	tensor vanAlbada;
@@ -175,7 +175,7 @@ schemi::tensor schemi::vanAlbadaLimiter::calculate3OLimit(const tensor & r,
 					vanAlbada()) * std::get<8>(gradient()) };
 }
 
-schemi::tensor3 schemi::vanAlbadaLimiter::calculate3OLimit(const tensor3 & r,
+schemi::tensor3 schemi::vanAlbadaLimiter::calculateNoRSLimit(const tensor3 & r,
 		const tensor3 & gradient) const noexcept
 {
 	tensor3 vanAlbada;

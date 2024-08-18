@@ -131,7 +131,7 @@ schemi::tensor3 schemi::minmodLimiter::calculate(const tensor3 & r,
 					* std::get<26>(gradient()) };
 }
 
-schemi::vector schemi::minmodLimiter::calculate3OLimit(const vector & r,
+schemi::vector schemi::minmodLimiter::calculateNoRSLimit(const vector & r,
 		const vector & gradient) const noexcept
 {
 	vector minmod;
@@ -151,7 +151,7 @@ schemi::vector schemi::minmodLimiter::calculate3OLimit(const vector & r,
 					minmod()) * std::get<2>(gradient()) };
 }
 
-schemi::tensor schemi::minmodLimiter::calculate3OLimit(const tensor & r,
+schemi::tensor schemi::minmodLimiter::calculateNoRSLimit(const tensor & r,
 		const tensor & gradient) const noexcept
 {
 	tensor minmod;
@@ -177,7 +177,7 @@ schemi::tensor schemi::minmodLimiter::calculate3OLimit(const tensor & r,
 					* std::get<8>(gradient()) };
 }
 
-schemi::tensor3 schemi::minmodLimiter::calculate3OLimit(const tensor3 & r,
+schemi::tensor3 schemi::minmodLimiter::calculateNoRSLimit(const tensor3 & r,
 		const tensor3 & gradient) const noexcept
 {
 	tensor3 minmod;

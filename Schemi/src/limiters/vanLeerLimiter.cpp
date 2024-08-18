@@ -127,7 +127,7 @@ schemi::tensor3 schemi::vanLeerLimiter::calculate(const tensor3 & r,
 			* std::get<26>(gradient()) };
 }
 
-schemi::vector schemi::vanLeerLimiter::calculate3OLimit(const vector & r,
+schemi::vector schemi::vanLeerLimiter::calculateNoRSLimit(const vector & r,
 		const vector & gradient) const noexcept
 {
 	vector vanLeer;
@@ -147,7 +147,7 @@ schemi::vector schemi::vanLeerLimiter::calculate3OLimit(const vector & r,
 					vanLeer()) * std::get<2>(gradient()) };
 }
 
-schemi::tensor schemi::vanLeerLimiter::calculate3OLimit(const tensor & r,
+schemi::tensor schemi::vanLeerLimiter::calculateNoRSLimit(const tensor & r,
 		const tensor & gradient) const noexcept
 {
 	tensor vanLeer;
@@ -173,7 +173,7 @@ schemi::tensor schemi::vanLeerLimiter::calculate3OLimit(const tensor & r,
 					* std::get<8>(gradient()) };
 }
 
-schemi::tensor3 schemi::vanLeerLimiter::calculate3OLimit(const tensor3 & r,
+schemi::tensor3 schemi::vanLeerLimiter::calculateNoRSLimit(const tensor3 & r,
 		const tensor3 & gradient) const noexcept
 {
 	tensor3 vanLeer;

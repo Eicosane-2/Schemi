@@ -57,7 +57,7 @@ volumeField<std::vector<T>> thirdOrderLimiter(const surfaceField<T> & surfGrad,
 					surfGrad()[farSurfaceIndex]);
 
 			cellLimiters.r()[i].emplace_back(
-					limiterObjectP.calculate3OLimit(r,
+					limiterObjectP.calculateNoRSLimit(r,
 							surfGrad()[farSurfaceIndex]));
 		}
 	}
