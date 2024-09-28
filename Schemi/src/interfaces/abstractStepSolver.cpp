@@ -26,7 +26,7 @@ schemi::abstractStepSolver::abstractStepSolver(
 		const volumeField<scalar> & minimalLengthScale_in,
 		const timestep & sourceTimeFlag_in,
 		const bool & molMassDiffusionFlag_in,
-		const abstractChemicalKinetics & chemKin_in) noexcept :
+		const chemicalKinetics::abstractChemicalKinetics & chemKin_in) noexcept :
 		gasPhase(gasPhase_in), limiter(limiter_in), fsolver(fsolver_in), gravitationFlag(
 				gravitationFlag_in), g(g_in), boundaryConditionValueCalc(
 				boundaryConditionValueCalc_in), timeForTVD(timeForTVD_in), timeForHancock(

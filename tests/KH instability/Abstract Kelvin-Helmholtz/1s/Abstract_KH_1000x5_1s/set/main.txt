@@ -19,7 +19,7 @@ SI
 #Equation_of_state
 vanDerWaals
 #TVD_limiter_type
-vanAlbada2
+vanAlbada
 #Number_of_iterations_of_SLE_matrix_solver
 2000
 #Diffusion_flag

@@ -7,12 +7,12 @@
 
 #include "chemicalKineticsNoReaction.hpp"
 
-schemi::chemicalKineticsNoReaction::chemicalKineticsNoReaction() noexcept :
+schemi::chemicalKinetics::NoReaction::NoReaction() noexcept :
 		abstractChemicalKinetics(false, 0.0)
 {
 }
 
-void schemi::chemicalKineticsNoReaction::solveChemicalKinetics(
+void schemi::chemicalKinetics::NoReaction::solveChemicalKinetics(
 		homogeneousPhase<cubicCell>&) const
 {
 }

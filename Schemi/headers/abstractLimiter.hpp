@@ -36,13 +36,13 @@ public:
 	virtual tensor3 calculate(const tensor3& /*r*/,
 			const tensor3& /*gradient*/) const noexcept =0;
 
-	virtual vector calculate3OLimit(const vector& /*r*/,
+	virtual vector calculateNoRSLimit(const vector& /*r*/,
 			const vector& /*gradient*/) const noexcept =0;
 
-	virtual tensor calculate3OLimit(const tensor& /*r*/,
+	virtual tensor calculateNoRSLimit(const tensor& /*r*/,
 			const tensor& /*gradient*/) const noexcept =0;
 
-	virtual tensor3 calculate3OLimit(const tensor3& /*r*/,
+	virtual tensor3 calculateNoRSLimit(const tensor3& /*r*/,
 			const tensor3& /*gradient*/) const noexcept =0;
 };
 }  // namespace schemi

@@ -52,7 +52,7 @@ protected:
 	const volumeField<scalar> & minimalLengthScale;
 	const timestep & sourceTimeFlag;
 	const bool & molMassDiffusionFlag;
-	const abstractChemicalKinetics & chemKin;
+	const chemicalKinetics::abstractChemicalKinetics & chemKin;
 public:
 	abstractStepSolver(homogeneousPhase<cubicCell> & gasPhase_in,
 			const abstractLimiter & limiter_in,
@@ -74,7 +74,7 @@ public:
 			const volumeField<scalar> & minimalLengthScale_in,
 			const timestep & sourceTimeFlag_in,
 			const bool & molMassDiffusionFlag_in,
-			const abstractChemicalKinetics & chemKin_in) noexcept;
+			const chemicalKinetics::abstractChemicalKinetics & chemKin_in) noexcept;
 
 	abstractStepSolver(const abstractStepSolver&) = delete;
 	auto& operator=(const abstractStepSolver&) = delete;

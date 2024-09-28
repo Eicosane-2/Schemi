@@ -26,13 +26,13 @@ public:
 	tensor3 calculate(const tensor3&, const tensor3 & gradient) const noexcept
 			override;
 
-	vector calculate3OLimit(const vector&,
+	vector calculateNoRSLimit(const vector&,
 			const vector & gradient) const noexcept override;
 
-	tensor calculate3OLimit(const tensor&,
+	tensor calculateNoRSLimit(const tensor&,
 			const tensor & gradient) const noexcept override;
 
-	tensor3 calculate3OLimit(const tensor3&,
+	tensor3 calculateNoRSLimit(const tensor3&,
 			const tensor3 & gradient) const noexcept override;
 };
 }  // namespace schemi

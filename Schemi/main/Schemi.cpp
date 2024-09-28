@@ -695,6 +695,8 @@ int main()
 				chemReactionFlag = chemicalReactions::NO2Disproportionation;
 			else if (reactionName == "H2O2Combustion")
 				chemReactionFlag = chemicalReactions::H2O2Combustion;
+			else if (reactionName == "Rober")
+				chemReactionFlag = chemicalReactions::Rober;
 			else
 				throw exception("Unknown chemical reaction model.",
 						errors::initialisationError);
@@ -702,9 +704,9 @@ int main()
 			chem.close();
 		}
 
-		std::unique_ptr<abstractChemicalKinetics> chmk(
-				abstractChemicalKinetics::createChemicalKinetics(*gasPhase,
-						chemReactionFlag, minTime));
+		std::unique_ptr<chemicalKinetics::abstractChemicalKinetics> chmk(
+				chemicalKinetics::abstractChemicalKinetics::createChemicalKinetics(
+						*gasPhase, chemReactionFlag, minTime));
 
 		/*Write initial conditions.*/
 		{

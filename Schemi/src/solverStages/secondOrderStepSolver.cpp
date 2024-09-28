@@ -30,7 +30,7 @@ schemi::secondOrderStepSolver::secondOrderStepSolver(
 		const volumeField<scalar> & minimalLengthScale_in,
 		const timestep & sourceTimeFlag_in,
 		const bool & molMassDiffusionFlag_in,
-		const abstractChemicalKinetics & chemKin_in) noexcept :
+		const chemicalKinetics::abstractChemicalKinetics & chemKin_in) noexcept :
 		abstractStepSolver(gasPhase_in, limiter_in, fsolver_in,
 				gravitationFlag_in, g_in, boundaryConditionValueCalc_in,
 				timeForTVD_in, timeForHancock_in, timeForFlowCalculation_in,

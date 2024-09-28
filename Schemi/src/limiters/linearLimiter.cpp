@@ -25,19 +25,19 @@ schemi::tensor3 schemi::linearLimiter::calculate(const tensor3&,
 	return gradient;
 }
 
-schemi::vector schemi::linearLimiter::calculate3OLimit(const vector&,
+schemi::vector schemi::linearLimiter::calculateNoRSLimit(const vector&,
 		const vector & gradient) const noexcept
 {
 	return gradient;
 }
 
-schemi::tensor schemi::linearLimiter::calculate3OLimit(const tensor&,
+schemi::tensor schemi::linearLimiter::calculateNoRSLimit(const tensor&,
 		const tensor & gradient) const noexcept
 {
 	return gradient;
 }
 
-schemi::tensor3 schemi::linearLimiter::calculate3OLimit(const tensor3&,
+schemi::tensor3 schemi::linearLimiter::calculateNoRSLimit(const tensor3&,
 		const tensor3 & gradient) const noexcept
 {
 	return gradient;

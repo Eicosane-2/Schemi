@@ -135,7 +135,7 @@ schemi::tensor3 schemi::superbeeLimiter::calculate(const tensor3 & r,
 					superbee()) * std::get<26>(gradient()) };
 }
 
-schemi::vector schemi::superbeeLimiter::calculate3OLimit(const vector & r,
+schemi::vector schemi::superbeeLimiter::calculateNoRSLimit(const vector & r,
 		const vector & gradient) const noexcept
 {
 	vector superbee;
@@ -155,7 +155,7 @@ schemi::vector schemi::superbeeLimiter::calculate3OLimit(const vector & r,
 			* std::get<2>(gradient()) };
 }
 
-schemi::tensor schemi::superbeeLimiter::calculate3OLimit(const tensor & r,
+schemi::tensor schemi::superbeeLimiter::calculateNoRSLimit(const tensor & r,
 		const tensor & gradient) const noexcept
 {
 	tensor superbee;
@@ -181,7 +181,7 @@ schemi::tensor schemi::superbeeLimiter::calculate3OLimit(const tensor & r,
 			* std::get<8>(gradient()) };
 }
 
-schemi::tensor3 schemi::superbeeLimiter::calculate3OLimit(const tensor3 & r,
+schemi::tensor3 schemi::superbeeLimiter::calculateNoRSLimit(const tensor3 & r,
 		const tensor3 & gradient) const noexcept
 {
 	tensor3 superbee;

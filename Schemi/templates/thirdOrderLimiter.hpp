@@ -31,34 +31,41 @@ volumeField<std::vector<T>> thirdOrderLimiter(const surfaceField<T> & surfGrad,
 		{
 			const auto surfaceIndex { surfacesOfCell_i[s1] };
 
-			std::size_t farSurfaceIndex { 0 };
-
-			scalar farSurfaceDistance { 0 };
+			std::pair<std::size_t, scalar> farSurface(0, 0);
 
 			for (std::size_t s2 = 0; s2 < surfacesOfCell_i.size(); ++s2)
 			{
 				if (s1 == s2)
 					continue;
 
-				const auto counterSurfaceIndex { surfacesOfCell_i[s2] };
+				const auto secSurfaceIndex { surfacesOfCell_i[s2] };
 
 				const scalar surfDistance =
-						(mesh_.surfaces()[counterSurfaceIndex].rC()
+						(mesh_.surfaces()[secSurfaceIndex].rC()
 								- mesh_.surfaces()[surfaceIndex].rC()).mag();
 
-				if (farSurfaceDistance < surfDistance)
+				if (farSurface.second < surfDistance)
 				{
-					farSurfaceDistance = surfDistance;
-					farSurfaceIndex = counterSurfaceIndex;
+					farSurface.second = surfDistance;
+					farSurface.first = secSurfaceIndex;
 				}
 			}
 
 			const auto r = elementsDivision(surfGrad()[surfaceIndex],
-					surfGrad()[farSurfaceIndex]);
+					surfGrad()[farSurface.first]);
+
+			const auto retr = elementsDivision(decltype(r)(1), r);
+
+			const auto limGradSurf = limiterObjectP.calculateNoRSLimit(retr,
+					surfGrad()[surfaceIndex]);
+
+			const auto limOppGradSurf = limiterObjectP.calculateNoRSLimit(r,
+					surfGrad()[farSurface.first]);
 
 			cellLimiters.r()[i].emplace_back(
-					limiterObjectP.calculate3OLimit(r,
-							surfGrad()[farSurfaceIndex]));
+					0.5
+							* ((1 - onethirds) * limOppGradSurf
+									+ (1 + onethirds) * limGradSurf));
 		}
 	}
 

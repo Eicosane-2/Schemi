@@ -25,9 +25,7 @@ public:
 
 	const scalar CmuIn = 0.09,
 
-	const scalar C0In = 0.95,
-
-	const scalar C0maxIn = 1.3,
+	const scalar C0In = 0.98,
 
 	const scalar C1In = 1.44,
 
@@ -35,25 +33,25 @@ public:
 
 	const scalar C3In = 2.0,
 
-	const scalar sigmaScIn = 0.5,
+	const scalar sigmaScIn = 0.7,
 
 	const scalar sigmaTIn = 1,
 
 	const scalar sigmaEIn = 1,
 
-	const scalar sigmakIn = 0.5,
+	const scalar sigmakIn = 0.7,
 
-	const scalar sigmaepsIn = 0.4,
+	const scalar sigmaepsIn = 0.6,
 
-	const scalar sigmaaIn = 0.2,
+	const scalar sigmaaIn = 0.7,
 
-	const scalar sigmabIn = 0.5,
+	const scalar sigmabIn = 0.7,
 
-	const scalar Ca1In = 3.0,
+	const scalar Ca1In = 2.5,
 
-	const scalar Ca1maxIn = 30.0,
+	const scalar Ca1maxIn = 15.0,
 
-	const scalar Cb1In = 3.0,
+	const scalar Cb1In = 2.0,
 
 	const scalar minkIn = 1E-15,
 
@@ -63,9 +61,9 @@ public:
 
 	const scalar CMS_D_In = 1.0,
 
-	const scalar CMS_B_In = 0.01,
+	const scalar CMS_A_In = 1.0,
 
-	const scalar CMS_A_In = 1.0) noexcept;
+	const scalar CMS_M_In = 1.0) noexcept;
 
 	std::valarray<scalar> calculateNut(const std::valarray<scalar> & k,
 			const std::valarray<scalar> & eps) const noexcept override;

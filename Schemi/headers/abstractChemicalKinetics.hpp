@@ -19,6 +19,8 @@
 
 namespace schemi
 {
+namespace chemicalKinetics
+{
 class abstractChemicalKinetics
 {
 protected:
@@ -75,6 +77,7 @@ public:
 
 	virtual void solveChemicalKinetics(homogeneousPhase<cubicCell>&) const =0;
 };
+}
 }  // namespace schemi
 
 #endif /* ABSTRACTCHEMICALKINETICS_HPP_ */
