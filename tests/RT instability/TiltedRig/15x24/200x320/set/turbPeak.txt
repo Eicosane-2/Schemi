@@ -1,0 +1,12 @@
+#Type_of_peak
+no
+#Maximum_k
+1
+#Maximum_epsilon
+1000
+#Center_coordinate
+1.0
+#Left_width
+0.005
+#Right_width
+0.005

@@ -12,8 +12,6 @@
 1E-15
 #Number_of_components
 5
-#Number_of_zones
-3
 #Defines_universal_gas_constant
 SI
 #Equation_of_state

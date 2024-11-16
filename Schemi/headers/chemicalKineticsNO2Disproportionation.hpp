@@ -72,27 +72,6 @@ class NO2Disproportionation: public abstractChemicalKinetics
 
 			void transpose() noexcept;
 		} matrix;
-
-		std::valarray<scalar> matrixDotProduct(const reactionMatrix & m,
-				const std::valarray<scalar> & v) const noexcept;
-
-		auto solveJ(const std::array<scalar, N> & oldField,
-				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, N>;
-
-		auto solveGS(const std::array<scalar, N> & oldField,
-				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, N>;
-
-		auto solveCG(const std::array<scalar, N> & oldField,
-				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, N>;
-
-		auto solveJCG(const std::array<scalar, N> & oldField,
-				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, N>;
-
-		auto solveGE() const -> std::array<scalar, N>;
 	public:
 		cellReactionMatrix() noexcept;
 

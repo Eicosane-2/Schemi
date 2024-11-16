@@ -7,6 +7,8 @@
 
 #include "abstractFlowSolver.hpp"
 
+#include <map>
+
 #include "flowSolverEnum.hpp"
 #include "HLLSolver.hpp"
 #include "HLLCFSolver.hpp"
@@ -21,26 +23,26 @@ schemi::abstractFlowSolver::~abstractFlowSolver() noexcept
 }
 
 std::unique_ptr<schemi::abstractFlowSolver> schemi::abstractFlowSolver::createFlowSolver(
-		const std::string_view name, const MPIHandler & par)
+		const std::string & name, const MPIHandler & par)
 {
+	std::map<std::string, flowSolver> flowSolverType;
+	flowSolverType.insert( { "HLLCF", flowSolver::HLLCF });
+	flowSolverType.insert( { "HLLC", flowSolver::HLLC });
+	flowSolverType.insert( { "HLL", flowSolver::HLL });
+	flowSolverType.insert( { "HLLCLM", flowSolver::HLLCLM });
+	flowSolverType.insert( { "KT", flowSolver::KT });
+	flowSolverType.insert( { "HLLC2p", flowSolver::HLLC2p });
+	flowSolverType.insert( { "Richtmyer", flowSolver::Richtmyer });
+
 	flowSolver flowSolwerFlag;
-	if (name == "HLLCF")
-		flowSolwerFlag = flowSolver::HLLCF;
-	else if (name == "HLLC")
-		flowSolwerFlag = flowSolver::HLLC;
-	else if (name == "HLL")
-		flowSolwerFlag = flowSolver::HLL;
-	else if (name == "HLLCLM")
-		flowSolwerFlag = flowSolver::HLLCLM;
-	else if (name == "KT")
-		flowSolwerFlag = flowSolver::KT;
-	else if (name == "HLLC2p")
-		flowSolwerFlag = flowSolver::HLLC2p;
-	else if (name == "Richtmyer")
-		flowSolwerFlag = flowSolver::Richtmyer;
-	else
+	try
+	{
+		flowSolwerFlag = flowSolverType.at(name);
+	} catch (const std::out_of_range&)
+	{
 		throw exception("Unknown flow solver flag.",
 				errors::initialisationError);
+	}
 
 	switch (flowSolwerFlag)
 	{
