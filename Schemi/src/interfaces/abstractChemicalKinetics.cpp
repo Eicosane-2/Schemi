@@ -17,8 +17,16 @@
 
 schemi::chemicalKinetics::abstractChemicalKinetics::abstractChemicalKinetics(
 		const bool flag, const scalar mt) noexcept :
-		minTimestep(mt), chemicalReaction(flag)
+		minTimestep(mt), solvers(), chemicalReaction(flag)
 {
+	solvers.insert( { "Gauss-Seidel", iterativeSolver::GaussSeidel });
+	solvers.insert(
+			{ "Conjugate_gradient", iterativeSolver::ConjugateGradient });
+	solvers.insert( { "Jacobi_conjugate_gradient",
+			iterativeSolver::JacobiConjugateGradient });
+	solvers.insert( { "Jacobi", iterativeSolver::Jacobi });
+	solvers.insert( { "Gauss_elimination", iterativeSolver::GaussElimination });
+	solvers.insert( { "no", iterativeSolver::noSolver });
 }
 
 schemi::chemicalKinetics::abstractChemicalKinetics::~abstractChemicalKinetics() noexcept

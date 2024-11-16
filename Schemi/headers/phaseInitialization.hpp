@@ -16,11 +16,13 @@
 #include "enthalpyFlowEnum.hpp"
 #include "MPIHandler.hpp"
 #include "homogeneousPhase.hpp"
+#include "zone.hpp"
 
 namespace schemi
 {
 std::tuple<std::unique_ptr<homogeneousPhase<cubicCell>>, enthalpyFlow, bool> phaseInitialization(
-		std::size_t numberOfComponents, std::size_t numberOfZones,
+		std::size_t numberOfComponents,
+		const std::vector<std::unique_ptr<zone>> & numberOfZones,
 		const mesh & meshReference,
 		const std::vector<boundaryConditionType> & commonConditions,
 		const MPIHandler & parallelism, const std::string & turbulenceONString,

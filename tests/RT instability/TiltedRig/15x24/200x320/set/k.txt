@@ -1,0 +1,15 @@
+#Tail_boundary_condition
+slip
+#Point_boundary_condition
+slip
+#Bottom_boundary_condition
+blank
+#Right_boundary_condition
+slip
+#Left_boundary_condition
+slip
+#Top_boundary_condition
+blank
+#Values_in_zones
+6.5E-3
+6.5E-3

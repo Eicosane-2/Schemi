@@ -21,7 +21,8 @@
 
 std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		schemi::enthalpyFlow, bool> schemi::phaseInitialization(
-		std::size_t numberOfComponents, std::size_t numberOfZones,
+		std::size_t numberOfComponents,
+		const std::vector<std::unique_ptr<zone>> & numberOfZones,
 		const mesh & meshReference,
 		const std::vector<boundaryConditionType> & commonConditions,
 		const MPIHandler & parallelism, const std::string & turbulenceONString,
@@ -73,32 +74,40 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			>> MolMassDiffusionFlagString;
 	transportCoefficientsFile.close();
 
+	std::map<std::string, transportModel> transportModels;
+	transportModels.insert( { "constant", transportModel::constant });
+	transportModels.insert( { "hardSpheres", transportModel::hardSpheres });
 	transportModel transpModel;
-	if (transportModelTypeString == "constant")
-		transpModel = transportModel::constant;
-	else if (transportModelTypeString == "hardSpheres")
-		transpModel = transportModel::hardSpheres;
-	else
+	try
+	{
+		transpModel = transportModels.at(transportModelTypeString);
+	} catch (const std::out_of_range&)
+	{
 		throw exception("Unknown flag for transport model.",
 				errors::initialisationError);
+	}
 
-	if (implicitEnthalpyFlowFlagString == "implicit")
-		enthalpyFlowFlag = enthalpyFlow::implicitSolve;
-	else if (implicitEnthalpyFlowFlagString == "explicit")
-		enthalpyFlowFlag = enthalpyFlow::explicitSolve;
-	else if (implicitEnthalpyFlowFlagString == "no")
-		enthalpyFlowFlag = enthalpyFlow::noSolve;
-	else
+	std::map<std::string, enthalpyFlow> enthalpyFlowTypes;
+	enthalpyFlowTypes.insert( { "implicit", enthalpyFlow::implicitSolve });
+	enthalpyFlowTypes.insert( { "explicit", enthalpyFlow::explicitSolve });
+	enthalpyFlowTypes.insert( { "no", enthalpyFlow::noSolve });
+	try
+	{
+		enthalpyFlowFlag = enthalpyFlowTypes.at(implicitEnthalpyFlowFlagString);
+	} catch (const std::out_of_range&)
+	{
 		throw exception("Unknown flag for enthalpy flow calculation.",
 				errors::initialisationError);
+	}
 
-	if (MolMassDiffusionFlagString == "on")
-		molMassDiffusionFlag = true;
-	else if (MolMassDiffusionFlagString == "off")
-		molMassDiffusionFlag = false;
-	else
+	try
+	{
+		molMassDiffusionFlag = onOffMap.at(MolMassDiffusionFlagString);
+	} catch (const std::out_of_range&)
+	{
 		throw exception("Unknown flag for molar mass diffusion correction.",
 				errors::initialisationError);
+	}
 
 	/*Create mixture class and boundary conditions for basic quantities: concentrations, velocity, pressure, k, epsilon, a and b.*/
 	std::vector<std::array<std::vector<subPatchData<scalar>>, 6>> boundaryConditionsMatrix(
@@ -107,7 +116,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		arr.fill(std::vector<subPatchData<scalar>>(0));
 
 	std::vector<std::vector<std::string>> matrixOfSubstancesConditions(
-			numberOfComponents, std::vector<std::string>(5 + numberOfZones));
+			numberOfComponents,
+			std::vector<std::string>(5 + numberOfZones.size()));
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
@@ -206,7 +216,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
 					errors::initialisationError);
-		for (std::size_t j = 0; j < numberOfZones; ++j)
+		for (std::size_t j = 0; j < numberOfZones.size(); ++j)
 			substanceConditionsFile >> matrixOfSubstancesConditions[k][5 + j]; /*Values in zones*/
 		substanceConditionsFile.close();
 	}
@@ -286,20 +296,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				errors::initialisationError);
 
 	{
+		std::map<std::string, gasModel> gasModels;
+		gasModels.insert( { "vanDerWaals", gasModel::vanDerWaals });
+		gasModels.insert( { "ideal", gasModel::ideal });
+		gasModels.insert( { "RedlichKwong", gasModel::RedlichKwong });
+		gasModels.insert( { "stiffened", gasModel::stiffened });
+		gasModels.insert( { "Kataoka", gasModel::KataokaVanDerWaals });
 		gasModel gasModelFlag;
-		if (equationOfState == "vanDerWaals")
-			gasModelFlag = gasModel::vanDerWaals;
-		else if (equationOfState == "ideal")
-			gasModelFlag = gasModel::ideal;
-		else if (equationOfState == "RedlichKwong")
-			gasModelFlag = gasModel::RedlichKwong;
-		else if (equationOfState == "stiffened")
-			gasModelFlag = gasModel::stiffened;
-		else if (equationOfState == "Kataoka")
-			gasModelFlag = gasModel::KataokaVanDerWaals;
-		else
+		try
+		{
+			gasModelFlag = gasModels.at(equationOfState);
+		} catch (const std::out_of_range&)
+		{
 			throw exception("Unknown type of equation of state.",
 					errors::initialisationError);
+		}
 
 		switch (gasModelFlag)
 		{
@@ -415,7 +426,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::array<std::vector<subPatchData<vector>>, 6> boundaryConditionsVelocity;
 	boundaryConditionsVelocity.fill(std::vector<subPatchData<vector>>(0));
-	std::vector<std::string> velocityConditions(3 * numberOfZones);
+	std::vector<std::string> velocityConditions(3 * numberOfZones.size());
 	{
 		std::ifstream velocityConditionsFile { "./set/velocity.txt" };
 
@@ -499,7 +510,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
 					errors::initialisationError);
-		for (std::size_t i = 0; i < numberOfZones; ++i)
+		for (std::size_t i = 0; i < numberOfZones.size(); ++i)
 			velocityConditionsFile >> velocityConditions[3 * i]
 					>> velocityConditions[1 + 3 * i]
 					>> velocityConditions[2 + 3 * i];
@@ -519,7 +530,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsPressure;
 	boundaryConditionsPressure.fill(std::vector<subPatchData<scalar>>(0));
-	std::vector<std::string> pressureConditions(numberOfZones);
+	std::vector<std::string> pressureConditions(numberOfZones.size());
 	{
 		std::ifstream pressureConditionsFile { "./set/pressure.txt" };
 
@@ -603,7 +614,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
 					errors::initialisationError);
-		for (std::size_t i = 0; i < numberOfZones; ++i)
+		for (std::size_t i = 0; i < numberOfZones.size(); ++i)
 			pressureConditionsFile >> pressureConditions[i];
 
 		pressureConditionsFile.close();
@@ -621,7 +632,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionskTurb;
 	boundaryConditionskTurb.fill(std::vector<subPatchData<scalar>>(0));
-	std::vector<std::string> kTurbConditions(numberOfZones);
+	std::vector<std::string> kTurbConditions(numberOfZones.size());
 	{
 		std::ifstream kTurbConditionsFile { "./set/k.txt" };
 
@@ -705,7 +716,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
 					errors::initialisationError);
-		for (std::size_t i = 0; i < numberOfZones; ++i)
+		for (std::size_t i = 0; i < numberOfZones.size(); ++i)
 			kTurbConditionsFile >> kTurbConditions[i];
 
 		kTurbConditionsFile.close();
@@ -723,7 +734,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsepsTurb;
 	boundaryConditionsepsTurb.fill(std::vector<subPatchData<scalar>>(0));
-	std::vector<std::string> epsTurbConditions(numberOfZones);
+	std::vector<std::string> epsTurbConditions(numberOfZones.size());
 	{
 		std::ifstream epsTurbConditionsFile { "./set/epsilon.txt" };
 
@@ -807,7 +818,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
 					errors::initialisationError);
-		for (std::size_t i = 0; i < numberOfZones; ++i)
+		for (std::size_t i = 0; i < numberOfZones.size(); ++i)
 			epsTurbConditionsFile >> epsTurbConditions[i];
 
 		epsTurbConditionsFile.close();
@@ -825,7 +836,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::array<std::vector<subPatchData<vector>>, 6> boundaryConditionsaTurb;
 	boundaryConditionsaTurb.fill(std::vector<subPatchData<vector>>(0));
-	std::vector<std::string> aTurbConditions(3 * numberOfZones);
+	std::vector<std::string> aTurbConditions(3 * numberOfZones.size());
 	{
 		std::ifstream aTurbConditionsFile { "./set/a.txt" };
 
@@ -910,7 +921,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
 					errors::initialisationError);
-		for (std::size_t i = 0; i < numberOfZones; ++i)
+		for (std::size_t i = 0; i < numberOfZones.size(); ++i)
 			aTurbConditionsFile >> aTurbConditions[3 * i]
 					>> aTurbConditions[1 + 3 * i] >> aTurbConditions[2 + 3 * i];
 
@@ -929,7 +940,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::array<std::vector<subPatchData<scalar>>, 6> boundaryConditionsbTurb;
 	boundaryConditionsbTurb.fill(std::vector<subPatchData<scalar>>(0));
-	std::vector<std::string> bTurbConditions(numberOfZones);
+	std::vector<std::string> bTurbConditions(numberOfZones.size());
 	{
 		std::ifstream bTurbConditionsFile { "./set/b.txt" };
 
@@ -1013,7 +1024,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (skipBuffer != "#Values_in_zones")
 			throw exception("Wrong position in file.",
 					errors::initialisationError);
-		for (std::size_t i = 0; i < numberOfZones; ++i)
+		for (std::size_t i = 0; i < numberOfZones.size(); ++i)
 			bTurbConditionsFile >> bTurbConditions[i];
 
 		bTurbConditionsFile.close();
@@ -1115,32 +1126,6 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					commonConditions[4] }, subPatchData<scalar> {
 					commonConditions[5] });
 
-	/*Reading vectors for zones determination.*/
-	std::valarray<vector> vectorsOfZones(numberOfZones * 2);
-	{
-		std::ifstream coordinatesOfZonesFile("./set/coordinatesOfZones.txt");
-
-		if (coordinatesOfZonesFile.is_open())
-			std::cout << "./set/coordinatesOfZones.txt is opened." << std::endl;
-		else
-			throw std::ifstream::failure(
-					"./set/coordinatesOfZones.txt not found.");
-
-		for (std::size_t i = 0; i < numberOfZones; ++i)
-		{
-			coordinatesOfZonesFile >> skipBuffer
-					>> std::get<0>(vectorsOfZones[2 * i].r())
-					>> std::get<1>(vectorsOfZones[2 * i].r())
-					>> std::get<2>(vectorsOfZones[2 * i].r());
-			coordinatesOfZonesFile >> skipBuffer
-					>> std::get<0>(vectorsOfZones[2 * i + 1].r())
-					>> std::get<1>(vectorsOfZones[2 * i + 1].r())
-					>> std::get<2>(vectorsOfZones[2 * i + 1].r());
-		}
-
-		coordinatesOfZonesFile.close();
-	}
-
 	if ((readDataPoint.second == "no")
 			|| (readDataPoint.second == "initialisation"))
 	{
@@ -1151,22 +1136,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				const vector & radiusOfCell { meshReference.cells()[i].rC() };
 				bool zoneFounded { false };
 
-				for (std::size_t j = 0; j < numberOfZones; ++j)
+				for (std::size_t j = 0; j < numberOfZones.size(); ++j)
 				{
-					if ((std::get<0>(radiusOfCell())
-							>= std::get<0>(vectorsOfZones[2 * j]()))
-							&& (std::get<0>(radiusOfCell())
-									<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-							&& (std::get<1>(radiusOfCell())
-									>= std::get<1>(vectorsOfZones[2 * j]()))
-							&& (std::get<1>(radiusOfCell())
-									<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-							&& (std::get<2>(radiusOfCell())
-									>= std::get<2>(vectorsOfZones[2 * j]()))
-							&& (std::get<2>(radiusOfCell())
-									<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+					zoneFounded = numberOfZones[j]->isPointInZone(radiusOfCell);
+
+					if (zoneFounded)
 					{
-						zoneFounded = true;
 						phase->concentration.v[k].r()[i] = std::stod(
 								matrixOfSubstancesConditions[k - 1][5 + j]);
 						break;
@@ -1187,22 +1162,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			const vector & radiusOfCell { meshReference.cells()[i].rC() };
 			bool zoneFounded { false };
 
-			for (std::size_t j = 0; j < numberOfZones; ++j)
+			for (std::size_t j = 0; j < numberOfZones.size(); ++j)
 			{
-				if ((std::get<0>(radiusOfCell())
-						>= std::get<0>(vectorsOfZones[2 * j]()))
-						&& (std::get<0>(radiusOfCell())
-								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<1>(radiusOfCell())
-								>= std::get<1>(vectorsOfZones[2 * j]()))
-						&& (std::get<1>(radiusOfCell())
-								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<2>(radiusOfCell())
-								>= std::get<2>(vectorsOfZones[2 * j]()))
-						&& (std::get<2>(radiusOfCell())
-								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				zoneFounded = numberOfZones[j]->isPointInZone(radiusOfCell);
+
+				if (zoneFounded)
 				{
-					zoneFounded = true;
 					phase->velocity.r()[i] = vector(
 							std::stod(velocityConditions[3 * j]),
 							std::stod(velocityConditions[1 + 3 * j]),
@@ -1224,22 +1189,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			const vector & radiusOfCell { meshReference.cells()[i].rC() };
 			bool zoneFounded { false };
 
-			for (std::size_t j = 0; j < numberOfZones; ++j)
+			for (std::size_t j = 0; j < numberOfZones.size(); ++j)
 			{
-				if ((std::get<0>(radiusOfCell())
-						>= std::get<0>(vectorsOfZones[2 * j]()))
-						&& (std::get<0>(radiusOfCell())
-								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<1>(radiusOfCell())
-								>= std::get<1>(vectorsOfZones[2 * j]()))
-						&& (std::get<1>(radiusOfCell())
-								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<2>(radiusOfCell())
-								>= std::get<2>(vectorsOfZones[2 * j]()))
-						&& (std::get<2>(radiusOfCell())
-								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				zoneFounded = numberOfZones[j]->isPointInZone(radiusOfCell);
+
+				if (zoneFounded)
 				{
-					zoneFounded = true;
 					phase->pressure.r()[i] = std::stod(pressureConditions[j]);
 					break;
 				}
@@ -1257,22 +1212,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			const vector & radiusOfCell { meshReference.cells()[i].rC() };
 			bool zoneFounded { false };
 
-			for (std::size_t j = 0; j < numberOfZones; ++j)
+			for (std::size_t j = 0; j < numberOfZones.size(); ++j)
 			{
-				if ((std::get<0>(radiusOfCell())
-						>= std::get<0>(vectorsOfZones[2 * j]()))
-						&& (std::get<0>(radiusOfCell())
-								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<1>(radiusOfCell())
-								>= std::get<1>(vectorsOfZones[2 * j]()))
-						&& (std::get<1>(radiusOfCell())
-								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<2>(radiusOfCell())
-								>= std::get<2>(vectorsOfZones[2 * j]()))
-						&& (std::get<2>(radiusOfCell())
-								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				zoneFounded = numberOfZones[j]->isPointInZone(radiusOfCell);
+
+				if (zoneFounded)
 				{
-					zoneFounded = true;
 					phase->kTurb.r()[i] = std::stod(kTurbConditions[j]);
 					break;
 				}
@@ -1290,22 +1235,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			const vector & radiusOfCell { meshReference.cells()[i].rC() };
 			bool zoneFounded { false };
 
-			for (std::size_t j = 0; j < numberOfZones; ++j)
+			for (std::size_t j = 0; j < numberOfZones.size(); ++j)
 			{
-				if ((std::get<0>(radiusOfCell())
-						>= std::get<0>(vectorsOfZones[2 * j]()))
-						&& (std::get<0>(radiusOfCell())
-								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<1>(radiusOfCell())
-								>= std::get<1>(vectorsOfZones[2 * j]()))
-						&& (std::get<1>(radiusOfCell())
-								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<2>(radiusOfCell())
-								>= std::get<2>(vectorsOfZones[2 * j]()))
-						&& (std::get<2>(radiusOfCell())
-								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				zoneFounded = numberOfZones[j]->isPointInZone(radiusOfCell);
+
+				if (zoneFounded)
 				{
-					zoneFounded = true;
 					phase->epsTurb.r()[i] = std::stod(epsTurbConditions[j]);
 					break;
 				}
@@ -1323,22 +1258,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			const vector & radiusOfCell { meshReference.cells()[i].rC() };
 			bool zoneFounded { false };
 
-			for (std::size_t j = 0; j < numberOfZones; ++j)
+			for (std::size_t j = 0; j < numberOfZones.size(); ++j)
 			{
-				if ((std::get<0>(radiusOfCell())
-						>= std::get<0>(vectorsOfZones[2 * j]()))
-						&& (std::get<0>(radiusOfCell())
-								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<1>(radiusOfCell())
-								>= std::get<1>(vectorsOfZones[2 * j]()))
-						&& (std::get<1>(radiusOfCell())
-								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<2>(radiusOfCell())
-								>= std::get<2>(vectorsOfZones[2 * j]()))
-						&& (std::get<2>(radiusOfCell())
-								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				zoneFounded = numberOfZones[j]->isPointInZone(radiusOfCell);
+
+				if (zoneFounded)
 				{
-					zoneFounded = true;
 					phase->aTurb.r()[i] = vector(
 							std::stod(aTurbConditions[3 * j]),
 							std::stod(aTurbConditions[1 + 3 * j]),
@@ -1360,26 +1285,17 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			const vector & radiusOfCell { meshReference.cells()[i].rC() };
 			bool zoneFounded { false };
 
-			for (std::size_t j = 0; j < numberOfZones; ++j)
+			for (std::size_t j = 0; j < numberOfZones.size(); ++j)
 			{
-				if ((std::get<0>(radiusOfCell())
-						>= std::get<0>(vectorsOfZones[2 * j]()))
-						&& (std::get<0>(radiusOfCell())
-								<= std::get<0>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<1>(radiusOfCell())
-								>= std::get<1>(vectorsOfZones[2 * j]()))
-						&& (std::get<1>(radiusOfCell())
-								<= std::get<1>(vectorsOfZones[2 * j + 1]()))
-						&& (std::get<2>(radiusOfCell())
-								>= std::get<2>(vectorsOfZones[2 * j]()))
-						&& (std::get<2>(radiusOfCell())
-								<= std::get<2>(vectorsOfZones[2 * j + 1]())))
+				zoneFounded = numberOfZones[j]->isPointInZone(radiusOfCell);
+
+				if (zoneFounded)
 				{
-					zoneFounded = true;
 					phase->bTurb.r()[i] = std::stod(bTurbConditions[j]);
 					break;
 				}
 			}
+
 			if (!zoneFounded)
 				throw exception(
 						"Cell " + std::to_string(i)

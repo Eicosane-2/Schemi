@@ -42,42 +42,43 @@ schemi::abstractTurbulenceGen::~abstractTurbulenceGen() noexcept
 }
 
 std::unique_ptr<schemi::abstractTurbulenceGen> schemi::abstractTurbulenceGen::createTurbulenceModel(
-		const mesh & meshIn, const std::string_view turbulenceONString,
-		const std::string_view sourceTypeString)
+		const mesh & meshIn, const std::string & turbulenceONString,
+		const std::string & sourceTypeString)
 {
 	bool turbulenceFlag;
-	if (turbulenceONString == "on")
-		turbulenceFlag = true;
-	else if (turbulenceONString == "off")
-		turbulenceFlag = false;
-	else
+	try
+	{
+		turbulenceFlag = onOffMap.at(turbulenceONString);
+	} catch (std::out_of_range&)
+	{
 		throw exception("Unknown turbulence flag.",
 				errors::initialisationError);
+	}
+
+	std::map<std::string, turbulenceModel> turbulenceModels;
+	turbulenceModels.insert( { "BHR", turbulenceModel::BHRSource });
+	turbulenceModels.insert( { "zero", turbulenceModel::zeroSource });
+	turbulenceModels.insert( { "decay", turbulenceModel::decaySource });
+	turbulenceModels.insert( { "shear", turbulenceModel::shearSource });
+	turbulenceModels.insert( { "arithmetic1",
+			turbulenceModel::arithmeticA1Source });
+	turbulenceModels.insert( { "arithmetic2",
+			turbulenceModel::arithmeticA2Source });
+	turbulenceModels.insert( { "kEpsA", turbulenceModel::kEpsASource });
+	turbulenceModels.insert( { "arithmetic3",
+			turbulenceModel::arithmeticA3Source });
+	turbulenceModels.insert( { "BHRKL", turbulenceModel::BHRKLSource });
+	turbulenceModels.insert( { "BHR2", turbulenceModel::BHR2Source });
 
 	turbulenceModel turbulenceModelFlag;
-	if (sourceTypeString == "BHR")
-		turbulenceModelFlag = turbulenceModel::BHRSource;
-	else if (sourceTypeString == "zero")
-		turbulenceModelFlag = turbulenceModel::zeroSource;
-	else if (sourceTypeString == "decay")
-		turbulenceModelFlag = turbulenceModel::decaySource;
-	else if (sourceTypeString == "shear")
-		turbulenceModelFlag = turbulenceModel::shearSource;
-	else if (sourceTypeString == "arithmetic1")
-		turbulenceModelFlag = turbulenceModel::arithmeticA1Source;
-	else if (sourceTypeString == "arithmetic2")
-		turbulenceModelFlag = turbulenceModel::arithmeticA2Source;
-	else if (sourceTypeString == "kEpsA")
-		turbulenceModelFlag = turbulenceModel::kEpsASource;
-	else if (sourceTypeString == "arithmetic3")
-		turbulenceModelFlag = turbulenceModel::arithmeticA3Source;
-	else if (sourceTypeString == "BHRKL")
-		turbulenceModelFlag = turbulenceModel::BHRKLSource;
-	else if (sourceTypeString == "BHR2")
-		turbulenceModelFlag = turbulenceModel::BHR2Source;
-	else
+	try
+	{
+		turbulenceModelFlag = turbulenceModels.at(sourceTypeString);
+	} catch (std::out_of_range&)
+	{
 		throw exception("Unknown source generation flag.",
 				errors::initialisationError);
+	}
 
 	std::unique_ptr<abstractTurbulenceGen> turbulenceSources;
 	switch (turbulenceModelFlag)

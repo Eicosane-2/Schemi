@@ -1,0 +1,2 @@
+#MPI_nodes_in_directions
+2 4 1

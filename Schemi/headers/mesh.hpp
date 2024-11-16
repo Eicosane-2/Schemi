@@ -164,6 +164,9 @@ public:
 			const std::pair<vector, vector> & vectorOfParallelepiped,
 			const std::size_t N_x, const std::size_t N_y, const std::size_t N_z,
 			const std::vector<boundaryConditionType> & commonConditions);
+
+	std::size_t findSeparatingSurface(std::size_t cell1,
+			std::size_t cell2) const;
 };
 }  // namespace schemi
 

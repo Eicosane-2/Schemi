@@ -25,7 +25,7 @@ public:
 	virtual ~abstractLimiter() noexcept =0;
 
 	static std::unique_ptr<abstractLimiter> createLimiter(
-			const std::string_view name);
+			const std::string & name);
 
 	virtual vector calculate(const vector& /*r*/,
 			const vector& /*gradient*/) const noexcept =0;

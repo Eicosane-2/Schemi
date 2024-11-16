@@ -12,6 +12,8 @@
 
 #include <limits>
 #include <cmath>
+#include <map>
+#include <string>
 
 #include "scalar.hpp"
 
@@ -50,6 +52,9 @@ veryBig { 1E-3 * std::numeric_limits<scalar>::max() },
 constexpr std::size_t componentPlaceholder { static_cast<std::size_t>(-1) },
 		lengthOfNumber { 6 };
 constexpr int ioPrecision { 20 };
+
+const std::map<std::string, bool> onOffMap { { "on", true }, { "off", false }, {
+		"yes", true }, { "no", false } };
 }  // namespace schemi
 
 #endif /* GLOBALCONSTANTS_HPP_ */

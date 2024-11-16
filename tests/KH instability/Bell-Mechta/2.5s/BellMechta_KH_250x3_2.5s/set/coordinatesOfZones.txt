@@ -1,8 +1,0 @@
-#Beginning_of_zone_1
-0.0 0.0 0.0
-#Ending_of_zone_1
-1.25 1.0 1.0
-#Beginning_of_zone_2
-1.25 0.0 0.0
-#Ending_of_zone_2
-2.5 1.0 1.0

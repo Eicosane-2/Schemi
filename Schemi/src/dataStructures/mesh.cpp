@@ -7,6 +7,7 @@
 
 #include "mesh.hpp"
 
+#include <algorithm>
 #include <iostream>
 
 #include "exception.hpp"
@@ -672,7 +673,7 @@ void schemi::mesh::twoDParallelepiped(
 		for (std::size_t i = 0; i < N_x * (N_y - 1); ++i)
 		{
 			const std::size_t layer_n = i / N_x;
-			const std::size_t index_in_layer = (i - layer_n * (N_y - 1));
+			const std::size_t index_in_layer = (i - layer_n * N_x);
 
 			prev = surfacesA.size();
 
@@ -2984,6 +2985,31 @@ void schemi::mesh::threeDParallelepiped(
 
 	calculateWeights();
 	calculateCellSurfaceDistances();
+}
+
+std::size_t schemi::mesh::findSeparatingSurface(std::size_t cell1,
+		std::size_t cell2) const
+{
+	auto surfs1 = surfacesOfCells()[cell1];
+	auto surfs2 = surfacesOfCells()[cell2];
+
+	std::sort(surfs1.begin(), surfs1.end());
+	std::sort(surfs2.begin(), surfs2.end());
+
+	decltype(surfs1) intersection;
+
+	std::set_intersection(surfs1.begin(), surfs1.end(), surfs2.begin(),
+			surfs2.end(), std::back_inserter(intersection));
+
+	if (intersection.size() > 1)
+		throw exception("More than one surface, separating cells.",
+				errors::systemError);
+	else if (intersection.size() == 0)
+		throw exception("No surfaces between two cells.",
+				errors::initialisationError);
+	else
+		return intersection[0];
+
 }
 
 schemi::mesh * schemi::mesh::pInstance = nullptr;

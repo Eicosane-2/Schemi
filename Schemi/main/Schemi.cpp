@@ -27,6 +27,7 @@
 #include "structForOutput.hpp"
 #include "thirdOrderStepSolver.hpp"
 #include "ThomasSolver.hpp"
+#include "zone.hpp"
 
 #ifdef MPI_VERSION
 int main(int argc, char * argv[])
@@ -64,15 +65,15 @@ int main()
 		std::pair<scalar, scalar> timestepCoeffs { 0.25, 0.5 };
 		std::size_t numberOfCells_x, numberOfCells_y, numberOfCells_z,
 				frequencyOfOutput, frequencyOfOutputWidth, numberOfComponents,
-				numberOfZones, numberOfIterations, nsteps { 0 }, nouts { 0 },
-				noutsW { 0 };
+				numberOfIterations, nsteps { 0 }, nouts { 0 }, noutsW { 0 };
 		std::string universalGasConstant, equationOfState,
 				typeOfTVDLimeterString, diffusionONString, turbulenceONString,
 				matrixSolverString, gravitationONString, sourceTypeString,
 				flowSolwerString, dimensionsOfTask, sourceTimeFlagString,
 				linearFlagString, thirdOrderString, readFromOutput,
 				mixedZoneWidthCalString;
-		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag;
+		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag,
+				thirdOrder;
 		vector g { 0 }, gDelta { 0 };
 		dimensions dimensionsFlag;
 		timestep sourceTimeFlag;
@@ -123,8 +124,6 @@ int main()
 
 					>> skipBuffer >> numberOfComponents
 
-					>> skipBuffer >> numberOfZones
-
 					>> skipBuffer >> universalGasConstant
 
 					>> skipBuffer >> equationOfState
@@ -161,13 +160,17 @@ int main()
 		}
 
 		/*Setting flags.*/
-		if (linearFlagString == "linear")
-			linearFlag = true;
-		else if (linearFlagString == "star")
-			linearFlag = false;
-		else
+		std::map<std::string, bool> reconstructionType;
+		reconstructionType.insert( { "linear", true });
+		reconstructionType.insert( { "star", false });
+		try
+		{
+			linearFlag = reconstructionType.at(linearFlagString);
+		} catch (const std::out_of_range&)
+		{
 			throw exception("Unknown reconstruction flag.",
 					errors::initialisationError);
+		}
 
 		frequencyOfOutputWidth = std::min(frequencyOfOutput, std::size_t(1000));
 
@@ -226,45 +229,39 @@ int main()
 						<< std::endl;
 			}
 
-			if (sourceTimeFlagType == "Courant")
+			std::map<std::string, timestep> sourceTimeType;
+			sourceTimeType.insert( { "Courant", timestep::CourantTimeStep });
+			sourceTimeType.insert( { "Courant-Source",
+					timestep::CourantAndSourceTimeStep });
+			sourceTimeType.insert( { "Courant-Source-Diffusion",
+					timestep::CourantAndSourceAndDiffusionTimeStep });
+			try
 			{
-				std::cout << "Courant time-step on." << std::endl;
-
-				sourceTimeFlag = timestep::CourantTimeStep;
-			}
-			else if (sourceTimeFlagType == "Courant-Source")
+				sourceTimeFlag = sourceTimeType.at(sourceTimeFlagType);
+			} catch (const std::out_of_range&)
 			{
-				std::cout << "Courant and source time-step on." << std::endl;
-
-				sourceTimeFlag = timestep::CourantAndSourceTimeStep;
-			}
-			else if (sourceTimeFlagType == "Courant-Source-Diffusion")
-			{
-				std::cout << "Courant, source and diffusion time-step on."
-						<< std::endl;
-
-				sourceTimeFlag = timestep::CourantAndSourceAndDiffusionTimeStep;
-			}
-			else
 				throw exception("Unknown source time-step flag.",
 						errors::initialisationError);
+			};
 		}
 
-		if (gravitationONString == "on")
-			gravitationFlag = true;
-		else if (gravitationONString == "off")
-			gravitationFlag = false;
-		else
+		try
+		{
+			gravitationFlag = onOffMap.at(gravitationONString);
+		} catch (const std::out_of_range&)
+		{
 			throw exception("Unknown gravitation flag.",
 					errors::initialisationError);
+		}
 
-		if (diffusionONString == "on")
-			diffusionFlag = true;
-		else if (diffusionONString == "off")
-			diffusionFlag = false;
-		else
+		try
+		{
+			diffusionFlag = onOffMap.at(diffusionONString);
+		} catch (const std::out_of_range&)
+		{
 			throw exception("Unknown diffusion flag.",
 					errors::initialisationError);
+		}
 
 		std::unique_ptr<abstractLimiter> limiter(
 				abstractLimiter::createLimiter(typeOfTVDLimeterString));
@@ -277,32 +274,39 @@ int main()
 				abstractFlowSolver::createFlowSolver(flowSolwerString,
 						parallelism));
 
-		if (dimensionsOfTask == "1D")
-			dimensionsFlag = dimensions::task1D;
-		else if (dimensionsOfTask == "2D")
-			dimensionsFlag = dimensions::task2D;
-		else if (dimensionsOfTask == "3D")
-			dimensionsFlag = dimensions::task3D;
-		else
+		std::map<std::string, dimensions> dimensionsMap;
+		dimensionsMap.insert( { "1D", dimensions::task1D });
+		dimensionsMap.insert( { "2D", dimensions::task2D });
+		dimensionsMap.insert( { "3D", dimensions::task3D });
+		try
+		{
+			dimensionsFlag = dimensionsMap.at(dimensionsOfTask);
+		} catch (const std::out_of_range&)
+		{
 			throw exception("Unknown dimensions flag.",
 					errors::initialisationError);
+		}
 
-		bool thirdOrder;
-		if (thirdOrderString == "SecondOrder")
-			thirdOrder = false;
-		else if (thirdOrderString == "ThirdOrder")
-			thirdOrder = true;
-		else
+		std::map<std::string, bool> orderType;
+		orderType.insert( { "ThirdOrder", true });
+		orderType.insert( { "SecondOrder", false });
+		try
+		{
+			thirdOrder = orderType.at(thirdOrderString);
+		} catch (const std::out_of_range&)
+		{
 			throw exception("Unknown gas dynamics approximation order.",
 					errors::initialisationError);
+		}
 
-		if (mixedZoneWidthCalString == "on")
-			mixedZoneWidthCalcFlag = true;
-		else if (mixedZoneWidthCalString == "off")
-			mixedZoneWidthCalcFlag = false;
-		else
+		try
+		{
+			mixedZoneWidthCalcFlag = onOffMap.at(mixedZoneWidthCalString);
+		} catch (const std::out_of_range&)
+		{
 			throw exception("Unknown flag for mixed zone width calculation.",
 					errors::initialisationError);
+		}
 
 		std::pair<std::size_t, std::string> readDataPoint;
 		if ((readFromOutput == "no") || (readFromOutput == "initialisation"))
@@ -630,6 +634,8 @@ int main()
 			throw exception("More than 9 components.",
 					errors::initialisationError);
 
+		const auto numberOfZones = zone::zonesArray();
+
 		/*Creating fields.*/
 		auto [gasPhase, enthalpyFlowFlag, molMassDiffusionFlag] =
 				phaseInitialization(numberOfComponents, numberOfZones, mesh_,
@@ -683,23 +689,28 @@ int main()
 
 			chem >> skipBuffer >> reactionName;
 
-			if (reactionName == "no")
-				chemReactionFlag = chemicalReactions::noReaction;
-			else if (reactionName == "Cl2")
-				chemReactionFlag = chemicalReactions::Cl2Dissociation;
-			else if (reactionName == "Cl2H2")
-				chemReactionFlag = chemicalReactions::Cl2H2Dissociation;
-			else if (reactionName == "H2Cl2Combustion")
-				chemReactionFlag = chemicalReactions::H2Cl2Combustion;
-			else if (reactionName == "NO2Disproportionation")
-				chemReactionFlag = chemicalReactions::NO2Disproportionation;
-			else if (reactionName == "H2O2Combustion")
-				chemReactionFlag = chemicalReactions::H2O2Combustion;
-			else if (reactionName == "Rober")
-				chemReactionFlag = chemicalReactions::Rober;
-			else
+			std::map<std::string, chemicalReactions> chemicalReactionsMap;
+			chemicalReactionsMap.insert(
+					{ "no", chemicalReactions::noReaction });
+			chemicalReactionsMap.insert( { "Cl2",
+					chemicalReactions::Cl2Dissociation });
+			chemicalReactionsMap.insert( { "Cl2H2",
+					chemicalReactions::Cl2H2Dissociation });
+			chemicalReactionsMap.insert( { "H2Cl2Combustion",
+					chemicalReactions::H2Cl2Combustion });
+			chemicalReactionsMap.insert( { "NO2Disproportionation",
+					chemicalReactions::NO2Disproportionation });
+			chemicalReactionsMap.insert( { "H2O2Combustion",
+					chemicalReactions::H2O2Combustion });
+			chemicalReactionsMap.insert( { "Rober", chemicalReactions::Rober });
+			try
+			{
+				chemReactionFlag = chemicalReactionsMap.at(reactionName);
+			} catch (const std::out_of_range&)
+			{
 				throw exception("Unknown chemical reaction model.",
 						errors::initialisationError);
+			}
 
 			chem.close();
 		}
