@@ -1,19 +1,19 @@
 /*
- * Advection3dOrder.cpp
+ * Advection2dOrder.cpp
  *
- *  Created on: 2023/06/04
+ *  Created on: 2024/11/20
  *      Author: Maxim Boldyrev
  */
 
-#include "Advection3dOrder.hpp"
+#include "Advection2dOrder.hpp"
 
 #include <chrono>
 
 #include "divergence.hpp"
 #include "gradient.hpp"
-#include "thirdOrderLimiter.hpp"
+#include "TVDLimiter.hpp"
 
-schemi::starFields schemi::Advection3dOrder(
+schemi::starFields schemi::Advection2dOrder(
 		homogeneousPhase<cubicCell> & gasPhase, const abstractLimiter & limiter,
 		const abstractFlowSolver & fsolver, std::pair<bool, vector> gravitation,
 		const boundaryConditionValue & boundaryConditionValueCalc,
@@ -37,21 +37,15 @@ schemi::starFields schemi::Advection3dOrder(
 			gasPhase.transportModel };
 
 	/*Creating limited gradients.*/
-	std::vector<volumeField<std::vector<vector>> > concentrationTVDGradient {
-			gasPhase.phaseThermodynamics->Mv().size(), volumeField<
-					std::vector<vector>>(mesh_, std::vector<vector>(0)) };
-	volumeField<std::vector<tensor>> velocityTVDGradient { mesh_, std::vector<
-			tensor>(0) };
-	volumeField<std::vector<vector>> pressureTVDGradient { mesh_, std::vector<
-			vector>(0) };
-	volumeField<std::vector<vector>> kTVDGradient { mesh_, std::vector<vector>(
-			0) };
-	volumeField<std::vector<vector>> epsilonTVDGradient { mesh_, std::vector<
-			vector>(0) };
-	volumeField<std::vector<tensor>> aTVDGradient { mesh_, std::vector<tensor>(
-			0) };
-	volumeField<std::vector<vector>> bTVDGradient { mesh_, std::vector<vector>(
-			0) };
+	std::vector<volumeField<vector>> concentrationTVDGradient {
+			gasPhase.phaseThermodynamics->Mv().size(), volumeField<vector>(
+					mesh_, vector(0)) };
+	volumeField<tensor> velocityTVDGradient { mesh_, tensor(0) };
+	volumeField<vector> pressureTVDGradient { mesh_, vector(0) };
+	volumeField<vector> kTVDGradient { mesh_, vector(0) };
+	volumeField<vector> epsilonTVDGradient { mesh_, vector(0) };
+	volumeField<tensor> aTVDGradient { mesh_, tensor(0) };
+	volumeField<vector> bTVDGradient { mesh_, vector(0) };
 
 	/*TVD Reconstruction.*/
 	const auto TVDStartTime = std::chrono::high_resolution_clock::now();
@@ -59,52 +53,56 @@ schemi::starFields schemi::Advection3dOrder(
 		/*TVD limiters.*/
 		for (std::size_t k = 0; k < concentrationTVDGradient.size(); ++k)
 		{
-			const auto surfaceConcentarionGradient_k = surfGrad(
+			const auto concentrationGradient_k = grad(
 					gasPhase.concentration.v[k + 1], boundaryConditionValueCalc,
 					k + 1);
 
-			concentrationTVDGradient[k] = thirdOrderLimiter(
-					surfaceConcentarionGradient_k, limiter);
+			concentrationTVDGradient[k] = TVDLimiter(concentrationGradient_k,
+					gasPhase.concentration.v[k + 1], limiter,
+					boundaryConditionValueCalc, parallelism, k + 1);
 		}
 
-		const auto surfaceVelocityGradient = surfGrad(gasPhase.velocity,
+		const auto velocityGradient = grad(gasPhase.velocity,
 				boundaryConditionValueCalc);
 
-		velocityTVDGradient = thirdOrderLimiter(surfaceVelocityGradient,
-				limiter);
+		velocityTVDGradient = TVDLimiter(velocityGradient, gasPhase.velocity,
+				limiter, boundaryConditionValueCalc, parallelism);
 
-		const auto surfacePressureGradient = surfGrad(gasPhase.pressure,
+		const auto pressureGradient = grad(gasPhase.pressure,
 				boundaryConditionValueCalc);
 
-		pressureTVDGradient = thirdOrderLimiter(surfacePressureGradient,
-				limiter);
+		pressureTVDGradient = TVDLimiter(pressureGradient, gasPhase.pressure,
+				limiter, boundaryConditionValueCalc, parallelism);
 
 		if (gasPhase.turbulenceSources->turbulence)
 		{
-			const auto surfacekGradient = surfGrad(gasPhase.kTurb,
+			const auto kGradient = grad(gasPhase.kTurb,
 					boundaryConditionValueCalc);
 
-			kTVDGradient = thirdOrderLimiter(surfacekGradient, limiter);
+			kTVDGradient = TVDLimiter(kGradient, gasPhase.kTurb, limiter,
+					boundaryConditionValueCalc, parallelism);
 
-			const auto surfaceepsilonGradient = surfGrad(gasPhase.epsTurb,
+			const auto epsilonGradient = grad(gasPhase.epsTurb,
 					boundaryConditionValueCalc);
 
-			epsilonTVDGradient = thirdOrderLimiter(surfaceepsilonGradient,
-					limiter);
+			epsilonTVDGradient = TVDLimiter(epsilonGradient, gasPhase.epsTurb,
+					limiter, boundaryConditionValueCalc, parallelism);
 
 			if (gasPhase.turbulenceSources->aField)
 			{
-				const auto surfaceaGradient = surfGrad(gasPhase.aTurb,
+				const auto aGradient = grad(gasPhase.aTurb,
 						boundaryConditionValueCalc);
 
-				aTVDGradient = thirdOrderLimiter(surfaceaGradient, limiter);
+				aTVDGradient = TVDLimiter(aGradient, gasPhase.aTurb, limiter,
+						boundaryConditionValueCalc, parallelism);
 
 				if (gasPhase.turbulenceSources->bField)
 				{
-					const auto surfacebGradient = surfGrad(gasPhase.bTurb,
+					const auto bGradient = grad(gasPhase.bTurb,
 							boundaryConditionValueCalc);
 
-					bTVDGradient = thirdOrderLimiter(surfacebGradient, limiter);
+					bTVDGradient = TVDLimiter(bGradient, gasPhase.bTurb,
+							limiter, boundaryConditionValueCalc, parallelism);
 				}
 			}
 		}
@@ -127,15 +125,15 @@ schemi::starFields schemi::Advection3dOrder(
 				for (std::size_t k = 0;
 						k < reconstructedConcentrationsValues.size(); ++k)
 					reconstructedConcentrationsValues[k] =
-							(concentrationTVDGradient[k]()[i][j] & deltaVector)
+							(concentrationTVDGradient[k]()[i] & deltaVector)
 									+ gasPhase.concentration.v[k + 1]()[i];
 
 				const vector reconstructedVelocityValue =
-						(velocityTVDGradient()[i][j] & deltaVector)
+						(velocityTVDGradient()[i] & deltaVector)
 								+ gasPhase.velocity()[i];
 
 				const scalar reconstructedPressureValue {
-						(pressureTVDGradient()[i][j] & deltaVector)
+						(pressureTVDGradient()[i] & deltaVector)
 								+ gasPhase.pressure()[i] };
 
 				scalar reconstructedkValue { 0 };
@@ -144,19 +142,19 @@ schemi::starFields schemi::Advection3dOrder(
 				scalar reconstructedbValue { 0 };
 				if (gasPhase.turbulenceSources->turbulence)
 				{
-					reconstructedkValue = (kTVDGradient()[i][j] & deltaVector)
+					reconstructedkValue = (kTVDGradient()[i] & deltaVector)
 							+ gasPhase.kTurb()[i];
 
-					reconstructedEpsilon = (epsilonTVDGradient()[i][j]
+					reconstructedEpsilon = (epsilonTVDGradient()[i]
 							& deltaVector) + gasPhase.epsTurb()[i];
 
 					if (gasPhase.turbulenceSources->aField)
 					{
-						reconstructedaValue = (aTVDGradient()[i][j]
-								& deltaVector) + gasPhase.aTurb()[i];
+						reconstructedaValue = (aTVDGradient()[i] & deltaVector)
+								+ gasPhase.aTurb()[i];
 
 						if (gasPhase.turbulenceSources->bField)
-							reconstructedbValue = (bTVDGradient()[i][j]
+							reconstructedbValue = (bTVDGradient()[i]
 									& deltaVector) + gasPhase.bTurb()[i];
 					}
 				}

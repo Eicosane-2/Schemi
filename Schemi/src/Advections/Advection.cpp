@@ -300,10 +300,8 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 				surfaceOwnerSide.temperature());
 
 		/*Recalculation of other quantities for neighbour side*/
+		const std::size_t nonExistentCell = mesh_.nonexistCell();
 		for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
-		{
-			const std::size_t nonExistentCell = mesh_.nonexistCell();
-
 			if (mesh_.surfaceNeighbour()[i] != nonExistentCell)
 			{
 				surfaceNeighbourSide.concentration.v[0].r()[i] = 0;
@@ -384,7 +382,6 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 								concentrations_i,
 								surfaceNeighbourSide.temperature()[i]);
 			}
-		}
 	}
 	const auto TVDEndTime = std::chrono::high_resolution_clock::now();
 	timeForTVD += std::chrono::duration_cast<std::chrono::milliseconds>(
