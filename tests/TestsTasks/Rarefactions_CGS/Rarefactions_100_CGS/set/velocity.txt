@@ -11,5 +11,5 @@ blank
 #Top_boundary_condition
 blank
 #Values_in_zones
--200.0 0.0 0.0
-200.0 0.0 0.0
+-2.0 0.0 0.0
+2.0 0.0 0.0

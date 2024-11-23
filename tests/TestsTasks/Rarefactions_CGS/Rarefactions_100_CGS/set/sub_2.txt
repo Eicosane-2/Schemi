@@ -1,7 +1,7 @@
 #Molar_mass_(kg/mol)
-18
+1
 #Molar_isohoric_heat_capacity_(J/T/mol)
-20.78615655E7
+20.785E7
 #Critical_temperature_(K)
 1
 #Critical_pressure_(Pa)
@@ -22,4 +22,4 @@ blank
 blank
 #Values_in_zones
 0
-0.0639
+1
