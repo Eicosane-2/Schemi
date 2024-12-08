@@ -8,6 +8,7 @@
 #include "chemicalKineticsNO2Disproportionation.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <numeric>
 
 void schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::reactionMatrix::transpose() noexcept

@@ -32,7 +32,7 @@ struct diffusiveFields
 	diffusiveFields(const mesh & meshRef,
 			const bunchOfFields<cubicCell> & cellFields,
 			const std::vector<boundaryConditionType> & commBoundCond,
-			const bool turbulenceFlag, const bool aField);
+			const bool turbulenceFlag, const bool aField, const bool bField);
 };
 }  // namespace schemi
 

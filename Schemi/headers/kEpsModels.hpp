@@ -1,71 +1,43 @@
 /*
- * turbulentParametersKL.hpp
+ * kEpsModels.hpp
  *
- *  Created on: 2019/12/06
+ *  Created on: 2024/12/03
  *      Author: Maxim Boldyrev
- *
- *      Class for k-L family models parameters.
  */
 
-#ifndef TURBULENTPARAMETERSKL_HPP_
-#define TURBULENTPARAMETERSKL_HPP_
+#ifndef KEPSMODELS_HPP_
+#define KEPSMODELS_HPP_
 
-#include "abstractTurbulentParameters.hpp"
+#include "abstractTurbulenceModel.hpp"
 
 namespace schemi
 {
-class turbulentParametersKL: public abstractTurbulentParameters
+class kEpsModels: public abstractTurbulenceModel
 {
+	scalar CMS_R_;
+	scalar CMS_D_;
+
 	scalar thetaS(const scalar divV, const scalar k, const scalar eps,
-			const scalar CMS_par) const noexcept;
+			const scalar CMS) const noexcept;
+
+protected:
+	void CMS_RSet(const scalar) noexcept;
+	void CMS_DSet(const scalar) noexcept;
+
 public:
-	constexpr static scalar Dr = 3.11;
+	virtual ~kEpsModels() noexcept =0;
 
-	explicit turbulentParametersKL(
+	scalar CMS_R() const noexcept;
+	scalar CMS_D() const noexcept;
 
-	const mesh & meshIn,
-
-	const scalar CmuI = 0.28,
-
-	const scalar C0In = 1.5 - 0.98,
-
-	const scalar C1In = 1.5 - 1.2,
-
-	const scalar C2In = 1.5 - 1.92,
-
-	const scalar C3In = 1.5 - 1.67,
-
-	const scalar sigmaScIn = 0.5,
-
-	const scalar sigmaTIn = 1,
-
-	const scalar sigmaEIn = 1,
-
-	const scalar sigmakIn = 1.0,
-
-	const scalar sigmaepsIn = 0.1,
-
-	const scalar sigmaaIn = 1.0,
-
-	const scalar sigmabIn = 1.0,
-
-	const scalar Ca1In = 1.9,
-
-	const scalar Ca1maxIn = 19.0,
-
-	const scalar Cb1In = 1.2,
-
-	const scalar minkIn = 1E-15,
-
-	const scalar mienpsIn = 1E-15,
-
-	const scalar CMS_R_In = 0.1,
-
-	const scalar CMS_D_In = 1.0,
-
-	const scalar CMS_A_In = 1.0,
-
-	const scalar CMS_M_In = 1.0) noexcept;
+	explicit kEpsModels(const mesh & meshIn, const bool turb = true,
+			const bool a = false, const bool b = false,
+			const turbulenceModel model = turbulenceModel::unknownModel,
+			const scalar Cmu_in = 0.09, const scalar sigmaSc_in = 0.5,
+			const scalar sigmaT_in = 1, const scalar sigmaE_in = 1,
+			const scalar sigmak_in = 0.5, const scalar sigmaeps_in = 0.4,
+			const scalar sigmaa_in = 0.5, const scalar sigmab_in = 0.5,
+			const scalar CMS_R_in = 0.1, const scalar CMS_D_in = 1.0) noexcept;
 
 	std::valarray<scalar> calculateNut(const std::valarray<scalar> & k,
 			const std::valarray<scalar> & eps) const noexcept override;
@@ -100,4 +72,4 @@ public:
 };
 }  // namespace schemi
 
-#endif /* TURBULENTPARAMETERSKL_HPP_ */
+#endif /* KEPSMODELS_HPP_ */

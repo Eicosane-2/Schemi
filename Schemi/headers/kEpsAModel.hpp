@@ -1,24 +1,38 @@
 /*
- * BHRGen.hpp
+ * kEpsAModel.hpp
  *
- *  Created on: 2020/03/12
+ *  Created on: 2024/12/04
  *      Author: Maxim Boldyrev
- *
- *      Class for k-epsilon-a-b model turbulence generation.
  */
 
-#ifndef BHRGEN_HPP_
-#define BHRGEN_HPP_
+#ifndef KEPSAMODEL_HPP_
+#define KEPSAMODEL_HPP_
 
-#include "abstractTurbulenceGen.hpp"
+#include "kEpsModels.hpp"
+#include "diffusiveFields.hpp"
 
 namespace schemi
 {
-class BHRGen: public abstractTurbulenceGen
+class kEpsAModel: public kEpsModels
 {
+	scalar thetaA(const vector & a, const scalar k,
+			const scalar b) const noexcept;
+
+	scalar C0() const noexcept;
+	scalar C1() const noexcept;
+	scalar C2() const noexcept;
+	scalar C3() const noexcept;
+
+	scalar Ca() const noexcept;
+
+	scalar CaMax() const noexcept;
+
+	scalar CMSA() const noexcept;
+
+	scalar chi() const noexcept;
+
 public:
-	BHRGen(const mesh & meshIn, const bool turb_in,
-			const turbulenceModel tm_in) noexcept;
+	kEpsAModel(const mesh & meshIn, const bool turb_in);
 
 	std::tuple<std::pair<volumeField<scalar>, volumeField<scalar>>,
 			std::pair<volumeField<scalar>, volumeField<scalar>>,
@@ -33,12 +47,17 @@ public:
 			const volumeField<vector> & gradP,
 			const volumeField<vector> & gradRho,
 			const volumeField<tensor> & grada, const volumeField<scalar> & diva,
-			const volumeField<vector>&, const volumeField<tensor> & spherR,
+			const volumeField<vector> & gradb,
+			const volumeField<tensor> & spherR,
 			const volumeField<tensor> & devR,
 			const volumeField<vector> & gradMav_n,
 			const abstractMixtureThermodynamics & mixture,
 			const volumeField<scalar> & nu_t) const noexcept override;
+
+	volumeField<scalar> calculate_b(const mesh & m,
+			const std::vector<field<scalar, cubicCell>> & c,
+			const std::vector<field<scalar, cubicCell>> & rho) const noexcept;
 };
 }  // namespace schemi
 
-#endif /* BHRGEN_HPP_ */
+#endif /* KEPSAMODEL_HPP_ */

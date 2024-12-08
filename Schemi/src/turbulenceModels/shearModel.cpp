@@ -1,22 +1,76 @@
 /*
- * shearGen.cpp
+ * shearModel.cpp
  *
- *  Created on: 2023/06/03
+ *  Created on: 2024/12/04
  *      Author: Maxim Boldyrev
  */
 
-#include "shearGen.hpp"
+#include "shearModel.hpp"
 
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 
-#include "doubleDotProduct.hpp"
-#include "turbulentParametersKEPS.hpp"
-
-schemi::shearGen::shearGen(const mesh & meshIn, const bool turb_in,
-		const turbulenceModel tm_in) noexcept :
-		abstractTurbulenceGen(turb_in, tm_in)
+schemi::shearModel::shearModel(const mesh & meshIn, const bool turb_in) :
+		kEpsModels(meshIn, turb_in, false, false, turbulenceModel::shearModel)
 {
-	turbPar = std::make_unique<turbulentParametersKEPS>(meshIn);
+	modelParametersSet().resize(3);
+
+	/*Read turbulent parameters.*/
+	{
+		std::ifstream turbulentParametersFile { "./set/turbulentParameters.txt" };
+		if (turbulentParametersFile.is_open())
+			std::cout << "./set/turbulentParameters.txt is opened."
+					<< std::endl;
+		else
+			throw std::ifstream::failure(
+					"./set/turbulentParameters.txt not found.");
+
+		std::string skipBuffer;
+		scalar value;
+
+		turbulentParametersFile >> skipBuffer >> value;
+		CmuSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaScSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaTSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaESet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaKSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaEpsSet(value);
+
+		turbulentParametersFile >> skipBuffer >> value;
+		CMS_RSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		CMS_DSet(value);
+
+		turbulentParametersFile >> skipBuffer >> value;
+		minkSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		minepsilonSet(value);
+
+		turbulentParametersFile >> skipBuffer >> modelParametersSet()[0];
+		turbulentParametersFile >> skipBuffer >> modelParametersSet()[1];
+		turbulentParametersFile >> skipBuffer >> modelParametersSet()[2];
+
+		turbulentParametersFile.close();
+	}
+}
+
+schemi::scalar schemi::shearModel::C1() const noexcept
+{
+	return modelParameters()[0];
+}
+schemi::scalar schemi::shearModel::C2() const noexcept
+{
+	return modelParameters()[1];
+}
+schemi::scalar schemi::shearModel::C3() const noexcept
+{
+	return modelParameters()[2];
 }
 
 std::tuple<
@@ -28,7 +82,7 @@ std::tuple<
 				schemi::volumeField<schemi::vector>>,
 		std::pair<schemi::volumeField<schemi::scalar>,
 				schemi::volumeField<schemi::scalar>>,
-		schemi::volumeField<schemi::scalar>> schemi::shearGen::calculate(
+		schemi::volumeField<schemi::scalar>> schemi::shearModel::calculate(
 		scalar & sourceTimestep, const scalar sourceTimestepCoeff,
 		const bunchOfFields<cubicCell> & cellFields,
 		const diffusiveFields & diffFieldsOld,
@@ -65,19 +119,17 @@ std::tuple<
 	{
 		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
 
-		const scalar rhoSpherRGen = spherR()[i] && gradV()[i];
+		const scalar rhoSpherRGen(spherR()[i] && gradV()[i]);
 
-		const scalar rhoDevRGen = devR()[i] && gradV()[i];
+		const scalar rhoDevRGen(devR()[i] && gradV()[i]);
 
 		const scalar dissip(-cellFields.rhoepsTurb()[i]);
 
 		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen;
 		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
 
-		Sourceeps.first.r()[i] = turbPar->C1() * ek * rhoDevRGen
-				+ turbPar->C3() * ek * rhoSpherRGen;
-		Sourceeps.second.r()[i] = turbPar->C2() * dissip
-				/ cellFields.kTurb()[i];
+		Sourceeps.first.r()[i] = (C1() * rhoDevRGen + C3() * rhoSpherRGen) * ek;
+		Sourceeps.second.r()[i] = C2() * dissip / cellFields.kTurb()[i];
 
 		/*Time-step calculation*/
 		modeps[i] = std::abs(

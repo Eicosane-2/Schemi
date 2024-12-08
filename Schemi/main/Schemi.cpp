@@ -748,9 +748,8 @@ int main()
 		if (readDataPoint.second == "initialisation")
 			std::exit(EXIT_SUCCESS);
 
-		boundaryConditionValue boundaryConditionValueCalc(
-				*gasPhase->turbulenceSources->turbPar, *gasPhase,
-				*(gasPhase->phaseThermodynamics), parallelism);
+		boundaryConditionValue boundaryConditionValueCalc(*gasPhase->turbulence,
+				*gasPhase, *(gasPhase->phaseThermodynamics), parallelism);
 
 		skipBuffer.clear();
 

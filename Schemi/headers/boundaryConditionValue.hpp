@@ -11,7 +11,7 @@
 #define BOUNDARYCONDITIONVALUE_HPP_
 
 #include "abstractMixtureThermodynamics.hpp"
-#include "abstractTurbulentParameters.hpp"
+#include "abstractTurbulenceModel.hpp"
 #include "MPIHandler.hpp"
 #include "slipFunction.hpp"
 
@@ -19,13 +19,13 @@ namespace schemi
 {
 class boundaryConditionValue
 {
-	const abstractTurbulentParameters & turbPar;
+	const abstractTurbulenceModel & turb;
 	const bunchOfFields<cubicCell> & cellFields;
 	const abstractMixtureThermodynamics & mix;
 	const mesh & meshReference;
 public:
 	const MPIHandler & parallelism;
-	boundaryConditionValue(const abstractTurbulentParameters & turbPar_in,
+	boundaryConditionValue(const abstractTurbulenceModel & turb_in,
 			const bunchOfFields<cubicCell> & cellFields_in,
 			const abstractMixtureThermodynamics & mix_in,
 			const MPIHandler & parallelism_in) noexcept;
@@ -87,7 +87,7 @@ public:
 					cellFields.epsTurb.boundCond()[surfaceIndex], cellIndex,
 					surfaceIndex) };
 
-			retValue = turbPar.calculateNut(kBoundary, epsilonBoundary);
+			retValue = turb.calculateNut(kBoundary, epsilonBoundary);
 		}
 			break;
 		case boundaryConditionType::calculatedTemperature:
@@ -321,7 +321,7 @@ public:
 					cellFields.epsTurb.boundCond()[surfaceIndex], cellIndex,
 					surfaceIndex) };
 
-			retValue = turbPar.calculateNut(kBoundary, epsilonBoundary);
+			retValue = turb.calculateNut(kBoundary, epsilonBoundary);
 		}
 			break;
 		case boundaryConditionType::calculatedTemperature:

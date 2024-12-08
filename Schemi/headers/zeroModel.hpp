@@ -1,24 +1,22 @@
 /*
- * kEpsAGen.hpp
+ * zeroModel.hpp
  *
- *  Created on: 2020/05/13
+ *  Created on: 2024/12/04
  *      Author: Maxim Boldyrev
- *
- *      Class for k-epsilon-a model turbulence generation.
  */
 
-#ifndef KEPSAGEN_HPP_
-#define KEPSAGEN_HPP_
+#ifndef ZEROMODEL_HPP_
+#define ZEROMODEL_HPP_
 
-#include "abstractTurbulenceGen.hpp"
+#include "kEpsModels.hpp"
+#include "diffusiveFields.hpp"
 
 namespace schemi
 {
-class kEpsAGen: public abstractTurbulenceGen
+class zeroModel: public kEpsModels
 {
 public:
-	kEpsAGen(const mesh & meshIn, const bool turb_in,
-			const turbulenceModel tm_in) noexcept;
+	zeroModel(const mesh & meshIn, const bool turb_in);
 
 	std::tuple<std::pair<volumeField<scalar>, volumeField<scalar>>,
 			std::pair<volumeField<scalar>, volumeField<scalar>>,
@@ -33,7 +31,8 @@ public:
 			const volumeField<vector> & gradP,
 			const volumeField<vector> & gradRho,
 			const volumeField<tensor> & grada, const volumeField<scalar> & diva,
-			const volumeField<vector>&, const volumeField<tensor> & spherR,
+			const volumeField<vector> & gradb,
+			const volumeField<tensor> & spherR,
 			const volumeField<tensor> & devR,
 			const volumeField<vector> & gradMav_n,
 			const abstractMixtureThermodynamics & mixture,
@@ -41,4 +40,4 @@ public:
 };
 }  // namespace schemi
 
-#endif /* KEPSAGEN_HPP_ */
+#endif /* ZEROMODEL_HPP_ */

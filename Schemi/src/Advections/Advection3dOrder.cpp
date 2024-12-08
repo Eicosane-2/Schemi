@@ -27,13 +27,13 @@ schemi::starFields schemi::Advection3dOrder(
 	homogeneousPhase<quadraticSurface> surfaceOwnerSide { bunchOfFields<
 			quadraticSurface>(gasPhase),
 			transportCoefficients<quadraticSurface>(mesh_),
-			gasPhase.phaseThermodynamics, gasPhase.turbulenceSources,
+			gasPhase.phaseThermodynamics, gasPhase.turbulence,
 			gasPhase.transportModel };
 
 	homogeneousPhase<quadraticSurface> surfaceNeighbourSide { bunchOfFields<
 			quadraticSurface>(gasPhase),
 			transportCoefficients<quadraticSurface>(mesh_),
-			gasPhase.phaseThermodynamics, gasPhase.turbulenceSources,
+			gasPhase.phaseThermodynamics, gasPhase.turbulence,
 			gasPhase.transportModel };
 
 	/*Creating limited gradients.*/
@@ -79,7 +79,7 @@ schemi::starFields schemi::Advection3dOrder(
 		pressureTVDGradient = thirdOrderLimiter(surfacePressureGradient,
 				limiter);
 
-		if (gasPhase.turbulenceSources->turbulence)
+		if (gasPhase.turbulence->turbulence())
 		{
 			const auto surfacekGradient = surfGrad(gasPhase.kTurb,
 					boundaryConditionValueCalc);
@@ -92,14 +92,14 @@ schemi::starFields schemi::Advection3dOrder(
 			epsilonTVDGradient = thirdOrderLimiter(surfaceepsilonGradient,
 					limiter);
 
-			if (gasPhase.turbulenceSources->aField)
+			if (gasPhase.turbulence->aField())
 			{
 				const auto surfaceaGradient = surfGrad(gasPhase.aTurb,
 						boundaryConditionValueCalc);
 
 				aTVDGradient = thirdOrderLimiter(surfaceaGradient, limiter);
 
-				if (gasPhase.turbulenceSources->bField)
+				if (gasPhase.turbulence->bField())
 				{
 					const auto surfacebGradient = surfGrad(gasPhase.bTurb,
 							boundaryConditionValueCalc);
@@ -142,7 +142,7 @@ schemi::starFields schemi::Advection3dOrder(
 				scalar reconstructedEpsilon { 0 };
 				vector reconstructedaValue { 0 };
 				scalar reconstructedbValue { 0 };
-				if (gasPhase.turbulenceSources->turbulence)
+				if (gasPhase.turbulence->turbulence())
 				{
 					reconstructedkValue = (kTVDGradient()[i][j] & deltaVector)
 							+ gasPhase.kTurb()[i];
@@ -150,12 +150,12 @@ schemi::starFields schemi::Advection3dOrder(
 					reconstructedEpsilon = (epsilonTVDGradient()[i][j]
 							& deltaVector) + gasPhase.epsTurb()[i];
 
-					if (gasPhase.turbulenceSources->aField)
+					if (gasPhase.turbulence->aField())
 					{
 						reconstructedaValue = (aTVDGradient()[i][j]
 								& deltaVector) + gasPhase.aTurb()[i];
 
-						if (gasPhase.turbulenceSources->bField)
+						if (gasPhase.turbulence->bField())
 							reconstructedbValue = (bTVDGradient()[i][j]
 									& deltaVector) + gasPhase.bTurb()[i];
 					}
@@ -174,7 +174,7 @@ schemi::starFields schemi::Advection3dOrder(
 					surfaceOwnerSide.pressure.r()[surfaceIndex] =
 							reconstructedPressureValue;
 
-					if (gasPhase.turbulenceSources->turbulence)
+					if (gasPhase.turbulence->turbulence())
 					{
 						surfaceOwnerSide.kTurb.r()[surfaceIndex] =
 								reconstructedkValue;
@@ -182,12 +182,12 @@ schemi::starFields schemi::Advection3dOrder(
 						surfaceOwnerSide.epsTurb.r()[surfaceIndex] =
 								reconstructedEpsilon;
 
-						if (gasPhase.turbulenceSources->aField)
+						if (gasPhase.turbulence->aField())
 						{
 							surfaceOwnerSide.aTurb.r()[surfaceIndex] =
 									reconstructedaValue;
 
-							if (gasPhase.turbulenceSources->bField)
+							if (gasPhase.turbulence->bField())
 								surfaceOwnerSide.bTurb.r()[surfaceIndex] =
 										reconstructedbValue;
 						}
@@ -206,7 +206,7 @@ schemi::starFields schemi::Advection3dOrder(
 					surfaceNeighbourSide.pressure.r()[surfaceIndex] =
 							reconstructedPressureValue;
 
-					if (gasPhase.turbulenceSources->turbulence)
+					if (gasPhase.turbulence->turbulence())
 					{
 						surfaceNeighbourSide.kTurb.r()[surfaceIndex] =
 								reconstructedkValue;
@@ -214,12 +214,12 @@ schemi::starFields schemi::Advection3dOrder(
 						surfaceNeighbourSide.epsTurb.r()[surfaceIndex] =
 								reconstructedEpsilon;
 
-						if (gasPhase.turbulenceSources->aField)
+						if (gasPhase.turbulence->aField())
 						{
 							surfaceNeighbourSide.aTurb.r()[surfaceIndex] =
 									reconstructedaValue;
 
-							if (gasPhase.turbulenceSources->bField)
+							if (gasPhase.turbulence->bField())
 								surfaceNeighbourSide.bTurb.r()[surfaceIndex] =
 										reconstructedbValue;
 						}
@@ -247,7 +247,7 @@ schemi::starFields schemi::Advection3dOrder(
 			surfaceOwnerSide.density[0].r() += surfaceOwnerSide.density[k]();
 		}
 
-		if (gasPhase.turbulenceSources->turbulence)
+		if (gasPhase.turbulence->turbulence())
 		{
 			surfaceOwnerSide.rhokTurb.r() = astProduct(surfaceOwnerSide.kTurb,
 					surfaceOwnerSide.density[0])();
@@ -255,12 +255,12 @@ schemi::starFields schemi::Advection3dOrder(
 			surfaceOwnerSide.rhoepsTurb.r() = surfaceOwnerSide.epsTurb()
 					* surfaceOwnerSide.density[0]();
 
-			if (gasPhase.turbulenceSources->aField)
+			if (gasPhase.turbulence->aField())
 			{
 				surfaceOwnerSide.rhoaTurb.r() = astProduct(
 						surfaceOwnerSide.aTurb, surfaceOwnerSide.density[0])();
 
-				if (gasPhase.turbulenceSources->bField)
+				if (gasPhase.turbulence->bField())
 					surfaceOwnerSide.rhobTurb.r() = surfaceOwnerSide.bTurb()
 							* surfaceOwnerSide.density[0]();
 			}
@@ -322,7 +322,7 @@ schemi::starFields schemi::Advection3dOrder(
 						surfaceNeighbourSide.velocity()[i]
 								* surfaceNeighbourSide.density[0]()[i];
 
-				if (gasPhase.turbulenceSources->turbulence)
+				if (gasPhase.turbulence->turbulence())
 				{
 					surfaceNeighbourSide.rhokTurb.r()[i] =
 							surfaceNeighbourSide.kTurb()[i]
@@ -332,13 +332,13 @@ schemi::starFields schemi::Advection3dOrder(
 							surfaceNeighbourSide.epsTurb()[i]
 									* surfaceNeighbourSide.density[0]()[i];
 
-					if (gasPhase.turbulenceSources->aField)
+					if (gasPhase.turbulence->aField())
 					{
 						surfaceNeighbourSide.rhoaTurb.r()[i] =
 								surfaceNeighbourSide.aTurb()[i]
 										* surfaceNeighbourSide.density[0]()[i];
 
-						if (gasPhase.turbulenceSources->bField)
+						if (gasPhase.turbulence->bField())
 							surfaceNeighbourSide.rhobTurb.r()[i] =
 									surfaceNeighbourSide.bTurb()[i]
 											* surfaceNeighbourSide.density[0]()[i];
@@ -436,7 +436,7 @@ schemi::starFields schemi::Advection3dOrder(
 							surfaceOwnerSide.pressure()[i],
 							surfaceOwnerSide.pressure.boundCond()[i], i, i);
 
-			if (surfaceNeighbourSide.turbulenceSources->turbulence)
+			if (surfaceNeighbourSide.turbulence->turbulence())
 			{
 				surfaceNeighbourSide.kTurb.r()[i] =
 						boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -456,7 +456,7 @@ schemi::starFields schemi::Advection3dOrder(
 						surfaceNeighbourSide.density[0]()[i]
 								* surfaceNeighbourSide.epsTurb()[i];
 
-				if (surfaceNeighbourSide.turbulenceSources->aField)
+				if (surfaceNeighbourSide.turbulence->aField())
 				{
 					surfaceNeighbourSide.aTurb.r()[i] =
 							boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -468,7 +468,7 @@ schemi::starFields schemi::Advection3dOrder(
 							surfaceNeighbourSide.aTurb.r()[i]
 									* surfaceNeighbourSide.density[0]()[i];
 
-					if (surfaceNeighbourSide.turbulenceSources->bField)
+					if (surfaceNeighbourSide.turbulence->bField())
 					{
 						surfaceNeighbourSide.bTurb.r()[i] =
 								boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -559,7 +559,7 @@ schemi::starFields schemi::Advection3dOrder(
 			gasPhase.density[k].r() -= divergence(NumFluxFlows.density[k])()
 					* timestep;
 
-		if (gasPhase.turbulenceSources->turbulence)
+		if (gasPhase.turbulence->turbulence())
 		{
 			gasPhase.rhokTurb.r() -= divergence(NumFluxFlows.rhokTurb)()
 					* timestep;
@@ -567,12 +567,12 @@ schemi::starFields schemi::Advection3dOrder(
 			gasPhase.rhoepsTurb.r() -= divergence(NumFluxFlows.rhoepsTurb)()
 					* timestep;
 
-			if (gasPhase.turbulenceSources->aField)
+			if (gasPhase.turbulence->aField())
 			{
 				gasPhase.rhoaTurb.r() -= astProduct(
 						divergence(NumFluxFlows.rhoaTurb), timestep)();
 
-				if (gasPhase.turbulenceSources->bField)
+				if (gasPhase.turbulence->bField())
 					gasPhase.rhobTurb.r() -= divergence(NumFluxFlows.rhobTurb)()
 							* timestep;
 			}
@@ -609,19 +609,19 @@ schemi::starFields schemi::Advection3dOrder(
 		gasPhase.entropy.r() = gasPhase.phaseThermodynamics->Sv(
 				gasPhase.concentration.p, gasPhase.temperature());
 
-		if (gasPhase.turbulenceSources->turbulence)
+		if (gasPhase.turbulence->turbulence())
 		{
 			gasPhase.kTurb.r() = gasPhase.rhokTurb() / gasPhase.density[0]();
 
 			gasPhase.epsTurb.r() = gasPhase.rhoepsTurb()
 					/ gasPhase.density[0]();
 
-			if (gasPhase.turbulenceSources->aField)
+			if (gasPhase.turbulence->aField())
 			{
 				gasPhase.aTurb.r() = division(gasPhase.rhoaTurb,
 						gasPhase.density[0])();
 
-				if (gasPhase.turbulenceSources->bField)
+				if (gasPhase.turbulence->bField())
 					gasPhase.bTurb.r() = gasPhase.rhobTurb()
 							/ gasPhase.density[0]();
 			}

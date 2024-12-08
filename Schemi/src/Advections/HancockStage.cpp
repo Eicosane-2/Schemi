@@ -110,7 +110,7 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 		}
 		divRhoEVHancock.r()[i] /= mesh_.cells()[i].V();
 	}
-	if (surfaceOwnerSide.turbulenceSources->turbulence)
+	if (surfaceOwnerSide.turbulence->turbulence())
 	{
 		/*Rhok.*/
 		divRhokVHancock = HancockDivergence(surfaceOwnerSide.velocity,
@@ -120,13 +120,13 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 		divRhoEpsVHancock = HancockDivergence(surfaceOwnerSide.velocity,
 				surfaceNeighbourSide.velocity, surfaceOwnerSide.rhoepsTurb,
 				surfaceNeighbourSide.rhoepsTurb);
-		if (surfaceOwnerSide.turbulenceSources->aField)
+		if (surfaceOwnerSide.turbulence->aField())
 		{
 			/*Rhoa.*/
 			divRhoaVHancock = HancockDivergence(surfaceOwnerSide.velocity,
 					surfaceNeighbourSide.velocity, surfaceOwnerSide.rhoaTurb,
 					surfaceNeighbourSide.rhoaTurb);
-			if (surfaceOwnerSide.turbulenceSources->bField)
+			if (surfaceOwnerSide.turbulence->bField())
 				/*Rhob.*/
 				divRhobVHancock = HancockDivergence(surfaceOwnerSide.velocity,
 						surfaceNeighbourSide.velocity,
@@ -148,7 +148,7 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 	/*Total energy.*/
 	HancockTimeIntegration(divRhoEVHancock, surfaceOwnerSide.totalEnergy,
 			surfaceNeighbourSide.totalEnergy, halfTimestep);
-	if (surfaceOwnerSide.turbulenceSources->turbulence)
+	if (surfaceOwnerSide.turbulence->turbulence())
 	{
 		/*Rhok.*/
 		HancockTimeIntegration(divRhokVHancock, surfaceOwnerSide.rhokTurb,
@@ -156,12 +156,12 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 		/*RhoEpsilon.*/
 		HancockTimeIntegration(divRhoEpsVHancock, surfaceOwnerSide.rhoepsTurb,
 				surfaceNeighbourSide.rhoepsTurb, halfTimestep);
-		if (surfaceOwnerSide.turbulenceSources->aField)
+		if (surfaceOwnerSide.turbulence->aField())
 		{
 			/*Rhoa.*/
 			HancockTimeIntegration(divRhoaVHancock, surfaceOwnerSide.rhoaTurb,
 					surfaceNeighbourSide.rhoaTurb, halfTimestep);
-			if (surfaceOwnerSide.turbulenceSources->bField)
+			if (surfaceOwnerSide.turbulence->bField())
 				/*Rhob.*/
 				HancockTimeIntegration(divRhobVHancock,
 						surfaceOwnerSide.rhobTurb,
@@ -184,7 +184,7 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 					surfaceOwnerSide.concentration.v[k]();
 		}
 
-		if (surfaceOwnerSide.turbulenceSources->turbulence)
+		if (surfaceOwnerSide.turbulence->turbulence())
 		{
 			surfaceOwnerSide.kTurb.r() = surfaceOwnerSide.rhokTurb()
 					/ surfaceOwnerSide.density[0]();
@@ -192,12 +192,12 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 			surfaceOwnerSide.epsTurb.r() = surfaceOwnerSide.rhoepsTurb()
 					/ surfaceOwnerSide.density[0]();
 
-			if (surfaceOwnerSide.turbulenceSources->aField)
+			if (surfaceOwnerSide.turbulence->aField())
 			{
 				surfaceOwnerSide.aTurb.r() = division(surfaceOwnerSide.rhoaTurb,
 						surfaceOwnerSide.density[0])();
 
-				if (surfaceOwnerSide.turbulenceSources->bField)
+				if (surfaceOwnerSide.turbulence->bField())
 					surfaceOwnerSide.bTurb.r() = surfaceOwnerSide.rhobTurb()
 							/ surfaceOwnerSide.density[0]();
 			}
@@ -258,7 +258,7 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 						surfaceNeighbourSide.momentum()[i]
 								/ surfaceNeighbourSide.density[0]()[i];
 
-				if (surfaceNeighbourSide.turbulenceSources->turbulence)
+				if (surfaceNeighbourSide.turbulence->turbulence())
 				{
 					surfaceNeighbourSide.kTurb.r()[i] =
 							surfaceNeighbourSide.rhokTurb()[i]
@@ -268,13 +268,13 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 							surfaceNeighbourSide.rhoepsTurb()[i]
 									/ surfaceNeighbourSide.density[0]()[i];
 
-					if (surfaceNeighbourSide.turbulenceSources->aField)
+					if (surfaceNeighbourSide.turbulence->aField())
 					{
 						surfaceNeighbourSide.aTurb.r()[i] =
 								surfaceNeighbourSide.rhoaTurb()[i]
 										/ surfaceNeighbourSide.density[0]()[i];
 
-						if (surfaceNeighbourSide.turbulenceSources->bField)
+						if (surfaceNeighbourSide.turbulence->bField())
 							surfaceNeighbourSide.bTurb.r()[i] =
 									surfaceNeighbourSide.rhobTurb()[i]
 											/ surfaceNeighbourSide.density[0]()[i];
@@ -356,7 +356,7 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 								surfaceOwnerSide.pressure()[i],
 								surfaceOwnerSide.pressure.boundCond()[i], i, i);
 
-				if (surfaceNeighbourSide.turbulenceSources->turbulence)
+				if (surfaceNeighbourSide.turbulence->turbulence())
 				{
 					surfaceNeighbourSide.kTurb.r()[i] =
 							boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -378,7 +378,7 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 							surfaceNeighbourSide.density[0].r()[i]
 									* surfaceNeighbourSide.epsTurb()[i];
 
-					if (surfaceNeighbourSide.turbulenceSources->aField)
+					if (surfaceNeighbourSide.turbulence->aField())
 					{
 						surfaceNeighbourSide.aTurb.r()[i] =
 								boundaryConditionValueCalc.boundaryConditionValueCell(
@@ -390,7 +390,7 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 								surfaceNeighbourSide.aTurb.r()[i]
 										* surfaceNeighbourSide.density[0]()[i];
 
-						if (surfaceNeighbourSide.turbulenceSources->bField)
+						if (surfaceNeighbourSide.turbulence->bField())
 						{
 							surfaceNeighbourSide.bTurb.r()[i] =
 									boundaryConditionValueCalc.boundaryConditionValueCell(

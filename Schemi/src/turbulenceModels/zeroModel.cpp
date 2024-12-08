@@ -1,19 +1,56 @@
 /*
- * zeroGen.cpp
+ * zeroModel.cpp
  *
- *  Created on: 2023/06/03
+ *  Created on: 2024/12/04
  *      Author: Maxim Boldyrev
  */
 
-#include "zeroGen.hpp"
+#include "zeroModel.hpp"
 
-#include "turbulentParametersKEPS.hpp"
+#include <iostream>
+#include <fstream>
 
-schemi::zeroGen::zeroGen(const mesh & meshIn, const bool turb_in,
-		const turbulenceModel tm_in) noexcept :
-		abstractTurbulenceGen(turb_in, tm_in)
+schemi::zeroModel::zeroModel(const mesh & meshIn, const bool turb_in) :
+		kEpsModels(meshIn, turb_in, false, false, turbulenceModel::zeroModel)
 {
-	turbPar = std::make_unique<turbulentParametersKEPS>(meshIn);
+	/*Read turbulent parameters.*/
+	{
+		std::ifstream turbulentParametersFile { "./set/turbulentParameters.txt" };
+		if (turbulentParametersFile.is_open())
+			std::cout << "./set/turbulentParameters.txt is opened."
+					<< std::endl;
+		else
+			throw std::ifstream::failure(
+					"./set/turbulentParameters.txt not found.");
+
+		std::string skipBuffer;
+		scalar value;
+
+		turbulentParametersFile >> skipBuffer >> value;
+		CmuSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaScSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaTSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaESet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaKSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		sigmaEpsSet(value);
+
+		turbulentParametersFile >> skipBuffer >> value;
+		minkSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		minepsilonSet(value);
+
+		turbulentParametersFile >> skipBuffer >> value;
+		CMS_RSet(value);
+		turbulentParametersFile >> skipBuffer >> value;
+		CMS_DSet(value);
+
+		turbulentParametersFile.close();
+	}
 }
 
 std::tuple<
@@ -25,7 +62,7 @@ std::tuple<
 				schemi::volumeField<schemi::vector>>,
 		std::pair<schemi::volumeField<schemi::scalar>,
 				schemi::volumeField<schemi::scalar>>,
-		schemi::volumeField<schemi::scalar>> schemi::zeroGen::calculate(
+		schemi::volumeField<schemi::scalar>> schemi::zeroModel::calculate(
 		scalar & sourceTimestep, const scalar,
 		const bunchOfFields<cubicCell> & cellFields, const diffusiveFields&,
 		const volumeField<tensor>&, const volumeField<vector>&,

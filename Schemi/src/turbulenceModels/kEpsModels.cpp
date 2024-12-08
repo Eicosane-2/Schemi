@@ -1,104 +1,88 @@
 /*
- * turbulentParametersKEPS.cpp
+ * kEpsModels.cpp
  *
- *  Created on: 2023/06/03
+ *  Created on: 2024/12/03
  *      Author: Maxim Boldyrev
  */
 
-#include "turbulentParametersKEPS.hpp"
+#include "kEpsModels.hpp"
 
-schemi::scalar schemi::turbulentParametersKEPS::thetaS(const scalar divV,
-		const scalar k, const scalar eps, const scalar CMS_par) const noexcept
+#include "volumeField.hpp"
+#include "surfaceField.hpp"
+
+schemi::scalar schemi::kEpsModels::thetaS(const scalar divV, const scalar k,
+		const scalar eps, const scalar CMS) const noexcept
 {
 	const auto Cmu2 = Cmu() * Cmu();
 	const auto k2 = k * k;
 	const auto eps2 = eps * eps;
 
-	const auto CMS2 = CMS_par * CMS_par;
+	const auto CMS2 = CMS * CMS;
 
 	const auto divV2 = divV * divV;
 
 	return 1. / std::sqrt(1 + 16. / 9. * Cmu2 * k2 / (CMS2 * eps2) * divV2);
 }
 
-schemi::turbulentParametersKEPS::turbulentParametersKEPS(
+void schemi::kEpsModels::CMS_RSet(const scalar v) noexcept
+{
+	CMS_R_ = v;
+}
 
-const mesh & meshIn,
+void schemi::kEpsModels::CMS_DSet(const scalar v) noexcept
+{
+	CMS_D_ = v;
+}
 
-const scalar CmuIn,
+schemi::scalar schemi::kEpsModels::CMS_R() const noexcept
+{
+	return CMS_R_;
+}
 
-const scalar C0In,
+schemi::scalar schemi::kEpsModels::CMS_D() const noexcept
+{
+	return CMS_D_;
+}
 
-const scalar C1In,
-
-const scalar C2In,
-
-const scalar C3In,
-
-const scalar sigmaScIn,
-
-const scalar sigmaTIn,
-
-const scalar sigmaEIn,
-
-const scalar sigmakIn,
-
-const scalar sigmaepsIn,
-
-const scalar sigmaaIn,
-
-const scalar sigmabIn,
-
-const scalar Ca1In,
-
-const scalar Ca1maxIn,
-
-const scalar Cb1In,
-
-const scalar minkIn,
-
-const scalar mienpsIn,
-
-const scalar CMS_R_In,
-
-const scalar CMS_D_In,
-
-const scalar CMS_A_In,
-
-const scalar CMS_M_In) noexcept :
-		abstractTurbulentParameters(meshIn, CmuIn, C0In, C1In, C2In, C3In,
-				sigmaScIn, sigmaTIn, sigmaEIn, sigmakIn, sigmaepsIn, sigmaaIn,
-				sigmabIn, Ca1In, Ca1maxIn, Cb1In, minkIn, mienpsIn, CMS_R_In,
-				CMS_D_In, CMS_A_In, CMS_M_In)
+schemi::kEpsModels::kEpsModels(const mesh & meshIn, const bool turb,
+		const bool a, const bool b, const turbulenceModel model,
+		const scalar Cmu_in, const scalar sigmaSc_in, const scalar sigmaT_in,
+		const scalar sigmaE_in, const scalar sigmak_in,
+		const scalar sigmaeps_in, const scalar sigmaa_in,
+		const scalar sigmab_in, const scalar CMS_R_in,
+		const scalar CMS_D_in) noexcept :
+		abstractTurbulenceModel(meshIn, turb, a, b, model, Cmu_in, sigmaSc_in,
+				sigmaT_in, sigmaE_in, sigmak_in, sigmaeps_in, sigmaa_in,
+				sigmab_in), CMS_R_(CMS_R_in), CMS_D_(CMS_D_in)
 {
 }
 
-std::valarray<schemi::scalar> schemi::turbulentParametersKEPS::calculateNut(
+std::valarray<schemi::scalar> schemi::kEpsModels::calculateNut(
 		const std::valarray<scalar> & k,
 		const std::valarray<scalar> & eps) const noexcept
 {
 	return Cmu() * k * k / eps;
 }
 
-schemi::scalar schemi::turbulentParametersKEPS::calculateNut(const scalar k,
+schemi::scalar schemi::kEpsModels::calculateNut(const scalar k,
 		const scalar eps) const noexcept
 {
 	return Cmu() * k * k / eps;
 }
 
-std::valarray<schemi::scalar> schemi::turbulentParametersKEPS::rhoepsilon(
+std::valarray<schemi::scalar> schemi::kEpsModels::rhoepsilon(
 		const bunchOfFields<cubicCell> & cf) const noexcept
 {
 	return cf.rhoepsTurb();
 }
 
-schemi::scalar schemi::turbulentParametersKEPS::thetaS_R(const scalar divV,
-		const scalar k, const scalar eps) const noexcept
+schemi::scalar schemi::kEpsModels::thetaS_R(const scalar divV, const scalar k,
+		const scalar eps) const noexcept
 {
 	return thetaS(divV, k, eps, CMS_R());
 }
 
-schemi::volumeField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_R(
+schemi::volumeField<schemi::scalar> schemi::kEpsModels::thetaS_R(
 		const volumeField<scalar> & divV, const volumeField<scalar> & k,
 		const volumeField<scalar> & eps) const noexcept
 {
@@ -110,7 +94,7 @@ schemi::volumeField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_R(
 	return returnField;
 }
 
-schemi::surfaceField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_R(
+schemi::surfaceField<schemi::scalar> schemi::kEpsModels::thetaS_R(
 		const surfaceField<scalar> & divV, const surfaceField<scalar> & k,
 		const surfaceField<scalar> & eps) const noexcept
 {
@@ -122,8 +106,8 @@ schemi::surfaceField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_R(
 	return returnField;
 }
 
-schemi::scalar schemi::turbulentParametersKEPS::thetaS_D(const scalar divV,
-		const scalar k, const scalar eps) const noexcept
+schemi::scalar schemi::kEpsModels::thetaS_D(const scalar divV, const scalar k,
+		const scalar eps) const noexcept
 {
 	if (divV < 0.)
 		return thetaS(divV, k, eps, CMS_D());
@@ -131,7 +115,7 @@ schemi::scalar schemi::turbulentParametersKEPS::thetaS_D(const scalar divV,
 		return 1.;
 }
 
-schemi::volumeField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_D(
+schemi::volumeField<schemi::scalar> schemi::kEpsModels::thetaS_D(
 		const volumeField<scalar> & divV, const volumeField<scalar> & k,
 		const volumeField<scalar> & eps) const noexcept
 {
@@ -146,7 +130,7 @@ schemi::volumeField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_D(
 	return returnField;
 }
 
-schemi::surfaceField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_D(
+schemi::surfaceField<schemi::scalar> schemi::kEpsModels::thetaS_D(
 		const surfaceField<scalar> & divV, const surfaceField<scalar> & k,
 		const surfaceField<scalar> & eps) const noexcept
 {
@@ -159,4 +143,8 @@ schemi::surfaceField<schemi::scalar> schemi::turbulentParametersKEPS::thetaS_D(
 			returnField.r()[i] = 1.;
 
 	return returnField;
+}
+
+schemi::kEpsModels::~kEpsModels() noexcept
+{
 }

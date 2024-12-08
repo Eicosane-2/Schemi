@@ -8,6 +8,7 @@
 #include "chemicalKineticsRober.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <numeric>
 
 void schemi::chemicalKinetics::Rober::cellReactionMatrix::reactionMatrix::transpose() noexcept

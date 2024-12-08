@@ -1,24 +1,37 @@
 /*
- * BHRKLGen.hpp
+ * BHRKLModel.hpp
  *
- *  Created on: 2020/03/12
+ *  Created on: 2024/12/04
  *      Author: Maxim Boldyrev
- *
- *      Class for k-L-a-b model turbulence generation.
  */
 
-#ifndef BHRKLGEN_HPP_
-#define BHRKLGEN_HPP_
+#ifndef BHRKLMODEL_HPP_
+#define BHRKLMODEL_HPP_
 
-#include "abstractTurbulenceGen.hpp"
+#include "kLModels.hpp"
+#include "diffusiveFields.hpp"
 
 namespace schemi
 {
-class BHRKLGen: public abstractTurbulenceGen
+class BHRKLModel: public kLModels
 {
+	scalar thetaA(const vector & a, const scalar k,
+			const scalar b) const noexcept;
+
+	scalar C0() const noexcept;
+	scalar C1() const noexcept;
+	scalar C2() const noexcept;
+	scalar C3() const noexcept;
+
+	scalar Ca() const noexcept;
+	scalar Cb() const noexcept;
+
+	scalar CaMax() const noexcept;
+
+	scalar CMSA() const noexcept;
+
 public:
-	BHRKLGen(const mesh & meshIn, const bool turb_in,
-			const turbulenceModel tm_in) noexcept;
+	BHRKLModel(const mesh & meshIn, const bool turb_in);
 
 	std::tuple<std::pair<volumeField<scalar>, volumeField<scalar>>,
 			std::pair<volumeField<scalar>, volumeField<scalar>>,
@@ -33,7 +46,8 @@ public:
 			const volumeField<vector> & gradP,
 			const volumeField<vector> & gradRho,
 			const volumeField<tensor> & grada, const volumeField<scalar> & diva,
-			const volumeField<vector>&, const volumeField<tensor> & spherR,
+			const volumeField<vector> & gradb,
+			const volumeField<tensor> & spherR,
 			const volumeField<tensor> & devR,
 			const volumeField<vector> & gradMav_n,
 			const abstractMixtureThermodynamics & mixture,
@@ -41,4 +55,4 @@ public:
 };
 }  // namespace schemi
 
-#endif /* BHRKLGEN_HPP_ */
+#endif /* BHRKLMODEL_HPP_ */

@@ -1,24 +1,43 @@
 /*
- * BHR2Gen.hpp
+ * BHR2Model.hpp
  *
- *  Created on: 2024/05/01
+ *  Created on: 2024/12/03
  *      Author: Maxim Boldyrev
- *
- *      Class for k-epsilon-a-b model turbulence generation. Second version.
  */
 
-#ifndef BHR2GEN_HPP_
-#define BHR2GEN_HPP_
+#ifndef BHR2MODEL_HPP_
+#define BHR2MODEL_HPP_
 
-#include "abstractTurbulenceGen.hpp"
+#include "kEpsModels.hpp"
+#include "diffusiveFields.hpp"
 
 namespace schemi
 {
-class BHR2Gen: public abstractTurbulenceGen
+class BHR2Model: public kEpsModels
 {
+	scalar thetaA(const vector & a, const scalar k,
+			const scalar b) const noexcept;
+
+	scalar C0() const noexcept;
+	scalar C1() const noexcept;
+	scalar C2() const noexcept;
+	scalar C3() const noexcept;
+	scalar C4() const noexcept;
+
+	scalar Ca() const noexcept;
+	scalar Cb() const noexcept;
+
+	scalar alpha2() const noexcept;
+	scalar alpha3() const noexcept;
+	scalar alpha4() const noexcept;
+
+	scalar CaMax() const noexcept;
+
+	scalar CMSA() const noexcept;
+	scalar CMSM() const noexcept;
+
 public:
-	BHR2Gen(const mesh & meshIn, const bool turb_in,
-			const turbulenceModel tm_in) noexcept;
+	BHR2Model(const mesh & meshIn, const bool turb_in);
 
 	std::tuple<std::pair<volumeField<scalar>, volumeField<scalar>>,
 			std::pair<volumeField<scalar>, volumeField<scalar>>,
@@ -41,4 +60,4 @@ public:
 };
 }  // namespace schemi
 
-#endif /* BHR2GEN_HPP_ */
+#endif /* BHR2MODEL_HPP_ */

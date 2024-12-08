@@ -9,10 +9,13 @@
 
 #include <chrono>
 
+#include "arithmeticAModel.hpp"
 #include "harmonicInterpolateScalar.hpp"
 #include "divergence.hpp"
+#include "diffusiveFields.hpp"
 #include "fieldProducts.hpp"
 #include "gradient.hpp"
+#include "kEpsAModel.hpp"
 #include "linearInterpolate.hpp"
 
 void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
@@ -81,8 +84,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	}
 
 	diffusiveFields diffFieldsOld { mesh_, gasPhase, commonConditions,
-			gasPhase.turbulenceSources->turbulence,
-			gasPhase.turbulenceSources->aField }, diffFieldsNew(diffFieldsOld);
+			gasPhase.turbulence->turbulence(), gasPhase.turbulence->aField(),
+			gasPhase.turbulence->bField() }, diffFieldsNew(diffFieldsOld);
 
 	effectiveTransportCoefficients<quadraticSurface> effectiveCoeffs { mesh_,
 			gasPhase.phaseThermodynamics->Mv().size() };
@@ -104,9 +107,9 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	gasPhase.calculateCoefficients(*gasPhase.transportModel,
 			gasPhase.phaseThermodynamics->Mv(), gasPhase.temperature,
 			gasPhase.pressure, gasPhase.concentration);
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 		gasPhase.calculateCoefficients(gasPhase.kTurb, gasPhase.epsTurb,
-				*(gasPhase.turbulenceSources->turbPar));
+				*(gasPhase.turbulence));
 
 	/*Calculation of fields for SLE matrix calculation*/
 	nonIdealCorrectionOld.r() = gasPhase.phaseThermodynamics->nonIdeality(
@@ -188,30 +191,28 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 			gasPhase.phaseThermodynamics->Mv(), surfaceTemperature, star.p,
 			surfaceConcentration);
 
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 	{
 		effectiveCoeffs.tNu = harmonicInterpolate(gasPhase.tNu, bncCalc);
-		effectiveCoeffs.calculateCoefficients(
-				*gasPhase.turbulenceSources->turbPar);
+		effectiveCoeffs.calculateCoefficients(*gasPhase.turbulence);
 
 		const auto k_surf = linearInterpolate(gasPhase.kTurb, bncCalc);
 		const auto eps_surf = linearInterpolate(gasPhase.epsTurb, bncCalc);
 
-		const auto thetaS_s = gasPhase.turbulenceSources->turbPar->thetaS_D(
-				divV_s, k_surf, eps_surf);
+		const auto thetaS_s = gasPhase.turbulence->thetaS_D(divV_s, k_surf,
+				eps_surf);
 
 		effectiveCoeffs.k_D.r() *= thetaS_s();
 		effectiveCoeffs.eps_D.r() *= thetaS_s();
 
-		thetaS_R = gasPhase.turbulenceSources->turbPar->thetaS_R(divV,
-				diffFieldsOld.k, diffFieldsOld.eps);
+		thetaS_R = gasPhase.turbulence->thetaS_R(divV, diffFieldsOld.k,
+				diffFieldsOld.eps);
 	}
 
 	effectiveCoeffs.calculateEffectiveCoefficients(surfaceRho,
-			*(gasPhase.turbulenceSources), surfaceConcentration.v[0],
-			surfaceCv);
+			*(gasPhase.turbulence), surfaceConcentration.v[0], surfaceCv);
 
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 	{
 		if (msolver.solverType != matrixSolver::explicitSolver)
 			kMatrix.generateDTimeLaplacian(diffFieldsOld.k,
@@ -233,7 +234,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 					astProduct(diffFieldsOld.eps, gasPhase.density[0]),
 					gasPhase.density[0], effectiveCoeffs.rhoDeps, bncCalc);
 
-		if (gasPhase.turbulenceSources->aField)
+		if (gasPhase.turbulence->aField())
 		{
 			if (msolver.solverType != matrixSolver::explicitSolver)
 				aMatrix.generateDTimeLaplacian(diffFieldsOld.a,
@@ -243,7 +244,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 				aMatrix.generateDTimeExplicitLaplacian(diffFieldsOld.a,
 						gasPhase.density[0], effectiveCoeffs.rhoDa, bncCalc);
 
-			if (gasPhase.turbulenceSources->bField)
+			if (gasPhase.turbulence->bField())
 			{
 				if (msolver.solverType != matrixSolver::explicitSolver)
 					bMatrix.generateDTimeLaplacian(diffFieldsOld.b,
@@ -319,7 +320,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 
 	effectiveCoeffs.caclulateDFluxes(explGradX,
 			gasPhase.phaseThermodynamics->Mv(), surfaceConcentration,
-			gasPhase.turbulenceSources->turbulence);
+			gasPhase.turbulence->turbulence());
 
 	for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
 	{
@@ -448,44 +449,17 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	volumeField<scalar> diva { mesh_, 0 };
 	volumeField<vector> gradb { mesh_, vector(0) };
 
-	//volumeField<vector> divDeva1 { mesh_, vector(0) };
-
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 	{
-		switch (gasPhase.turbulenceSources->model)
+		switch (gasPhase.turbulence->model())
 		{
-		case turbulenceModel::kEpsASource:
+		case turbulenceModel::kEpsAModel:
 		{
-			volumeField<scalar> bCalculated { mesh_, 0 };
-			volumeField<scalar> numerator { mesh_, 0 };
-			volumeField<scalar> denomenator { mesh_, 0 };
-			for (std::size_t k = 1; k < gasPhase.concentration.v.size(); ++k)
-			{
-				std::valarray<scalar> x_k = gasPhase.concentration.v[k]()
-						/ gasPhase.concentration.v[0]();
+			const auto & kEpsA = dynamic_cast<kEpsAModel&>(*gasPhase.turbulence);
 
-				numerator.r() += x_k
-						/ (gasPhase.density[k]() + stabilizator
-								+ gasPhase.turbulenceSources->turbPar->Cb1()
-										* gasPhase.density[0]());
-
-				denomenator.r() += x_k * gasPhase.density[k]()
-						/ (gasPhase.density[k]() + stabilizator
-								+ gasPhase.turbulenceSources->turbPar->Cb1()
-										* gasPhase.density[0]());
-			}
-
-			bCalculated.r() = gasPhase.density[0]() * numerator()
-					/ denomenator() - 1.;
-
-			std::replace_if(std::begin(bCalculated.r()),
-					std::end(bCalculated.r()), [](const scalar value) 
-					{
-						return value < 0.;
-					}, 0.0);
-
-			diffFieldsOld.b.r() = bCalculated();
-			diffFieldsNew.b.r() = bCalculated();
+			diffFieldsOld.b.r() = kEpsA.calculate_b(mesh_,
+					gasPhase.concentration.v, gasPhase.density)();
+			diffFieldsNew.b.r() = diffFieldsOld.b();
 
 			if (linearRec)
 			{
@@ -497,21 +471,26 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 				grada = grad(star.a);
 				diva = divergence(star.a);
 			}
-
-			//auto aDiffSurface = surfGrad(diffFieldsOld.a, bncCalc);
-
-			//for (auto & a_i : aDiffSurface.r())
-			//	a_i.transpose();
-
-			//aDiffSurface.r() = astProduct(aDiffSurface,
-			//		effectiveCoeffs.rhoDa)();
-
-			//divDeva1 = divergence(aDiffSurface);
 		}
 			break;
-		case turbulenceModel::BHRSource:
-		case turbulenceModel::BHR2Source:
-		case turbulenceModel::BHRKLSource:
+		case turbulenceModel::arithmeticA1Model:
+		case turbulenceModel::arithmeticA2Model:
+		case turbulenceModel::arithmeticA3Model:
+		{
+			const auto & arithmetic =
+					dynamic_cast<arithmeticAModel&>(*gasPhase.turbulence);
+
+			diffFieldsOld.a.r() = arithmetic.calculate_a(
+					gasPhase.turbulence->model(), mesh_, gasPhase, gradRho,
+					gradP)();
+
+			grada = grad(diffFieldsOld.a, bncCalc);
+			diva = divergence(diffFieldsOld.a, bncCalc);
+		}
+			break;
+		case turbulenceModel::BHRModel:
+		case turbulenceModel::BHR2Model:
+		case turbulenceModel::BHRKLModel:
 		{
 			if (linearRec)
 			{
@@ -525,58 +504,6 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 				diva = divergence(star.a);
 				gradb = grad(star.b);
 			}
-
-			//auto aDiffSurface = surfGrad(diffFieldsOld.a, bncCalc);
-
-			//for (auto & a_i : aDiffSurface.r())
-			//	a_i.transpose();
-
-			//aDiffSurface.r() = astProduct(aDiffSurface,
-			//		effectiveCoeffs.rhoDa)();
-
-			//divDeva1 = divergence(aDiffSurface);
-		}
-			break;
-		case turbulenceModel::arithmeticA1Source:
-		{
-			volumeField<scalar> sonicSpeed2 { mesh_, 0 };
-			sonicSpeed2.r() = gasPhase.phaseThermodynamics->sqSonicSpeed(
-					gasPhase.concentration.p, gasPhase.density[0](),
-					gasPhase.internalEnergy(), gasPhase.pressure());
-
-			for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-				diffFieldsOld.a.r()[i] = -gasPhase.tNu()[i]
-						/ gasPhase.turbulenceSources->turbPar->Ca1()
-						* (gradRho()[i] / gasPhase.density[0]()[i]
-								- gradP()[i]
-										/ (gasPhase.density[0]()[i]
-												* sonicSpeed2()[i]));
-
-			grada = grad(diffFieldsOld.a, bncCalc);
-			diva = divergence(diffFieldsOld.a, bncCalc);
-		}
-			break;
-		case turbulenceModel::arithmeticA2Source:
-		{
-			for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-				diffFieldsOld.a.r()[i] = -gasPhase.tNu()[i]
-						/ gasPhase.turbulenceSources->turbPar->Ca1()
-						* (gradRho()[i] / gasPhase.density[0]()[i]
-								- gradP()[i] / gasPhase.pressure()[i]);
-
-			grada = grad(diffFieldsOld.a, bncCalc);
-			diva = divergence(diffFieldsOld.a, bncCalc);
-		}
-			break;
-		case turbulenceModel::arithmeticA3Source:
-		{
-			for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-				diffFieldsOld.a.r()[i] = -gasPhase.tNu()[i]
-						/ gasPhase.turbulenceSources->turbPar->Ca1()
-						* gradRho()[i] / gasPhase.density[0]()[i];
-
-			grada = grad(diffFieldsOld.a, bncCalc);
-			diva = divergence(diffFieldsOld.a, bncCalc);
 		}
 			break;
 		default:
@@ -590,7 +517,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	for (auto & devTotVisc1_i : devTotVisc1.r())
 		devTotVisc1_i.transpose();
 
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 		devPhysViscSurf.r() += devTotVisc1();
 
 	/*Explicit deviatoric part of molecular viscosity tensor for energy computation.*/
@@ -610,7 +537,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		devTotVisc1.r()[i].r()[4] -= lambdadivV_s_i;
 		devTotVisc1.r()[i].r()[8] -= lambdadivV_s_i;
 
-		if (gasPhase.turbulenceSources->turbulence)
+		if (gasPhase.turbulence->turbulence())
 		{
 			devPhysViscSurf.r()[i].r()[0] -= lambdadivV_s_i;
 			devPhysViscSurf.r()[i].r()[4] -= lambdadivV_s_i;
@@ -631,7 +558,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	volumeField<tensor> devTurbR { mesh_, tensor(0) };
 	volumeField<tensor> philtTurbVisc { mesh_, tensor(0) };
 
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 	{
 		devTurbR = devPhysVisc;
 		philtTurbVisc = devPhysVisc;
@@ -640,7 +567,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	/*Multiplying on physical, effective or turbulent viscosity correspondingly.*/
 	devPhysVisc.r() = astProduct(devPhysVisc, gasPhase.physMu)();
 
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 	{
 		auto turbViscCoeff1 = gasPhase.tNu;
 		turbViscCoeff1.r() = (1. - thetaS_R()) * turbViscCoeff1();
@@ -663,8 +590,6 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	astProductSelf(devTotVisc1, effectiveCoeffs.mu);
 
 	astProductSelf(devPhysViscSurf, effectiveCoeffs.physMu);
-
-	const auto divDevPhysVisc = divergence(devPhysViscSurf);
 
 	/*Accounting of explicit part of effective viscosity tensor*/
 	const auto divDevTotVisc1 = divergence(devTotVisc1);
@@ -704,7 +629,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 
 	volumeField<vector> gradMav_Mav { mesh_, vector { 0 } };
 
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 	{
 		auto turbViscCoeff1 = gasPhase.tNu;
 		turbViscCoeff1.r() = (1. - thetaS_R()) * turbViscCoeff1();
@@ -723,20 +648,14 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 					0, 0, turbPressure);
 		}
 
-		if (gasPhase.turbulenceSources->model != turbulenceModel::zeroSource)
+		if (gasPhase.turbulence->model() != turbulenceModel::zeroModel)
 			temperatureMatrix.SLE[0].freeTerm +=
-					gasPhase.turbulenceSources->turbPar->rhoepsilon(gasPhase);
+					gasPhase.turbulence->rhoepsilon(gasPhase);
 
-		if (gasPhase.turbulenceSources->aField)
+		if (gasPhase.turbulence->aField())
 			gradMav_Mav.r() = division(
 					grad(division(surfaceRho, surfaceConcentration.v[0])),
 					avMolMass)();
-
-		//FIXME Do not work correctly with MPI.
-		//if (gasPhase.turbulenceSources->aField)
-		//	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-		//		for (std::size_t j = 0; j < vector::vsize; ++j)
-		//			aMatrix.SLE[j].freeTerm[i] += divDeva1()[i].v()[j];
 
 		temperatureMatrix.SLE[0].freeTerm +=
 				dampProduct(philtTurbVisc, gradV)();
@@ -744,11 +663,11 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		auto & nonConstMesh = const_cast<mesh&>(mesh_);
 
 		const auto [SourcekSuSp, SourceepsSuSp, SourceaSuSp, SourcebSuSp,
-				gravEnSink] = gasPhase.turbulenceSources->calculate(
+				gravEnSink] = gasPhase.turbulence->calculate(
 				nonConstMesh.timestepSourceRef(), timestepCoeffs.first,
-				gasPhase, diffFieldsOld, gradV, divDevPhysVisc, gradP, gradRho,
-				grada, diva, gradb, spherTurbR, devTurbR, gradMav_Mav,
-				*(gasPhase.phaseThermodynamics), gasPhase.tNu);
+				gasPhase, diffFieldsOld, gradV, divergence(devPhysViscSurf),
+				gradP, gradRho, grada, diva, gradb, spherTurbR, devTurbR,
+				gradMav_Mav, *(gasPhase.phaseThermodynamics), gasPhase.tNu);
 
 		if (msolver.solverType == matrixSolver::explicitSolver)
 		{
@@ -786,15 +705,15 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 			bMatrix.diagonaleSourceTerm(SourcebSuSp.second);
 		}
 
-		switch (gasPhase.turbulenceSources->model)
+		switch (gasPhase.turbulence->model())
 		{
-		case turbulenceModel::kEpsASource:
-		case turbulenceModel::BHRSource:
-		case turbulenceModel::BHR2Source:
-		case turbulenceModel::BHRKLSource:
-		case turbulenceModel::arithmeticA1Source:
-		case turbulenceModel::arithmeticA2Source:
-		case turbulenceModel::arithmeticA3Source:
+		case turbulenceModel::kEpsAModel:
+		case turbulenceModel::BHRModel:
+		case turbulenceModel::BHR2Model:
+		case turbulenceModel::BHRKLModel:
+		case turbulenceModel::arithmeticA1Model:
+		case turbulenceModel::arithmeticA2Model:
+		case turbulenceModel::arithmeticA3Model:
 		{
 			temperatureMatrix.SLE[0].freeTerm -= gravEnSink();
 
@@ -856,7 +775,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 							/ temperatureMatrix.SLE[0].centralDiagonale;
 	}
 
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 	{
 		/*Explicit source integration*/
 		/*Calculation of new k*/
@@ -878,7 +797,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 					/ epsMatrix.SLE[0].centralDiagonale
 					+ sigmaSourceeps() / gasPhase.density[0]() * timestep;
 
-		if (gasPhase.turbulenceSources->aField)
+		if (gasPhase.turbulence->aField())
 		{
 			/*Calculation of new a by components of vector*/
 			if (msolver.solverType != matrixSolver::explicitSolver)
@@ -897,8 +816,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 								timestep)();
 			}
 
-			if (gasPhase.turbulenceSources->bField)
 			/*Calculation of new b*/
+			if (gasPhase.turbulence->bField())
 			{
 				if (msolver.solverType != matrixSolver::explicitSolver)
 					diffFieldsNew.b.r() = msolver.solve(diffFieldsOld.b(),
@@ -915,41 +834,22 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		std::replace_if(std::begin(diffFieldsNew.k.r()),
 				std::end(diffFieldsNew.k.r()), [&gasPhase](const scalar value) 
 				{
-					return value < gasPhase.turbulenceSources->turbPar->mink();
-				}, gasPhase.turbulenceSources->turbPar->mink());
+					return value < gasPhase.turbulence->mink();
+				}, gasPhase.turbulence->mink());
 
 		std::replace_if(std::begin(diffFieldsNew.eps.r()),
-				std::end(diffFieldsNew.eps.r()),
-				[&gasPhase](
-						const scalar value) 
-						{
-							return value < gasPhase.turbulenceSources->turbPar->mineps();
-						}, gasPhase.turbulenceSources->turbPar->mineps());
+				std::end(diffFieldsNew.eps.r()), [&gasPhase](const scalar value) 
+				{
+					return value < gasPhase.turbulence->minepsilon();
+				}, gasPhase.turbulence->minepsilon());
 
-		//XXX Non-physical bounding of vector a.
-		//if (gasPhase.turbulenceSources->aField)
-		//	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-		//		diffFieldsNew.a.r()[i] =
-		//				[&diffFieldsNew](const std::size_t i_l)
-		//				{
-		//					const auto module_a = diffFieldsNew.a()[i_l].mag();
-		//					const auto module_turb_V = std::sqrt(
-		//							2 * diffFieldsNew.k()[i_l]);
-		//					if (module_a < module_turb_V)
-		//						return diffFieldsNew.a()[i_l];
-		//					else
-		//						return diffFieldsNew.a()[i_l] / module_a
-		//								* module_turb_V;
-		//				}(i);
-
-		if (gasPhase.turbulenceSources->bField)
+		if (gasPhase.turbulence->bField())
 			std::replace_if(std::begin(diffFieldsNew.b.r()),
 					std::end(diffFieldsNew.b.r()),
-					[&gasPhase](
-							const scalar value) 
-							{
-								return value < gasPhase.turbulenceSources->turbPar->minb_value;
-							}, gasPhase.turbulenceSources->turbPar->minb_value);
+					[&gasPhase](const scalar value) 
+					{
+						return value < gasPhase.turbulence->minb();
+					}, gasPhase.turbulence->minb());
 	}
 
 	/*Recalculation of values in cells*/
@@ -976,11 +876,11 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	gasPhase.pressure.r() = gasPhase.phaseThermodynamics->pFromUv(
 			gasPhase.concentration.p, gasPhase.internalEnergy());
 
-	if (gasPhase.turbulenceSources->turbulence)
+	if (gasPhase.turbulence->turbulence())
 	{
 		gasPhase.kTurb.r() = diffFieldsNew.k();
 		gasPhase.epsTurb.r() = diffFieldsNew.eps();
-		if (gasPhase.turbulenceSources->aField)
+		if (gasPhase.turbulence->aField())
 		{
 			gasPhase.aTurb.r() = diffFieldsNew.a();
 			gasPhase.bTurb.r() = diffFieldsNew.b();
@@ -989,12 +889,12 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		gasPhase.rhokTurb.r() =
 				astProduct(gasPhase.kTurb, gasPhase.density[0])();
 		gasPhase.rhoepsTurb.r() = gasPhase.epsTurb() * gasPhase.density[0]();
-		if (gasPhase.turbulenceSources->aField)
+		if (gasPhase.turbulence->aField())
 		{
 			gasPhase.rhoaTurb.r() = astProduct(gasPhase.aTurb,
 					gasPhase.density[0])();
 
-			if (gasPhase.turbulenceSources->bField)
+			if (gasPhase.turbulence->bField())
 				gasPhase.rhobTurb.r() = gasPhase.bTurb()
 						* gasPhase.density[0]();
 		}
@@ -1017,9 +917,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	if (sourceTimeFlag == timestep::CourantAndSourceAndDiffusionTimeStep)
 	{
 		const auto maxVal = effectiveCoeffs.maxValue(
-				gasPhase.turbulenceSources->turbulence,
-				gasPhase.turbulenceSources->aField,
-				gasPhase.turbulenceSources->bField);
+				gasPhase.turbulence->turbulence(),
+				gasPhase.turbulence->aField(), gasPhase.turbulence->bField());
 
 		const scalar diffuse_dt = 0.5 * timestepCoeffs.second
 				/ (linearInterpolate(maxVal)() * minimalLengthScale()
