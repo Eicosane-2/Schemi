@@ -14,7 +14,7 @@
 schemi::scalar schemi::BHRModel::thetaA(const vector & a, const scalar k,
 		const scalar b) const noexcept
 {
-	if (CMSA() < 1E15)
+	if (CMSA() < aFlag)
 	{
 		const auto aa = (a & a);
 
