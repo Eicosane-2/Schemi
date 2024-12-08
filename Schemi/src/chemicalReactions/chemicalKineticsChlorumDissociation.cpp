@@ -8,6 +8,7 @@
 #include "chemicalKineticsChlorumDissociation.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <numeric>
 
 void schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::reactionMatrix::transpose() noexcept

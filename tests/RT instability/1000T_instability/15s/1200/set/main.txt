@@ -27,7 +27,7 @@ on
 #Type_of_SLE_solver_flag
 GaussSeidel
 #Type_of_source_flag
-BHR
+BHR2
 #Type_of_flow_solver
 HLLC
 #Dimensions_of_the_task

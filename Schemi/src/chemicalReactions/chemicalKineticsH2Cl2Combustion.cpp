@@ -8,6 +8,7 @@
 #include "chemicalKineticsH2Cl2Combustion.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <numeric>
 
 void schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::reactionMatrix::transpose() noexcept

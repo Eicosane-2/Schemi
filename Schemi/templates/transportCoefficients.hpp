@@ -13,7 +13,7 @@
 #include <iostream>
 
 #include "turbulenceModelEnum.hpp"
-#include "abstractTurbulentParameters.hpp"
+#include "abstractTurbulenceModel.hpp"
 
 namespace schemi
 {
@@ -63,22 +63,22 @@ struct transportCoefficients
 
 	void calculateCoefficients(const field<scalar, typeOfEntity> & kField,
 			const field<scalar, typeOfEntity> & epsField,
-			const abstractTurbulentParameters & tp) noexcept
+			const abstractTurbulenceModel & t) noexcept
 	{
-		tNu.r() = tp.calculateNut(kField(), epsField());
+		tNu.r() = t.calculateNut(kField(), epsField());
 
-		calculateCoefficients(tp);
+		calculateCoefficients(t);
 	}
 
-	void calculateCoefficients(const abstractTurbulentParameters & tp) noexcept
+	void calculateCoefficients(const abstractTurbulenceModel & t) noexcept
 	{
-		tD.r() = tNu() / tp.sigmaSc();
-		tKappa.r() = tNu() / tp.sigmaT();
-		tLambda.r() = tNu() / tp.sigmaE();
-		k_D.r() = tNu() / tp.sigmaK();
-		eps_D.r() = tNu() / tp.sigmaEps();
-		a_D.r() = tNu() / tp.sigmaa();
-		b_D.r() = tNu() / tp.sigmab();
+		tD.r() = tNu() / t.sigmaSc();
+		tKappa.r() = tNu() / t.sigmaT();
+		tLambda.r() = tNu() / t.sigmaE();
+		k_D.r() = tNu() / t.sigmaK();
+		eps_D.r() = tNu() / t.sigmaEps();
+		a_D.r() = tNu() / t.sigmaa();
+		b_D.r() = tNu() / t.sigmab();
 	}
 
 	void tAssign(const scalar val) noexcept
@@ -212,11 +212,11 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 	}
 
 	void calculateEffectiveCoefficients(const field<scalar, typeOfEntity> & rho,
-			const abstractTurbulenceGen & t,
+			const abstractTurbulenceModel & t,
 			const field<scalar, typeOfEntity> & conc,
 			const field<scalar, typeOfEntity> & Cv) noexcept
 	{
-		if (t.turbulence)
+		if (t.turbulence())
 		{
 			mu.r() = this->physMu() + rho() * this->tNu();
 
@@ -230,10 +230,10 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 
 			rhoDk.r() = this->physMu() + rho() * this->k_D();
 			rhoDeps.r() = this->physMu() + rho() * this->eps_D();
-			if (t.aField)
+			if (t.aField())
 			{
 				rhoDa.r() = this->physMu() + rho() * this->a_D();
-				if (t.bField)
+				if (t.bField())
 					rhoDb.r() = this->physMu() + rho() * this->b_D();
 			}
 		}

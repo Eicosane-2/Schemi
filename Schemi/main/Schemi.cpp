@@ -24,9 +24,11 @@
 #include "phaseInitialization.hpp"
 #include "scalar.hpp"
 #include "secondOrderStepSolver.hpp"
+#include "secondOrderStepSolverRK.hpp"
 #include "structForOutput.hpp"
 #include "thirdOrderStepSolver.hpp"
 #include "ThomasSolver.hpp"
+#include "typeOfSolverEnum.hpp"
 #include "zone.hpp"
 
 #ifdef MPI_VERSION
@@ -72,8 +74,8 @@ int main()
 				flowSolwerString, dimensionsOfTask, sourceTimeFlagString,
 				linearFlagString, thirdOrderString, readFromOutput,
 				mixedZoneWidthCalString;
-		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag,
-				thirdOrder;
+		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag;
+		typeOfSolverEnum thirdOrder;
 		vector g { 0 }, gDelta { 0 };
 		dimensions dimensionsFlag;
 		timestep sourceTimeFlag;
@@ -287,9 +289,10 @@ int main()
 					errors::initialisationError);
 		}
 
-		std::map<std::string, bool> orderType;
-		orderType.insert( { "ThirdOrder", true });
-		orderType.insert( { "SecondOrder", false });
+		std::map<std::string, typeOfSolverEnum> orderType;
+		orderType.insert( { "ThirdOrder", typeOfSolverEnum::ThirdOrder });
+		orderType.insert( { "SecondOrder", typeOfSolverEnum::SecondOrder });
+		orderType.insert( { "SecondOrderRK", typeOfSolverEnum::SecondOrderRK });
 		try
 		{
 			thirdOrder = orderType.at(thirdOrderString);
@@ -745,25 +748,18 @@ int main()
 		if (readDataPoint.second == "initialisation")
 			std::exit(EXIT_SUCCESS);
 
-		boundaryConditionValue boundaryConditionValueCalc(
-				*gasPhase->turbulenceSources->turbPar, *gasPhase,
-				*(gasPhase->phaseThermodynamics), parallelism);
+		boundaryConditionValue boundaryConditionValueCalc(*gasPhase->turbulence,
+				*gasPhase, *(gasPhase->phaseThermodynamics), parallelism);
 
 		skipBuffer.clear();
 
 		parallelism.correctBoundaryValues(*gasPhase);
 
 		std::unique_ptr<abstractStepSolver> stepSolver;
-		if (thirdOrder)
-			stepSolver = std::make_unique<thirdOrderStepSolver>(*gasPhase,
-					*limiter, *fsolver, gravitationFlag, g,
-					boundaryConditionValueCalc, timeForTVD, timeForHancock,
-					timeForFlowCalculation, timeForTimeIntegration, parallelism,
-					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
-					timeForDiffusion, commonConditions, enthalpyFlowFlag,
-					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk);
-		else
+
+		switch (thirdOrder)
+		{
+		case typeOfSolverEnum::SecondOrder:
 			stepSolver = std::make_unique<secondOrderStepSolver>(*gasPhase,
 					*limiter, *fsolver, gravitationFlag, g,
 					boundaryConditionValueCalc, timeForTVD, timeForHancock,
@@ -772,6 +768,32 @@ int main()
 					timeForDiffusion, commonConditions, enthalpyFlowFlag,
 					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
 					sourceTimeFlag, molMassDiffusionFlag, *chmk);
+			break;
+		case typeOfSolverEnum::SecondOrderRK:
+			stepSolver = std::make_unique<secondOrderStepSolverRK>(*gasPhase,
+					*limiter, *fsolver, gravitationFlag, g,
+					boundaryConditionValueCalc, timeForTVD, timeForHancock,
+					timeForFlowCalculation, timeForTimeIntegration, parallelism,
+					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
+					timeForDiffusion, commonConditions, enthalpyFlowFlag,
+					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
+					sourceTimeFlag, molMassDiffusionFlag, *chmk);
+			break;
+		case typeOfSolverEnum::ThirdOrder:
+			stepSolver = std::make_unique<thirdOrderStepSolver>(*gasPhase,
+					*limiter, *fsolver, gravitationFlag, g,
+					boundaryConditionValueCalc, timeForTVD, timeForHancock,
+					timeForFlowCalculation, timeForTimeIntegration, parallelism,
+					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
+					timeForDiffusion, commonConditions, enthalpyFlowFlag,
+					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
+					sourceTimeFlag, molMassDiffusionFlag, *chmk);
+			break;
+		default:
+			throw exception("Unknown type of approximation order.",
+					errors::initialisationError);
+			break;
+		}
 
 #ifdef MPI_VERSION
 		(MPI_Barrier(MPI_COMM_WORLD));

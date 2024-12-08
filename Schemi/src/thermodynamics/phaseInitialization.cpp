@@ -8,6 +8,7 @@
 #include "phaseInitialization.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 
 #include "gasModelEnum.hpp"
@@ -37,8 +38,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::string skipBuffer;
 
-	std::unique_ptr<abstractTurbulenceGen> turbulenceSources(
-			abstractTurbulenceGen::createTurbulenceModel(meshReference,
+	std::unique_ptr<abstractTurbulenceModel> turbul(
+			abstractTurbulenceModel::createTurbulenceModel(meshReference,
 					turbulenceONString, sourceTypeString));
 
 	transportCoefficients<cubicCell> tCoeffsPhase { meshReference };
@@ -422,7 +423,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 					transpModel));
 
 	phase = std::make_unique<homogeneousPhase<cubicCell>>(cellFields,
-			tCoeffsPhase, mixture, turbulenceSources, transportModel);
+			tCoeffsPhase, mixture, turbul, transportModel);
 
 	std::array<std::vector<subPatchData<vector>>, 6> boundaryConditionsVelocity;
 	boundaryConditionsVelocity.fill(std::vector<subPatchData<vector>>(0));
@@ -1032,8 +1033,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		parallelism.correctBoundaryConditions(boundaryConditionsbTurb);
 
 		phase->bTurb = volumeField<scalar>(meshReference,
-				phase->turbulenceSources->turbPar->minb_value,
-				std::get<0>(boundaryConditionsbTurb),
+				phase->turbulence->minb(), std::get<0>(boundaryConditionsbTurb),
 				std::get<1>(boundaryConditionsbTurb),
 				std::get<2>(boundaryConditionsbTurb),
 				std::get<3>(boundaryConditionsbTurb),
@@ -1737,14 +1737,14 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	std::replace_if(std::begin(phase->kTurb.r()), std::end(phase->kTurb.r()),
 			[&phase](const scalar value) 
 			{
-				return value < phase->turbulenceSources->turbPar->mink();
-			}, phase->turbulenceSources->turbPar->mink());
+				return value < phase->turbulence->mink();
+			}, phase->turbulence->mink());
 
 	std::replace_if(std::begin(phase->epsTurb.r()),
 			std::end(phase->epsTurb.r()), [&phase](const scalar value) 
 			{
-				return value < phase->turbulenceSources->turbPar->mineps();
-			}, phase->turbulenceSources->turbPar->mineps());
+				return value < phase->turbulence->minepsilon();
+			}, phase->turbulence->minepsilon());
 
 	/*Calculate derived fields.*/
 	for (std::size_t k = 1; k < phase->concentration.v.size(); ++k)
@@ -1774,10 +1774,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	phase->rhobTurb.r() = phase->density[0]() * phase->bTurb();
 
 	phase->calculateCoefficients(phase->kTurb, phase->epsTurb,
-			*phase->turbulenceSources->turbPar);
+			*phase->turbulence);
 
 	/*Set turbulent quantities to zero, if it is non-turbulent task.*/
-	if (!phase->turbulenceSources->turbulence)
+	if (!phase->turbulence->turbulence())
 	{
 		phase->kTurb.r() = scalar { 0 };
 		phase->epsTurb.r() = 0;

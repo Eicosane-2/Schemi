@@ -7,6 +7,8 @@
 
 #include "TVDLimiter.hpp"
 
+#include <algorithm>
+
 schemi::volumeField<schemi::vector> schemi::TVDLimiter(
 		const volumeField<vector> & gradient, const volumeField<scalar> & value,
 		const abstractLimiter & limiterObjectP,

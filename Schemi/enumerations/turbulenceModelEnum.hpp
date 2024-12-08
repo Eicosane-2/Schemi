@@ -14,16 +14,17 @@ namespace schemi
 {
 enum class turbulenceModel
 {
-	BHRSource,
-	zeroSource,
-	decaySource,
-	shearSource,
-	arithmeticA1Source,
-	arithmeticA2Source,
-	kEpsASource,
-	arithmeticA3Source,
-	BHRKLSource,
-	BHR2Source,
+	BHRModel,
+	zeroModel,
+	decayModel,
+	shearModel,
+	arithmeticA1Model,
+	arithmeticA2Model,
+	arithmeticA3Model,
+	kEpsAModel,
+	BHRKLModel,
+	BHR2Model,
+	unknownModel
 };
 }  // namespace schemi
 

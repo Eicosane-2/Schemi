@@ -8,6 +8,7 @@
 #include "chemicalKineticsChlorumHydrogeniumDissociation.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <numeric>
 
 void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::reactionMatrix::transpose() noexcept
