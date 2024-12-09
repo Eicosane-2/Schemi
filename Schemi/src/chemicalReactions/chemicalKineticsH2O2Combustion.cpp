@@ -491,7 +491,8 @@ schemi::chemicalKinetics::H2O2Combustion::H2O2Combustion(
 
 	chem >> skipBuffer >> maxIterationNumber;
 
-	ΔU_298 = ΔН_298 - Δn * phaseIn.phaseThermodynamics->Rv() * 298.15;
+	//ΔU_298 = ΔН_298 - Δn * phaseIn.phaseThermodynamics->Rv() * 298.15;
+	ΔU_298 = ΔН_298;
 
 	chem.close();
 }
