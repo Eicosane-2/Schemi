@@ -29,29 +29,18 @@ std::valarray<schemi::scalar> schemi::JacobiConjugateGradientSolver::algorithm(
 		for (auto & j : i_row)
 			j.first = 0;
 
-	std::valarray<scalar> oldFieldValues(oldField);
-
-	std::valarray<scalar> newFieldValues(oldFieldValues);
-
-	auto matrixT = matrix;
-	matrixT.transpose();
+	std::valarray<scalar> newFieldValues(oldField);
 
 	std::size_t nIterations { 0 };
 
-	std::valarray<scalar> rf_n = matrix.freeTerm - (matrix & oldFieldValues);
-	std::valarray<scalar> df_n = JacobiPreconditioner & rf_n;
-
-	auto rs_n = rf_n;
-	auto ds_n = JacobiPreconditioner & rs_n;
+	std::valarray<scalar> r_n = matrix.freeTerm - (matrix & oldField);
+	std::valarray<scalar> d_n = JacobiPreconditioner & r_n;
 
 	while (true)
 	{
 		nIterations++;
 
-		//const scalar diff { relativeIterationDifference(oldFieldValues,
-		//		newFieldValues) };
-
-		const scalar diff { rf_n.max() };
+		const scalar diff { std::abs(r_n).max() };
 
 		if ((diff < convergenceTolerance) && (nIterations > 1))
 		{
@@ -70,30 +59,23 @@ std::valarray<schemi::scalar> schemi::JacobiConjugateGradientSolver::algorithm(
 		}
 		else
 		{
-			oldFieldValues = newFieldValues;
+			const scalar alpha = (r_n * (JacobiPreconditioner & r_n)).sum()
+					/ ((d_n * (matrix & d_n)).sum() + stabilizator);
 
-			const scalar alpha = (rs_n * (JacobiPreconditioner & rf_n)).sum()
-					/ ((ds_n * (matrix & df_n)).sum() + stabilizator);
+			newFieldValues += alpha * d_n;
 
-			newFieldValues += alpha * df_n;
+			const std::valarray<scalar> r_n1 = r_n - alpha * (matrix & d_n);
 
-			const std::valarray<scalar> rf_n1 = rf_n - alpha * (matrix & df_n);
-			const std::valarray<scalar> rs_n1 = rs_n - alpha * (matrixT & ds_n);
+			const scalar beta =
+					(r_n1 * (JacobiPreconditioner & r_n1)).sum()
+							/ ((r_n * (JacobiPreconditioner & r_n)).sum()
+									+ stabilizator);
 
-			const scalar beta = (rs_n1 * (JacobiPreconditioner & rf_n1)).sum()
-					/ ((rs_n * (JacobiPreconditioner & rf_n)).sum()
-							+ stabilizator);
+			const std::valarray<scalar> d_n1 = (JacobiPreconditioner & r_n1)
+					+ beta * d_n;
 
-			const std::valarray<scalar> df_n1 = (JacobiPreconditioner & rf_n1)
-					+ beta * df_n;
-			const std::valarray<scalar> ds_n1 = (JacobiPreconditioner & rs_n1)
-					+ beta * ds_n;
-
-			rf_n = rf_n1;
-			df_n = df_n1;
-
-			rs_n = rs_n1;
-			ds_n = ds_n1;
+			r_n = r_n1;
+			d_n = d_n1;
 		}
 	}
 }

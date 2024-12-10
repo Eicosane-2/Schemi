@@ -339,32 +339,21 @@ protected:
 
 		std::valarray<scalar> newIteration(oldIteration);
 
-		auto matrixT = matrix;
-		matrixT.transpose();
-
 		std::size_t nIterations { 0 };
 
 		std::valarray<scalar> mFrT(N);
 		for (std::size_t i = 0; i < N; ++i)
 			mFrT[i] = matrix.FreeTerm[i];
 
-		std::valarray<scalar> rf_n { mFrT
+		std::valarray<scalar> r_n { mFrT
 				- matrixDotProduct(matrix, oldIteration) };
-		std::valarray<scalar> df_n = rf_n;
-
-		auto rs_n = rf_n;
-		auto ds_n = df_n;
+		std::valarray<scalar> d_n = r_n;
 
 		while (true)
 		{
 			nIterations++;
 
-			//const scalar diff { 100.
-			//		* std::abs(
-			//				(newIteration - oldIteration)
-			//						/ (std::abs(newIteration) + stabilizator)).max() };
-
-			const scalar diff { rf_n.max() };
+			const scalar diff { std::abs(r_n).max() };
 
 			if ((diff < convergenceTolerance) && (nIterations > 1))
 			{
@@ -396,30 +385,22 @@ protected:
 			}
 			else
 			{
-				oldIteration = newIteration;
-
-				const scalar alpha = (rs_n * rf_n).sum()
-						/ ((ds_n * matrixDotProduct(matrix, df_n)).sum()
+				const scalar alpha = (r_n * r_n).sum()
+						/ ((d_n * matrixDotProduct(matrix, d_n)).sum()
 								+ stabilizator);
 
-				newIteration += alpha * df_n;
+				newIteration += alpha * d_n;
 
-				const std::valarray<scalar> rf_n1 = rf_n
-						- alpha * matrixDotProduct(matrix, df_n);
-				const std::valarray<scalar> rs_n1 = rs_n
-						- alpha * matrixDotProduct(matrixT, ds_n);
+				const std::valarray<scalar> r_n1 = r_n
+						- alpha * matrixDotProduct(matrix, d_n);
 
-				const scalar beta = (rs_n1 * rf_n1).sum()
-						/ ((rs_n * rf_n).sum() + stabilizator);
+				const scalar beta = (r_n1 * r_n1).sum()
+						/ ((r_n * r_n).sum() + stabilizator);
 
-				const std::valarray<scalar> df_n1 = rf_n1 + beta * df_n;
-				const std::valarray<scalar> ds_n1 = rs_n1 + beta * ds_n;
+				const std::valarray<scalar> d_n1 = r_n1 + beta * d_n;
 
-				rf_n = rf_n1;
-				df_n = df_n1;
-
-				rs_n = rs_n1;
-				ds_n = ds_n1;
+				r_n = r_n1;
+				d_n = d_n1;
 			}
 		}
 	}
@@ -440,33 +421,21 @@ protected:
 
 		std::valarray<scalar> newIteration(oldIteration);
 
-		auto matrixT = matrix;
-		matrixT.transpose();
-
 		std::size_t nIterations { 0 };
 
 		std::valarray<scalar> mFrT(N);
 		for (std::size_t i = 0; i < N; ++i)
 			mFrT[i] = matrix.FreeTerm[i];
 
-		std::valarray<scalar> rf_n { mFrT
+		std::valarray<scalar> r_n { mFrT
 				- matrixDotProduct(matrix, oldIteration) };
-		std::valarray<scalar> df_n = matrixDotProduct(JacobiPreconditioner,
-				rf_n);
-
-		auto rs_n = rf_n;
-		auto ds_n = matrixDotProduct(JacobiPreconditioner, rs_n);
+		std::valarray<scalar> d_n = matrixDotProduct(JacobiPreconditioner, r_n);
 
 		while (true)
 		{
 			nIterations++;
 
-			//const scalar diff { 100.
-			//		* std::abs(
-			//				(newIteration - oldIteration)
-			//						/ (std::abs(newIteration) + stabilizator)).max() };
-
-			const scalar diff { rf_n.max() };
+			const scalar diff { std::abs(r_n).max() };
 
 			if ((diff < convergenceTolerance) && (nIterations > 1))
 			{
@@ -500,34 +469,27 @@ protected:
 			{
 				oldIteration = newIteration;
 
-				const scalar alpha = (rs_n
-						* matrixDotProduct(JacobiPreconditioner, rf_n)).sum()
-						/ ((ds_n * matrixDotProduct(matrix, df_n)).sum()
+				const scalar alpha = (r_n
+						* matrixDotProduct(JacobiPreconditioner, r_n)).sum()
+						/ ((d_n * matrixDotProduct(matrix, d_n)).sum()
 								+ stabilizator);
 
-				newIteration += alpha * df_n;
+				newIteration += alpha * d_n;
 
-				const std::valarray<scalar> rf_n1 = rf_n
-						- alpha * matrixDotProduct(matrix, df_n);
-				const std::valarray<scalar> rs_n1 = rs_n
-						- alpha * matrixDotProduct(matrixT, ds_n);
+				const std::valarray<scalar> r_n1 = r_n
+						- alpha * matrixDotProduct(matrix, d_n);
 
 				const scalar beta =
-						(rs_n1 * matrixDotProduct(JacobiPreconditioner, rf_n1)).sum()
-								/ ((rs_n
+						(r_n1 * matrixDotProduct(JacobiPreconditioner, r_n1)).sum()
+								/ ((r_n
 										* matrixDotProduct(JacobiPreconditioner,
-												rf_n)).sum() + stabilizator);
+												r_n)).sum() + stabilizator);
 
-				const std::valarray<scalar> df_n1 = matrixDotProduct(
-						JacobiPreconditioner, rf_n1) + beta * df_n;
-				const std::valarray<scalar> ds_n1 = matrixDotProduct(
-						JacobiPreconditioner, rs_n1) + beta * ds_n;
+				const std::valarray<scalar> d_n1 = matrixDotProduct(
+						JacobiPreconditioner, r_n1) + beta * d_n;
 
-				rf_n = rf_n1;
-				df_n = df_n1;
-
-				rs_n = rs_n1;
-				ds_n = ds_n1;
+				r_n = r_n1;
+				d_n = d_n1;
 			}
 		}
 	}

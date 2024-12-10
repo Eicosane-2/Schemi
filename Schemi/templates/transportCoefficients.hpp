@@ -492,7 +492,7 @@ private:
 											/ (std::abs(newIteration)
 													+ stabilizator)).max() };
 
-			if (diff < 1E-12)
+			if (diff < convergenceToleranceGlobal)
 			{
 				normalize(newIteration);
 				return newIteration;

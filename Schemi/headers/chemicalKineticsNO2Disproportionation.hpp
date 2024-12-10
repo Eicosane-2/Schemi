@@ -19,7 +19,7 @@ class NO2Disproportionation: public abstractChemicalKinetics
 {
 	static constexpr std::size_t N { 4 };
 
-	// (/ 1E6) --- cm^3/mole/s converted to m^3/mole/s
+	/*(/ 1E6) --- cm^3/mole/s converted to m^3/mole/s*/
 	scalar A_forward { 5.36E-50 * NAvogardro * NAvogardro / 1E12 };
 	scalar n_forward { 3.95 };
 	scalar E_forward { -1825 * R_SI };

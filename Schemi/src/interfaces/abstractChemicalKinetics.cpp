@@ -21,11 +21,11 @@ schemi::chemicalKinetics::abstractChemicalKinetics::abstractChemicalKinetics(
 {
 	solvers.insert( { "Gauss-Seidel", iterativeSolver::GaussSeidel });
 	solvers.insert(
-			{ "Conjugate_gradient", iterativeSolver::ConjugateGradient });
-	solvers.insert( { "Jacobi_conjugate_gradient",
+			{ "conjugateGradient", iterativeSolver::ConjugateGradient });
+	solvers.insert( { "JacobiConjugateGradient",
 			iterativeSolver::JacobiConjugateGradient });
 	solvers.insert( { "Jacobi", iterativeSolver::Jacobi });
-	solvers.insert( { "Gauss_elimination", iterativeSolver::GaussElimination });
+	solvers.insert( { "GaussElimination", iterativeSolver::GaussElimination });
 	solvers.insert( { "no", iterativeSolver::noSolver });
 }
 

@@ -32,28 +32,34 @@ schemi::SLEMatrix::SLEMatrixStorage::SLEMatrixStorage(
 void schemi::SLEMatrix::SLEMatrixStorage::transpose() noexcept
 {
 	std::vector<std::vector<std::pair<scalar, std::size_t>>> lowerTriangleNew(
-			lowerTriangle.size()), upperTriangleNew(upperTriangle.size());
+			0), upperTriangleNew(0);
 
 	for (std::size_t i = 0; i < centralDiagonale.size(); ++i)
 	{
 		for (std::size_t j = 0; j < lowerTriangle[i].size(); ++j)
 		{
-			const std::size_t jAbsOld = lowerTriangle[i][j].second;
+			const std::size_t jOld = lowerTriangle[i][j].second;
 			const auto Avalue = lowerTriangle[i][j].first;
 
-			const std::size_t iNew = jAbsOld;
+			const std::size_t iNew = jOld;
 			const std::size_t jNew = i;
+
+			if ((iNew + 1) > upperTriangleNew.size())
+				upperTriangleNew.resize(iNew + 1);
 
 			upperTriangleNew[iNew].emplace_back(Avalue, jNew);
 		}
 
 		for (std::size_t j = 0; j < upperTriangle[i].size(); ++j)
 		{
-			const std::size_t jAbsOld = upperTriangle[i][j].second;
+			const std::size_t jOld = upperTriangle[i][j].second;
 			const auto Avalue = upperTriangle[i][j].first;
 
-			const std::size_t iNew = jAbsOld;
+			const std::size_t iNew = jOld;
 			const std::size_t jNew = i;
+
+			if ((iNew + 1) > lowerTriangleNew.size())
+				lowerTriangleNew.resize(iNew + 1);
 
 			lowerTriangleNew[iNew].emplace_back(Avalue, jNew);
 		}
