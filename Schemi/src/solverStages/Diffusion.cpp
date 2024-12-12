@@ -277,17 +277,6 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 					effectiveCoeffs.rhoD[k], bncCalc, k + 1);
 	}
 
-	std::vector<volumeField<vector>> molFracGrad(massFractionMatrix.size(),
-			volumeField<vector>(mesh_, vector(0)));
-	for (std::size_t k = 1; k < surfaceConcentration.v.size(); ++k)
-	{
-		surfaceField<scalar> surfMolFrac_k { mesh_, 0 };
-
-		surfMolFrac_k.r() = surfaceConcentration.v[k]()
-				/ surfaceConcentration.v[0]();
-		molFracGrad[k - 1] = grad(surfMolFrac_k);
-	}
-
 	std::vector<volumeField<scalar>> cellMolFrac(massFractionMatrix.size(),
 			volumeField<scalar>(mesh_, 0));
 	for (std::size_t k = 1; k < gasPhase.concentration.v.size(); ++k)
