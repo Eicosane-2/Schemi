@@ -687,11 +687,17 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 			epsMatrix.freeSourceTerm(SourceepsSuSp.first);
 			epsMatrix.diagonaleSourceTerm(SourceepsSuSp.second);
 
-			aMatrix.freeSourceTerm(SourceaSuSp.first);
-			aMatrix.diagonaleSourceTerm(SourceaSuSp.second);
+			if (gasPhase.turbulence->aField())
+			{
+				aMatrix.freeSourceTerm(SourceaSuSp.first);
+				aMatrix.diagonaleSourceTerm(SourceaSuSp.second);
 
-			bMatrix.freeSourceTerm(SourcebSuSp.first);
-			bMatrix.diagonaleSourceTerm(SourcebSuSp.second);
+				if (gasPhase.turbulence->bField())
+				{
+					bMatrix.freeSourceTerm(SourcebSuSp.first);
+					bMatrix.diagonaleSourceTerm(SourcebSuSp.second);
+				}
+			}
 		}
 
 		switch (gasPhase.turbulence->model())

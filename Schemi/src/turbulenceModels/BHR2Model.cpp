@@ -254,7 +254,7 @@ std::tuple<
 		Sourcea.second.r()[i] = -cellFields.density[0]()[i] * ek * Ca()
 				* thetaA_i;
 
-		const scalar rhobGrada(-cellFields.rhobTurb()[i] * diva()[i]);
+		const scalar rhobDiva(-cellFields.rhobTurb()[i] * diva()[i]);
 
 		const scalar baGradRho(
 				-(diffFieldsOld.b()[i] + 2.)
@@ -262,7 +262,7 @@ std::tuple<
 
 		const scalar redistribution_b(cellFields.rhoaTurb()[i] & gradb()[i]);
 
-		Sourceb.first.r()[i] = rhobGrada + baGradRho + redistribution_b;
+		Sourceb.first.r()[i] = rhobDiva + baGradRho + redistribution_b;
 		Sourceb.second.r()[i] = -cellFields.density[0]()[i] * ek * Cb()
 				* thetaA_i;
 
