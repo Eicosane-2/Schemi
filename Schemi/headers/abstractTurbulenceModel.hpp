@@ -65,6 +65,8 @@ protected:
 	void minepsilonSet(const scalar) noexcept;
 	void minbSet(const scalar) noexcept;
 
+	constexpr static scalar aFlag { 1E15 };
+
 public:
 	virtual ~abstractTurbulenceModel() noexcept =0;
 

@@ -450,7 +450,8 @@ schemi::chemicalKinetics::H2Cl2Combustion::H2Cl2Combustion(
 
 	chem >> skipBuffer >> maxIterationNumber;
 
-	ΔU_298 = ΔН_298 - Δn * phaseIn.phaseThermodynamics->Rv() * 298.15;
+	//ΔU_298 = ΔН_298 - Δn * phaseIn.phaseThermodynamics->Rv() * 298.15;
+	ΔU_298 = ΔН_298;
 
 	chem.close();
 }

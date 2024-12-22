@@ -20,7 +20,8 @@ enum class matrixSolver
 	explicitSolver,
 	conjugateGradient,
 	JacobiConjugateGradient,
-	Jacobi
+	Jacobi,
+	biConjugateGradient
 };
 }  // namespace schemi
 

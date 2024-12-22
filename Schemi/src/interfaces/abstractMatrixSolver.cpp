@@ -9,6 +9,7 @@
 
 #include <cmath>
 
+#include "biConjugateGradientSolver.hpp"
 #include "conjugateGradientSolver.hpp"
 #include "GaussSeidelSolver.hpp"
 #include "globalConstants.hpp"
@@ -64,6 +65,8 @@ std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 		matrixSolverFlag = matrixSolver::JacobiConjugateGradient;
 	else if (name == "Jacobi")
 		matrixSolverFlag = matrixSolver::Jacobi;
+	else if (name == "biConjugateGradient")
+		matrixSolverFlag = matrixSolver::biConjugateGradient;
 	else
 		throw exception("Unknown or inappropriate matrix solver flag.",
 				errors::initialisationError);
@@ -99,6 +102,13 @@ std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 		return std::make_pair(
 				std::make_unique<JacobiSolver>(iter, matrixSolver::Jacobi),
 				std::make_unique<JacobiSolver>(iter, matrixSolver::Jacobi));
+		break;
+	case matrixSolver::biConjugateGradient:
+		return std::make_pair(
+				std::make_unique<biConjugateGradientSovler>(iter,
+						matrixSolver::biConjugateGradient),
+				std::make_unique<biConjugateGradientSovler>(iter,
+						matrixSolver::biConjugateGradient));
 		break;
 	default:
 		return std::make_pair(

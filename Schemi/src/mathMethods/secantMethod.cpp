@@ -20,7 +20,7 @@ schemi::scalar schemi::secantMethod(const scalar startingValue,
 	scalar x1 { guess }, x2 { startingValue };
 
 	if (std::abs(x2 - x1) <= convergenceToleranceGlobal)
-		throw exception("Initial values too close.",
+		throw exception("Guess is too close to a starting value.",
 				errors::initialisationError);
 
 	while ((std::abs(x2 - x1) > convergenceToleranceGlobal) && (it <= maxIter))
