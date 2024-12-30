@@ -24,6 +24,7 @@ schemi::arithmeticAModel::arithmeticAModel(const mesh & meshIn,
 			std::cout << "./set/turbulentParameters.txt is opened."
 					<< std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure(
 					"./set/turbulentParameters.txt not found.");
 

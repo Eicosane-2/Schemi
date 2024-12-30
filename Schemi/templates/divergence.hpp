@@ -44,6 +44,7 @@ volumeField<returnTypeDivergence<Type>> divergence(
 			else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
 				normalVector = mesh_.surfaces()[surfaceIndex].N() * (-1);
 			else
+				[[unlikely]]
 				throw exception("Couldn't choose normal's orientation.",
 						errors::systemError);
 
@@ -80,6 +81,7 @@ volumeField<returnTypeDivergence<Type>> divergence(
 			else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
 				normalVector = mesh_.surfaces()[surfaceIndex].N() * (-1);
 			else
+				[[unlikely]]
 				throw exception("Couldn't choose normal's orientation.",
 						errors::systemError);
 
@@ -140,7 +142,7 @@ surfaceField<returnTypeDivergence<Type>> surfDivergence(
 			divergence.r()[i] = (deltaV / deltaRMag) & deltaRNorm;
 		}
 			break;
-		default:
+		[[unlikely]] default:
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 

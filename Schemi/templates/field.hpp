@@ -67,6 +67,7 @@ struct field
 			fieldSize = meshReference.surfacesSize();
 		}
 		else
+			[[unlikely]]
 			throw exception("Unknown type of field.",
 					errors::fieldInitialisationError);
 	}
@@ -405,6 +406,7 @@ struct field
 			fieldSize = meshReference.surfacesSize();
 		}
 		else
+			[[unlikely]]
 			throw exception("Unknown type of field.",
 					errors::fieldInitialisationError);
 

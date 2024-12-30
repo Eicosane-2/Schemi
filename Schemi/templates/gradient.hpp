@@ -43,6 +43,7 @@ volumeField<returnTypeGradient<Type>> grad(const volumeField<Type> & inField,
 			else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
 				normalVector = mesh_.surfaces()[surfaceIndex].N() * (-1);
 			else
+				[[unlikely]]
 				throw exception("Couldn't choose normal's orientation.",
 						errors::systemError);
 
@@ -78,6 +79,7 @@ volumeField<returnTypeGradient<Type>> grad(const surfaceField<Type> & inField)
 			else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
 				normalVector = mesh_.surfaces()[surfaceIndex].N() * (-1);
 			else
+				[[unlikely]]
 				throw exception("Couldn't choose normal's orientation.",
 						errors::systemError);
 
@@ -138,7 +140,7 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			gradient.r()[i] = (deltaV / deltaRMag) * deltaRNorm;
 		}
 			break;
-		default:
+		[[unlikely]] default:
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 

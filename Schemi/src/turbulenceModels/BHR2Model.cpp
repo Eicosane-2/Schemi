@@ -36,6 +36,7 @@ schemi::BHR2Model::BHR2Model(const mesh & meshIn, const bool turb_in) :
 			std::cout << "./set/turbulentParameters.txt is opened."
 					<< std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure(
 					"./set/turbulentParameters.txt not found.");
 
@@ -244,13 +245,13 @@ std::tuple<
 		const vector rhoAgradV(
 				cellFields.rhoaTurb()[i] & (grada()[i] - gradV()[i]));
 
-		const vector redistribution_a(
-				cellFields.density[0]()[i]
-						* ((diffFieldsOld.a()[i] & grada()[i])
-								+ diffFieldsOld.a()[i] * diva()[i]));
+		//const vector redistribution_a(
+		//		cellFields.density[0]()[i]
+		//				* ((diffFieldsOld.a()[i] & grada()[i])
+		//						+ diffFieldsOld.a()[i] * diva()[i]));
 
-		Sourcea.first.r()[i] = bGradP + tauGradRho + rhoAgradV
-				+ redistribution_a;
+		Sourcea.first.r()[i] = bGradP + tauGradRho + rhoAgradV;
+		//+ redistribution_a;
 		Sourcea.second.r()[i] = -cellFields.density[0]()[i] * ek * Ca()
 				* thetaA_i;
 

@@ -23,6 +23,7 @@ schemi::boundaryConditionType schemi::boundaryConditionFromString(
 	else if (boundaryConditionString == "fixedValueSurface")
 		return boundaryConditionType::fixedValueSurface;
 	else if (boundaryConditionString == "innerSurface")
+		[[unlikely]]
 		throw exception("<<innerSurface>> can not be boundary surface type.",
 				errors::boundaryConditionError);
 	else

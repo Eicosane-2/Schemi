@@ -204,40 +204,41 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCFSolver::c
 			bState = rhobState / densityState[0];
 		}
 		else
-		{
-			errValue = errors::RiemannSolverError;
-			throw exception("Fatal error in Riemann solver.", errValue);
+			[[unlikely]]
+			{
+				errValue = errors::RiemannSolverError;
+				throw exception("Fatal error in Riemann solver.", errValue);
+			}
+
+			for (std::size_t k = 0; k < numFluxes.density.size(); ++k)
+				numFluxes.density[k].r()[i] = velocityState * densityState[k];
+
+			numFluxes.momentum.r()[i] = momentumState * velocityState
+					+ tensor(1, 0, 0, 0, 1, 0, 0, 0, 1)
+							* (pressureState + twothirds * rhokState);
+
+			numFluxes.totalEnergy.r()[i] = velocityState * totalEnergyState
+					+ velocityState * (pressureState + twothirds * rhokState);
+
+			numFluxes.rhokTurb.r()[i] = rhokState * velocityState;
+			numFluxes.rhoepsTurb.r()[i] = velocityState * rhoEpsState;
+			numFluxes.rhoaTurb.r()[i] = rhoaState * velocityState;
+			numFluxes.rhobTurb.r()[i] = velocityState * rhobState;
+
+			starValues.c.v[0].r()[i] = 0;
+			for (std::size_t k = 1; k < densityState.size(); ++k)
+			{
+				starValues.c.v[k].r()[i] = densityState[k]
+						/ surfaceOwnerSide.phaseThermodynamics->Mv()[k - 1];
+
+				starValues.c.v[0].r()[i] += starValues.c.v[k]()[i];
+			}
+			starValues.rho.r()[i] = densityState[0];
+			starValues.v.r()[i] = velocityState;
+			starValues.p.r()[i] = pressureState;
+			starValues.a.r()[i] = aState;
+			starValues.b.r()[i] = bState;
 		}
 
-		for (std::size_t k = 0; k < numFluxes.density.size(); ++k)
-			numFluxes.density[k].r()[i] = velocityState * densityState[k];
-
-		numFluxes.momentum.r()[i] = momentumState * velocityState
-				+ tensor(1, 0, 0, 0, 1, 0, 0, 0, 1)
-						* (pressureState + twothirds * rhokState);
-
-		numFluxes.totalEnergy.r()[i] = velocityState * totalEnergyState
-				+ velocityState * (pressureState + twothirds * rhokState);
-
-		numFluxes.rhokTurb.r()[i] = rhokState * velocityState;
-		numFluxes.rhoepsTurb.r()[i] = velocityState * rhoEpsState;
-		numFluxes.rhoaTurb.r()[i] = rhoaState * velocityState;
-		numFluxes.rhobTurb.r()[i] = velocityState * rhobState;
-
-		starValues.c.v[0].r()[i] = 0;
-		for (std::size_t k = 1; k < densityState.size(); ++k)
-		{
-			starValues.c.v[k].r()[i] = densityState[k]
-					/ surfaceOwnerSide.phaseThermodynamics->Mv()[k - 1];
-
-			starValues.c.v[0].r()[i] += starValues.c.v[k]()[i];
-		}
-		starValues.rho.r()[i] = densityState[0];
-		starValues.v.r()[i] = velocityState;
-		starValues.p.r()[i] = pressureState;
-		starValues.a.r()[i] = aState;
-		starValues.b.r()[i] = bState;
+		return std::make_tuple(numFluxes, starValues);
 	}
-
-	return std::make_tuple(numFluxes, starValues);
-}

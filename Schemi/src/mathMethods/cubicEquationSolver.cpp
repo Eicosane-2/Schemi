@@ -79,9 +79,11 @@ std::array<schemi::scalar, 3> schemi::cubicEquationSolver(const scalar Ain,
 						- a * onethirds;
 			}
 			else
+				[[unlikely]]
 				throw exception("Q has unknown value: ",
 						errors::cubicEquationError);
 		else
+			[[unlikely]]
 			throw exception("S has unknown value: ",
 					errors::cubicEquationError);
 	}
@@ -131,6 +133,7 @@ schemi::scalar schemi::returnSinglePosValue(std::array<scalar, 3> tripleValue)
 				< zeroLevel) && (std::get<1>(tripleValue) < 0))
 			return std::get<2>(tripleValue);
 		else
+			[[unlikely]]
 			throw exception("Can't choose solitary positive value.",
 					errors::positivnessError);
 	}
@@ -141,6 +144,7 @@ schemi::scalar schemi::returnSinglePosValue(std::array<scalar, 3> tripleValue)
 							< zeroLevel)))
 		return std::get<0>(tripleValue);
 	else
+		[[unlikely]]
 		throw exception("Can't choose solitary positive value.",
 				errors::positivnessError);
 }

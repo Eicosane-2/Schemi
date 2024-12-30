@@ -228,6 +228,7 @@ schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 					}
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose side to add",
 							errors::systemError);
 			}

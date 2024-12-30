@@ -140,6 +140,7 @@ schemi::mesh* schemi::mesh::instance()
 		return pInstance;
 	}
 	else
+		[[unlikely]]
 		throw exception("Mesh object should be created only once.",
 				errors::meshGenerationError);
 }
@@ -362,6 +363,7 @@ void schemi::mesh::oneDParallelepiped(
 				* (surface.r0Y() - surface.r00()).mag();
 	}
 	else
+		[[unlikely]]
 		throw exception("Tail surface must be marked <<calculated>>.",
 				errors::meshGenerationError);
 
@@ -424,6 +426,7 @@ void schemi::mesh::oneDParallelepiped(
 				* (surface.r0Y() - surface.r00()).mag();
 	}
 	else
+		[[unlikely]]
 		throw exception("Point surface must be marked <<calculated>>.",
 				errors::meshGenerationError);
 
@@ -616,6 +619,7 @@ void schemi::mesh::twoDParallelepiped(
 			}
 		}
 		else
+			[[unlikely]]
 			throw exception("Tail surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -755,6 +759,7 @@ void schemi::mesh::twoDParallelepiped(
 			}
 		}
 		else
+			[[unlikely]]
 			throw exception("Point surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -796,6 +801,7 @@ void schemi::mesh::twoDParallelepiped(
 			}
 		}
 		else
+			[[unlikely]]
 			throw exception("Right surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -843,6 +849,7 @@ void schemi::mesh::twoDParallelepiped(
 			}
 		}
 		else
+			[[unlikely]]
 			throw exception("Left surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -1320,6 +1327,7 @@ void schemi::mesh::threeDParallelepiped(
 				}
 		}
 		else
+			[[unlikely]]
 			throw exception("Tail surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -1539,6 +1547,7 @@ void schemi::mesh::threeDParallelepiped(
 				}
 		}
 		else
+			[[unlikely]]
 			throw exception("Point surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -1589,6 +1598,7 @@ void schemi::mesh::threeDParallelepiped(
 				}
 		}
 		else
+			[[unlikely]]
 			throw exception("Bottom surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -1639,6 +1649,7 @@ void schemi::mesh::threeDParallelepiped(
 				}
 		}
 		else
+			[[unlikely]]
 			throw exception("Right surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -1697,6 +1708,7 @@ void schemi::mesh::threeDParallelepiped(
 				}
 		}
 		else
+			[[unlikely]]
 			throw exception("Left surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -1755,6 +1767,7 @@ void schemi::mesh::threeDParallelepiped(
 				}
 		}
 		else
+			[[unlikely]]
 			throw exception("Top surface must be marked <<calculated>>.",
 					errors::meshGenerationError);
 	}
@@ -3008,7 +3021,7 @@ std::size_t schemi::mesh::findSeparatingSurface(std::size_t cell1,
 		throw exception("No surfaces between two cells.",
 				errors::initialisationError);
 	else
-		return intersection[0];
+		[[likely]] return intersection[0];
 
 }
 

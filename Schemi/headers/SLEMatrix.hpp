@@ -62,6 +62,11 @@ public:
 			const boundaryConditionValue & bncCalc, const std::size_t compt =
 					componentPlaceholder);
 
+	void addNabla(const volumeField<scalar> & vField,
+			const surfaceField<vector> & additionalField,
+			const boundaryConditionValue & bncCalc, const std::size_t compt =
+					componentPlaceholder);
+
 	void generateDTimeLaplacian(const volumeField<scalar> & vField,
 			const volumeField<scalar> & rFieldOld,
 			const volumeField<scalar> & rFieldNew,
