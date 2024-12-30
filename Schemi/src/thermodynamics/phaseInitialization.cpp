@@ -63,6 +63,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	if (transportCoefficientsFile.is_open())
 		std::cout << "./set/transportCoefficients.txt is opened." << std::endl;
 	else
+		[[unlikely]]
 		throw std::ifstream::failure(
 				"./set/transportCoefficients.txt not found.");
 
@@ -132,6 +133,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (substanceConditionsFile.is_open())
 			std::cout << substanceName << " is opened." << std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure(substanceName + " not found.");
 
 		substanceConditionsFile >> skipBuffer
@@ -293,6 +295,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		hPlanck = PlanckConstant_SI * 1E7;
 	}
 	else
+		[[unlikely]]
 		throw exception("Unknown type of universal gas constant.",
 				errors::initialisationError);
 
@@ -339,6 +342,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			if (fluidConditionsFile.is_open())
 				std::cout << stiffenedCoeffsName << " is opened." << std::endl;
 			else
+				[[unlikely]]
 				throw std::ifstream::failure(
 						stiffenedCoeffsName + " not found.");
 
@@ -369,6 +373,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			if (fluidConditionsFile.is_open())
 				std::cout << KataokaCoeffsName << " is opened." << std::endl;
 			else
+				[[unlikely]]
 				throw std::ifstream::failure(KataokaCoeffsName + " not found.");
 
 			std::valarray<scalar> epsilonLJData(numberOfComponents),
@@ -396,6 +401,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			else if (bCalcTypeStr == "Kataoka")
 				bCalc = { false, bCoeff };
 			else
+				[[unlikely]]
 				throw exception(
 						"Wrong type of Kataoka-van der Waals b coefficient calculation",
 						errors::initialisationError);
@@ -434,6 +440,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (velocityConditionsFile.is_open())
 			std::cout << "./set/velocity.txt is opened." << std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure("./set/velocity.txt not found.");
 
 		/*Read boundary*/
@@ -538,6 +545,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (pressureConditionsFile.is_open())
 			std::cout << "./set/pressure.txt is opened." << std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure("./set/pressure.txt not found.");
 
 		/*Read boundary*/
@@ -640,6 +648,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (kTurbConditionsFile.is_open())
 			std::cout << "./set/k.txt is opened." << std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure("./set/k.txt is opened.");
 
 		/*Read boundary*/
@@ -742,6 +751,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (epsTurbConditionsFile.is_open())
 			std::cout << "./set/epsilon.txt is opened." << std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure("./set/epsilon.txt not found.");
 
 		/*Read boundary*/
@@ -844,6 +854,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (aTurbConditionsFile.is_open())
 			std::cout << "./set/a.txt is opened." << std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure("./set/a.txt not found.");
 
 		/*Read boundary*/
@@ -948,6 +959,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (bTurbConditionsFile.is_open())
 			std::cout << "./set/b.txt is opened." << std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure("./set/b.txt not found.");
 
 		/*Read boundary*/
@@ -1678,6 +1690,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (turbPeakConditionsFile.is_open())
 			std::cout << "./set/turbPeak.txt is opened." << std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure("./set/turbPeak.txt not found.");
 
 		turbPeakConditionsFile >> skipBuffer >> profileType >> skipBuffer
@@ -1727,6 +1740,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "Added linear peak for k and epsilon." << std::endl;
 		}
 		else if (profileType != "no")
+			[[unlikely]]
 			throw exception(
 					"Wrong parameter of peak, must be <<linear>> or <<no>>.",
 					errors::initialisationError);

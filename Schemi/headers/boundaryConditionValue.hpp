@@ -65,12 +65,12 @@ public:
 		case boundaryConditionType::fixedValueSurface:
 			retValue = bndCondInfo.second;
 			break;
-		case boundaryConditionType::innerSurface:
+		[[unlikely]] case boundaryConditionType::innerSurface:
 			throw exception(
 					"<<innerSurface>> is incorrect variant for returning boundary condition value.",
 					errors::boundaryConditionError);
 			break;
-		case boundaryConditionType::calculated:
+		[[unlikely]] case boundaryConditionType::calculated:
 			throw exception(
 					"<<calculated>> is incorrect variant for returning boundary condition value.",
 					errors::boundaryConditionError);
@@ -265,7 +265,7 @@ public:
 			retValue = density;
 		}
 			break;
-		default:
+		[[unlikely]] default:
 			throw exception("Unknown type of boundary condition.",
 					errors::boundaryConditionError);
 			break;
@@ -299,12 +299,12 @@ public:
 			throw exception(
 					"<<fixedValueSurface>> is incorrect variant for returning boundary condition value.",
 					errors::boundaryConditionError);
-		case boundaryConditionType::innerSurface:
+		[[unlikely]] case boundaryConditionType::innerSurface:
 			throw exception(
 					"<<innerSurface>> is incorrect variant for returning boundary condition value.",
 					errors::boundaryConditionError);
 			break;
-		case boundaryConditionType::calculated:
+		[[unlikely]] case boundaryConditionType::calculated:
 			throw exception(
 					"<<calculated>> is incorrect variant for returning boundary condition value.",
 					errors::boundaryConditionError);
@@ -499,7 +499,7 @@ public:
 			retValue = density;
 		}
 			break;
-		default:
+		[[unlikely]] default:
 			throw exception("Unknown type of boundary condition.",
 					errors::boundaryConditionError);
 			break;

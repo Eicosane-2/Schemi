@@ -68,6 +68,7 @@ std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 	else if (name == "biConjugateGradient")
 		matrixSolverFlag = matrixSolver::biConjugateGradient;
 	else
+		[[unlikely]]
 		throw exception("Unknown or inappropriate matrix solver flag.",
 				errors::initialisationError);
 

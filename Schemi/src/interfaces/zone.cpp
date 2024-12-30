@@ -28,6 +28,7 @@ std::vector<std::unique_ptr<schemi::zone>> schemi::zone::zonesArray()
 	if (zoneDescr.is_open())
 		std::cout << "./set/zonesDescription.txt is opened." << std::endl;
 	else
+		[[unlikely]]
 		throw std::ifstream::failure("./set/zonesDescription.txt not found.");
 
 	std::string skipBuffer, outZone;
@@ -114,6 +115,7 @@ std::vector<std::unique_ptr<schemi::zone>> schemi::zone::zonesArray()
 					vector(pX2, pY2, pZ2), r);
 		}
 		else
+			[[unlikely]]
 			throw exception("Unknown zone type.", errors::initialisationError);
 	}
 

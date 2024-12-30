@@ -108,6 +108,7 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 							/ mesh_.cells()[i].V() * (-1);
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
@@ -164,7 +165,7 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 								* boundaryValue;
 			}
 				break;
-			default:
+			[[unlikely]] default:
 			{
 				const scalar boundaryValue {
 						bncCalc.boundaryConditionValueSurface(vField()[i],
@@ -245,6 +246,7 @@ void schemi::SLEMatrix::generateDTimeNabla(const volumeField<scalar> & vField,
 							/ mesh_.cells()[i].V() * (-1);
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
@@ -266,12 +268,8 @@ void schemi::SLEMatrix::generateDTimeNabla(const volumeField<scalar> & vField,
 				}
 			}
 				break;
-			default:
+			[[unlikely]] default:
 			{
-				const scalar boundaryValue { bncCalc.boundaryConditionValueCell(
-						vField()[i], vField.boundCond()[surfaceIndex], i,
-						surfaceIndex, compt) };
-
 				const vector outerNormale(
 						mesh_.surfaces()[surfaceIndex].N()
 								* mesh_.surfaces()[surfaceIndex].S()
@@ -281,8 +279,132 @@ void schemi::SLEMatrix::generateDTimeNabla(const volumeField<scalar> & vField,
 					SLE[0].centralDiagonale[i] +=
 							(additionalField()[surfaceIndex] & outerNormale);
 				else
+				{
+					const scalar boundaryValue {
+							bncCalc.boundaryConditionValueCell(vField()[i],
+									vField.boundCond()[surfaceIndex], i,
+									surfaceIndex, compt) };
+
 					SLE[0].freeTerm[i] -= (additionalField()[surfaceIndex]
 							& outerNormale) * boundaryValue;
+				}
+			}
+				break;
+			}
+		}
+}
+
+void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
+		const surfaceField<vector> & additionalField,
+		const boundaryConditionValue & bncCalc, const std::size_t compt)
+{
+	auto & mesh_ { vField.meshRef() };
+
+	for (std::size_t i = 0; i < vField.size(); ++i)
+		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
+		{
+			const std::size_t surfaceIndex { mesh_.surfacesOfCells()[i][j] };
+
+			switch (vField.boundCond()[surfaceIndex].first)
+			{
+			case boundaryConditionType::innerSurface:
+			{
+				std::size_t oIndex;
+
+				vector outerNormale;
+
+				if (mesh_.surfaceOwner()[surfaceIndex] == i)
+				{
+					oIndex = mesh_.surfaceNeighbour()[surfaceIndex];
+
+					outerNormale = mesh_.surfaces()[surfaceIndex].N()
+							* mesh_.surfaces()[surfaceIndex].S()
+							/ mesh_.cells()[i].V();
+
+				}
+				else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
+				{
+					oIndex = mesh_.surfaceOwner()[surfaceIndex];
+
+					outerNormale = mesh_.surfaces()[surfaceIndex].N()
+							* mesh_.surfaces()[surfaceIndex].S()
+							/ mesh_.cells()[i].V() * (-1);
+				}
+				else
+					[[unlikely]]
+					throw exception("Couldn't choose oIndex.",
+							errors::systemError);
+
+				if ((outerNormale & additionalField()[surfaceIndex]) > 0)
+				{
+					SLE[0].centralDiagonale[i] +=
+							(additionalField()[surfaceIndex] & outerNormale);
+				}
+				else
+				{
+					if (oIndex < i)
+					{
+						const auto Iterator =
+								std::find_if(SLE[0].lowerTriangle[i].begin(),
+										SLE[0].lowerTriangle[i].end(),
+										[oIndex](
+												const std::pair<scalar,
+														std::size_t> & p) 
+												{	if(oIndex == p.second)
+													return true;
+													else return false;});
+
+						if (Iterator != SLE[0].lowerTriangle[i].end())
+							Iterator->first += (additionalField()[surfaceIndex]
+									& outerNormale);
+						else
+							SLE[0].lowerTriangle[i].emplace_back(
+									(additionalField()[surfaceIndex]
+											& outerNormale), oIndex);
+					}
+					else
+					{
+						const auto Iterator =
+								std::find_if(SLE[0].upperTriangle[i].begin(),
+										SLE[0].upperTriangle[i].end(),
+										[oIndex](
+												const std::pair<scalar,
+														std::size_t> & p) 
+												{	if(oIndex == p.second)
+													return true;
+													else return false;});
+
+						if (Iterator != SLE[0].upperTriangle[i].end())
+							Iterator->first += (additionalField()[surfaceIndex]
+									& outerNormale);
+						else
+							SLE[0].upperTriangle[i].emplace_back(
+									(additionalField()[surfaceIndex]
+											& outerNormale), oIndex);
+					}
+				}
+			}
+				break;
+			[[unlikely]] default:
+			{
+				const vector outerNormale(
+						mesh_.surfaces()[surfaceIndex].N()
+								* mesh_.surfaces()[surfaceIndex].S()
+								/ mesh_.cells()[i].V());
+
+				if ((outerNormale & additionalField()[surfaceIndex]) > 0)
+					SLE[0].centralDiagonale[i] +=
+							(additionalField()[surfaceIndex] & outerNormale);
+				else
+				{
+					const scalar boundaryValue {
+							bncCalc.boundaryConditionValueCell(vField()[i],
+									vField.boundCond()[surfaceIndex], i,
+									surfaceIndex, compt) };
+
+					SLE[0].freeTerm[i] -= (additionalField()[surfaceIndex]
+							& outerNormale) * boundaryValue;
+				}
 			}
 				break;
 			}
@@ -337,6 +459,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 							/ mesh_.cells()[i].V() * (-1);
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
@@ -393,7 +516,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								* boundaryValue;
 			}
 				break;
-			default:
+			[[unlikely]] default:
 			{
 				const scalar boundaryValue { bncCalc.boundaryConditionValueCell(
 						vField()[i], vField.boundCond()[surfaceIndex], i,
@@ -474,6 +597,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 							/ mesh_.cells()[i].V() * (-1);
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
@@ -545,7 +669,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								* boundaryValue;
 			}
 				break;
-			default:
+			[[unlikely]] default:
 			{
 				const scalar boundaryValue { bncCalc.boundaryConditionValueCell(
 						vField()[i], vField.boundCond()[surfaceIndex], i,
@@ -633,6 +757,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 							/ mesh_.cells()[i].V() * (-1);
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
@@ -734,7 +859,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								* std::get<2>(boundaryValue());
 			}
 				break;
-			default:
+			[[unlikely]] default:
 			{
 				const vector boundaryValue(
 						bncCalc.boundaryConditionValueCell(vField()[i],
@@ -836,6 +961,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
@@ -974,7 +1100,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								* std::get<2>(boundaryValue());
 			}
 				break;
-			default:
+			[[unlikely]] default:
 			{
 				const vector boundaryValue(
 						bncCalc.boundaryConditionValueCell(vField()[i],
@@ -1088,6 +1214,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
@@ -1309,7 +1436,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								* std::get<8>(boundaryValue());
 			}
 				break;
-			default:
+			[[unlikely]] default:
 			{
 				const tensor boundaryValue(
 						bncCalc.boundaryConditionValueCell(vField()[i],
@@ -1459,6 +1586,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 
 				}
 				else
+					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
@@ -1789,7 +1917,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								* std::get<8>(boundaryValue());
 			}
 				break;
-			default:
+			[[unlikely]] default:
 			{
 				const tensor boundaryValue(
 						bncCalc.boundaryConditionValueCell(vField()[i],

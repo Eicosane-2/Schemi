@@ -20,6 +20,7 @@ schemi::zeroModel::zeroModel(const mesh & meshIn, const bool turb_in) :
 			std::cout << "./set/turbulentParameters.txt is opened."
 					<< std::endl;
 		else
+			[[unlikely]]
 			throw std::ifstream::failure(
 					"./set/turbulentParameters.txt not found.");
 

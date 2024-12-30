@@ -86,73 +86,75 @@ std::valarray<schemi::scalar> schemi::JacobiSolver::algorithm(
 			return newIteration;
 		}
 		else if (nIterations >= maxIterationNumber)
-		{
-			std::clog << name << std::endl;
-			std::clog << "Jacobi algorithm did not converged. Difference is: "
-					<< diff << std::endl;
+			[[unlikely]]
+			{
+				std::clog << name << std::endl;
+				std::clog
+						<< "Jacobi algorithm did not converged. Difference is: "
+						<< diff << std::endl;
 
-			normalize(newIteration);
-			return newIteration;
+				normalize(newIteration);
+				return newIteration;
+			}
+			else
+				oldIteration = newIteration;
 		}
-		else
-			oldIteration = newIteration;
 	}
-}
 
-schemi::JacobiSolver::JacobiSolver(const std::size_t maxIteration,
-		const matrixSolver type_in) noexcept :
-		abstractMatrixSolver(maxIteration, type_in)
-{
-}
-
-std::valarray<schemi::scalar> schemi::JacobiSolver::solve(
-		const std::valarray<scalar> & oldField,
-		const SLEMatrix & matrix) const noexcept
-{
-	return algorithm(oldField, matrix.SLE[0], matrix.name);
-}
-
-std::valarray<schemi::vector> schemi::JacobiSolver::solve(
-		const std::valarray<vector> & oldField,
-		const SLEMatrix & matrix) const noexcept
-{
-	std::valarray<vector> result(oldField.size());
-
-	for (std::size_t j = 0; j < vector::vsize; ++j)
+	schemi::JacobiSolver::JacobiSolver(const std::size_t maxIteration,
+			const matrixSolver type_in) noexcept :
+			abstractMatrixSolver(maxIteration, type_in)
 	{
-		std::valarray<scalar> v_j_buf(oldField.size());
-
-		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			v_j_buf[i] = oldField[i]()[j];
-
-		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
-
-		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].r()[j] = v_j_buf[i];
 	}
 
-	return result;
-}
-
-std::valarray<schemi::tensor> schemi::JacobiSolver::solve(
-		const std::valarray<tensor> & oldField,
-		const SLEMatrix & matrix) const noexcept
-{
-	std::valarray<tensor> result(oldField);
-
-	for (std::size_t j = 0; j < tensor::vsize; ++j)
+	std::valarray<schemi::scalar> schemi::JacobiSolver::solve(
+			const std::valarray<scalar> & oldField,
+			const SLEMatrix & matrix) const noexcept
 	{
-		std::valarray<scalar> v_j_buf(oldField.size());
-
-		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			v_j_buf[i] = oldField[i]()[j];
-
-		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
-
-		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].r()[j] = v_j_buf[i];
+		return algorithm(oldField, matrix.SLE[0], matrix.name);
 	}
 
-	return result;
-}
+	std::valarray<schemi::vector> schemi::JacobiSolver::solve(
+			const std::valarray<vector> & oldField,
+			const SLEMatrix & matrix) const noexcept
+	{
+		std::valarray<vector> result(oldField.size());
+
+		for (std::size_t j = 0; j < vector::vsize; ++j)
+		{
+			std::valarray<scalar> v_j_buf(oldField.size());
+
+			for (std::size_t i = 0; i < v_j_buf.size(); ++i)
+				v_j_buf[i] = oldField[i]()[j];
+
+			v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
+
+			for (std::size_t i = 0; i < v_j_buf.size(); ++i)
+				result[i].r()[j] = v_j_buf[i];
+		}
+
+		return result;
+	}
+
+	std::valarray<schemi::tensor> schemi::JacobiSolver::solve(
+			const std::valarray<tensor> & oldField,
+			const SLEMatrix & matrix) const noexcept
+	{
+		std::valarray<tensor> result(oldField);
+
+		for (std::size_t j = 0; j < tensor::vsize; ++j)
+		{
+			std::valarray<scalar> v_j_buf(oldField.size());
+
+			for (std::size_t i = 0; i < v_j_buf.size(); ++i)
+				v_j_buf[i] = oldField[i]()[j];
+
+			v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
+
+			for (std::size_t i = 0; i < v_j_buf.size(); ++i)
+				result[i].r()[j] = v_j_buf[i];
+		}
+
+		return result;
+	}
 

@@ -19,6 +19,7 @@ int schemi::sign(const scalar inValue)
 	else if ((inValue <= zeroLevel) && (inValue >= -zeroLevel))
 		return 0;
 	else
+		[[unlikely]]
 		throw exception(
 				std::string("Signum. Unknown value: ")
 						+ std::to_string(inValue), errors::NaNError);

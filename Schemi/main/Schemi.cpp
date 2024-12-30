@@ -89,6 +89,7 @@ int main()
 			if (gFile.is_open())
 				std::cout << "./set/g.txt is opened." << std::endl;
 			else
+				[[unlikely]]
 				throw std::ifstream::failure("./set/g.txt not found.");
 
 			gFile >> skipBuffer >> gravitationONString >> skipBuffer
@@ -106,6 +107,7 @@ int main()
 			if (mainParametersFile.is_open())
 				std::cout << "./set/main.txt is opened." << std::endl;
 			else
+				[[unlikely]]
 				throw std::ifstream::failure("./set/main.txt not found.");
 
 			mainParametersFile >> skipBuffer
@@ -685,6 +687,7 @@ int main()
 				std::cout << "./set/chemicalKinetics.txt is opened."
 						<< std::endl;
 			else
+				[[unlikely]]
 				throw std::ifstream::failure(
 						"./set/chemicalKinetics.txt not found.");
 
@@ -789,7 +792,7 @@ int main()
 					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
 					sourceTimeFlag, molMassDiffusionFlag, *chmk);
 			break;
-		default:
+		[[unlikely]] default:
 			throw exception("Unknown type of approximation order.",
 					errors::initialisationError);
 			break;

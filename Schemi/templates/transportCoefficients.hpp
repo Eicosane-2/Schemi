@@ -498,26 +498,27 @@ private:
 				return newIteration;
 			}
 			else if (nIterations >= 100)
-			{
-				std::clog
-						<< "Gauss-Seidel algorithm for diffusive flows did not converged. Difference is: "
-						<< diff << std::endl;
+				[[unlikely]]
+				{
+					std::clog
+							<< "Gauss-Seidel algorithm for diffusive flows did not converged. Difference is: "
+							<< diff << std::endl;
 
-				normalize(newIteration);
-				return newIteration;
+					normalize(newIteration);
+					return newIteration;
+				}
+				else
+					oldIteration = newIteration;
 			}
-			else
-				oldIteration = newIteration;
 		}
-	}
 
-	void normalize(std::valarray<scalar> & res) const noexcept
-	{
-		for (auto & i : res)
-			if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
-				i = 0;
-	}
-};
-}  // namespace schemi
+		void normalize(std::valarray<scalar> & res) const noexcept
+		{
+			for (auto & i : res)
+				if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
+					i = 0;
+		}
+	};
+	}  // namespace schemi
 
 #endif /* TRANSPORTCOEFFICIENTS_HPP_ */

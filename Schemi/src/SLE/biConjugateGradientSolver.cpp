@@ -41,93 +41,95 @@ std::valarray<schemi::scalar> schemi::biConjugateGradientSovler::algorithm(
 			return newFieldValues;
 		}
 		else if (nIterations >= maxIterationNumber)
-		{
-			std::clog << name << std::endl;
-			std::clog
-					<< "Bi-conjugate gradient algorithm did not converged. Difference is: "
-					<< diff << std::endl;
+			[[unlikely]]
+			{
+				std::clog << name << std::endl;
+				std::clog
+						<< "Bi-conjugate gradient algorithm did not converged. Difference is: "
+						<< diff << std::endl;
 
-			normalize(newFieldValues);
-			return newFieldValues;
+				normalize(newFieldValues);
+				return newFieldValues;
+			}
+			else
+			{
+				const scalar alpha = (ro_n * r_n).sum()
+						/ ((do_n * (matrix & d_n)).sum() + stabilizator);
+
+				newFieldValues += alpha * d_n;
+
+				const std::valarray<scalar> r_n1 = r_n - alpha * (matrix & d_n);
+				const std::valarray<scalar> ro_n1 = ro_n
+						- alpha * (matrixT & do_n);
+
+				const scalar beta = (ro_n1 * r_n1).sum()
+						/ ((ro_n * r_n).sum() + stabilizator);
+
+				const std::valarray<scalar> d_n1 = r_n1 + beta * d_n;
+				const std::valarray<scalar> do_n1 = ro_n1 + beta * do_n;
+
+				r_n = r_n1;
+				d_n = d_n1;
+
+				ro_n = ro_n1;
+				do_n = do_n1;
+			}
 		}
-		else
+	}
+
+	schemi::biConjugateGradientSovler::biConjugateGradientSovler(
+			const std::size_t maxIteration, const matrixSolver type_in) noexcept :
+			abstractMatrixSolver(maxIteration, type_in)
+	{
+	}
+
+	std::valarray<schemi::scalar> schemi::biConjugateGradientSovler::solve(
+			const std::valarray<scalar> & oldField,
+			const SLEMatrix & matrix) const noexcept
+	{
+		return algorithm(oldField, matrix.SLE[0], matrix.name);
+	}
+
+	std::valarray<schemi::vector> schemi::biConjugateGradientSovler::solve(
+			const std::valarray<vector> & oldField,
+			const SLEMatrix & matrix) const noexcept
+	{
+		std::valarray<vector> result(oldField.size());
+
+		for (std::size_t j = 0; j < vector::vsize; ++j)
 		{
-			const scalar alpha = (ro_n * r_n).sum()
-					/ ((do_n * (matrix & d_n)).sum() + stabilizator);
+			std::valarray<scalar> v_j_buf(oldField.size());
 
-			newFieldValues += alpha * d_n;
+			for (std::size_t i = 0; i < v_j_buf.size(); ++i)
+				v_j_buf[i] = oldField[i]()[j];
 
-			const std::valarray<scalar> r_n1 = r_n - alpha * (matrix & d_n);
-			const std::valarray<scalar> ro_n1 = ro_n - alpha * (matrixT & do_n);
+			v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
 
-			const scalar beta = (ro_n1 * r_n1).sum()
-					/ ((ro_n * r_n).sum() + stabilizator);
-
-			const std::valarray<scalar> d_n1 = r_n1 + beta * d_n;
-			const std::valarray<scalar> do_n1 = ro_n1 + beta * do_n;
-
-			r_n = r_n1;
-			d_n = d_n1;
-
-			ro_n = ro_n1;
-			do_n = do_n1;
+			for (std::size_t i = 0; i < v_j_buf.size(); ++i)
+				result[i].r()[j] = v_j_buf[i];
 		}
+
+		return result;
 	}
-}
 
-schemi::biConjugateGradientSovler::biConjugateGradientSovler(
-		const std::size_t maxIteration, const matrixSolver type_in) noexcept :
-		abstractMatrixSolver(maxIteration, type_in)
-{
-}
-
-std::valarray<schemi::scalar> schemi::biConjugateGradientSovler::solve(
-		const std::valarray<scalar> & oldField,
-		const SLEMatrix & matrix) const noexcept
-{
-	return algorithm(oldField, matrix.SLE[0], matrix.name);
-}
-
-std::valarray<schemi::vector> schemi::biConjugateGradientSovler::solve(
-		const std::valarray<vector> & oldField,
-		const SLEMatrix & matrix) const noexcept
-{
-	std::valarray<vector> result(oldField.size());
-
-	for (std::size_t j = 0; j < vector::vsize; ++j)
+	std::valarray<schemi::tensor> schemi::biConjugateGradientSovler::solve(
+			const std::valarray<tensor> & oldField,
+			const SLEMatrix & matrix) const noexcept
 	{
-		std::valarray<scalar> v_j_buf(oldField.size());
+		std::valarray<tensor> result(oldField.size());
 
-		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			v_j_buf[i] = oldField[i]()[j];
+		for (std::size_t j = 0; j < tensor::vsize; ++j)
+		{
+			std::valarray<scalar> v_j_buf(oldField.size());
 
-		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
+			for (std::size_t i = 0; i < v_j_buf.size(); ++i)
+				v_j_buf[i] = oldField[i]()[j];
 
-		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].r()[j] = v_j_buf[i];
+			v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
+
+			for (std::size_t i = 0; i < v_j_buf.size(); ++i)
+				result[i].r()[j] = v_j_buf[i];
+		}
+
+		return result;
 	}
-
-	return result;
-}
-
-std::valarray<schemi::tensor> schemi::biConjugateGradientSovler::solve(
-		const std::valarray<tensor> & oldField,
-		const SLEMatrix & matrix) const noexcept
-{
-	std::valarray<tensor> result(oldField.size());
-
-	for (std::size_t j = 0; j < tensor::vsize; ++j)
-	{
-		std::valarray<scalar> v_j_buf(oldField.size());
-
-		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			v_j_buf[i] = oldField[i]()[j];
-
-		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
-
-		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].r()[j] = v_j_buf[i];
-	}
-
-	return result;
-}

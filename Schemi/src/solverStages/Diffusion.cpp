@@ -27,8 +27,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		const starFields & star, const enthalpyFlow enthalpySolverFlag,
 		const bool linearRec, const boundaryConditionValue & bncCalc,
 		const volumeField<scalar> & minimalLengthScale,
-		const MPIHandler & parallelism, const timestep sourceTimeFlag,
-		const bool molMassDiffusionFlag)
+		[[maybe_unused]] const MPIHandler & parallelism,
+		const timestep sourceTimeFlag, const bool molMassDiffusionFlag)
 {
 	const auto DiffusionStartTime { std::chrono::high_resolution_clock::now() };
 
@@ -38,9 +38,22 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 
 	/*Fields for diffusion stage.*/
 	surfaceField<vector> entExplDiffFlow { mesh_, vector(0) };
-	volumeField<scalar> intermediateTemperature(gasPhase.temperature);
+
+	volumeField<scalar> avMolMass { mesh_, 0 };
+	{
+		std::vector<boundaryConditionType> bndCon(commonConditions);
+		std::replace(bndCon.begin(), bndCon.end(),
+				boundaryConditionType::calculated,
+				boundaryConditionType::calculatedAverageMolarMass);
+		avMolMass = volumeField<scalar>(mesh_, 0, subPatchData<scalar> {
+				bndCon[0] }, subPatchData<scalar> { bndCon[1] },
+				subPatchData<scalar> { bndCon[2] }, subPatchData<scalar> {
+						bndCon[3] }, subPatchData<scalar> { bndCon[4] },
+				subPatchData<scalar> { bndCon[5] });
+	}
 
 	surfaceField<scalar> surfaceRho { mesh_, 0 };
+
 	volumeField<scalar> CVOld { mesh_, 0 };
 	{
 		std::vector<boundaryConditionType> bndCon(commonConditions);
@@ -53,6 +66,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 				subPatchData<scalar> { bndCon[3] }, subPatchData<scalar> {
 						bndCon[4] }, subPatchData<scalar> { bndCon[5] });
 	}
+
 	volumeField<scalar> CCVOld { mesh_, 0 };
 	volumeField<scalar> CCVNew { mesh_, 0 };
 	volumeField<scalar> nonIdealCorrectionOld { mesh_, 0 };
@@ -96,7 +110,6 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 					std::string("Mass fraction")) };
 	SLEMatrix velocityMatrix { std::string("Velocity") };
 	SLEMatrix temperatureMatrix { std::string("Temperature") };
-	SLEMatrix temperatureEnthMatrix { std::string("Temperature-enthalpy") };
 	SLEMatrix kMatrix { std::string("k") };
 	SLEMatrix epsMatrix { std::string("epsilon") };
 	SLEMatrix aMatrix { std::string("a") };
@@ -115,16 +128,15 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	nonIdealCorrectionOld.r() = gasPhase.phaseThermodynamics->nonIdeality(
 			gasPhase.concentration.p, gasPhase.temperature());
 
+	avMolMass.r() = gasPhase.density[0]() / gasPhase.concentration.v[0]();
+
 	CVOld.r() = gasPhase.phaseThermodynamics->Cv(gasPhase.concentration.p);
 
-	CvM.r() = CVOld() * gasPhase.concentration.v[0]() / gasPhase.density[0]();
+	CvM.r() = CVOld() / avMolMass.r();
 
 	const auto surfaceCv = linearInterpolate(CVOld, bncCalc);
 
 	CCVOld.r() = gasPhase.concentration.v[0]() * CVOld();
-
-	const auto surfaceTemperature = linearInterpolate(gasPhase.temperature,
-			bncCalc);
 
 	concentrationsPack<quadraticSurface> surfaceConcentration { mesh_,
 			gasPhase.phaseThermodynamics->Mv().size() };
@@ -139,22 +151,6 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		surfaceRho.r() += surfaceConcentration.v[k]()
 				* gasPhase.phaseThermodynamics->Mv()[k - 1];
 	}
-
-	volumeField<scalar> avMolMass { mesh_, 0 };
-	{
-		std::vector<boundaryConditionType> bndCon(commonConditions);
-		std::replace(bndCon.begin(), bndCon.end(),
-				boundaryConditionType::calculated,
-				boundaryConditionType::calculatedAverageMolarMass);
-		avMolMass = volumeField<scalar>(mesh_, 0, subPatchData<scalar> {
-				bndCon[0] }, subPatchData<scalar> { bndCon[1] },
-				subPatchData<scalar> { bndCon[2] }, subPatchData<scalar> {
-						bndCon[3] }, subPatchData<scalar> { bndCon[4] },
-				subPatchData<scalar> { bndCon[5] });
-	}
-	avMolMass.r() = gasPhase.density[0]() / gasPhase.concentration.v[0]();
-
-	const auto gradMav = surfGrad(avMolMass, bncCalc);
 
 	NonIdRho.r() = nonIdealCorrectionOld() / gasPhase.density[0]();
 
@@ -185,6 +181,9 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	}
 
 	divV_s = surfDivergence(diffFieldsOld.velocity, bncCalc);
+
+	const auto surfaceTemperature = linearInterpolate(gasPhase.temperature,
+			bncCalc);
 
 	/*Calculation of all diffusion coefficients.*/
 	effectiveCoeffs.calculateCoefficients(*gasPhase.transportModel,
@@ -391,21 +390,21 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	}
 
 	/*Calculation of new concentrations*/
-	concentrationsPack<cubicCell> intermediateConcentration { mesh_,
+	concentrationsPack<cubicCell> calculatedConcentration { mesh_,
 			gasPhase.phaseThermodynamics->Mv().size() };
-	for (std::size_t k = 1; k < intermediateConcentration.v.size(); ++k)
+	for (std::size_t k = 1; k < calculatedConcentration.v.size(); ++k)
 	{
-		intermediateConcentration.v[k].r() = diffFieldsNew.massFraction[k - 1]()
+		calculatedConcentration.v[k].r() = diffFieldsNew.massFraction[k - 1]()
 				* gasPhase.density[0]()
 				/ gasPhase.phaseThermodynamics->Mv()[k - 1];
 
-		intermediateConcentration.v[0].r() += intermediateConcentration.v[k]();
+		calculatedConcentration.v[0].r() += calculatedConcentration.v[k]();
 	}
 
-	CCVNew.r() = gasPhase.phaseThermodynamics->Cv(intermediateConcentration.p)
-			* intermediateConcentration.v[0]();
+	CCVNew.r() = gasPhase.phaseThermodynamics->Cv(calculatedConcentration.p)
+			* calculatedConcentration.v[0]();
 	nonIdealCorrectionNew.r() = gasPhase.phaseThermodynamics->nonIdeality(
-			intermediateConcentration.p, gasPhase.temperature());
+			calculatedConcentration.p, gasPhase.temperature());
 
 	/*Generate SLE matrix for components of the velocity vector.*/
 	surfaceField<tensor> devPhysViscSurf { mesh_, tensor(0) };
@@ -601,6 +600,14 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 
 		const auto divEnthFlowLaplacian = divergence(entExplDiffFlow);
 
+		auto & nonConstMesh = const_cast<mesh&>(mesh_);
+
+		nonConstMesh.timestepSourceRef() =
+				timestepCoeffs.first
+						* (CCVOld() * gasPhase.temperature()
+								/ std::abs(
+										divEnthFlowLaplacian() + stabilizator)).min();
+
 		temperatureMatrix.SLE[0].freeTerm -= divEnthFlowLaplacian();
 
 		//temperatureMatrix.distributeSourceTerm(
@@ -736,27 +743,15 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	/*Calculation of new temperature*/
 	if (enthalpySolverFlag == enthalpyFlow::implicitSolve)
 	{
+		temperatureMatrix.addNabla(diffFieldsOld.temperature, entExplDiffFlow,
+				bncCalc);
+
 		if (msolver.solverType != matrixSolver::explicitSolver)
-			intermediateTemperature.r() = msolver.solve(
+			diffFieldsNew.temperature.r() = msolver.solve(
 					diffFieldsOld.temperature(), temperatureMatrix);
 		else
-			intermediateTemperature.r() = (temperatureMatrix.SLE[0].explOldTime
-					+ temperatureMatrix.SLE[0].freeTerm * timestep)
-					/ temperatureMatrix.SLE[0].centralDiagonale;
-
-		parallelism.correctBoundaryConditions(intermediateTemperature);
-
-		nonIdealCorrectionOld.r() = gasPhase.phaseThermodynamics->nonIdeality(
-				gasPhase.concentration.p, intermediateTemperature());
-
-		oldEnergyField.r() = CCVOld() * intermediateTemperature()
-				+ nonIdealCorrectionOld() - nonIdealCorrectionNew();
-
-		temperatureEnthMatrix.generateDTimeNabla(intermediateTemperature,
-				oldEnergyField, CCVNew, entExplDiffFlow, timestep, bncCalc);
-
-		diffFieldsNew.temperature.r() = msolverForEnthalpy.solve(
-				intermediateTemperature(), temperatureEnthMatrix);
+			diffFieldsNew.temperature.r() = msolverForEnthalpy.solve(
+					diffFieldsOld.temperature(), temperatureMatrix);
 	}
 	else
 	{
@@ -848,10 +843,10 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	}
 
 	/*Recalculation of values in cells*/
-	gasPhase.concentration.v[0].r() = intermediateConcentration.v[0]();
+	gasPhase.concentration.v[0].r() = calculatedConcentration.v[0]();
 	for (std::size_t k = 1; k < gasPhase.density.size(); ++k)
 	{
-		gasPhase.concentration.v[k].r() = intermediateConcentration.v[k]();
+		gasPhase.concentration.v[k].r() = calculatedConcentration.v[k]();
 
 		gasPhase.density[k].r() = gasPhase.concentration.v[k]()
 				* gasPhase.phaseThermodynamics->Mv()[k - 1];

@@ -95,6 +95,7 @@ schemi::volumeField<schemi::vector> schemi::TVDLimiter(
 		}
 		else if (mesh_.neighboursOfCells()[i].size()
 				> mesh_.surfacesOfCells()[i].size())
+			[[unlikely]]
 			throw exception(
 					"Number of surfaces somehow lesser than number of neighbour cells.",
 					errors::systemError);
@@ -242,6 +243,7 @@ schemi::volumeField<schemi::tensor> schemi::TVDLimiter(
 		}
 		else if (mesh_.neighboursOfCells()[i].size()
 				> mesh_.surfacesOfCells()[i].size())
+			[[unlikely]]
 			throw exception(
 					"Number of surfaces somehow lesser than number of neighbour cells.",
 					errors::systemError);
@@ -482,6 +484,7 @@ schemi::volumeField<schemi::tensor3> schemi::TVDLimiter(
 		}
 		else if (mesh_.neighboursOfCells()[i].size()
 				> mesh_.surfacesOfCells()[i].size())
+			[[unlikely]]
 			throw exception(
 					"Number of surfaces somehow lesser than number of neighbour cells.",
 					errors::systemError);

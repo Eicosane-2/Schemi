@@ -64,7 +64,7 @@ surfaceField<typeOfValue> linearInterpolate(
 					+ inField()[neiIndex] * mesh_.surfNeiW()[i];
 		}
 			break;
-		default:
+		[[unlikely]] default:
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
@@ -123,7 +123,7 @@ surfaceField<T> divergenceLinearInterpolate(const volumeField<T> & inField,
 			retSurfField.r()[i] = (deltaV / deltaRMag) & deltaRNorm;
 		}
 			break;
-		default:
+		[[unlikely]] default:
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
@@ -195,7 +195,7 @@ surfaceField<T> gradientLinearInterpolate(const volumeField<T> & inField,
 			retSurfField.r()[i] = (deltaV / deltaRMag) * deltaRNorm;
 		}
 			break;
-		default:
+		[[unlikely]] default:
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 

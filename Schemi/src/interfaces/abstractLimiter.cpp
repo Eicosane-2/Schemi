@@ -86,7 +86,7 @@ std::unique_ptr<schemi::abstractLimiter> schemi::abstractLimiter::createLimiter(
 	case typeOfTVDLimiter::Sewby:
 		return std::make_unique<SewbyLimiter>();
 		break;
-	default:
+	[[unlikely]] default:
 		return std::make_unique<zeroLimiter>();
 		break;
 	}

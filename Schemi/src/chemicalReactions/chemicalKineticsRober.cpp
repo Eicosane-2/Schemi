@@ -112,7 +112,7 @@ auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solve(
 	case iterativeSolver::GaussElimination:
 		return solveGE<reactionMatrix, N>(matrix);
 		break;
-	default:
+	[[unlikely]] default:
 		throw exception("Unknown chemical iterative solver type.",
 				errors::initialisationError);
 		break;
@@ -287,6 +287,7 @@ schemi::chemicalKinetics::Rober::Rober(
 	if (chem.is_open())
 		std::cout << "./set/chemicalKinetics.txt is opened." << std::endl;
 	else
+		[[unlikely]]
 		throw std::ifstream::failure("./set/chemicalKinetics.txt not found.");
 
 	chem >> skipBuffer >> skipBuffer;

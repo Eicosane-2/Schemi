@@ -64,7 +64,7 @@ std::unique_ptr<schemi::abstractFlowSolver> schemi::abstractFlowSolver::createFl
 	case flowSolver::Richtmyer:
 		return std::make_unique<RichtmyerSolver>(par);
 		break;
-	default:
+	[[unlikely]] default:
 		return std::make_unique<KTSolver>();
 		break;
 	}

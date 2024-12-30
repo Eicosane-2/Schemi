@@ -44,6 +44,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 				<< " output file is opened. Number of output: " << noutput
 				<< '.' << std::endl;
 	else
+		[[unlikely]]
 		throw std::ofstream::failure(
 				std::string("Couldn't create outputFile ")
 						+ std::string(outputFileName) + std::string("."));
@@ -51,6 +52,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	if (timeFile.is_open())
 		std::cout << "./result/Time.tsv is opened." << std::endl;
 	else
+		[[unlikely]]
 		throw std::ofstream::failure("Couldn't open ./result/Time.tsv.");
 
 	outputFile << "coordinate_x" << '\t';
@@ -313,6 +315,7 @@ void schemi::output::mixedZoneWidth1D(const structForOutput & outputData,
 	if (timeWidthFile.is_open())
 		std::cout << "./result/timeWidth.tsv is opened." << std::endl;
 	else
+		[[unlikely]]
 		throw std::ofstream::failure("Couldn't create ./result/timeWidth.tsv.");
 
 	scalar rL { 0 }, rR { 0 };
