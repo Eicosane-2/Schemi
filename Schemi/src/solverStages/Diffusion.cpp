@@ -394,6 +394,9 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 			gasPhase.phaseThermodynamics->Mv().size() };
 	for (std::size_t k = 1; k < calculatedConcentration.v.size(); ++k)
 	{
+		calculatedConcentration.v[k].boundCond_r() =
+				gasPhase.concentration.v[k].boundCond();
+
 		calculatedConcentration.v[k].r() = diffFieldsNew.massFraction[k - 1]()
 				* gasPhase.density[0]()
 				/ gasPhase.phaseThermodynamics->Mv()[k - 1];
@@ -593,6 +596,78 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	//temperatureMatrix.distributeSourceTerm(
 	//		astProduct(divNonIdealityCorrectionLaplacian, -1.0),
 	//		diffFieldsOld.temperature, timestep);
+
+	if (msolver.solverType != matrixSolver::explicitSolver)
+	{
+		surfaceField<vector> entExplDiffFlowAfDif { mesh_, vector(0) };
+
+		concentrationsPack<quadraticSurface> surfaceConcentrationAfDif { mesh_,
+				gasPhase.phaseThermodynamics->Mv().size() };
+
+		for (std::size_t k = 1; k < surfaceConcentrationAfDif.v.size(); ++k)
+		{
+			surfaceConcentrationAfDif.v[k] = linearInterpolate(
+					calculatedConcentration.v[k], bncCalc);
+
+			surfaceConcentrationAfDif.v[0].r() +=
+					surfaceConcentrationAfDif.v[k]();
+		}
+
+		for (std::size_t k = 1; k < surfaceConcentrationAfDif.v.size(); ++k)
+			cellMolFrac[k - 1].r() = surfaceConcentrationAfDif.v[k]()
+					/ surfaceConcentrationAfDif.v[0]();
+
+		for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+		{
+			explGradW[k] = surfGrad(diffFieldsOld.massFraction[k], bncCalc,
+					k + 1);
+
+			explGradX[k] = surfGrad(cellMolFrac[k], bncCalc, k + 1);
+		}
+
+		effectiveCoeffs.caclulateDFluxes(explGradX,
+				gasPhase.phaseThermodynamics->Mv(), surfaceConcentrationAfDif,
+				gasPhase.turbulence->turbulence());
+
+		for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+		{
+			auto explDiffFlowW_k = astProduct(effectiveCoeffs.rhoD[k],
+					explGradW[k]);
+			astProductSelf(explDiffFlowW_k, -1);
+
+			/*Calculate enthalpy per mole per Kelvin (isobaric molar heat capacity) for k component*/
+			surfaceField<scalar> h_k { mesh_, 0 };
+			h_k.r() = gasPhase.phaseThermodynamics->hkT(
+					surfaceConcentrationAfDif.v[k + 1](), surfaceTemperature(),
+					k);
+
+			/*Calculating molar mass correction for diffusion flow and explicit enthalpy flow.*/
+			surfaceField<vector> massFrCorr_k { mesh_, vector(0) };
+			if (molMassDiffusionFlag)
+			{
+				surfaceField<vector> explDiffFlowX_k(mesh_, vector(0));
+
+				for (std::size_t i = 0; i < explDiffFlowX_k.size(); ++i)
+					explDiffFlowX_k.r()[i] = effectiveCoeffs.DFlux()[i][k];
+
+				massFrCorr_k.r() = explDiffFlowX_k() - explDiffFlowW_k();
+			}
+
+			for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
+			{
+				const vector entExplDiffFlow_k_i = (massFrCorr_k()[i]
+						+ explDiffFlowW_k()[i]) * h_k()[i]
+						/ gasPhase.phaseThermodynamics->Mv()[k];
+
+				entExplDiffFlowAfDif.r()[i] += entExplDiffFlow_k_i;
+			}
+		}
+
+		constexpr scalar we = 0.5;
+
+		entExplDiffFlow.r() = astProduct(entExplDiffFlowAfDif, we)()
+				+ astProduct(entExplDiffFlow, 1 - we)();
+	}
 
 	if (enthalpySolverFlag == enthalpyFlow::explicitSolve)
 	{
