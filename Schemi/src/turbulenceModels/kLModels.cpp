@@ -71,7 +71,8 @@ schemi::scalar schemi::kLModels::calculateNut(const scalar k,
 }
 
 std::valarray<schemi::scalar> schemi::kLModels::rhoepsilon(
-		const bunchOfFields<cubicCell> & cf) const noexcept
+		const bunchOfFields<cubicCell> & cf,
+		const abstractMixtureThermodynamics&) const noexcept
 {
 	return cf.density[0]() * std::sqrt(cf.kTurb() * cf.kTurb() * cf.kTurb())
 			/ cf.epsTurb();

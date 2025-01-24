@@ -102,7 +102,8 @@ public:
 			const scalar /*eps*/) const noexcept =0;
 
 	virtual std::valarray<scalar> rhoepsilon(
-			const bunchOfFields<cubicCell>& /*cf*/) const noexcept =0;
+			const bunchOfFields<cubicCell>& /*cf*/,
+			const abstractMixtureThermodynamics& /*th*/) const noexcept =0;
 
 	virtual scalar thetaS_R(const scalar /*divV*/, const scalar /*k*/,
 			const scalar /*eps*/) const noexcept =0;
