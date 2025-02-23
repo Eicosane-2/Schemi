@@ -24,7 +24,7 @@ enum class typeOfTVDLimiter
 	superbee,
 	vanAlbada2,
 	minmod2,
-	Sewby
+	Sweby
 };
 }  // namespace schemi
 

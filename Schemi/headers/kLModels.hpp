@@ -44,8 +44,9 @@ public:
 
 	scalar calculateNut(const scalar k, const scalar L) const noexcept override;
 
-	std::valarray<scalar> rhoepsilon(
-			const bunchOfFields<cubicCell> & cf) const noexcept override;
+	virtual std::valarray<scalar> rhoepsilon(
+			const bunchOfFields<cubicCell> & cf,
+			const abstractMixtureThermodynamics & th) const noexcept override;
 
 	scalar thetaS_R(const scalar divV, const scalar k,
 			const scalar L) const noexcept override;

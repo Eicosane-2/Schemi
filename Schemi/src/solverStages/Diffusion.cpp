@@ -721,7 +721,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 
 		if (gasPhase.turbulence->model() != turbulenceModel::zeroModel)
 			temperatureMatrix.SLE[0].freeTerm +=
-					gasPhase.turbulence->rhoepsilon(gasPhase);
+					gasPhase.turbulence->rhoepsilon(gasPhase,
+							*gasPhase.phaseThermodynamics);
 
 		if (gasPhase.turbulence->aField())
 			gradMav_Mav.r() = division(

@@ -240,3 +240,15 @@ std::tuple<
 
 	return std::make_tuple(Sourcek, Sourceeps, Sourcea, Sourceb, gravGenField);
 }
+
+std::valarray<schemi::scalar> schemi::BHRModel::rhoepsilon(
+		const bunchOfFields<cubicCell> & cf,
+		const abstractMixtureThermodynamics & th) const noexcept
+{
+	const auto a_s2 = th.sqSonicSpeed(cf.concentration.p, cf.density[0](),
+			cf.internalEnergy(), cf.pressure());
+
+	const auto Mat2(2 * cf.kTurb() / a_s2);
+
+	return cf.rhoepsTurb() * (1 + CMSM() * Mat2);
+}

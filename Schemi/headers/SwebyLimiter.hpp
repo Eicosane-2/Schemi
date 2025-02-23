@@ -1,23 +1,25 @@
 /*
- * SewbyLimiter.hpp
+ * SwebyLimiter.hpp
  *
  *  Created on: 2023/11/05
  *      Author: Maxim Boldyrev
  */
 
-#ifndef SEWBYLIMITER_HPP_
-#define SEWBYLIMITER_HPP_
+#ifndef SWEBYLIMITER_HPP_
+#define SWEBYLIMITER_HPP_
 
 #include "abstractLimiter.hpp"
 
 namespace schemi
 {
-class SewbyLimiter: public abstractLimiter
+class SwebyLimiter: public abstractLimiter
 {
-	scalar SewbyLimiterCalculation(const scalar r,
+	const scalar b { 2.0 };
+
+	scalar SwebyLimiterCalculation(const scalar r,
 			const scalar xiR) const noexcept;
 
-	scalar SewbyLimiterCalculation(const scalar r) const noexcept;
+	scalar SwebyLimiterCalculation(const scalar r) const noexcept;
 public:
 	vector calculate(const vector & r, const vector & gradient) const noexcept
 			override;
@@ -39,4 +41,4 @@ public:
 };
 }  // namespace schemi
 
-#endif /* SEWBYLIMITER_HPP_ */
+#endif /* SWEBYLIMITER_HPP_ */

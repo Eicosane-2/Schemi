@@ -71,7 +71,8 @@ schemi::scalar schemi::kEpsModels::calculateNut(const scalar k,
 }
 
 std::valarray<schemi::scalar> schemi::kEpsModels::rhoepsilon(
-		const bunchOfFields<cubicCell> & cf) const noexcept
+		const bunchOfFields<cubicCell> & cf,
+		const abstractMixtureThermodynamics&) const noexcept
 {
 	return cf.rhoepsTurb();
 }

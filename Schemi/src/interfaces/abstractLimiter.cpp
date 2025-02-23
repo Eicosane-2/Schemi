@@ -17,11 +17,11 @@
 #include "linearLimiter.hpp"
 #include "vanAlbadaLimiter.hpp"
 #include "HQUICKLimiter.hpp"
+#include "SwebyLimiter.hpp"
 #include "vanLeer2Limiter.hpp"
 #include "superbeeLimiter.hpp"
 #include "vanAlbada2Limiter.hpp"
 #include "minmod2Limiter.hpp"
-#include "SewbyLimiter.hpp"
 #include "zeroLimiter.hpp"
 
 schemi::abstractLimiter::~abstractLimiter() noexcept
@@ -42,7 +42,7 @@ std::unique_ptr<schemi::abstractLimiter> schemi::abstractLimiter::createLimiter(
 	limiterType.insert( { "superbee", typeOfTVDLimiter::superbee });
 	limiterType.insert( { "vanAlbada2", typeOfTVDLimiter::vanAlbada2 });
 	limiterType.insert( { "minmod2", typeOfTVDLimiter::minmod2 });
-	limiterType.insert( { "Sewby", typeOfTVDLimiter::Sewby });
+	limiterType.insert( { "Sweby", typeOfTVDLimiter::Sweby });
 
 	typeOfTVDLimiter limiterFlag;
 	try
@@ -83,8 +83,8 @@ std::unique_ptr<schemi::abstractLimiter> schemi::abstractLimiter::createLimiter(
 	case typeOfTVDLimiter::minmod2:
 		return std::make_unique<minmod2Limiter>();
 		break;
-	case typeOfTVDLimiter::Sewby:
-		return std::make_unique<SewbyLimiter>();
+	case typeOfTVDLimiter::Sweby:
+		return std::make_unique<SwebyLimiter>();
 		break;
 	[[unlikely]] default:
 		return std::make_unique<zeroLimiter>();
