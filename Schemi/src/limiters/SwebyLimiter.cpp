@@ -1,43 +1,43 @@
 /*
- * SewbyLimiter.cpp
+ * SwebyLimiter.cpp
  *
  *  Created on: 2023/11/05
  *      Author: Maxim Boldyrev
  */
 
-#include "SewbyLimiter.hpp"
+#include "SwebyLimiter.hpp"
 
 #include <algorithm>
 
 #include "elementsProduct.hpp"
 
-schemi::scalar schemi::SewbyLimiter::SewbyLimiterCalculation(const scalar r,
+schemi::scalar schemi::SwebyLimiter::SwebyLimiterCalculation(const scalar r,
 		const scalar xiR) const noexcept
 {
-	scalar Sewby;
+	scalar Sweby;
 
 	if (r <= 0.)
-		Sewby = 0;
+		Sweby = 0;
 	else
-		Sewby = std::min(std::min(2., 2 * r), xiR);
+		Sweby = std::min(std::min(b, b * r), xiR);
 
-	return Sewby;
+	return Sweby;
 }
 
-schemi::scalar schemi::SewbyLimiter::SewbyLimiterCalculation(
+schemi::scalar schemi::SwebyLimiter::SwebyLimiterCalculation(
 		const scalar r) const noexcept
 {
-	scalar Sewby;
+	scalar Sweby;
 
 	if (r <= 0.)
-		Sewby = 0;
+		Sweby = 0;
 	else
-		Sewby = std::min(2., 2 * r);
+		Sweby = std::min(b, b * r);
 
-	return Sewby;
+	return Sweby;
 }
 
-schemi::vector schemi::SewbyLimiter::calculate(const vector & r,
+schemi::vector schemi::SwebyLimiter::calculate(const vector & r,
 		const vector & gradient) const noexcept
 {
 	vector HQUICK, xiR { 2 / (1 + std::get<0>(r())), 2 / (1 + std::get<1>(r())),
@@ -45,14 +45,14 @@ schemi::vector schemi::SewbyLimiter::calculate(const vector & r,
 
 	std::transform(r().begin(), r().end(), xiR().begin(), HQUICK.r().begin(),
 			[this](const auto r_j, const auto xiR_j) 
-			{	return this->SewbyLimiterCalculation(r_j, xiR_j);});
+			{	return this->SwebyLimiterCalculation(r_j, xiR_j);});
 
 	return vector { std::get<0>(HQUICK()) * std::get<0>(gradient()),
 			std::get<1>(HQUICK()) * std::get<1>(gradient()), std::get<2>(
 					HQUICK()) * std::get<2>(gradient()) };
 }
 
-schemi::tensor schemi::SewbyLimiter::calculate(const tensor & r,
+schemi::tensor schemi::SwebyLimiter::calculate(const tensor & r,
 		const tensor & gradient) const noexcept
 {
 	tensor HQUICK, xiR { 2 / (1 + std::get<0>(r())), 2 / (1 + std::get<1>(r())),
@@ -63,7 +63,7 @@ schemi::tensor schemi::SewbyLimiter::calculate(const tensor & r,
 
 	std::transform(r().begin(), r().end(), xiR().begin(), HQUICK.r().begin(),
 			[this](const auto r_j, const auto xiR_j) 
-			{	return this->SewbyLimiterCalculation(r_j, xiR_j);});
+			{	return this->SwebyLimiterCalculation(r_j, xiR_j);});
 
 	return tensor { std::get<0>(HQUICK()) * std::get<0>(gradient()),
 			std::get<1>(HQUICK()) * std::get<1>(gradient()), std::get<2>(
@@ -76,7 +76,7 @@ schemi::tensor schemi::SewbyLimiter::calculate(const tensor & r,
 					* std::get<8>(gradient()) };
 }
 
-schemi::tensor3 schemi::SewbyLimiter::calculate(const tensor3 & r,
+schemi::tensor3 schemi::SwebyLimiter::calculate(const tensor3 & r,
 		const tensor3 & gradient) const noexcept
 {
 	tensor3 HQUICK, xiR { 2 / (1 + std::get<0>(r())), 2
@@ -96,7 +96,7 @@ schemi::tensor3 schemi::SewbyLimiter::calculate(const tensor3 & r,
 
 	std::transform(r().begin(), r().end(), xiR().begin(), HQUICK.r().begin(),
 			[this](const auto r_j, const auto xiR_j) 
-			{	return this->SewbyLimiterCalculation(r_j, xiR_j);});
+			{	return this->SwebyLimiterCalculation(r_j, xiR_j);});
 
 	return tensor3 { std::get<0>(HQUICK()) * std::get<0>(gradient()),
 			std::get<1>(HQUICK()) * std::get<1>(gradient()), std::get<2>(
@@ -127,14 +127,14 @@ schemi::tensor3 schemi::SewbyLimiter::calculate(const tensor3 & r,
 					* std::get<26>(gradient()) };
 }
 
-schemi::vector schemi::SewbyLimiter::calculateNoRSLimit(const vector & r,
+schemi::vector schemi::SwebyLimiter::calculateNoRSLimit(const vector & r,
 		const vector & gradient) const noexcept
 {
 	vector HQUICK;
 
 	std::transform(r().begin(), r().end(), HQUICK.r().begin(),
 			[this](const auto r_j) 
-			{	return this->SewbyLimiterCalculation(r_j);});
+			{	return this->SwebyLimiterCalculation(r_j);});
 
 	const auto beta = elementsDivision((vector(1) + 2 * r), vector(3));
 
@@ -147,14 +147,14 @@ schemi::vector schemi::SewbyLimiter::calculateNoRSLimit(const vector & r,
 					HQUICK()) * std::get<2>(gradient()) };
 }
 
-schemi::tensor schemi::SewbyLimiter::calculateNoRSLimit(const tensor & r,
+schemi::tensor schemi::SwebyLimiter::calculateNoRSLimit(const tensor & r,
 		const tensor & gradient) const noexcept
 {
 	tensor HQUICK;
 
 	std::transform(r().begin(), r().end(), HQUICK.r().begin(),
 			[this](const auto r_j) 
-			{	return this->SewbyLimiterCalculation(r_j);});
+			{	return this->SwebyLimiterCalculation(r_j);});
 
 	const auto beta = elementsDivision((tensor(1) + 2 * r), tensor(3));
 
@@ -173,14 +173,14 @@ schemi::tensor schemi::SewbyLimiter::calculateNoRSLimit(const tensor & r,
 					* std::get<8>(gradient()) };
 }
 
-schemi::tensor3 schemi::SewbyLimiter::calculateNoRSLimit(const tensor3 & r,
+schemi::tensor3 schemi::SwebyLimiter::calculateNoRSLimit(const tensor3 & r,
 		const tensor3 & gradient) const noexcept
 {
 	tensor3 HQUICK;
 
 	std::transform(r().begin(), r().end(), HQUICK.r().begin(),
 			[this](const auto r_j) 
-			{	return this->SewbyLimiterCalculation(r_j);});
+			{	return this->SwebyLimiterCalculation(r_j);});
 
 	const auto beta = elementsDivision((tensor3(1) + 2 * r), tensor3(3));
 

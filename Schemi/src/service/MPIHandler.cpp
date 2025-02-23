@@ -88,7 +88,8 @@ schemi::MPIHandler::MPIHandler(std::size_t mpi_rank_in, std::size_t mpi_size_in)
 	std::ifstream mpiRanksFile { "./set/MPIRanks.txt" };
 	if (mpiRanksFile.is_open())
 		std::cout << "./set/MPIRanks.txt is opened." << std::endl;
-	else [[unlikely]]
+	else
+		[[unlikely]]
 		throw std::ifstream::failure("./set/MPIRanks.txt not found.");
 
 	std::string skipBuffer;
@@ -266,7 +267,8 @@ void schemi::MPIHandler::initialiseBuffersSize(
 
 		gathBufSize = gathBufSizeArr[0];
 	}
-	else [[unlikely]]
+	else
+		[[unlikely]]
 		throw exception("Arrays were already initialised.", errors::MPIError);
 #endif
 }
