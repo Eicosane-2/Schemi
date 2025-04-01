@@ -481,6 +481,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 			break;
 		case turbulenceModel::BHRModel:
 		case turbulenceModel::BHR2Model:
+		case turbulenceModel::BHR3Model:
 		case turbulenceModel::BHRKLModel:
 		{
 			if (linearRec)
@@ -788,6 +789,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		case turbulenceModel::kEpsAModel:
 		case turbulenceModel::BHRModel:
 		case turbulenceModel::BHR2Model:
+		case turbulenceModel::BHR3Model:
 		case turbulenceModel::BHRKLModel:
 		case turbulenceModel::arithmeticA1Model:
 		case turbulenceModel::arithmeticA2Model:
