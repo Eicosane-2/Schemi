@@ -24,6 +24,7 @@ enum class turbulenceModel
 	kEpsAModel,
 	BHRKLModel,
 	BHR2Model,
+	BHR3Model,
 	unknownModel
 };
 }  // namespace schemi

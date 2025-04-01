@@ -12,6 +12,7 @@
 
 #include "arithmeticAModel.hpp"
 #include "BHR2Model.hpp"
+#include "BHR3Model.hpp"
 #include "BHRKLModel.hpp"
 #include "decayModel.hpp"
 #include "boundaryConditionValue.hpp"
@@ -280,6 +281,7 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 	turbulenceModels.insert( { "kEpsA", turbulenceModel::kEpsAModel });
 	turbulenceModels.insert( { "BHRKL", turbulenceModel::BHRKLModel });
 	turbulenceModels.insert( { "BHR2", turbulenceModel::BHR2Model });
+	turbulenceModels.insert( { "BHR3", turbulenceModel::BHR3Model });
 
 	turbulenceModel turbulenceModelFlag;
 	try
@@ -316,6 +318,9 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 		break;
 	case turbulenceModel::BHR2Model:
 		trbl = std::make_unique<BHR2Model>(meshIn, turbulenceFlag);
+		break;
+	case turbulenceModel::BHR3Model:
+		trbl = std::make_unique<BHR3Model>(meshIn, turbulenceFlag);
 		break;
 	default:
 		trbl = std::make_unique<zeroModel>(meshIn, turbulenceFlag);
