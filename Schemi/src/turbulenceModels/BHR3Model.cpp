@@ -26,16 +26,13 @@ schemi::scalar schemi::BHR3Model::thetaA(const vector & a, const scalar k,
 	return 1;
 }
 
-schemi::scalar schemi::BHR3Model::thetaB(const vector & gradMav_n,
-		const vector & gradRho, const scalar pressure, const scalar k,
-		const scalar eps) const noexcept
+schemi::scalar schemi::BHR3Model::thetaB(const vector & a, const scalar k,
+		const scalar Camp, const scalar CMS_B) const noexcept
 {
-	return 1.0
-			/ sqrt(
-					1.0
-							+ std::abs(gradMav_n & gradRho) / pressure
-									* pow<scalar, 4>(k)
-									/ (pow<scalar, 2>(eps) * CMSB()));
+	if ((a & a) / (2 * k) < CMS_B)
+		return Camp;
+	else
+		return 1;
 }
 
 schemi::BHR3Model::BHR3Model(const mesh & meshIn, const bool turb_in) :
@@ -189,7 +186,7 @@ std::tuple<
 		const volumeField<vector> & gradP, const volumeField<vector> & gradRho,
 		const volumeField<tensor> & grada, const volumeField<scalar> & diva,
 		const volumeField<vector> & gradb, const volumeField<tensor> & spherR,
-		const volumeField<tensor> & devR, const volumeField<vector> & gradMav_n,
+		const volumeField<tensor> & devR, const volumeField<vector>&,
 		const abstractMixtureThermodynamics & mixture,
 		const volumeField<scalar>&) const noexcept
 {
@@ -230,9 +227,8 @@ std::tuple<
 		const auto thetaA_i = thetaA(diffFieldsOld.a()[i], diffFieldsOld.k()[i],
 				diffFieldsOld.b()[i]);
 
-		const auto thetaB_i = thetaB(gradMav_n()[i], gradRho()[i],
-				cellFields.pressure()[i], diffFieldsOld.k()[i],
-				diffFieldsOld.eps()[i]);
+		const auto thetaB_i = thetaB(diffFieldsOld.a()[i], diffFieldsOld.k()[i],
+				Camp(), CMSB());
 
 		const scalar rhoSpherRGen(spherR()[i] && gradV()[i]);
 
@@ -252,7 +248,7 @@ std::tuple<
 				/ cellFields.kTurb()[i];
 
 		Sourceeps.first.r()[i] = (C1() * rhoDevRGen + C3() * rhoSpherRGen
-				+ C0() / thetaB_i * std::max(gravGen, 0.0) + C4() * Pi_K) * ek;
+				+ C0() * std::max(gravGen, 0.0) + C4() * Pi_K) * ek;
 		Sourceeps.second.r()[i] = C2() * dissip / cellFields.kTurb()[i];
 
 		/*Time-step calculation*/
@@ -267,7 +263,7 @@ std::tuple<
 				(gradP()[i] - divDevPhysVisc()[i]) * diffFieldsOld.b()[i]);
 
 		const vector tauGradRho(
-				(devR()[i] * thetaS_i + spherR()[i] * Camp())
+				(devR()[i] * thetaS_i + spherR()[i] * thetaB_i)
 						/ cellFields.density[0]()[i] & gradRho()[i]);
 
 		const vector rhoAgradV(

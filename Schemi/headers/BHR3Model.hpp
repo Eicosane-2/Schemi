@@ -18,9 +18,8 @@ class BHR3Model: public kEpsModels
 	scalar thetaA(const vector & a, const scalar k,
 			const scalar b) const noexcept;
 
-	scalar thetaB(const vector & gradMav_n, const vector & gradRho,
-			const scalar pressure, const scalar k,
-			const scalar eps) const noexcept;
+	scalar thetaB(const vector & a, const scalar k, const scalar Camp,
+			const scalar CMS_B) const noexcept;
 
 	scalar C0() const noexcept;
 	scalar C1() const noexcept;
@@ -59,7 +58,8 @@ public:
 			const volumeField<vector> & gradP,
 			const volumeField<vector> & gradRho,
 			const volumeField<tensor> & grada, const volumeField<scalar> & diva,
-			const volumeField<vector>&, const volumeField<tensor> & spherR,
+			const volumeField<vector> & gradb,
+			const volumeField<tensor> & spherR,
 			const volumeField<tensor> & devR,
 			const volumeField<vector> & gradMav_n,
 			const abstractMixtureThermodynamics & mixture,
