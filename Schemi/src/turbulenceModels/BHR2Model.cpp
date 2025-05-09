@@ -164,7 +164,7 @@ std::tuple<
 		const volumeField<vector> & divDevPhysVisc,
 		const volumeField<vector> & gradP, const volumeField<vector> & gradRho,
 		const volumeField<tensor> & grada, const volumeField<scalar> & diva,
-		const volumeField<vector> & gradb, const volumeField<tensor> & spherR,
+		const volumeField<vector>&, const volumeField<tensor> & spherR,
 		const volumeField<tensor> & devR, const volumeField<vector>&,
 		const abstractMixtureThermodynamics & mixture,
 		const volumeField<scalar>&) const noexcept
@@ -261,9 +261,9 @@ std::tuple<
 				-(diffFieldsOld.b()[i] + 2.)
 						* (diffFieldsOld.a()[i] & gradRho()[i]));
 
-		const scalar redistribution_b(cellFields.rhoaTurb()[i] & gradb()[i]);
+		//const scalar redistribution_b(cellFields.rhoaTurb()[i] & gradb()[i]);
 
-		Sourceb.first.r()[i] = rhobDiva + baGradRho + redistribution_b;
+		Sourceb.first.r()[i] = rhobDiva + baGradRho;	// + redistribution_b;
 		Sourceb.second.r()[i] = -cellFields.density[0]()[i] * ek * Cb()
 				* thetaA_i;
 
