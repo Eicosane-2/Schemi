@@ -26,7 +26,8 @@ starFields Advection3dOrder(homogeneousPhase<cubicCell> & gasPhase,
 		const boundaryConditionValue & boundaryConditionValueCalc,
 		scalar & timeForTVD, scalar & timeForHancock,
 		scalar & timeForFlowCalculation, scalar & timeForTimeIntegration,
-		const MPIHandler & parallelism);
+		const MPIHandler & parallelism,
+		const volumeField<scalar> & minimalLengthScale);
 }  // namespace schemi
 
 #endif /* ADVECTION3DORDER_HPP_ */

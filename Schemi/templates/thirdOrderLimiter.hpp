@@ -21,9 +21,9 @@ volumeField<std::vector<T>> thirdOrderLimiter(const surfaceField<T> & surfGrad,
 {
 	auto & mesh_ { surfGrad.meshRef() };
 
-	volumeField<std::vector<T>> cellLimiters(mesh_, std::vector<T>(0));
+	volumeField<std::vector<T>> limitedGradients(mesh_, std::vector<T>(0));
 
-	for (std::size_t i = 0; i < cellLimiters.size(); ++i)
+	for (std::size_t i = 0; i < limitedGradients.size(); ++i)
 	{
 		const auto & surfacesOfCell_i = mesh_.surfacesOfCells()[i];
 
@@ -62,14 +62,14 @@ volumeField<std::vector<T>> thirdOrderLimiter(const surfaceField<T> & surfGrad,
 			const auto limOppGradSurf = limiterObjectP.calculateNoRSLimit(r,
 					surfGrad()[farSurface.first]);
 
-			cellLimiters.r()[i].emplace_back(
+			limitedGradients.r()[i].emplace_back(
 					0.5
 							* ((1 - onethirds) * limOppGradSurf
 									+ (1 + onethirds) * limGradSurf));
 		}
 	}
 
-	return cellLimiters;
+	return limitedGradients;
 }
 }  // namespace schemi
 

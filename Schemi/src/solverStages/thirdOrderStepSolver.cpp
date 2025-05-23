@@ -48,7 +48,8 @@ void schemi::thirdOrderStepSolver::calculateStep()
 
 	auto star = Advection3dOrder(gasPhase, limiter, fsolver, { gravitationFlag,
 			g }, boundaryConditionValueCalc, timeForTVD, timeForHancock,
-			timeForFlowCalculation, timeForTimeIntegration, parallelism);
+			timeForFlowCalculation, timeForTimeIntegration, parallelism,
+			minimalLengthScale);
 
 	/* gasPhase: Un1 = Un - dt*divF(Un) */
 
@@ -56,7 +57,8 @@ void schemi::thirdOrderStepSolver::calculateStep()
 
 	Advection3dOrder(gasPhase, limiter, fsolver, { gravitationFlag, g },
 			boundaryConditionValueCalc, timeForTVD, timeForHancock,
-			timeForFlowCalculation, timeForTimeIntegration, parallelism);
+			timeForFlowCalculation, timeForTimeIntegration, parallelism,
+			minimalLengthScale);
 
 	/* gasPhase: Un2 = Un1 - dt*divF(Un1) */
 
@@ -68,7 +70,8 @@ void schemi::thirdOrderStepSolver::calculateStep()
 
 	Advection3dOrder(gasPhase, limiter, fsolver, { gravitationFlag, g },
 			boundaryConditionValueCalc, timeForTVD, timeForHancock,
-			timeForFlowCalculation, timeForTimeIntegration, parallelism);
+			timeForFlowCalculation, timeForTimeIntegration, parallelism,
+			minimalLengthScale);
 
 	/* gasPhase: Un3 = Un2 - dt*divF(Un2) */
 

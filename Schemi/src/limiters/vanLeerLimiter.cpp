@@ -136,12 +136,6 @@ schemi::vector schemi::vanLeerLimiter::calculateNoRSLimit(const vector & r,
 			[this](const auto r_j) 
 			{	return this->vanLeerLimiterCalculation(r_j);});
 
-	const auto beta = elementsDivision((vector(1) + 2 * r), vector(3));
-
-	std::transform(vanLeer().begin(), vanLeer().end(), beta().begin(),
-			vanLeer.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
-
 	return vector { std::get<0>(vanLeer()) * std::get<0>(gradient()),
 			std::get<1>(vanLeer()) * std::get<1>(gradient()), std::get<2>(
 					vanLeer()) * std::get<2>(gradient()) };
@@ -155,12 +149,6 @@ schemi::tensor schemi::vanLeerLimiter::calculateNoRSLimit(const tensor & r,
 	std::transform(r().begin(), r().end(), vanLeer.r().begin(),
 			[this](const auto r_j) 
 			{	return this->vanLeerLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor(1) + 2 * r), tensor(3));
-
-	std::transform(vanLeer().begin(), vanLeer().end(), beta().begin(),
-			vanLeer.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor { std::get<0>(vanLeer()) * std::get<0>(gradient()),
 			std::get<1>(vanLeer()) * std::get<1>(gradient()), std::get<2>(
@@ -181,12 +169,6 @@ schemi::tensor3 schemi::vanLeerLimiter::calculateNoRSLimit(const tensor3 & r,
 	std::transform(r().begin(), r().end(), vanLeer.r().begin(),
 			[this](const auto r_j) 
 			{	return this->vanLeerLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor3(1) + 2 * r), tensor3(3));
-
-	std::transform(vanLeer().begin(), vanLeer().end(), beta().begin(),
-			vanLeer.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor3 { std::get<0>(vanLeer()) * std::get<0>(gradient()), std::get<
 			1>(vanLeer()) * std::get<1>(gradient()), std::get<2>(vanLeer())

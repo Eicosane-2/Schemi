@@ -13,6 +13,7 @@
 
 #include "gasModelEnum.hpp"
 #include "boundaryConditionFromString.hpp"
+#include "intExpPow.hpp"
 #include "mixtureIdeal.hpp"
 #include "mixtureKataokaVanDerWaals.hpp"
 #include "mixtureRedlichKwong.hpp"
@@ -123,10 +124,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
-		std::string substanceName { "./set/sub_" }, bufComponent(
-				std::to_string(k + 1));
+		std::string substanceName { "./set/sub_" };
 
-		substanceName.append(bufComponent);
+		substanceName.append(std::to_string(k + 1));
 		substanceName.append(".txt");
 		std::ifstream substanceConditionsFile { substanceName };
 
@@ -1143,6 +1143,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	{
 		/*Set initial conditions for concentrations.*/
 		for (std::size_t k = 1; k < phase->concentration.v.size(); ++k)
+		{
 			for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
 			{
 				const vector & radiusOfCell { meshReference.cells()[i].rC() };
@@ -1167,6 +1168,45 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 									+ " component concentration dropped out of all zones.",
 							errors::initialisationError);
 			}
+
+			const std::string coordinateModificator(
+					std::string("./set/sub_") + std::to_string(k)
+							+ std::string("_modifFunction.txt"));
+
+			std::ifstream coordinateModificatorFile { coordinateModificator };
+
+			if (coordinateModificatorFile.is_open())
+			{
+				std::cout << coordinateModificator << " is opened."
+						<< std::endl;
+
+				std::string functionName;
+
+				coordinateModificatorFile >> skipBuffer >> functionName;
+
+				if (functionName == "gaussian")
+				{
+					scalar A, B, x0, c;
+
+					coordinateModificatorFile >> skipBuffer >> A >> skipBuffer
+							>> B >> skipBuffer >> x0 >> skipBuffer >> c;
+
+					const auto f = [A, B, x0, c](const scalar x) 
+					{	return A + B*std::exp(-pow<scalar, 2>((x - x0)/c));};
+
+					for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)
+					{
+						const vector & radiusOfCell {
+								meshReference.cells()[i].rC() };
+
+						phase->concentration.v[k].r()[i] *= f(
+								std::get<0>(radiusOfCell()));
+					}
+				}
+
+				coordinateModificatorFile.close();
+			}
+		}
 
 		/*Set initial conditions for velocity.*/
 		for (std::size_t i = 0; i < meshReference.cellsSize(); ++i)

@@ -21,7 +21,7 @@ schemi::scalar schemi::minmodLimiter::minmodLimiterCalculation(const scalar r,
 	else if (r <= 1.)
 		minmod = r;
 	else
-		minmod = std::min(static_cast<scalar>(1.), xiR);
+		minmod = std::min(static_cast<scalar>(1), xiR);
 
 	return minmod;
 }
@@ -140,12 +140,6 @@ schemi::vector schemi::minmodLimiter::calculateNoRSLimit(const vector & r,
 			[this](const auto r_j) 
 			{	return this->minmodLimiterCalculation(r_j);});
 
-	const auto beta = elementsDivision((vector(1) + 2 * r), vector(3));
-
-	std::transform(minmod().begin(), minmod().end(), beta().begin(),
-			minmod.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
-
 	return vector { std::get<0>(minmod()) * std::get<0>(gradient()),
 			std::get<1>(minmod()) * std::get<1>(gradient()), std::get<2>(
 					minmod()) * std::get<2>(gradient()) };
@@ -159,12 +153,6 @@ schemi::tensor schemi::minmodLimiter::calculateNoRSLimit(const tensor & r,
 	std::transform(r().begin(), r().end(), minmod.r().begin(),
 			[this](const auto r_j) 
 			{	return this->minmodLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor(1) + 2 * r), tensor(3));
-
-	std::transform(minmod().begin(), minmod().end(), beta().begin(),
-			minmod.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor { std::get<0>(minmod()) * std::get<0>(gradient()),
 			std::get<1>(minmod()) * std::get<1>(gradient()), std::get<2>(
@@ -185,12 +173,6 @@ schemi::tensor3 schemi::minmodLimiter::calculateNoRSLimit(const tensor3 & r,
 	std::transform(r().begin(), r().end(), minmod.r().begin(),
 			[this](const auto r_j) 
 			{	return this->minmodLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor3(1) + 2 * r), tensor3(3));
-
-	std::transform(minmod().begin(), minmod().end(), beta().begin(),
-			minmod.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor3 { std::get<0>(minmod()) * std::get<0>(gradient()),
 			std::get<1>(minmod()) * std::get<1>(gradient()), std::get<2>(

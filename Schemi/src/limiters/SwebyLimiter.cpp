@@ -19,7 +19,9 @@ schemi::scalar schemi::SwebyLimiter::SwebyLimiterCalculation(const scalar r,
 	if (r <= 0.)
 		Sweby = 0;
 	else
-		Sweby = std::min(std::min(b, b * r), xiR);
+		Sweby = std::min(
+				{ std::min(static_cast<scalar>(1), b * r), std::min(
+						static_cast<scalar>(b), r), b * xiR });
 
 	return Sweby;
 }
@@ -32,7 +34,8 @@ schemi::scalar schemi::SwebyLimiter::SwebyLimiterCalculation(
 	if (r <= 0.)
 		Sweby = 0;
 	else
-		Sweby = std::min(b, b * r);
+		Sweby = std::min(std::min(static_cast<scalar>(1), b * r),
+				std::min(static_cast<scalar>(b), r));
 
 	return Sweby;
 }
@@ -136,12 +139,6 @@ schemi::vector schemi::SwebyLimiter::calculateNoRSLimit(const vector & r,
 			[this](const auto r_j) 
 			{	return this->SwebyLimiterCalculation(r_j);});
 
-	const auto beta = elementsDivision((vector(1) + 2 * r), vector(3));
-
-	std::transform(Sweby().begin(), Sweby().end(), beta().begin(),
-			Sweby.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
-
 	return vector { std::get<0>(Sweby()) * std::get<0>(gradient()), std::get<1>(
 			Sweby()) * std::get<1>(gradient()), std::get<2>(Sweby())
 			* std::get<2>(gradient()) };
@@ -155,12 +152,6 @@ schemi::tensor schemi::SwebyLimiter::calculateNoRSLimit(const tensor & r,
 	std::transform(r().begin(), r().end(), Sweby.r().begin(),
 			[this](const auto r_j) 
 			{	return this->SwebyLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor(1) + 2 * r), tensor(3));
-
-	std::transform(Sweby().begin(), Sweby().end(), beta().begin(),
-			Sweby.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor { std::get<0>(Sweby()) * std::get<0>(gradient()), std::get<1>(
 			Sweby()) * std::get<1>(gradient()), std::get<2>(Sweby())
@@ -181,12 +172,6 @@ schemi::tensor3 schemi::SwebyLimiter::calculateNoRSLimit(const tensor3 & r,
 	std::transform(r().begin(), r().end(), Sweby.r().begin(),
 			[this](const auto r_j) 
 			{	return this->SwebyLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor3(1) + 2 * r), tensor3(3));
-
-	std::transform(Sweby().begin(), Sweby().end(), beta().begin(),
-			Sweby.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor3 { std::get<0>(Sweby()) * std::get<0>(gradient()),
 			std::get<1>(Sweby()) * std::get<1>(gradient()), std::get<2>(Sweby())
