@@ -86,8 +86,7 @@ volumeField<std::vector<T>> thirdOrderLimiterCada(
 			}
 			else if (eta > (1 + eps))
 			{
-				const auto r = elementsDivision(surfGrad()[surfaceIndex],
-						surfGrad()[farSurface.first]);
+				const auto r = elementsDivision(gradNear, gradOppose);
 
 				const auto retr = elementsDivision(decltype(r)(1), r);
 
@@ -104,16 +103,15 @@ volumeField<std::vector<T>> thirdOrderLimiterCada(
 			}
 			else
 			{
-				const auto r = elementsDivision(surfGrad()[surfaceIndex],
-						surfGrad()[farSurface.first]);
+				const auto r = elementsDivision(gradNear, gradOppose);
 
 				const auto retr = elementsDivision(decltype(r)(1), r);
 
 				const auto limGradSurf = limiterObjectP.calculateNoRSLimit(retr,
-						surfGrad()[surfaceIndex]);
+						gradNear);
 
 				const auto limOppGradSurf = limiterObjectP.calculateNoRSLimit(r,
-						surfGrad()[farSurface.first]);
+						gradOppose);
 
 				const auto limitedGrad = 0.5
 						* ((1 - onethirds) * limOppGradSurf
