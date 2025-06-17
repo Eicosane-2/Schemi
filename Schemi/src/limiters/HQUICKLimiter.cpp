@@ -136,12 +136,6 @@ schemi::vector schemi::HQUICKLimiter::calculateNoRSLimit(const vector & r,
 			[this](const auto r_j) 
 			{	return this->HQUICKLimiterCalculation(r_j);});
 
-	const auto beta = elementsDivision((vector(1) + 2 * r), vector(3));
-
-	std::transform(HQUICK().begin(), HQUICK().end(), beta().begin(),
-			HQUICK.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
-
 	return vector { std::get<0>(HQUICK()) * std::get<0>(gradient()),
 			std::get<1>(HQUICK()) * std::get<1>(gradient()), std::get<2>(
 					HQUICK()) * std::get<2>(gradient()) };
@@ -155,12 +149,6 @@ schemi::tensor schemi::HQUICKLimiter::calculateNoRSLimit(const tensor & r,
 	std::transform(r().begin(), r().end(), HQUICK.r().begin(),
 			[this](const auto r_j) 
 			{	return this->HQUICKLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor(1) + 2 * r), tensor(3));
-
-	std::transform(HQUICK().begin(), HQUICK().end(), beta().begin(),
-			HQUICK.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor { std::get<0>(HQUICK()) * std::get<0>(gradient()),
 			std::get<1>(HQUICK()) * std::get<1>(gradient()), std::get<2>(
@@ -181,12 +169,6 @@ schemi::tensor3 schemi::HQUICKLimiter::calculateNoRSLimit(const tensor3 & r,
 	std::transform(r().begin(), r().end(), HQUICK.r().begin(),
 			[this](const auto r_j) 
 			{	return this->HQUICKLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor3(1) + 2 * r), tensor3(3));
-
-	std::transform(HQUICK().begin(), HQUICK().end(), beta().begin(),
-			HQUICK.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor3 { std::get<0>(HQUICK()) * std::get<0>(gradient()),
 			std::get<1>(HQUICK()) * std::get<1>(gradient()), std::get<2>(

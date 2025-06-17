@@ -23,7 +23,7 @@ schemi::scalar schemi::superbeeLimiter::superbeeLimiterCalculation(
 	else if (r <= 1.)
 		superbee = r;
 	else
-		superbee = std::min(std::min(r, static_cast<scalar>(2.)), xiR);
+		superbee = std::min( { r, static_cast<scalar>(2), xiR });
 
 	return superbee;
 }
@@ -40,7 +40,7 @@ schemi::scalar schemi::superbeeLimiter::superbeeLimiterCalculation(
 	else if (r <= 1.)
 		superbee = r;
 	else
-		superbee = std::min(r, static_cast<scalar>(2.));
+		superbee = std::min(r, static_cast<scalar>(2));
 
 	return superbee;
 }
@@ -144,12 +144,6 @@ schemi::vector schemi::superbeeLimiter::calculateNoRSLimit(const vector & r,
 			[this](const auto r_j) 
 			{	return this->superbeeLimiterCalculation(r_j);});
 
-	const auto beta = elementsDivision((vector(1) + 2 * r), vector(3));
-
-	std::transform(superbee().begin(), superbee().end(), beta().begin(),
-			superbee.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
-
 	return vector { std::get<0>(superbee()) * std::get<0>(gradient()), std::get<
 			1>(superbee()) * std::get<1>(gradient()), std::get<2>(superbee())
 			* std::get<2>(gradient()) };
@@ -163,12 +157,6 @@ schemi::tensor schemi::superbeeLimiter::calculateNoRSLimit(const tensor & r,
 	std::transform(r().begin(), r().end(), superbee.r().begin(),
 			[this](const auto r_j) 
 			{	return this->superbeeLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor(1) + 2 * r), tensor(3));
-
-	std::transform(superbee().begin(), superbee().end(), beta().begin(),
-			superbee.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor { std::get<0>(superbee()) * std::get<0>(gradient()), std::get<
 			1>(superbee()) * std::get<1>(gradient()), std::get<2>(superbee())
@@ -189,12 +177,6 @@ schemi::tensor3 schemi::superbeeLimiter::calculateNoRSLimit(const tensor3 & r,
 	std::transform(r().begin(), r().end(), superbee.r().begin(),
 			[this](const auto r_j) 
 			{	return this->superbeeLimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor3(1) + 2 * r), tensor3(3));
-
-	std::transform(superbee().begin(), superbee().end(), beta().begin(),
-			superbee.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor3 { std::get<0>(superbee()) * std::get<0>(gradient()),
 			std::get<1>(superbee()) * std::get<1>(gradient()), std::get<2>(

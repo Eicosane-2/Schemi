@@ -14,8 +14,8 @@
 #include "sign.hpp"
 #include "intExpPow.hpp"
 
-std::array<schemi::scalar, 3> schemi::cubicEquationSolver(const scalar Ain,
-		const scalar Bin, const scalar Cin, const scalar Din)
+std::array<schemi::scalar, 3> schemi::cubicEquationSolver(const scalar A,
+		const scalar B, const scalar C, const scalar D)
 {
 	typedef long double cScalar;
 
@@ -23,9 +23,9 @@ std::array<schemi::scalar, 3> schemi::cubicEquationSolver(const scalar Ain,
 
 	scalar x1 { std::nan("1") }, x2 { std::nan("2") }, x3 { std::nan("3") };
 
-	if ((Ain > cubicEquationCriteria) || (Ain < -cubicEquationCriteria))
+	if ((A > cubicEquationCriteria) || (A < -cubicEquationCriteria))
 	{
-		const cScalar a { Bin / Ain }, b { Cin / Ain }, c { Din / Ain };
+		const cScalar a { B / A }, b { C / A }, c { D / A };
 
 		const cScalar Q { (pow<cScalar, 2>(a) - 3 * b) / 9 };
 
@@ -89,16 +89,16 @@ std::array<schemi::scalar, 3> schemi::cubicEquationSolver(const scalar Ain,
 	}
 	else
 	{
-		const cScalar a { Bin }, b { Cin }, c { Din };
+		const cScalar a { B }, b { C }, c { D };
 
-		const auto D = pow<cScalar, 2>(b) - 4 * a * c;
+		const auto Discr = pow<cScalar, 2>(b) - 4 * a * c;
 
-		if (D >= 0)
+		if (Discr >= 0)
 		{
 			const auto a2 = 0.5 / (a + stabilizator);
 
-			x1 = a2 * (-b + std::sqrt(D));
-			x2 = a2 * (-b - std::sqrt(D));
+			x1 = a2 * (-b + std::sqrt(Discr));
+			x2 = a2 * (-b - std::sqrt(Discr));
 		}
 	}
 

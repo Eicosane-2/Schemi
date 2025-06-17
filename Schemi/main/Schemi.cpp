@@ -27,6 +27,7 @@
 #include "secondOrderStepSolverRK.hpp"
 #include "structForOutput.hpp"
 #include "thirdOrderStepSolver.hpp"
+#include "thirdOrderStepSolverCada.hpp"
 #include "ThomasSolver.hpp"
 #include "typeOfSolverEnum.hpp"
 #include "zone.hpp"
@@ -75,7 +76,7 @@ int main()
 				linearFlagString, thirdOrderString, readFromOutput,
 				mixedZoneWidthCalString;
 		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag;
-		typeOfSolverEnum thirdOrder;
+		typeOfSolverEnum order;
 		vector g { 0 }, gDelta { 0 };
 		dimensions dimensionsFlag;
 		timestep sourceTimeFlag;
@@ -293,11 +294,13 @@ int main()
 
 		std::map<std::string, typeOfSolverEnum> orderType;
 		orderType.insert( { "ThirdOrder", typeOfSolverEnum::ThirdOrder });
+		orderType.insert(
+				{ "ThirdOrderCada", typeOfSolverEnum::ThirdOrderCada });
 		orderType.insert( { "SecondOrder", typeOfSolverEnum::SecondOrder });
 		orderType.insert( { "SecondOrderRK", typeOfSolverEnum::SecondOrderRK });
 		try
 		{
-			thirdOrder = orderType.at(thirdOrderString);
+			order = orderType.at(thirdOrderString);
 		} catch (const std::out_of_range&)
 		{
 			throw exception("Unknown gas dynamics approximation order.",
@@ -760,7 +763,7 @@ int main()
 
 		std::unique_ptr<abstractStepSolver> stepSolver;
 
-		switch (thirdOrder)
+		switch (order)
 		{
 		case typeOfSolverEnum::SecondOrder:
 			stepSolver = std::make_unique<secondOrderStepSolver>(*gasPhase,
@@ -784,6 +787,16 @@ int main()
 			break;
 		case typeOfSolverEnum::ThirdOrder:
 			stepSolver = std::make_unique<thirdOrderStepSolver>(*gasPhase,
+					*limiter, *fsolver, gravitationFlag, g,
+					boundaryConditionValueCalc, timeForTVD, timeForHancock,
+					timeForFlowCalculation, timeForTimeIntegration, parallelism,
+					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
+					timeForDiffusion, commonConditions, enthalpyFlowFlag,
+					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
+					sourceTimeFlag, molMassDiffusionFlag, *chmk);
+			break;
+		case typeOfSolverEnum::ThirdOrderCada:
+			stepSolver = std::make_unique<thirdOrderStepSolverCada>(*gasPhase,
 					*limiter, *fsolver, gravitationFlag, g,
 					boundaryConditionValueCalc, timeForTVD, timeForHancock,
 					timeForFlowCalculation, timeForTimeIntegration, parallelism,

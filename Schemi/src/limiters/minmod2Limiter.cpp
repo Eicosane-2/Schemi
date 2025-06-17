@@ -19,8 +19,8 @@ schemi::scalar schemi::minmod2Limiter::minmod2LimiterCalculation(const scalar r,
 	if (r <= 0.)
 		minmod2 = 0;
 	else
-		minmod2 = std::min(static_cast<scalar>(1.),
-				std::min(4 * r / (1 + r), 2 * xiR));
+		minmod2 = std::min(
+				{ static_cast<scalar>(1), 4 * r / (1 + r), 2 * xiR });
 
 	return minmod2;
 }
@@ -33,7 +33,7 @@ schemi::scalar schemi::minmod2Limiter::minmod2LimiterCalculation(
 	if (r <= 0.)
 		minmod2 = 0;
 	else
-		minmod2 = std::min(static_cast<scalar>(1.), (4 * r / (1 + r)));
+		minmod2 = std::min(static_cast<scalar>(1), (4 * r / (1 + r)));
 
 	return minmod2;
 }
@@ -137,12 +137,6 @@ schemi::vector schemi::minmod2Limiter::calculateNoRSLimit(const vector & r,
 			[this](const auto r_j) 
 			{	return this->minmod2LimiterCalculation(r_j);});
 
-	const auto beta = elementsDivision((vector(1) + 2 * r), vector(3));
-
-	std::transform(minmod2().begin(), minmod2().end(), beta().begin(),
-			minmod2.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
-
 	return vector { std::get<0>(minmod2()) * std::get<0>(gradient()),
 			std::get<1>(minmod2()) * std::get<1>(gradient()), std::get<2>(
 					minmod2()) * std::get<2>(gradient()) };
@@ -156,12 +150,6 @@ schemi::tensor schemi::minmod2Limiter::calculateNoRSLimit(const tensor & r,
 	std::transform(r().begin(), r().end(), minmod2.r().begin(),
 			[this](const auto r_j) 
 			{	return this->minmod2LimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor(1) + 2 * r), tensor(3));
-
-	std::transform(minmod2().begin(), minmod2().end(), beta().begin(),
-			minmod2.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor { std::get<0>(minmod2()) * std::get<0>(gradient()),
 			std::get<1>(minmod2()) * std::get<1>(gradient()), std::get<2>(
@@ -182,12 +170,6 @@ schemi::tensor3 schemi::minmod2Limiter::calculateNoRSLimit(const tensor3 & r,
 	std::transform(r().begin(), r().end(), minmod2.r().begin(),
 			[this](const auto r_j) 
 			{	return this->minmod2LimiterCalculation(r_j);});
-
-	const auto beta = elementsDivision((tensor3(1) + 2 * r), tensor3(3));
-
-	std::transform(minmod2().begin(), minmod2().end(), beta().begin(),
-			minmod2.r().begin(), [](const auto limiter_j, const auto beta_j) 
-			{	return std::max(std::min(limiter_j, beta_j),0.0);});
 
 	return tensor3 { std::get<0>(minmod2()) * std::get<0>(gradient()), std::get<
 			1>(minmod2()) * std::get<1>(gradient()), std::get<2>(minmod2())
