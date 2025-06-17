@@ -17,8 +17,8 @@
 namespace schemi
 {
 /*Viete's trigonometric formula*/
-std::array<scalar, 3> cubicEquationSolver(const scalar Ain, const scalar Bin,
-		const scalar Cin, const scalar Din);
+std::array<scalar, 3> cubicEquationSolver(const scalar A, const scalar B,
+		const scalar C, const scalar D);
 
 scalar returnSinglePosValue(std::array<scalar, 3> tripleValue);
 }  // namespace schemi

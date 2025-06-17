@@ -12,7 +12,7 @@ namespace schemi
 {
 enum class typeOfSolverEnum
 {
-	SecondOrder, SecondOrderRK, ThirdOrder
+	SecondOrder, SecondOrderRK, ThirdOrder, ThirdOrderCada
 };
 }  // namespace schemi
 

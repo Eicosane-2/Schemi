@@ -1,14 +1,12 @@
 /*
- * Advection3dOrder.hpp
+ * Advection3dOrderCada.hpp
  *
- *  Created on: 2022/12/03
+ *  Created on: 2025/06/05
  *      Author: Maxim Boldyrev
- *
- *      Function for solving advection system of equations with 3d order spatial approximation.
  */
 
-#ifndef ADVECTION3DORDER_HPP_
-#define ADVECTION3DORDER_HPP_
+#ifndef ADVECTION3DORDERCADA_HPP_
+#define ADVECTION3DORDERCADA_HPP_
 
 #include "abstractFlowSolver.hpp"
 #include "abstractLimiter.hpp"
@@ -20,13 +18,14 @@
 namespace schemi
 {
 /*Advection stage.*/
-starFields Advection3dOrder(homogeneousPhase<cubicCell> & gasPhase,
+starFields Advection3dOrderCada(homogeneousPhase<cubicCell> & gasPhase,
 		const abstractLimiter & limiter, const abstractFlowSolver & fsolver,
 		std::pair<bool, vector> gravitation,
 		const boundaryConditionValue & boundaryConditionValueCalc,
 		scalar & timeForTVD, scalar & timeForHancock,
 		scalar & timeForFlowCalculation, scalar & timeForTimeIntegration,
-		const MPIHandler & parallelism);
+		const MPIHandler & parallelism,
+		const volumeField<scalar> & minimalLengthScale);
 }  // namespace schemi
 
-#endif /* ADVECTION3DORDER_HPP_ */
+#endif /* ADVECTION3DORDERCADA_HPP_ */

@@ -1,25 +1,26 @@
 /*
- * Advection3dOrder.cpp
+ * Advection3dOrderCada.cpp
  *
- *  Created on: 2023/06/04
+ *  Created on: 2025/06/05
  *      Author: Maxim Boldyrev
  */
 
-#include "Advection3dOrder.hpp"
+#include "Advection3dOrderCada.hpp"
 
 #include <chrono>
 
 #include "divergence.hpp"
 #include "gradient.hpp"
-#include "thirdOrderLimiter.hpp"
+#include "thirdOrderLimiterCada.hpp"
 
-schemi::starFields schemi::Advection3dOrder(
+schemi::starFields schemi::Advection3dOrderCada(
 		homogeneousPhase<cubicCell> & gasPhase, const abstractLimiter & limiter,
 		const abstractFlowSolver & fsolver, std::pair<bool, vector> gravitation,
 		const boundaryConditionValue & boundaryConditionValueCalc,
 		scalar & timeForTVD, scalar & timeForHancock,
 		scalar & timeForFlowCalculation, scalar & timeForTimeIntegration,
-		const MPIHandler & parallelism)
+		const MPIHandler & parallelism,
+		const volumeField<scalar> & minimalLengthScale)
 {
 	auto & mesh_ { gasPhase.pressure.meshRef() };
 
@@ -63,48 +64,51 @@ schemi::starFields schemi::Advection3dOrder(
 					gasPhase.concentration.v[k + 1], boundaryConditionValueCalc,
 					k + 1);
 
-			concentrationTVDGradient[k] = thirdOrderLimiter(
-					surfaceConcentarionGradient_k, limiter);
+			concentrationTVDGradient[k] = thirdOrderLimiterCada(
+					surfaceConcentarionGradient_k, limiter, minimalLengthScale);
 		}
 
 		const auto surfaceVelocityGradient = surfGrad(gasPhase.velocity,
 				boundaryConditionValueCalc);
 
-		velocityTVDGradient = thirdOrderLimiter(surfaceVelocityGradient,
-				limiter);
+		velocityTVDGradient = thirdOrderLimiterCada(surfaceVelocityGradient,
+				limiter, minimalLengthScale);
 
 		const auto surfacePressureGradient = surfGrad(gasPhase.pressure,
 				boundaryConditionValueCalc);
 
-		pressureTVDGradient = thirdOrderLimiter(surfacePressureGradient,
-				limiter);
+		pressureTVDGradient = thirdOrderLimiterCada(surfacePressureGradient,
+				limiter, minimalLengthScale);
 
 		if (gasPhase.turbulence->turbulence())
 		{
 			const auto surfacekGradient = surfGrad(gasPhase.kTurb,
 					boundaryConditionValueCalc);
 
-			kTVDGradient = thirdOrderLimiter(surfacekGradient, limiter);
+			kTVDGradient = thirdOrderLimiterCada(surfacekGradient, limiter,
+					minimalLengthScale);
 
 			const auto surfaceepsilonGradient = surfGrad(gasPhase.epsTurb,
 					boundaryConditionValueCalc);
 
-			epsilonTVDGradient = thirdOrderLimiter(surfaceepsilonGradient,
-					limiter);
+			epsilonTVDGradient = thirdOrderLimiterCada(surfaceepsilonGradient,
+					limiter, minimalLengthScale);
 
 			if (gasPhase.turbulence->aField())
 			{
 				const auto surfaceaGradient = surfGrad(gasPhase.aTurb,
 						boundaryConditionValueCalc);
 
-				aTVDGradient = thirdOrderLimiter(surfaceaGradient, limiter);
+				aTVDGradient = thirdOrderLimiterCada(surfaceaGradient, limiter,
+						minimalLengthScale);
 
 				if (gasPhase.turbulence->bField())
 				{
 					const auto surfacebGradient = surfGrad(gasPhase.bTurb,
 							boundaryConditionValueCalc);
 
-					bTVDGradient = thirdOrderLimiter(surfacebGradient, limiter);
+					bTVDGradient = thirdOrderLimiterCada(surfacebGradient,
+							limiter, minimalLengthScale);
 				}
 			}
 		}

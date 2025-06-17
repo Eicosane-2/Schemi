@@ -1,17 +1,17 @@
 /*
- * thirdOrderStepSolver.cpp
+ * thirdOrderStepSolverCada.cpp
  *
- *  Created on: 2023/06/03
+ *  Created on: 2025/06/05
  *      Author: Maxim Boldyrev
  */
 
-#include "thirdOrderStepSolver.hpp"
+#include "thirdOrderStepSolverCada.hpp"
 
-#include "Advection3dOrder.hpp"
+#include "Advection3dOrderCada.hpp"
 #include "Diffusion.hpp"
 #include "linearInterpolate.hpp"
 
-schemi::thirdOrderStepSolver::thirdOrderStepSolver(
+schemi::thirdOrderStepSolverCada::thirdOrderStepSolverCada(
 		homogeneousPhase<cubicCell> & gasPhase_in,
 		const abstractLimiter & limiter_in,
 		const abstractFlowSolver & fsolver_in, const bool & gravitationFlag_in,
@@ -42,21 +42,23 @@ schemi::thirdOrderStepSolver::thirdOrderStepSolver(
 {
 }
 
-void schemi::thirdOrderStepSolver::calculateStep()
+void schemi::thirdOrderStepSolverCada::calculateStep()
 {
 	const bunchOfFields<cubicCell> Un = gasPhase;
 
-	auto star = Advection3dOrder(gasPhase, limiter, fsolver, { gravitationFlag,
-			g }, boundaryConditionValueCalc, timeForTVD, timeForHancock,
-			timeForFlowCalculation, timeForTimeIntegration, parallelism);
+	auto star = Advection3dOrderCada(gasPhase, limiter, fsolver, {
+			gravitationFlag, g }, boundaryConditionValueCalc, timeForTVD,
+			timeForHancock, timeForFlowCalculation, timeForTimeIntegration,
+			parallelism, minimalLengthScale);
 
 	/* gasPhase: Un1 = Un - dt*divF(Un) */
 
 	parallelism.correctBoundaryValues(gasPhase);
 
-	Advection3dOrder(gasPhase, limiter, fsolver, { gravitationFlag, g },
+	Advection3dOrderCada(gasPhase, limiter, fsolver, { gravitationFlag, g },
 			boundaryConditionValueCalc, timeForTVD, timeForHancock,
-			timeForFlowCalculation, timeForTimeIntegration, parallelism);
+			timeForFlowCalculation, timeForTimeIntegration, parallelism,
+			minimalLengthScale);
 
 	/* gasPhase: Un2 = Un1 - dt*divF(Un1) */
 
@@ -66,9 +68,10 @@ void schemi::thirdOrderStepSolver::calculateStep()
 
 	parallelism.correctBoundaryValues(gasPhase);
 
-	Advection3dOrder(gasPhase, limiter, fsolver, { gravitationFlag, g },
+	Advection3dOrderCada(gasPhase, limiter, fsolver, { gravitationFlag, g },
 			boundaryConditionValueCalc, timeForTVD, timeForHancock,
-			timeForFlowCalculation, timeForTimeIntegration, parallelism);
+			timeForFlowCalculation, timeForTimeIntegration, parallelism,
+			minimalLengthScale);
 
 	/* gasPhase: Un3 = Un2 - dt*divF(Un2) */
 
