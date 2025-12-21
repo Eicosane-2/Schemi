@@ -52,9 +52,10 @@ class H2Cl2Combustion: public abstractChemicalKinetics
 	scalar n_HCl_diss { 0 };
 	scalar E_HCl_diss { 81.753 * 1000 * 4.184 };
 
-	scalar ΔН_298 = -92300;
-	scalar ΔU_298 = ΔН_298;
-	constexpr static scalar Δn = 0;
+	/*ΔH*/
+	scalar deltaH_298 = -92300;
+	scalar deltaU_298 = deltaH_298;
+	constexpr static scalar deltan = 0;
 
 	iterativeSolver itSolv;
 

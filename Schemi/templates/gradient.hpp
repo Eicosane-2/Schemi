@@ -41,17 +41,17 @@ volumeField<returnTypeGradient<Type>> grad(const volumeField<Type> & inField,
 			if (mesh_.surfaceOwner()[surfaceIndex] == i)
 				normalVector = mesh_.surfaces()[surfaceIndex].N();
 			else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
-				normalVector = mesh_.surfaces()[surfaceIndex].N() * (-1);
+				normalVector = mesh_.surfaces()[surfaceIndex].N() * -1;
 			else
 				[[unlikely]]
 				throw exception("Couldn't choose normal's orientation.",
 						errors::systemError);
 
-			cellGradValue += (interpolatedField()[surfaceIndex] * normalVector)
-					* mesh_.surfaces()[surfaceIndex].S();
+			cellGradValue += (interpolatedField.cval()[surfaceIndex]
+					* normalVector) * mesh_.surfaces()[surfaceIndex].S();
 		}
 
-		gradient.r()[i] = cellGradValue / mesh_.cells()[i].V();
+		gradient.val()[i] = cellGradValue / mesh_.cells()[i].V();
 	}
 
 	return gradient;
@@ -77,17 +77,17 @@ volumeField<returnTypeGradient<Type>> grad(const surfaceField<Type> & inField)
 			if (mesh_.surfaceOwner()[surfaceIndex] == i)
 				normalVector = mesh_.surfaces()[surfaceIndex].N();
 			else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
-				normalVector = mesh_.surfaces()[surfaceIndex].N() * (-1);
+				normalVector = mesh_.surfaces()[surfaceIndex].N() * -1;
 			else
 				[[unlikely]]
 				throw exception("Couldn't choose normal's orientation.",
 						errors::systemError);
 
-			cellGradValue += (inField()[surfaceIndex] * normalVector)
+			cellGradValue += (inField.cval()[surfaceIndex] * normalVector)
 					* mesh_.surfaces()[surfaceIndex].S();
 		}
 
-		gradient.r()[i] = cellGradValue / mesh_.cells()[i].V();
+		gradient.val()[i] = cellGradValue / mesh_.cells()[i].V();
 	}
 
 	return gradient;
@@ -115,8 +115,9 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			const vector deltaVec { mesh_.cells()[neiIndex].rC()
 					- mesh_.cells()[ownIndex].rC() };
 
-			gradient.r()[i] = (inField()[neiIndex] - inField()[ownIndex])
-					/ pow<scalar, 2>(deltaVec.mag()) * deltaVec;
+			gradient.val()[i] = (inField.cval()[neiIndex]
+					- inField.cval()[ownIndex]) / pow<scalar, 2>(deltaVec.mag())
+					* deltaVec;
 		}
 			break;
 		case boundaryConditionType::calculatedParallelBoundary:
@@ -124,8 +125,8 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
 			const Type outerCellValue { bncCalc.boundaryConditionValueCell(
-					inField()[ownIndex], inField.boundCond()[i], ownIndex, i,
-					compt) };
+					inField.cval()[ownIndex], inField.boundCond()[i], ownIndex,
+					i, compt) };
 
 			const vector deltaR(
 					(mesh_.surfaces()[i].rC() - mesh_.cells()[ownIndex].rC())
@@ -135,9 +136,9 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 
 			const vector deltaRNorm(deltaR / deltaRMag);
 
-			const Type deltaV { outerCellValue - inField()[ownIndex] };
+			const Type deltaV { outerCellValue - inField.cval()[ownIndex] };
 
-			gradient.r()[i] = (deltaV / deltaRMag) * deltaRNorm;
+			gradient.val()[i] = (deltaV / deltaRMag) * deltaRNorm;
 		}
 			break;
 		[[unlikely]] default:
@@ -145,8 +146,8 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
 			const Type outerCellValue { bncCalc.boundaryConditionValueCell(
-					inField()[ownIndex], inField.boundCond()[i], ownIndex, i,
-					compt) };
+					inField.cval()[ownIndex], inField.boundCond()[i], ownIndex,
+					i, compt) };
 
 			const vector deltaR(
 					(mesh_.surfaces()[i].rC() - mesh_.cells()[ownIndex].rC())
@@ -156,9 +157,9 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 
 			const vector deltaRNorm(deltaR / deltaRMag);
 
-			const Type deltaV { outerCellValue - inField()[ownIndex] };
+			const Type deltaV { outerCellValue - inField.cval()[ownIndex] };
 
-			gradient.r()[i] = (deltaV / deltaRMag) * deltaRNorm;
+			gradient.val()[i] = (deltaV / deltaRMag) * deltaRNorm;
 		}
 			break;
 		}

@@ -8,7 +8,7 @@
 #ifndef RETURNTYPEDIVERGENCE_HPP_
 #define RETURNTYPEDIVERGENCE_HPP_
 
-#include "vectorVectorDotProduct.hpp"
+#include "vector.hpp"
 
 namespace schemi
 {

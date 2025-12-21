@@ -22,7 +22,8 @@ struct subPatchData
 	{
 	}
 
-	subPatchData(boundaryConditionType boundType, T value = T { 0 }) :
+	explicit subPatchData(boundaryConditionType boundType, const T & value = T {
+			0 }) :
 			bType(boundType), fixVal(value)
 	{
 	}

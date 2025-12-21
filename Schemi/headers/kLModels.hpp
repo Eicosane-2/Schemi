@@ -25,7 +25,7 @@ protected:
 	void CMS_DSet(const scalar) noexcept;
 
 public:
-	virtual ~kLModels() noexcept =0;
+	virtual ~kLModels() noexcept override =0;
 
 	scalar CMS_R() const noexcept;
 	scalar CMS_D() const noexcept;
@@ -46,7 +46,9 @@ public:
 
 	virtual std::valarray<scalar> rhoepsilon(
 			const bunchOfFields<cubicCell> & cf,
-			const abstractMixtureThermodynamics & th) const noexcept override;
+			const abstractMixtureThermodynamics & th,
+			const volumeField<scalar> & k,
+			const volumeField<scalar> & eps) const noexcept override;
 
 	scalar thetaS_R(const scalar divV, const scalar k,
 			const scalar L) const noexcept override;

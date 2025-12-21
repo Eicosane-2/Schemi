@@ -8,6 +8,10 @@
 1.297E6
 #Kinetic_diameter_(A)
 2.89
+#Lennard_Jones_eps/kB_(K)
+59.7
+#Lennard_Jones_sigma_(A)
+2.915
 #Tail_boundary_condition
 subPatches 7
 slip ( 0 0 0 )( 0 0.003 1 )

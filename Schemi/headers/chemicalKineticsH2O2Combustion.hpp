@@ -68,9 +68,10 @@ class H2O2Combustion: public abstractChemicalKinetics
 	scalar n_R12 { -1.5 };
 	scalar E_R12 { 0 };
 
-	scalar ΔН_298 = -242000;
-	scalar ΔU_298 = ΔН_298;
-	constexpr static scalar Δn = -1;
+	/*ΔH*/
+	scalar deltaH_298 = -242000;
+	scalar deltaU_298 = deltaH_298;
+	constexpr static scalar deltan = -1;
 
 	iterativeSolver itSolv;
 

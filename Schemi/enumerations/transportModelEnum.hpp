@@ -10,7 +10,7 @@
 
 enum class transportModel
 {
-	constant, hardSpheres
+	constant, hardSpheres, LennardJones
 };
 
 #endif /* TRANSPORTMODELENUM_HPP_ */

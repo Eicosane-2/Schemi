@@ -59,8 +59,8 @@ schemi::vector schemi::UTCDFSLimiter::calculate(const vector & r,
 	vector UTCDFS, xiR { 2 / (1 + std::get<0>(r())), 2 / (1 + std::get<1>(r())),
 			2 / (1 + std::get<2>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), UTCDFS.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			UTCDFS.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->UTCDFSLimiterCalculation(r_j, xiR_j);});
 
 	return vector { std::get<0>(UTCDFS()) * std::get<0>(gradient()),
@@ -77,8 +77,8 @@ schemi::tensor schemi::UTCDFSLimiter::calculate(const tensor & r,
 					/ (1 + std::get<6>(r())), 2 / (1 + std::get<7>(r())), 2
 					/ (1 + std::get<8>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), UTCDFS.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			UTCDFS.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->UTCDFSLimiterCalculation(r_j, xiR_j);});
 
 	return tensor { std::get<0>(UTCDFS()) * std::get<0>(gradient()),
@@ -110,8 +110,8 @@ schemi::tensor3 schemi::UTCDFSLimiter::calculate(const tensor3 & r,
 			/ (1 + std::get<23>(r())), 2 / (1 + std::get<24>(r())), 2
 			/ (1 + std::get<25>(r())), 2 / (1 + std::get<26>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), UTCDFS.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			UTCDFS.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->UTCDFSLimiterCalculation(r_j, xiR_j);});
 
 	return tensor3 { std::get<0>(UTCDFS()) * std::get<0>(gradient()),
@@ -148,7 +148,7 @@ schemi::vector schemi::UTCDFSLimiter::calculateNoRSLimit(const vector & r,
 {
 	vector UTCDFS;
 
-	std::transform(r().begin(), r().end(), UTCDFS.r().begin(),
+	std::transform(r().cbegin(), r().cend(), UTCDFS.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->UTCDFSLimiterCalculation(r_j);});
 
@@ -162,7 +162,7 @@ schemi::tensor schemi::UTCDFSLimiter::calculateNoRSLimit(const tensor & r,
 {
 	tensor UTCDFS;
 
-	std::transform(r().begin(), r().end(), UTCDFS.r().begin(),
+	std::transform(r().cbegin(), r().cend(), UTCDFS.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->UTCDFSLimiterCalculation(r_j);});
 
@@ -182,7 +182,7 @@ schemi::tensor3 schemi::UTCDFSLimiter::calculateNoRSLimit(const tensor3 & r,
 {
 	tensor3 UTCDFS;
 
-	std::transform(r().begin(), r().end(), UTCDFS.r().begin(),
+	std::transform(r().cbegin(), r().cend(), UTCDFS.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->UTCDFSLimiterCalculation(r_j);});
 

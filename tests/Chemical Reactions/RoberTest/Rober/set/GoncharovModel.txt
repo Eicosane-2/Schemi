@@ -1,0 +1,7 @@
+off
+#Number_of_particles
+1
+#Initialisation_check_type
+viaRe
+#Initial_data
+0.51 0.2 0.2 1 2 2 7E-4 1E-2 1E15

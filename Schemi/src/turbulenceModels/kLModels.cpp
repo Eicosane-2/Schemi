@@ -72,10 +72,11 @@ schemi::scalar schemi::kLModels::calculateNut(const scalar k,
 
 std::valarray<schemi::scalar> schemi::kLModels::rhoepsilon(
 		const bunchOfFields<cubicCell> & cf,
-		const abstractMixtureThermodynamics&) const noexcept
+		const abstractMixtureThermodynamics&, const volumeField<scalar> & k,
+		const volumeField<scalar> & eps) const noexcept
 {
-	return cf.density[0]() * std::sqrt(cf.kTurb() * cf.kTurb() * cf.kTurb())
-			/ cf.epsTurb();
+	return cf.density[0].cval() * std::sqrt(k.cval() * k.cval() * k.cval())
+			/ eps.cval();
 }
 
 schemi::scalar schemi::kLModels::thetaS_R(const scalar divV, const scalar k,
@@ -91,7 +92,8 @@ schemi::volumeField<schemi::scalar> schemi::kLModels::thetaS_R(
 	volumeField<scalar> returnField { divV.meshRef(), 0. };
 
 	for (std::size_t i = 0; i < returnField.size(); ++i)
-		returnField.r()[i] = thetaS(divV()[i], k()[i], L()[i], CMS_R());
+		returnField.val()[i] = thetaS(divV.cval()[i], k.cval()[i], L.cval()[i],
+				CMS_R());
 
 	return returnField;
 }
@@ -103,7 +105,8 @@ schemi::surfaceField<schemi::scalar> schemi::kLModels::thetaS_R(
 	surfaceField<scalar> returnField { divV.meshRef(), 0. };
 
 	for (std::size_t i = 0; i < returnField.size(); ++i)
-		returnField.r()[i] = thetaS(divV()[i], k()[i], L()[i], CMS_R());
+		returnField.val()[i] = thetaS(divV.cval()[i], k.cval()[i], L.cval()[i],
+				CMS_R());
 
 	return returnField;
 }
@@ -124,10 +127,11 @@ schemi::volumeField<schemi::scalar> schemi::kLModels::thetaS_D(
 	volumeField<scalar> returnField { divV.meshRef(), 0. };
 
 	for (std::size_t i = 0; i < returnField.size(); ++i)
-		if (divV()[i] < 0.)
-			returnField.r()[i] = thetaS(divV()[i], k()[i], L()[i], CMS_D());
+		if (divV.cval()[i] < 0.)
+			returnField.val()[i] = thetaS(divV.cval()[i], k.cval()[i],
+					L.cval()[i], CMS_D());
 		else
-			returnField.r()[i] = 1.;
+			returnField.val()[i] = 1.;
 
 	return returnField;
 }
@@ -139,10 +143,11 @@ schemi::surfaceField<schemi::scalar> schemi::kLModels::thetaS_D(
 	surfaceField<scalar> returnField { divV.meshRef(), 0. };
 
 	for (std::size_t i = 0; i < returnField.size(); ++i)
-		if (divV()[i] < 0.)
-			returnField.r()[i] = thetaS(divV()[i], k()[i], L()[i], CMS_D());
+		if (divV.cval()[i] < 0.)
+			returnField.val()[i] = thetaS(divV.cval()[i], k.cval()[i],
+					L.cval()[i], CMS_D());
 		else
-			returnField.r()[i] = 1.;
+			returnField.val()[i] = 1.;
 
 	return returnField;
 }

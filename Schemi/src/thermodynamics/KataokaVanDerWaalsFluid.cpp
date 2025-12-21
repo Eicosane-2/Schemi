@@ -433,8 +433,9 @@ schemi::scalar schemi::KataokaVanDerWaalsFluid::Sv(const scalar c,
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
 	return c * R
-			* (log(nQ * (1. / (c + stabilizator) - b) / NAvogardro) + 5. / 2.)
-			+ c * R * std::log(qa(c, T, V0, eps, R)) + c * eps / T * [&]()
+			* (std::log(nQ * (1. / (c + stabilizator) - b) / NAvogardro)
+					+ 5. / 2.) + c * R * std::log(qa(c, T, V0, eps, R))
+			+ c * eps / T * [&]()
 			{
 				const auto V0c { V0 * c };
 				const auto epsRT { 0.5 * eps / (R * T) };

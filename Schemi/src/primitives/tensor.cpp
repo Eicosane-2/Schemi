@@ -9,6 +9,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numeric>
+
+#include "vector.hpp"
+#include "tensor3.hpp"
 
 schemi::tensor::tensor(const scalar inValue) noexcept :
 		value { inValue, inValue, inValue, inValue, inValue, inValue, inValue,
@@ -29,7 +33,7 @@ const std::array<schemi::scalar, 9>& schemi::tensor::operator()() const noexcept
 	return value;
 }
 
-std::array<schemi::scalar, 9>& schemi::tensor::r() noexcept
+std::array<schemi::scalar, 9>& schemi::tensor::wr() noexcept
 {
 	return value;
 }
@@ -41,10 +45,11 @@ schemi::scalar schemi::tensor::trace() const noexcept
 
 schemi::scalar schemi::tensor::mag() const noexcept
 {
-	scalar result { 0 };
-
-	for (std::size_t i = 0; i < value.size(); ++i)
-		result += value[i] * value[i];
+	const scalar result = std::accumulate(value.cbegin(), value.cend(), 0.0,
+			[](const scalar null, const scalar i) 
+			{
+				return null + i*i;
+			});
 
 	return std::sqrt(result);
 }
@@ -67,7 +72,7 @@ schemi::tensor schemi::tensor::operator+(const tensor & inTensor) const noexcept
 {
 	tensor sum(inTensor);
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.r()[i] += value[i];
+		sum.wr()[i] += value[i];
 
 	return sum;
 }
@@ -84,7 +89,7 @@ schemi::tensor schemi::tensor::operator-(const tensor & inTensor) const noexcept
 {
 	tensor sum(inTensor * (-1.));
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.r()[i] += value[i];
+		sum.wr()[i] += value[i];
 
 	return sum;
 }
@@ -108,11 +113,99 @@ schemi::tensor schemi::tensor::operator*(const scalar inScalar) const noexcept
 
 schemi::tensor& schemi::tensor::operator*=(const scalar inScalar) noexcept
 {
-	std::transform(value.begin(), value.end(), value.begin(),
+	std::transform(value.cbegin(), value.cend(), value.begin(),
 			[inScalar](const auto i) 
 			{	return i *inScalar;});
 
 	return *this;
+}
+
+schemi::tensor3 schemi::tensor::operator*(
+		const vector & inVector) const noexcept
+{
+	const auto & tens = *this;
+
+	return tensor3 {
+
+	std::get<0>(tens()) * std::get<0>(inVector()), std::get<0>(tens())
+			* std::get<1>(inVector()), std::get<0>(tens())
+			* std::get<2>(inVector()), std::get<1>(tens())
+			* std::get<0>(inVector()), std::get<1>(tens())
+			* std::get<1>(inVector()), std::get<1>(tens())
+			* std::get<2>(inVector()), std::get<2>(tens())
+			* std::get<0>(inVector()), std::get<2>(tens())
+			* std::get<1>(inVector()), std::get<2>(tens())
+			* std::get<2>(inVector()),
+
+	std::get<3>(tens()) * std::get<0>(inVector()), std::get<3>(tens())
+			* std::get<1>(inVector()), std::get<3>(tens())
+			* std::get<2>(inVector()), std::get<4>(tens())
+			* std::get<0>(inVector()), std::get<4>(tens())
+			* std::get<1>(inVector()), std::get<4>(tens())
+			* std::get<2>(inVector()), std::get<5>(tens())
+			* std::get<0>(inVector()), std::get<5>(tens())
+			* std::get<1>(inVector()), std::get<5>(tens())
+			* std::get<2>(inVector()),
+
+	std::get<6>(tens()) * std::get<0>(inVector()), std::get<6>(tens())
+			* std::get<1>(inVector()), std::get<6>(tens())
+			* std::get<2>(inVector()), std::get<7>(tens())
+			* std::get<0>(inVector()), std::get<7>(tens())
+			* std::get<1>(inVector()), std::get<7>(tens())
+			* std::get<2>(inVector()), std::get<8>(tens())
+			* std::get<0>(inVector()), std::get<8>(tens())
+			* std::get<1>(inVector()), std::get<8>(tens())
+			* std::get<2>(inVector())
+
+	};
+}
+
+schemi::vector schemi::tensor::operator&(const vector & inVector) const noexcept
+{
+	const auto & tens = *this;
+
+	return vector { std::get<0>(tens()) * std::get<0>(inVector())
+			+ std::get<1>(tens()) * std::get<1>(inVector())
+			+ std::get<2>(tens()) * std::get<2>(inVector()), std::get<3>(tens())
+			* std::get<0>(inVector())
+			+ std::get<4>(tens()) * std::get<1>(inVector())
+			+ std::get<5>(tens()) * std::get<2>(inVector()), std::get<6>(tens())
+			* std::get<0>(inVector())
+			+ std::get<7>(tens()) * std::get<1>(inVector())
+			+ std::get<8>(tens()) * std::get<2>(inVector()) };
+}
+
+schemi::tensor schemi::tensor::operator&(const tensor & inTensor) const noexcept
+{
+	const auto & tens = *this;
+
+	return tensor { std::get<0>(tens()) * std::get<0>(inTensor())
+			+ std::get<1>(tens()) * std::get<3>(inTensor())
+			+ std::get<2>(tens()) * std::get<6>(inTensor()), std::get<0>(tens())
+			* std::get<1>(inTensor())
+			+ std::get<1>(tens()) * std::get<4>(inTensor())
+			+ std::get<2>(tens()) * std::get<7>(inTensor()), std::get<0>(tens())
+			* std::get<2>(inTensor())
+			+ std::get<1>(tens()) * std::get<5>(inTensor())
+			+ std::get<2>(tens()) * std::get<8>(inTensor()), std::get<3>(tens())
+			* std::get<0>(inTensor())
+			+ std::get<4>(tens()) * std::get<3>(inTensor())
+			+ std::get<5>(tens()) * std::get<6>(inTensor()), std::get<3>(tens())
+			* std::get<1>(inTensor())
+			+ std::get<4>(tens()) * std::get<4>(inTensor())
+			+ std::get<5>(tens()) * std::get<7>(inTensor()), std::get<3>(tens())
+			* std::get<2>(inTensor())
+			+ std::get<4>(tens()) * std::get<5>(inTensor())
+			+ std::get<5>(tens()) * std::get<8>(inTensor()), std::get<6>(tens())
+			* std::get<0>(inTensor())
+			+ std::get<7>(tens()) * std::get<3>(inTensor())
+			+ std::get<8>(tens()) * std::get<6>(inTensor()), std::get<6>(tens())
+			* std::get<1>(inTensor())
+			+ std::get<7>(tens()) * std::get<4>(inTensor())
+			+ std::get<8>(tens()) * std::get<7>(inTensor()), std::get<6>(tens())
+			* std::get<2>(inTensor())
+			+ std::get<7>(tens()) * std::get<5>(inTensor())
+			+ std::get<8>(tens()) * std::get<8>(inTensor()) };
 }
 
 schemi::tensor schemi::tensor::operator/(const scalar inScalar) const noexcept
@@ -126,7 +219,7 @@ schemi::tensor schemi::tensor::operator/(const scalar inScalar) const noexcept
 
 schemi::tensor& schemi::tensor::operator/=(const scalar inScalar) noexcept
 {
-	std::transform(value.begin(), value.end(), value.begin(),
+	std::transform(value.cbegin(), value.cend(), value.begin(),
 			[inScalar](const auto i) 
 			{	return i /inScalar;});
 
@@ -144,4 +237,51 @@ schemi::tensor schemi::operator*(const scalar inScalar,
 		const tensor & inTensor) noexcept
 {
 	return inTensor * inScalar;
+}
+
+schemi::vector schemi::operator&(const vector & inVector,
+		const tensor & inTensor) noexcept
+{
+	tensor bufTensor(inTensor);
+	bufTensor.transpose();
+
+	return bufTensor & inVector;
+}
+
+schemi::tensor3 schemi::operator*(const vector & inVector,
+		const tensor & inTensor) noexcept
+{
+	return tensor3 {
+
+	std::get<0>(inVector()) * std::get<0>(inTensor()), std::get<0>(inVector())
+			* std::get<1>(inTensor()), std::get<0>(inVector())
+			* std::get<2>(inTensor()), std::get<0>(inVector())
+			* std::get<3>(inTensor()), std::get<0>(inVector())
+			* std::get<4>(inTensor()), std::get<0>(inVector())
+			* std::get<5>(inTensor()), std::get<0>(inVector())
+			* std::get<6>(inTensor()), std::get<0>(inVector())
+			* std::get<7>(inTensor()), std::get<0>(inVector())
+			* std::get<8>(inTensor()),
+
+	std::get<1>(inVector()) * std::get<0>(inTensor()), std::get<1>(inVector())
+			* std::get<1>(inTensor()), std::get<1>(inVector())
+			* std::get<2>(inTensor()), std::get<1>(inVector())
+			* std::get<3>(inTensor()), std::get<1>(inVector())
+			* std::get<4>(inTensor()), std::get<1>(inVector())
+			* std::get<5>(inTensor()), std::get<1>(inVector())
+			* std::get<6>(inTensor()), std::get<1>(inVector())
+			* std::get<7>(inTensor()), std::get<1>(inVector())
+			* std::get<8>(inTensor()),
+
+	std::get<2>(inVector()) * std::get<0>(inTensor()), std::get<2>(inVector())
+			* std::get<1>(inTensor()), std::get<2>(inVector())
+			* std::get<2>(inTensor()), std::get<2>(inVector())
+			* std::get<3>(inTensor()), std::get<2>(inVector())
+			* std::get<4>(inTensor()), std::get<2>(inVector())
+			* std::get<5>(inTensor()), std::get<2>(inVector())
+			* std::get<6>(inTensor()), std::get<2>(inVector())
+			* std::get<7>(inTensor()), std::get<2>(inVector())
+			* std::get<8>(inTensor())
+
+	};
 }

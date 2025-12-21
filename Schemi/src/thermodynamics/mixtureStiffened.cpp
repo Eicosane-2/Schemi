@@ -236,6 +236,42 @@ std::valarray<schemi::scalar> schemi::mixtureStiffened::TFromUv(
 	return TemperatureOutput;
 }
 
+std::valarray<schemi::scalar> schemi::mixtureStiffened::cFrompT(
+		const std::vector<const std::valarray<scalar>*> & concentrations,
+		const std::valarray<scalar> & p,
+		const std::valarray<scalar> & T) const noexcept
+{
+	std::valarray<scalar> concentrationOutput(concentrations[0]->size());
+
+	const auto X = calcMolarFrac(concentrations);
+
+	std::valarray<scalar> p0Mixture(0., concentrationOutput.size());
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+			p0Mixture += X[k] * X[l] * p0Matrix[k][l];
+
+	for (std::size_t i = 0; i < concentrationOutput.size(); ++i)
+		concentrationOutput[i] = stiffenedFluid::cFrompT(R, p[i], T[i],
+				p0Mixture[i]);
+
+	return concentrationOutput;
+}
+
+std::valarray<schemi::scalar> schemi::mixtureStiffened::cFrompTk(
+		const std::valarray<scalar> & p, const std::valarray<scalar> & T,
+		const std::size_t componentIndex) const noexcept
+{
+	std::valarray<scalar> concentrationOutput(p.size());
+
+	const auto & p0k = p0Matrix[componentIndex][componentIndex];
+
+	for (std::size_t i = 0; i < concentrationOutput.size(); ++i)
+		concentrationOutput[i] = stiffenedFluid::cFrompT(R, p[i], T[i], p0k);
+
+	return concentrationOutput;
+}
+
 std::valarray<schemi::scalar> schemi::mixtureStiffened::dpdrho(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar>&) const noexcept
@@ -557,6 +593,29 @@ schemi::scalar schemi::mixtureStiffened::TFromUv(
 			p0Mixture += X[k] * X[l] * p0Matrix[k][l];
 
 	return stiffenedFluid::TFromUv(CvMixture, Uv, concentrations[0], p0Mixture);
+}
+
+schemi::scalar schemi::mixtureStiffened::cFrompT(
+		const std::valarray<scalar> & concentrations, const scalar p,
+		const scalar T) const noexcept
+{
+	const auto X = calcMolarFrac(concentrations);
+
+	scalar p0Mixture { 0 };
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+			p0Mixture += X[k] * X[l] * p0Matrix[k][l];
+
+	return stiffenedFluid::cFrompT(R, p, T, p0Mixture);
+}
+
+schemi::scalar schemi::mixtureStiffened::cFrompTk(const scalar p,
+		const scalar T, const std::size_t componentIndex) const noexcept
+{
+	const auto & p0k = p0Matrix[componentIndex][componentIndex];
+
+	return stiffenedFluid::cFrompT(R, p, T, p0k);
 }
 
 schemi::scalar schemi::mixtureStiffened::dpdrho(const std::valarray<scalar>&,

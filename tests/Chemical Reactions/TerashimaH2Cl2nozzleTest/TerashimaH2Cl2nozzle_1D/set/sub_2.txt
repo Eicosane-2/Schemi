@@ -8,6 +8,10 @@
 1
 #Kinetic_diameter_(A)
 1.6
+#Lennard_Jones_eps/kB_(K)
+150
+#Lennard_Jones_sigma_(A)
+3.5
 #Tail_boundary_condition
 fixedValueCell 1E-9
 #Point_boundary_condition

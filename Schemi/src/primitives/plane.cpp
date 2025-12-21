@@ -7,7 +7,7 @@
 
 #include "plane.hpp"
 
-#include "vectorVectorDotProduct.hpp"
+#include "vector.hpp"
 
 schemi::plane::plane(const vector & n, const vector & p) noexcept :
 		normale(n / n.mag()), point(p)

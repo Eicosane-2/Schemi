@@ -27,7 +27,7 @@ off
 #Type_of_SLE_solver_flag
 explicit
 #Type_of_source_flag
-BHR2
+BHR
 #Type_of_flow_solver
 HLLC
 #Dimensions_of_the_task
@@ -44,3 +44,5 @@ SecondOrder
 no
 #Calculation_of_mixing_zone_width
 off
+#Nonlinearity_iterations
+on

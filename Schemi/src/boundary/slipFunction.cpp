@@ -7,11 +7,9 @@
 
 #include "slipFunction.hpp"
 
-#include "dyadicProduct.hpp"
 #include "exception.hpp"
-#include "tensorTensorDotProduct.hpp"
-#include "tensorVectorDotProduct.hpp"
-#include "vectorVectorDotProduct.hpp"
+#include "tensor.hpp"
+#include "vector.hpp"
 #include "doubleDotProduct.hpp"
 
 schemi::scalar schemi::slipFunction(const scalar inScalar,

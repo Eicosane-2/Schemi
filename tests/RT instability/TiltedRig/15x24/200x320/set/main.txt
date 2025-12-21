@@ -13,7 +13,7 @@
 #Number_of_components
 2
 #Defines_universal_gas_constant
-SI
+CGmS
 #Equation_of_state
 ideal
 #TVD_limiter_type
@@ -27,7 +27,7 @@ on
 #Type_of_SLE_solver_flag
 GaussSeidel
 #Type_of_source_flag
-BHR2
+BHR
 #Type_of_flow_solver
 HLLC
 #Dimensions_of_the_task
@@ -43,4 +43,6 @@ SecondOrder
 #Start_From_Time-Step
 no
 #Calculation_of_mixing_zone_width
+off
+#Nonlinearity_iterations
 on

@@ -10,6 +10,8 @@
 #include "Advection.hpp"
 #include "Diffusion.hpp"
 #include "linearInterpolate.hpp"
+#include "gradient.hpp"
+#include "divergence.hpp"
 
 schemi::secondOrderStepSolver::secondOrderStepSolver(
 		homogeneousPhase<cubicCell> & gasPhase_in,
@@ -30,7 +32,8 @@ schemi::secondOrderStepSolver::secondOrderStepSolver(
 		const volumeField<scalar> & minimalLengthScale_in,
 		const timestep & sourceTimeFlag_in,
 		const bool & molMassDiffusionFlag_in,
-		const chemicalKinetics::abstractChemicalKinetics & chemKin_in) noexcept :
+		const chemicalKinetics::abstractChemicalKinetics & chemKin_in,
+		const bool & nonLinearityIteratonsFlag_in) noexcept :
 		abstractStepSolver(gasPhase_in, limiter_in, fsolver_in,
 				gravitationFlag_in, g_in, boundaryConditionValueCalc_in,
 				timeForTVD_in, timeForHancock_in, timeForFlowCalculation_in,
@@ -38,7 +41,8 @@ schemi::secondOrderStepSolver::secondOrderStepSolver(
 				msolver_in, msolverEnthFl_in, timestepCoeffs_in,
 				timeForDiffusion_in, commonConditions_in, enthalpyFlowFlag_in,
 				linearFlag_in, bncCalc_in, minimalLengthScale_in,
-				sourceTimeFlag_in, molMassDiffusionFlag_in, chemKin_in)
+				sourceTimeFlag_in, molMassDiffusionFlag_in, chemKin_in,
+				nonLinearityIteratonsFlag_in)
 {
 }
 
@@ -50,6 +54,21 @@ void schemi::secondOrderStepSolver::calculateStep()
 
 	parallelism.correctBoundaryValues(gasPhase);
 
+	if (gasPhase.turbulence->isInitialisationModelUsed())
+	{
+		const volumeField<vector> gradRho_c(grad(star.rho));
+		const surfaceField<vector> gradRho_s(
+				surfGrad(gasPhase.density[0], bncCalc));
+		const volumeField<vector> gradP(grad(star.p));
+		const volumeField<scalar> divU(divergence(star.v));
+		const volumeField<tensor> gradU(grad(star.v));
+
+		gasPhase.turbulence->particlesTimeIntegration(gradRho_c, gradRho_s,
+				gasPhase.velocity, star.v, gasPhase.concentration,
+				gasPhase.density, bncCalc, gasPhase.phaseThermodynamics->Mv(),
+				gasPhase.pressure.meshRef().timestep(), gradP, divU, gradU);
+	}
+
 	if (diffusionFlag)
 	{
 		if (gravitationFlag) /*Gravitational acceleration invalidates star values of velocity.*/
@@ -59,7 +78,8 @@ void schemi::secondOrderStepSolver::calculateStep()
 		Diffusion(gasPhase, msolver, msolverEnthFl, timestepCoeffs,
 				timeForDiffusion, commonConditions, star, enthalpyFlowFlag,
 				linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-				parallelism, sourceTimeFlag, molMassDiffusionFlag);
+				parallelism, sourceTimeFlag, molMassDiffusionFlag,
+				nonLinearityIteratonsFlag);
 
 		parallelism.correctBoundaryValues(gasPhase);
 	}

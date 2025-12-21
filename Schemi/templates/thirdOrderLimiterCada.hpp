@@ -32,7 +32,7 @@ volumeField<std::vector<T>> thirdOrderLimiterCada(
 	{
 		const auto & surfacesOfCell_i = mesh_.surfacesOfCells()[i];
 
-		const auto dx2 = pow<scalar, 2>(1 / minimalLengthScale()[i]);
+		const auto dx2 = pow<scalar, 2>(1 / minimalLengthScale.cval()[i]);
 
 		for (std::size_t s1 = 0; s1 < surfacesOfCell_i.size(); ++s1)
 		{
@@ -58,8 +58,8 @@ volumeField<std::vector<T>> thirdOrderLimiterCada(
 				}
 			}
 
-			const auto & gradNear = surfGrad()[surfaceIndex];
-			const auto & gradOppose = surfGrad()[farSurface.first];
+			const auto & gradNear = surfGrad.cval()[surfaceIndex];
+			const auto & gradOppose = surfGrad.cval()[farSurface.first];
 
 			scalar delta2Near, delta2Oppose;
 
@@ -79,7 +79,7 @@ volumeField<std::vector<T>> thirdOrderLimiterCada(
 
 			if (eta < (1 - eps))
 			{
-				limitedGradients.r()[i].emplace_back(
+				limitedGradients.val()[i].emplace_back(
 						0.5
 								* ((1 - onethirds) * gradOppose
 										+ (1 + onethirds) * gradNear));
@@ -96,7 +96,7 @@ volumeField<std::vector<T>> thirdOrderLimiterCada(
 				const auto limOppGradSurf = limiterObjectP.calculateNoRSLimit(r,
 						gradOppose);
 
-				limitedGradients.r()[i].emplace_back(
+				limitedGradients.val()[i].emplace_back(
 						0.5
 								* ((1 - onethirds) * limOppGradSurf
 										+ (1 + onethirds) * limGradSurf));
@@ -123,7 +123,7 @@ volumeField<std::vector<T>> thirdOrderLimiterCada(
 
 				const auto eta1eps = (eta - 1) / eps;
 
-				limitedGradients.r()[i].emplace_back(
+				limitedGradients.val()[i].emplace_back(
 						0.5
 								* ((1 - eta1eps) * unlimitedGrad
 										+ (1 + eta1eps) * limitedGrad));

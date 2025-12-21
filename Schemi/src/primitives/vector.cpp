@@ -11,6 +11,8 @@
 #include <array>
 #include <cmath>
 
+#include "tensor.hpp"
+
 schemi::vector::vector(const schemi::scalar inValue) noexcept :
 		value { inValue, inValue, inValue }
 {
@@ -27,7 +29,7 @@ const std::array<schemi::scalar, 3>& schemi::vector::operator()() const noexcept
 	return value;
 }
 
-std::array<schemi::scalar, 3>& schemi::vector::r() noexcept
+std::array<schemi::scalar, 3>& schemi::vector::wr() noexcept
 {
 	return value;
 }
@@ -44,7 +46,7 @@ schemi::vector schemi::vector::operator+(const vector & inVector) const noexcept
 {
 	vector sum(inVector);
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.r()[i] += value[i];
+		sum.wr()[i] += value[i];
 
 	return sum;
 }
@@ -61,7 +63,7 @@ schemi::vector schemi::vector::operator-(const vector & inVector) const noexcept
 {
 	vector sum(inVector * (-1.));
 	for (std::size_t i = 0; i < value.size(); ++i)
-		sum.r()[i] += value[i];
+		sum.wr()[i] += value[i];
 
 	return sum;
 }
@@ -82,9 +84,62 @@ schemi::vector schemi::vector::operator*(const scalar inScalar) const noexcept
 
 schemi::vector& schemi::vector::operator*=(const scalar inScalar) noexcept
 {
-	std::transform(value.begin(), value.end(), value.begin(),
+	std::transform(value.cbegin(), value.cend(), value.begin(),
 			[inScalar](const auto i) 
 			{	return i *inScalar;});
+
+	return *this;
+}
+
+schemi::tensor schemi::vector::operator*(const vector & inVector) const noexcept
+{
+	const auto & vec = *this;
+
+	return tensor { std::get<0>(vec()) * std::get<0>(inVector()), std::get<0>(
+			vec()) * std::get<1>(inVector()), std::get<0>(vec())
+			* std::get<2>(inVector()), std::get<1>(vec())
+			* std::get<0>(inVector()), std::get<1>(vec())
+			* std::get<1>(inVector()), std::get<1>(vec())
+			* std::get<2>(inVector()), std::get<2>(vec())
+			* std::get<0>(inVector()), std::get<2>(vec())
+			* std::get<1>(inVector()), std::get<2>(vec())
+			* std::get<2>(inVector()) };
+}
+
+schemi::scalar schemi::vector::operator&(const vector & inVector) const noexcept
+{
+	const auto & vec = *this;
+
+	scalar result = 0;
+
+	for (std::size_t i = 0; i < vector::vsize; ++i)
+		result += vec()[i] * inVector()[i];
+
+	return result;
+}
+
+schemi::vector schemi::vector::operator^(const vector & inVector) const noexcept
+{
+	const auto & a = *this;
+	const auto & b = inVector;
+
+	return vector { std::get<1>(a()) * std::get<2>(b())
+			- std::get<2>(a()) * std::get<1>(b()), -(std::get<0>(a())
+			* std::get<2>(b()) - std::get<2>(a()) * std::get<0>(b())), std::get<
+			0>(a()) * std::get<1>(b()) - std::get<1>(a()) * std::get<0>(b()) };
+}
+
+schemi::vector& schemi::vector::operator^=(const vector & inVector) noexcept
+{
+	const auto & a = *this;
+	const auto & b = inVector;
+
+	const auto result = vector { std::get<1>(a()) * std::get<2>(b())
+			- std::get<2>(a()) * std::get<1>(b()), -(std::get<0>(a())
+			* std::get<2>(b()) - std::get<2>(a()) * std::get<0>(b())), std::get<
+			0>(a()) * std::get<1>(b()) - std::get<1>(a()) * std::get<0>(b()) };
+
+	value = result();
 
 	return *this;
 }
@@ -97,7 +152,7 @@ schemi::vector schemi::vector::operator/(const scalar inScalar) const noexcept
 
 schemi::vector& schemi::vector::operator/=(const scalar inScalar) noexcept
 {
-	std::transform(value.begin(), value.end(), value.begin(),
+	std::transform(value.cbegin(), value.cend(), value.begin(),
 			[inScalar](const auto i) 
 			{	return i /inScalar;});
 

@@ -82,25 +82,29 @@ public:
 			const std::size_t compt = componentPlaceholder);
 
 	void generateDTimeLaplacian(const volumeField<vector> & vField,
-			const volumeField<scalar> & rField,
+			const volumeField<scalar> & rFieldNew,
+			const volumeField<vector> & rFieldOld,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
 	void generateDTimeLaplacian2TO(const volumeField<vector> & vField,
-			const volumeField<scalar> & rField,
+			const volumeField<scalar> & rFieldNew,
+			const volumeField<vector> & rFieldOld,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
 	void generateDTimeLaplacian(const volumeField<tensor> & vField,
-			const volumeField<scalar> & rField,
+			const volumeField<scalar> & rFieldNew,
+			const volumeField<tensor> & rFieldOld,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
 
 	void generateDTimeLaplacian2TO(const volumeField<tensor> & vField,
-			const volumeField<scalar> & rField,
+			const volumeField<scalar> & rFieldNew,
+			const volumeField<tensor> & rFieldOld,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const scalar timestep, const boundaryConditionValue & bncCalc,
 			const std::size_t compt = componentPlaceholder);
@@ -113,13 +117,15 @@ public:
 					componentPlaceholder);
 
 	void generateDTimeExplicitLaplacian(const volumeField<vector> & vField,
-			const volumeField<scalar> & rField,
+			const volumeField<scalar> & rFieldNew,
+			const volumeField<vector> & rFieldOld,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const boundaryConditionValue & bncCalc, const std::size_t compt =
 					componentPlaceholder);
 
 	void generateDTimeExplicitLaplacian(const volumeField<tensor> & vField,
-			const volumeField<scalar> & rField,
+			const volumeField<scalar> & rFieldNew,
+			const volumeField<tensor> & rFieldOld,
 			const surfaceField<scalar> & effectiveDiffusionCoefficient,
 			const boundaryConditionValue & bncCalc, const std::size_t compt =
 					componentPlaceholder);

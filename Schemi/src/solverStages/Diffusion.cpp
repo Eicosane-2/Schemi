@@ -13,7 +13,6 @@
 #include "harmonicInterpolateScalar.hpp"
 #include "divergence.hpp"
 #include "diffusiveFields.hpp"
-#include "fieldProducts.hpp"
 #include "gradient.hpp"
 #include "kEpsAModel.hpp"
 #include "linearInterpolate.hpp"
@@ -28,8 +27,11 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		const bool linearRec, const boundaryConditionValue & bncCalc,
 		const volumeField<scalar> & minimalLengthScale,
 		[[maybe_unused]] const MPIHandler & parallelism,
-		const timestep sourceTimeFlag, const bool molMassDiffusionFlag)
+		const timestep sourceTimeFlag, const bool molMassDiffusionFlag,
+		const bool nonLinearityIteratonsFlag)
 {
+	constexpr bool distributionOn { true };
+
 	const auto DiffusionStartTime { std::chrono::high_resolution_clock::now() };
 
 	auto & mesh_ { gasPhase.pressure.meshRef() };
@@ -37,8 +39,6 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 	const scalar timestep = mesh_.timestep();
 
 	/*Fields for diffusion stage.*/
-	surfaceField<vector> entExplDiffFlow { mesh_, vector(0) };
-
 	volumeField<scalar> avMolMass { mesh_, 0 };
 	{
 		std::vector<boundaryConditionType> bndCon(commonConditions);
@@ -99,898 +99,948 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 
 	diffusiveFields diffFieldsOld { mesh_, gasPhase, commonConditions,
 			gasPhase.turbulence->turbulence(), gasPhase.turbulence->aField(),
-			gasPhase.turbulence->bField() }, diffFieldsNew(diffFieldsOld);
+			gasPhase.turbulence->bField() };
+	diffusiveFields diffFieldsNew(diffFieldsOld), diffFieldsCur(diffFieldsOld);
 
 	effectiveTransportCoefficients<quadraticSurface> effectiveCoeffs { mesh_,
 			gasPhase.phaseThermodynamics->Mv().size() };
 
-	/*Creating empty objects for SLE matrix.*/
-	std::vector<SLEMatrix> massFractionMatrix {
-			diffFieldsOld.massFraction.size(), SLEMatrix(
-					std::string("Mass fraction")) };
-	SLEMatrix velocityMatrix { std::string("Velocity") };
-	SLEMatrix temperatureMatrix { std::string("Temperature") };
-	SLEMatrix kMatrix { std::string("k") };
-	SLEMatrix epsMatrix { std::string("epsilon") };
-	SLEMatrix aMatrix { std::string("a") };
-	SLEMatrix bMatrix { std::string("b") };
-	/**/
-
-	/*Turbulent coefficients recalculation.*/
-	gasPhase.calculateCoefficients(*gasPhase.transportModel,
-			gasPhase.phaseThermodynamics->Mv(), gasPhase.temperature,
-			gasPhase.pressure, gasPhase.concentration);
-	if (gasPhase.turbulence->turbulence())
-		gasPhase.calculateCoefficients(gasPhase.kTurb, gasPhase.epsTurb,
-				*(gasPhase.turbulence));
-
-	/*Calculation of fields for SLE matrix calculation*/
-	nonIdealCorrectionOld.r() = gasPhase.phaseThermodynamics->nonIdeality(
-			gasPhase.concentration.p, gasPhase.temperature());
-
-	avMolMass.r() = gasPhase.density[0]() / gasPhase.concentration.v[0]();
-
-	CVOld.r() = gasPhase.phaseThermodynamics->Cv(gasPhase.concentration.p);
-
-	CvM.r() = CVOld() / avMolMass.r();
-
-	const auto surfaceCv = linearInterpolate(CVOld, bncCalc);
-
-	CCVOld.r() = gasPhase.concentration.v[0]() * CVOld();
-
-	concentrationsPack<quadraticSurface> surfaceConcentration { mesh_,
+	concentrationsPack<cubicCell> calculatedConcentration { mesh_,
 			gasPhase.phaseThermodynamics->Mv().size() };
 
-	for (std::size_t k = 1; k < surfaceConcentration.v.size(); ++k)
+	std::size_t nonLinearIteration(1);
+
+	while (true)
 	{
-		surfaceConcentration.v[k] = linearInterpolate(
-				gasPhase.concentration.v[k], bncCalc);
+		const auto isNotFirstIter = nonLinearIteration > 1;
 
-		surfaceConcentration.v[0].r() += surfaceConcentration.v[k]();
+		/*Creating empty objects for SLE matrix.*/
+		std::vector<SLEMatrix> massFractionMatrix {
+				diffFieldsOld.massFraction.size(), SLEMatrix(
+						std::string("Mass fraction")) };
+		SLEMatrix velocityMatrix { std::string("Velocity") };
+		SLEMatrix temperatureMatrix { std::string("Temperature") };
+		SLEMatrix kMatrix { std::string("k") };
+		SLEMatrix epsMatrix { std::string("epsilon") };
+		SLEMatrix aMatrix { std::string("a") };
+		SLEMatrix bMatrix { std::string("b") };
+		/**/
 
-		surfaceRho.r() += surfaceConcentration.v[k]()
-				* gasPhase.phaseThermodynamics->Mv()[k - 1];
-	}
+		/*Turbulent coefficients recalculation.*/
+		gasPhase.calculateCoefficients(*gasPhase.transportModel,
+				gasPhase.phaseThermodynamics->Mv(), diffFieldsCur.temperature,
+				gasPhase.pressure, gasPhase.concentration);
+		if (gasPhase.turbulence->turbulence())
+			gasPhase.calculateCoefficients(diffFieldsCur.k, diffFieldsCur.eps,
+					*(gasPhase.turbulence));
 
-	NonIdRho.r() = nonIdealCorrectionOld() / gasPhase.density[0]();
+		/*Calculation of fields for SLE matrix calculation*/
+		nonIdealCorrectionOld.val() = gasPhase.phaseThermodynamics->nonIdeality(
+				gasPhase.concentration.p, diffFieldsCur.temperature.cval());
 
-	const auto gradNonIdRho = surfGrad(NonIdRho, bncCalc);
+		avMolMass.val() =
+				(gasPhase.density[0] / gasPhase.concentration.v[0]).cval();
 
-	const auto gradCvM = surfGrad(CvM, bncCalc);
+		CVOld.val() = gasPhase.phaseThermodynamics->Cv(
+				gasPhase.concentration.p);
 
-	volumeField<tensor> gradV { mesh_ };
-	volumeField<vector> gradRho { mesh_ };
-	volumeField<vector> gradP { mesh_ };
-	volumeField<scalar> divV { mesh_ };
-	surfaceField<scalar> divV_s { mesh_ };
-	volumeField<scalar> thetaS_R { mesh_ };
+		CvM.val() = (CVOld / avMolMass).cval();
 
-	if (linearRec)
-	{
-		gradV = grad(gasPhase.velocity, bncCalc);
-		gradRho = grad(gasPhase.density[0], bncCalc);
-		gradP = grad(gasPhase.pressure, bncCalc);
-		divV = divergence(gasPhase.velocity, bncCalc);
-	}
-	else
-	{
-		gradV = grad(star.v);
-		gradRho = grad(star.rho);
-		gradP = grad(star.p);
-		divV = divergence(star.v);
-	}
+		const auto surfaceCv = linearInterpolate(CVOld, bncCalc);
 
-	divV_s = surfDivergence(diffFieldsOld.velocity, bncCalc);
+		CCVOld.val() = (gasPhase.concentration.v[0] * CVOld).cval();
 
-	const auto surfaceTemperature = linearInterpolate(gasPhase.temperature,
-			bncCalc);
+		concentrationsPack<quadraticSurface> surfaceConcentration { mesh_,
+				gasPhase.phaseThermodynamics->Mv().size() };
 
-	/*Calculation of all diffusion coefficients.*/
-	effectiveCoeffs.calculateCoefficients(*gasPhase.transportModel,
-			gasPhase.phaseThermodynamics->Mv(), surfaceTemperature, star.p,
-			surfaceConcentration);
+		surfaceRho.val() = 0;
 
-	if (gasPhase.turbulence->turbulence())
-	{
-		effectiveCoeffs.tNu = harmonicInterpolate(gasPhase.tNu, bncCalc);
-		effectiveCoeffs.calculateCoefficients(*gasPhase.turbulence);
-
-		const auto k_surf = linearInterpolate(gasPhase.kTurb, bncCalc);
-		const auto eps_surf = linearInterpolate(gasPhase.epsTurb, bncCalc);
-
-		const auto thetaS_s = gasPhase.turbulence->thetaS_D(divV_s, k_surf,
-				eps_surf);
-
-		effectiveCoeffs.k_D.r() *= thetaS_s();
-		effectiveCoeffs.eps_D.r() *= thetaS_s();
-
-		thetaS_R = gasPhase.turbulence->thetaS_R(divV, diffFieldsOld.k,
-				diffFieldsOld.eps);
-	}
-
-	effectiveCoeffs.calculateEffectiveCoefficients(surfaceRho,
-			*(gasPhase.turbulence), surfaceConcentration.v[0], surfaceCv);
-
-	if (gasPhase.turbulence->turbulence())
-	{
-		if (msolver.solverType != matrixSolver::explicitSolver)
-			kMatrix.generateDTimeLaplacian(diffFieldsOld.k,
-					astProduct(diffFieldsOld.k, gasPhase.density[0]),
-					gasPhase.density[0], effectiveCoeffs.rhoDk, timestep,
-					bncCalc);
-		else
-			kMatrix.generateDTimeExplicitLaplacian(diffFieldsOld.k,
-					astProduct(diffFieldsOld.k, gasPhase.density[0]),
-					gasPhase.density[0], effectiveCoeffs.rhoDk, bncCalc);
-
-		if (msolver.solverType != matrixSolver::explicitSolver)
-			epsMatrix.generateDTimeLaplacian(diffFieldsOld.eps,
-					astProduct(diffFieldsOld.eps, gasPhase.density[0]),
-					gasPhase.density[0], effectiveCoeffs.rhoDeps, timestep,
-					bncCalc);
-		else
-			epsMatrix.generateDTimeExplicitLaplacian(diffFieldsOld.eps,
-					astProduct(diffFieldsOld.eps, gasPhase.density[0]),
-					gasPhase.density[0], effectiveCoeffs.rhoDeps, bncCalc);
-
-		if (gasPhase.turbulence->aField())
+		for (std::size_t k = 1; k < surfaceConcentration.v.size(); ++k)
 		{
-			if (msolver.solverType != matrixSolver::explicitSolver)
-				aMatrix.generateDTimeLaplacian(diffFieldsOld.a,
-						gasPhase.density[0], effectiveCoeffs.rhoDa, timestep,
-						bncCalc);
-			else
-				aMatrix.generateDTimeExplicitLaplacian(diffFieldsOld.a,
-						gasPhase.density[0], effectiveCoeffs.rhoDa, bncCalc);
+			surfaceConcentration.v[k].val() = linearInterpolate(
+					gasPhase.concentration.v[k], bncCalc).cval();
 
-			if (gasPhase.turbulence->bField())
-			{
-				if (msolver.solverType != matrixSolver::explicitSolver)
-					bMatrix.generateDTimeLaplacian(diffFieldsOld.b,
-							astProduct(diffFieldsOld.b, gasPhase.density[0]),
-							gasPhase.density[0], effectiveCoeffs.rhoDb,
-							timestep, bncCalc);
-				else
-					bMatrix.generateDTimeExplicitLaplacian(diffFieldsOld.b,
-							astProduct(diffFieldsOld.b, gasPhase.density[0]),
-							gasPhase.density[0], effectiveCoeffs.rhoDb,
-							bncCalc);
-			}
+			surfaceConcentration.v[0] += surfaceConcentration.v[k];
+
+			surfaceRho += surfaceConcentration.v[k]
+					* gasPhase.phaseThermodynamics->Mv()[k - 1];
 		}
-	}
 
-	/*Generate SLE matrix for each component and calculate explicit diffusion fields.*/
-	for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
-	{
-		if (msolver.solverType != matrixSolver::explicitSolver)
-			massFractionMatrix[k].generateDTimeLaplacian(
-					diffFieldsOld.massFraction[k],
-					astProduct(diffFieldsOld.massFraction[k],
-							gasPhase.density[0]), gasPhase.density[0],
-					effectiveCoeffs.rhoD[k], timestep, bncCalc, k + 1);
-		else
-			massFractionMatrix[k].generateDTimeExplicitLaplacian(
-					diffFieldsOld.massFraction[k],
-					astProduct(diffFieldsOld.massFraction[k],
-							gasPhase.density[0]), gasPhase.density[0],
-					effectiveCoeffs.rhoD[k], bncCalc, k + 1);
-	}
+		NonIdRho.val() = (nonIdealCorrectionOld / gasPhase.density[0]).cval();
 
-	std::vector<volumeField<scalar>> cellMolFrac(massFractionMatrix.size(),
-			volumeField<scalar>(mesh_, 0));
-	for (std::size_t k = 1; k < gasPhase.concentration.v.size(); ++k)
-	{
-		std::vector<boundaryConditionType> bndCon(commonConditions);
-		std::replace(bndCon.begin(), bndCon.end(),
-				boundaryConditionType::calculated,
-				boundaryConditionType::calculatedMolarFraction);
-		cellMolFrac[k - 1] = volumeField<scalar>(mesh_, 0,
-				subPatchData<scalar> { bndCon[0] }, subPatchData<scalar> {
-						bndCon[1] }, subPatchData<scalar> { bndCon[2] },
-				subPatchData<scalar> { bndCon[3] }, subPatchData<scalar> {
-						bndCon[4] }, subPatchData<scalar> { bndCon[5] });
+		const auto gradNonIdRho = surfGrad(NonIdRho, bncCalc);
 
-		cellMolFrac[k - 1].r() = gasPhase.concentration.v[k]()
-				/ gasPhase.concentration.v[0]();
-	}
+		const auto gradCvM = surfGrad(CvM, bncCalc);
 
-	std::vector<surfaceField<vector>> explGradW { massFractionMatrix.size(),
-			surfaceField<vector>(mesh_, vector(0)) };
-	std::vector<surfaceField<vector>> explGradX { massFractionMatrix.size(),
-			surfaceField<vector>(mesh_, vector(0)) };
+		volumeField<tensor> gradV { mesh_ };
+		volumeField<vector> gradRho { mesh_ };
+		volumeField<vector> gradP { mesh_ };
+		volumeField<scalar> divV { mesh_ };
 
-	for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
-	{
-		explGradW[k] = surfGrad(diffFieldsOld.massFraction[k], bncCalc, k + 1);
-
-		explGradX[k] = surfGrad(cellMolFrac[k], bncCalc, k + 1);
-	}
-
-	effectiveCoeffs.caclulateDFluxes(explGradX,
-			gasPhase.phaseThermodynamics->Mv(), surfaceConcentration,
-			gasPhase.turbulence->turbulence());
-
-	for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
-	{
-		auto explDiffFlowW_k = astProduct(effectiveCoeffs.rhoD[k],
-				explGradW[k]);
-		astProductSelf(explDiffFlowW_k, -1);
-
-		/*Calculate enthalpy per mole per Kelvin (isobaric molar heat capacity) for k component*/
-		surfaceField<scalar> h_k { mesh_, 0 };
-		h_k.r() = gasPhase.phaseThermodynamics->hkT(
-				surfaceConcentration.v[k + 1](), surfaceTemperature(), k);
-
-		/*Calculating molar mass correction for diffusion flow and explicit enthalpy flow.*/
-		surfaceField<vector> massFrCorr_k { mesh_, vector(0) };
-		if (molMassDiffusionFlag)
+		if (linearRec || isNotFirstIter)
 		{
-			surfaceField<vector> explDiffFlowX_k(mesh_, vector(0));
+			gradV = grad(diffFieldsCur.velocity, bncCalc);
+			gradRho = grad(gasPhase.density[0], bncCalc);
+			gradP = grad(gasPhase.pressure, bncCalc);
+			divV = divergence(diffFieldsCur.velocity, bncCalc);
+		}
+		else
+		{
+			gradV = grad(star.v);
+			gradRho = grad(star.rho);
+			gradP = grad(star.p);
+			divV = divergence(star.v);
+		}
 
-			for (std::size_t i = 0; i < explDiffFlowX_k.size(); ++i)
-				explDiffFlowX_k.r()[i] = effectiveCoeffs.DFlux()[i][k];
+		auto gradVTr = gradV;
+		for (auto & gradVTr_i : gradVTr.val())
+			gradVTr_i.transpose();
 
-			massFrCorr_k.r() = explDiffFlowX_k() - explDiffFlowW_k();
+		const auto gradV_s = surfGrad(diffFieldsCur.velocity, bncCalc);
+
+		auto gradVTr_s = gradV_s;
+		for (auto & gradVTr_s_i : gradVTr_s.val())
+			gradVTr_s_i.transpose();
+
+		const auto divV_s = surfDivergence(diffFieldsCur.velocity, bncCalc);
+
+		const auto surfaceTemperature = linearInterpolate(
+				diffFieldsCur.temperature, bncCalc);
+
+		auto strainVol = gradV + gradVTr;
+		auto strainSurf = gradV_s + gradVTr_s;
+
+		auto strainSurf1 = gradVTr_s;
+
+		for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
+		{
+			const scalar lambdadivV_i { twothirds * divV.cval()[i] };
+
+			strainVol.val()[i].wr()[0] -= lambdadivV_i;
+			strainVol.val()[i].wr()[4] -= lambdadivV_i;
+			strainVol.val()[i].wr()[8] -= lambdadivV_i;
 		}
 
 		for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
 		{
-			const vector entExplDiffFlow_k_i = (massFrCorr_k()[i]
-					+ explDiffFlowW_k()[i]) * h_k()[i]
-					/ gasPhase.phaseThermodynamics->Mv()[k];
+			const scalar lambdadivV_s_i { twothirds * divV_s.cval()[i] };
 
-			entExplDiffFlow.r()[i] += entExplDiffFlow_k_i;
+			strainSurf.val()[i].wr()[0] -= lambdadivV_s_i;
+			strainSurf.val()[i].wr()[4] -= lambdadivV_s_i;
+			strainSurf.val()[i].wr()[8] -= lambdadivV_s_i;
+
+			strainSurf1.val()[i].wr()[0] -= lambdadivV_s_i;
+			strainSurf1.val()[i].wr()[4] -= lambdadivV_s_i;
+			strainSurf1.val()[i].wr()[8] -= lambdadivV_s_i;
 		}
 
-		const auto divMolMassFlow = divergence(massFrCorr_k);
+		/*Calculation of all diffusion coefficients.*/
+		effectiveCoeffs.calculateCoefficients(*gasPhase.transportModel,
+				gasPhase.phaseThermodynamics->Mv(), surfaceTemperature, star.p,
+				surfaceConcentration);
 
-		massFractionMatrix[k].SLE[0].freeTerm -= divMolMassFlow();
-
-		//massFractionMatrix[k].distributeSourceTerm(
-		//		astProduct(divMolMassFlow, -1.0), diffFieldsOld.massFraction[k],
-		//		timestep);
-	}
-
-	/*Calculation of resulting nonideality correction in laplacian*/
-	surfaceField<vector> nonIdFlow { mesh_, vector(0) };
-
-	nonIdFlow.r() = astProduct(gradCvM, surfaceTemperature)() + gradNonIdRho();
-	astProductSelf(nonIdFlow, -1.0);
-	const auto nonIdealityCorrectionLaplacian = astProduct(nonIdFlow,
-			astProduct(surfaceRho, effectiveCoeffs.tLambda));
-
-	/*Calculation of new mass fraction*/
-	{
-		volumeField<scalar> sumMassFrac(mesh_, 0.);
-
-		for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+		volumeField<scalar> thetaS_R { mesh_ };
+		if (gasPhase.turbulence->turbulence())
 		{
-			if (msolver.solverType != matrixSolver::explicitSolver)
-				diffFieldsNew.massFraction[k].r() = msolver.solve(
-						diffFieldsOld.massFraction[k](), massFractionMatrix[k]);
-			else
-				diffFieldsNew.massFraction[k].r() =
-						(massFractionMatrix[k].SLE[0].explOldTime
-								+ massFractionMatrix[k].SLE[0].freeTerm
-										* timestep)
-								/ massFractionMatrix[k].SLE[0].centralDiagonale;
+			const auto k_surf = linearInterpolate(diffFieldsCur.k, bncCalc);
+			const auto eps_surf = linearInterpolate(diffFieldsCur.eps, bncCalc);
 
-			std::replace_if(std::begin(diffFieldsNew.massFraction[k].r()),
-					std::end(diffFieldsNew.massFraction[k].r()),
-					[](const scalar value) 
-					{
-						return value < 0.;
-					}, 0.0);
+			effectiveCoeffs.calculateCoefficients(k_surf, eps_surf,
+					*gasPhase.turbulence);
 
-			sumMassFrac.r() += diffFieldsNew.massFraction[k]();
+			const auto thetaS_s = gasPhase.turbulence->thetaS_D(divV_s, k_surf,
+					eps_surf);
+
+			effectiveCoeffs.k_D *= thetaS_s;
+			effectiveCoeffs.eps_D *= thetaS_s;
+
+			thetaS_R = gasPhase.turbulence->thetaS_R(divV, diffFieldsCur.k,
+					diffFieldsCur.eps);
 		}
 
-		for (auto & newMassFrac_k : diffFieldsNew.massFraction)
-			newMassFrac_k.r() /= sumMassFrac();
-	}
+		effectiveCoeffs.calculateEffectiveCoefficients(surfaceRho,
+				*(gasPhase.turbulence), surfaceConcentration.v[0], surfaceCv);
 
-	/*Calculation of new concentrations*/
-	concentrationsPack<cubicCell> calculatedConcentration { mesh_,
-			gasPhase.phaseThermodynamics->Mv().size() };
-	for (std::size_t k = 1; k < calculatedConcentration.v.size(); ++k)
-	{
-		calculatedConcentration.v[k].boundCond_r() =
-				gasPhase.concentration.v[k].boundCond();
-
-		calculatedConcentration.v[k].r() = diffFieldsNew.massFraction[k - 1]()
-				* gasPhase.density[0]()
-				/ gasPhase.phaseThermodynamics->Mv()[k - 1];
-
-		calculatedConcentration.v[0].r() += calculatedConcentration.v[k]();
-	}
-
-	CCVNew.r() = gasPhase.phaseThermodynamics->Cv(calculatedConcentration.p)
-			* calculatedConcentration.v[0]();
-	nonIdealCorrectionNew.r() = gasPhase.phaseThermodynamics->nonIdeality(
-			calculatedConcentration.p, gasPhase.temperature());
-
-	/*Generate SLE matrix for components of the velocity vector.*/
-	surfaceField<tensor> devPhysViscSurf { mesh_, tensor(0) };
-
-	if (msolver.solverType != matrixSolver::explicitSolver)
-		velocityMatrix.generateDTimeLaplacian(diffFieldsOld.velocity,
-				gasPhase.density[0], effectiveCoeffs.mu, timestep, bncCalc);
-	else
-		velocityMatrix.generateDTimeExplicitLaplacian(diffFieldsOld.velocity,
-				gasPhase.density[0], effectiveCoeffs.mu, bncCalc);
-
-	volumeField<scalar> oldEnergyField(mesh_);
-	oldEnergyField.r() = CCVOld() * diffFieldsOld.temperature()
-			+ nonIdealCorrectionOld() - nonIdealCorrectionNew();
-
-	if (msolver.solverType != matrixSolver::explicitSolver)
-		temperatureMatrix.generateDTimeLaplacian(diffFieldsOld.temperature,
-				oldEnergyField, CCVNew, effectiveCoeffs.kappa, timestep,
-				bncCalc);
-	else
-		temperatureMatrix.generateDTimeExplicitLaplacian(
-				diffFieldsOld.temperature, oldEnergyField, CCVNew,
-				effectiveCoeffs.kappa, bncCalc);
-
-	/*Deviatoric part of physical viscosity tensor, begins from velocity gradient.*/
-	const auto gradV_s = surfGrad(gasPhase.velocity, bncCalc);
-	surfaceField<tensor> devTotVisc1 = gradV_s;
-
-	volumeField<tensor> grada { mesh_, tensor(0) };
-	volumeField<scalar> diva { mesh_, 0 };
-	volumeField<vector> gradb { mesh_, vector(0) };
-
-	if (gasPhase.turbulence->turbulence())
-	{
-		switch (gasPhase.turbulence->model())
-		{
-		case turbulenceModel::kEpsAModel:
-		{
-			const auto & kEpsA = dynamic_cast<kEpsAModel&>(*gasPhase.turbulence);
-
-			diffFieldsOld.b.r() = kEpsA.calculate_b(mesh_,
-					gasPhase.concentration.v, gasPhase.density)();
-			diffFieldsNew.b.r() = diffFieldsOld.b();
-
-			if (linearRec)
-			{
-				grada = grad(diffFieldsOld.a, bncCalc);
-				diva = divergence(diffFieldsOld.a, bncCalc);
-			}
-			else
-			{
-				grada = grad(star.a);
-				diva = divergence(star.a);
-			}
-		}
-			break;
-		case turbulenceModel::arithmeticA1Model:
-		case turbulenceModel::arithmeticA2Model:
-		case turbulenceModel::arithmeticA3Model:
-		{
-			const auto & arithmetic =
-					dynamic_cast<arithmeticAModel&>(*gasPhase.turbulence);
-
-			diffFieldsOld.a.r() = arithmetic.calculate_a(
-					gasPhase.turbulence->model(), mesh_, gasPhase, gradRho,
-					gradP)();
-
-			grada = grad(diffFieldsOld.a, bncCalc);
-			diva = divergence(diffFieldsOld.a, bncCalc);
-		}
-			break;
-		case turbulenceModel::BHRModel:
-		case turbulenceModel::BHR2Model:
-		case turbulenceModel::BHR3Model:
-		case turbulenceModel::BHRKLModel:
-		{
-			if (linearRec)
-			{
-				grada = grad(diffFieldsOld.a, bncCalc);
-				diva = divergence(diffFieldsOld.a, bncCalc);
-				gradb = grad(diffFieldsOld.b, bncCalc);
-			}
-			else
-			{
-				grada = grad(star.a);
-				diva = divergence(star.a);
-				gradb = grad(star.b);
-			}
-		}
-			break;
-		default:
-			break;
-		}
-
-		devPhysViscSurf = devTotVisc1;
-	}
-
-	/*Transposition of velocity gradient.*/
-	for (auto & devTotVisc1_i : devTotVisc1.r())
-		devTotVisc1_i.transpose();
-
-	if (gasPhase.turbulence->turbulence())
-		devPhysViscSurf.r() += devTotVisc1();
-
-	/*Explicit deviatoric part of molecular viscosity tensor for energy computation.*/
-	auto devPhysVisc = gradV;
-
-	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-		devPhysVisc.r()[i].transpose();
-
-	devPhysVisc.r() += gradV();
-
-	/*Add buoyant viscosity component to diagonal of all three tensors.*/
-	for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
-	{
-		const scalar lambdadivV_s_i { twothirds * divV_s()[i] };
-
-		devTotVisc1.r()[i].r()[0] -= lambdadivV_s_i;
-		devTotVisc1.r()[i].r()[4] -= lambdadivV_s_i;
-		devTotVisc1.r()[i].r()[8] -= lambdadivV_s_i;
+		if (!isNotFirstIter)
+			gasPhase.turbulence->checkTransitionToTurbulenceModel(
+					gasPhase.physMu / gasPhase.density[0],
+					effectiveCoeffs.physMu / surfaceRho, diffFieldsOld.k,
+					diffFieldsOld.eps, diffFieldsOld.a, diffFieldsOld.b,
+					gasPhase.concentration, bncCalc, timestep);
 
 		if (gasPhase.turbulence->turbulence())
 		{
-			devPhysViscSurf.r()[i].r()[0] -= lambdadivV_s_i;
-			devPhysViscSurf.r()[i].r()[4] -= lambdadivV_s_i;
-			devPhysViscSurf.r()[i].r()[8] -= lambdadivV_s_i;
-		}
-	}
+			if (msolver.solverType != matrixSolver::explicitSolver)
+				kMatrix.generateDTimeLaplacian(diffFieldsCur.k,
+						diffFieldsOld.k * gasPhase.density[0],
+						gasPhase.density[0], effectiveCoeffs.rhoDk, timestep,
+						bncCalc);
+			else
+				kMatrix.generateDTimeExplicitLaplacian(diffFieldsCur.k,
+						diffFieldsOld.k * gasPhase.density[0],
+						gasPhase.density[0], effectiveCoeffs.rhoDk, bncCalc);
 
-	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-	{
-		const scalar lambdadivV_i { twothirds * divV()[i] };
-
-		devPhysVisc.r()[i].r()[0] -= lambdadivV_i;
-		devPhysVisc.r()[i].r()[4] -= lambdadivV_i;
-		devPhysVisc.r()[i].r()[8] -= lambdadivV_i;
-	}
-
-	volumeField<tensor> spherTurbR { mesh_, tensor(0) };
-	volumeField<tensor> devTurbR { mesh_, tensor(0) };
-	volumeField<tensor> philtTurbVisc { mesh_, tensor(0) };
-
-	if (gasPhase.turbulence->turbulence())
-	{
-		devTurbR = devPhysVisc;
-		philtTurbVisc = devPhysVisc;
-	}
-
-	/*Multiplying on physical, effective or turbulent viscosity correspondingly.*/
-	devPhysVisc.r() = astProduct(devPhysVisc, gasPhase.physMu)();
-
-	if (gasPhase.turbulence->turbulence())
-	{
-		auto turbViscCoeff1 = gasPhase.tNu;
-		turbViscCoeff1.r() = (1. - thetaS_R()) * turbViscCoeff1();
-
-		philtTurbVisc = astProduct(
-				astProduct(turbViscCoeff1, gasPhase.density[0]), philtTurbVisc);
-
-		devTurbR = astProduct(astProduct(devTurbR, gasPhase.density[0]),
-				astProduct(gasPhase.tNu, thetaS_R));
-
-		for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-		{
-			/*Calculate turbulent pressure part*/
-			const scalar turbPressure { -twothirds * gasPhase.rhokTurb()[i] };
-			spherTurbR.r()[i] = tensor(turbPressure, 0, 0, 0, turbPressure, 0,
-					0, 0, turbPressure);
-		}
-	}
-
-	astProductSelf(devTotVisc1, effectiveCoeffs.mu);
-
-	astProductSelf(devPhysViscSurf, effectiveCoeffs.physMu);
-
-	/*Accounting of explicit part of effective viscosity tensor*/
-	const auto divDevTotVisc1 = divergence(devTotVisc1);
-	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-		for (std::size_t j = 0; j < vector::vsize; ++j)
-			velocityMatrix.SLE[j].freeTerm[i] += divDevTotVisc1()[i]()[j];
-
-	const auto divNonIdealityCorrectionLaplacian = divergence(
-			nonIdealityCorrectionLaplacian);
-
-	temperatureMatrix.SLE[0].freeTerm -= divNonIdealityCorrectionLaplacian();
-
-	//temperatureMatrix.distributeSourceTerm(
-	//		astProduct(divNonIdealityCorrectionLaplacian, -1.0),
-	//		diffFieldsOld.temperature, timestep);
-
-	if (msolver.solverType != matrixSolver::explicitSolver)
-	{
-		surfaceField<vector> entExplDiffFlowAfDif { mesh_, vector(0) };
-
-		concentrationsPack<quadraticSurface> surfaceConcentrationAfDif { mesh_,
-				gasPhase.phaseThermodynamics->Mv().size() };
-
-		for (std::size_t k = 1; k < surfaceConcentrationAfDif.v.size(); ++k)
-		{
-			surfaceConcentrationAfDif.v[k] = linearInterpolate(
-					calculatedConcentration.v[k], bncCalc);
-
-			surfaceConcentrationAfDif.v[0].r() +=
-					surfaceConcentrationAfDif.v[k]();
-		}
-
-		for (std::size_t k = 1; k < surfaceConcentrationAfDif.v.size(); ++k)
-			cellMolFrac[k - 1].r() = surfaceConcentrationAfDif.v[k]()
-					/ surfaceConcentrationAfDif.v[0]();
-
-		for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
-		{
-			explGradW[k] = surfGrad(diffFieldsOld.massFraction[k], bncCalc,
-					k + 1);
-
-			explGradX[k] = surfGrad(cellMolFrac[k], bncCalc, k + 1);
-		}
-
-		effectiveCoeffs.caclulateDFluxes(explGradX,
-				gasPhase.phaseThermodynamics->Mv(), surfaceConcentrationAfDif,
-				gasPhase.turbulence->turbulence());
-
-		for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
-		{
-			auto explDiffFlowW_k = astProduct(effectiveCoeffs.rhoD[k],
-					explGradW[k]);
-			astProductSelf(explDiffFlowW_k, -1);
-
-			/*Calculate enthalpy per mole per Kelvin (isobaric molar heat capacity) for k component*/
-			surfaceField<scalar> h_k { mesh_, 0 };
-			h_k.r() = gasPhase.phaseThermodynamics->hkT(
-					surfaceConcentrationAfDif.v[k + 1](), surfaceTemperature(),
-					k);
-
-			/*Calculating molar mass correction for diffusion flow and explicit enthalpy flow.*/
-			surfaceField<vector> massFrCorr_k { mesh_, vector(0) };
-			if (molMassDiffusionFlag)
-			{
-				surfaceField<vector> explDiffFlowX_k(mesh_, vector(0));
-
-				for (std::size_t i = 0; i < explDiffFlowX_k.size(); ++i)
-					explDiffFlowX_k.r()[i] = effectiveCoeffs.DFlux()[i][k];
-
-				massFrCorr_k.r() = explDiffFlowX_k() - explDiffFlowW_k();
-			}
-
-			for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
-			{
-				const vector entExplDiffFlow_k_i = (massFrCorr_k()[i]
-						+ explDiffFlowW_k()[i]) * h_k()[i]
-						/ gasPhase.phaseThermodynamics->Mv()[k];
-
-				entExplDiffFlowAfDif.r()[i] += entExplDiffFlow_k_i;
-			}
-		}
-
-		constexpr scalar we = 0.5;
-
-		entExplDiffFlow.r() = astProduct(entExplDiffFlowAfDif, we)()
-				+ astProduct(entExplDiffFlow, 1 - we)();
-	}
-
-	if (enthalpySolverFlag == enthalpyFlow::explicitSolve)
-	{
-		astProductSelf(entExplDiffFlow, surfaceTemperature);
-
-		const auto divEnthFlowLaplacian = divergence(entExplDiffFlow);
-
-		auto & nonConstMesh = const_cast<mesh&>(mesh_);
-
-		nonConstMesh.timestepSourceRef() =
-				timestepCoeffs.first
-						* (CCVOld() * gasPhase.temperature()
-								/ std::abs(
-										divEnthFlowLaplacian() + stabilizator)).min();
-
-		temperatureMatrix.SLE[0].freeTerm -= divEnthFlowLaplacian();
-
-		//temperatureMatrix.distributeSourceTerm(
-		//		astProduct(divEnthFlowLaplacian, -1), diffFieldsOld.temperature,
-		//		timestep);
-	}
-
-	temperatureMatrix.SLE[0].freeTerm += dampProduct(devPhysVisc, gradV)();
-
-	/*Calculating turbulent sources.*/
-	volumeField<scalar> sigmaSourcek { mesh_, scalar { 0 } };
-	volumeField<scalar> sigmaSourceeps { mesh_, 0 };
-	volumeField<vector> sigmaSourcea { mesh_, vector(0) };
-	volumeField<scalar> sigmaSourceb { mesh_, 0 };
-
-	volumeField<vector> gradMav_Mav { mesh_, vector { 0 } };
-
-	if (gasPhase.turbulence->turbulence())
-	{
-		auto turbViscCoeff1 = gasPhase.tNu;
-		turbViscCoeff1.r() = (1. - thetaS_R()) * turbViscCoeff1();
-
-		philtTurbVisc = astProduct(
-				astProduct(turbViscCoeff1, gasPhase.density[0]), philtTurbVisc);
-
-		devTurbR = astProduct(astProduct(devTurbR, gasPhase.density[0]),
-				astProduct(gasPhase.tNu, thetaS_R));
-
-		for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-		{
-			/*Calculate turbulent pressure part*/
-			const scalar turbPressure { -twothirds * gasPhase.rhokTurb()[i] };
-			spherTurbR.r()[i] = tensor(turbPressure, 0, 0, 0, turbPressure, 0,
-					0, 0, turbPressure);
-		}
-
-		if (gasPhase.turbulence->model() != turbulenceModel::zeroModel)
-			temperatureMatrix.SLE[0].freeTerm +=
-					gasPhase.turbulence->rhoepsilon(gasPhase,
-							*gasPhase.phaseThermodynamics);
-
-		if (gasPhase.turbulence->aField())
-			gradMav_Mav.r() = division(
-					grad(division(surfaceRho, surfaceConcentration.v[0])),
-					avMolMass)();
-
-		temperatureMatrix.SLE[0].freeTerm +=
-				dampProduct(philtTurbVisc, gradV)();
-
-		auto & nonConstMesh = const_cast<mesh&>(mesh_);
-
-		const auto [SourcekSuSp, SourceepsSuSp, SourceaSuSp, SourcebSuSp,
-				gravEnSink] = gasPhase.turbulence->calculate(
-				nonConstMesh.timestepSourceRef(), timestepCoeffs.first,
-				gasPhase, diffFieldsOld, gradV, divergence(devPhysViscSurf),
-				gradP, gradRho, grada, diva, gradb, spherTurbR, devTurbR,
-				gradMav_Mav, *(gasPhase.phaseThermodynamics), gasPhase.tNu);
-
-		if (msolver.solverType == matrixSolver::explicitSolver)
-		{
-			sigmaSourcek.r() = SourcekSuSp.first()
-					+ SourcekSuSp.second() * diffFieldsOld.k();
-			sigmaSourceeps.r() = SourceepsSuSp.first()
-					+ SourceepsSuSp.second() * diffFieldsOld.eps();
-
-			volumeField<vector> SpA(mesh_, vector(0));
-			for (std::size_t i = 0; i < SpA.size(); ++i)
-			{
-				const vector vec = vector(
-						SourceaSuSp.second()[i]()[0]
-								* diffFieldsOld.a()[i]()[0],
-						SourceaSuSp.second()[i]()[1]
-								* diffFieldsOld.a()[i]()[1],
-						SourceaSuSp.second()[i]()[2]
-								* diffFieldsOld.a()[i]()[2]);
-
-				sigmaSourcea.r()[i] = SourceaSuSp.first()[i] + vec;
-			}
-		}
-		else
-		{
-			kMatrix.freeSourceTerm(SourcekSuSp.first);
-			kMatrix.diagonaleSourceTerm(SourcekSuSp.second);
-
-			epsMatrix.freeSourceTerm(SourceepsSuSp.first);
-			epsMatrix.diagonaleSourceTerm(SourceepsSuSp.second);
+			if (msolver.solverType != matrixSolver::explicitSolver)
+				epsMatrix.generateDTimeLaplacian(diffFieldsCur.eps,
+						diffFieldsOld.eps * gasPhase.density[0],
+						gasPhase.density[0], effectiveCoeffs.rhoDeps, timestep,
+						bncCalc);
+			else
+				epsMatrix.generateDTimeExplicitLaplacian(diffFieldsCur.eps,
+						diffFieldsOld.eps * gasPhase.density[0],
+						gasPhase.density[0], effectiveCoeffs.rhoDeps, bncCalc);
 
 			if (gasPhase.turbulence->aField())
 			{
-				aMatrix.freeSourceTerm(SourceaSuSp.first);
-				aMatrix.diagonaleSourceTerm(SourceaSuSp.second);
+				if (msolver.solverType != matrixSolver::explicitSolver)
+					aMatrix.generateDTimeLaplacian(diffFieldsCur.a,
+							gasPhase.density[0],
+							gasPhase.density[0] * diffFieldsOld.a,
+							effectiveCoeffs.rhoDa, timestep, bncCalc);
+				else
+					aMatrix.generateDTimeExplicitLaplacian(diffFieldsCur.a,
+							gasPhase.density[0],
+							gasPhase.density[0] * diffFieldsOld.a,
+							effectiveCoeffs.rhoDa, bncCalc);
 
 				if (gasPhase.turbulence->bField())
 				{
-					bMatrix.freeSourceTerm(SourcebSuSp.first);
-					bMatrix.diagonaleSourceTerm(SourcebSuSp.second);
+					if (msolver.solverType != matrixSolver::explicitSolver)
+						bMatrix.generateDTimeLaplacian(diffFieldsCur.b,
+								diffFieldsOld.b * gasPhase.density[0],
+								gasPhase.density[0], effectiveCoeffs.rhoDb,
+								timestep, bncCalc);
+					else
+						bMatrix.generateDTimeExplicitLaplacian(diffFieldsCur.b,
+								diffFieldsOld.b * gasPhase.density[0],
+								gasPhase.density[0], effectiveCoeffs.rhoDb,
+								bncCalc);
 				}
 			}
 		}
 
-		switch (gasPhase.turbulence->model())
+		/*Generate SLE matrix for each component and calculate explicit diffusion fields.*/
+		for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
 		{
-		case turbulenceModel::kEpsAModel:
-		case turbulenceModel::BHRModel:
-		case turbulenceModel::BHR2Model:
-		case turbulenceModel::BHR3Model:
-		case turbulenceModel::BHRKLModel:
-		case turbulenceModel::arithmeticA1Model:
-		case turbulenceModel::arithmeticA2Model:
-		case turbulenceModel::arithmeticA3Model:
-		{
-			temperatureMatrix.SLE[0].freeTerm -= gravEnSink();
-
-			//temperatureMatrix.distributeSourceTerm(astProduct(gravEnSink, -1.0),
-			//		diffFieldsOld.temperature, timestep);
-		}
-			break;
-		default:
-			break;
-		}
-	}
-
-	/*Calculation of new velocity by components of vector*/
-	if (msolver.solverType != matrixSolver::explicitSolver)
-		diffFieldsNew.velocity.r() = msolver.solve(diffFieldsOld.velocity(),
-				velocityMatrix);
-	else
-		for (std::size_t j = 0; j < vector::vsize; ++j)
-			for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-				diffFieldsNew.velocity.r()[i].r()[j] =
-						(velocityMatrix.SLE[j].explOldTime[i]
-								+ velocityMatrix.SLE[j].freeTerm[i] * timestep)
-								/ velocityMatrix.SLE[j].centralDiagonale[i];
-
-	/*Calculation of new temperature*/
-	if (enthalpySolverFlag == enthalpyFlow::implicitSolve)
-	{
-		temperatureMatrix.addNabla(diffFieldsOld.temperature, entExplDiffFlow,
-				bncCalc);
-
-		if (msolver.solverType != matrixSolver::explicitSolver)
-			diffFieldsNew.temperature.r() = msolver.solve(
-					diffFieldsOld.temperature(), temperatureMatrix);
-		else
-			diffFieldsNew.temperature.r() = msolverForEnthalpy.solve(
-					diffFieldsOld.temperature(), temperatureMatrix);
-	}
-	else
-	{
-		if (msolver.solverType != matrixSolver::explicitSolver)
-			diffFieldsNew.temperature.r() = msolver.solve(
-					diffFieldsOld.temperature(), temperatureMatrix);
-		else
-			diffFieldsNew.temperature.r() =
-					(temperatureMatrix.SLE[0].explOldTime
-							+ temperatureMatrix.SLE[0].freeTerm * timestep)
-							/ temperatureMatrix.SLE[0].centralDiagonale;
-	}
-
-	if (gasPhase.turbulence->turbulence())
-	{
-		/*Explicit source integration*/
-		/*Calculation of new k*/
-		if (msolver.solverType != matrixSolver::explicitSolver)
-			diffFieldsNew.k.r() = msolver.solve(diffFieldsOld.k(), kMatrix);
-		else
-			diffFieldsNew.k.r() = (kMatrix.SLE[0].explOldTime
-					+ kMatrix.SLE[0].freeTerm * timestep)
-					/ kMatrix.SLE[0].centralDiagonale
-					+ sigmaSourcek() / gasPhase.density[0]() * timestep;
-
-		/*Calculation of new epsilon*/
-		if (msolver.solverType != matrixSolver::explicitSolver)
-			diffFieldsNew.eps.r() = msolver.solve(diffFieldsOld.eps(),
-					epsMatrix);
-		else
-			diffFieldsNew.eps.r() = (epsMatrix.SLE[0].explOldTime
-					+ epsMatrix.SLE[0].freeTerm * timestep)
-					/ epsMatrix.SLE[0].centralDiagonale
-					+ sigmaSourceeps() / gasPhase.density[0]() * timestep;
-
-		if (gasPhase.turbulence->aField())
-		{
-			/*Calculation of new a by components of vector*/
 			if (msolver.solverType != matrixSolver::explicitSolver)
-				diffFieldsNew.a.r() = msolver.solve(diffFieldsOld.a(), aMatrix);
+				massFractionMatrix[k].generateDTimeLaplacian(
+						diffFieldsCur.massFraction[k],
+						diffFieldsOld.massFraction[k] * gasPhase.density[0],
+						gasPhase.density[0], effectiveCoeffs.rhoD[k], timestep,
+						bncCalc, k + 1);
 			else
-			{
-				for (std::size_t j = 0; j < vector::vsize; ++j)
-					for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-						diffFieldsNew.a.r()[i].r()[j] =
-								(aMatrix.SLE[j].explOldTime[i]
-										+ aMatrix.SLE[j].freeTerm[i] * timestep)
-										/ aMatrix.SLE[j].centralDiagonale[i];
+				massFractionMatrix[k].generateDTimeExplicitLaplacian(
+						diffFieldsCur.massFraction[k],
+						diffFieldsOld.massFraction[k] * gasPhase.density[0],
+						gasPhase.density[0], effectiveCoeffs.rhoD[k], bncCalc,
+						k + 1);
+		}
 
-				diffFieldsNew.a.r() +=
-						astProduct(division(sigmaSourcea, gasPhase.density[0]),
-								timestep)();
+		std::vector<volumeField<scalar>> cellMolFrac(massFractionMatrix.size(),
+				volumeField<scalar>(mesh_, 0));
+		for (std::size_t k = 1; k < gasPhase.concentration.v.size(); ++k)
+		{
+			std::vector<boundaryConditionType> bndCon(commonConditions);
+			std::replace(bndCon.begin(), bndCon.end(),
+					boundaryConditionType::calculated,
+					boundaryConditionType::calculatedMolarFraction);
+			cellMolFrac[k - 1] = volumeField<scalar>(mesh_, 0,
+					subPatchData<scalar> { bndCon[0] }, subPatchData<scalar> {
+							bndCon[1] }, subPatchData<scalar> { bndCon[2] },
+					subPatchData<scalar> { bndCon[3] }, subPatchData<scalar> {
+							bndCon[4] }, subPatchData<scalar> { bndCon[5] });
+
+			cellMolFrac[k - 1].val() = (gasPhase.concentration.v[k]
+					/ gasPhase.concentration.v[0]).cval();
+		}
+
+		std::vector<surfaceField<vector>> explGradW { massFractionMatrix.size(),
+				surfaceField<vector>(mesh_, vector(0)) };
+		std::vector<surfaceField<vector>> explGradX { massFractionMatrix.size(),
+				surfaceField<vector>(mesh_, vector(0)) };
+
+		surfaceField<vector> entExplDiffFlow { mesh_, vector(0) };
+
+		if (molMassDiffusionFlag
+				|| (enthalpySolverFlag != enthalpyFlow::noSolve))
+		{
+			for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+				explGradW[k] = surfGrad(diffFieldsCur.massFraction[k], bncCalc,
+						k + 1);
+
+			if (molMassDiffusionFlag)
+			{
+				for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+					explGradX[k] = surfGrad(cellMolFrac[k], bncCalc, k + 1);
+
+				effectiveCoeffs.caclulateDFluxes(explGradX,
+						gasPhase.phaseThermodynamics->Mv(),
+						surfaceConcentration,
+						gasPhase.turbulence->turbulence());
 			}
 
-			/*Calculation of new b*/
-			if (gasPhase.turbulence->bField())
+			for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+			{
+				const auto explDiffFlowW_k = -1 * effectiveCoeffs.rhoD[k]
+						* explGradW[k];
+
+				/*Calculating molar mass correction for diffusion flow and explicit enthalpy flow.*/
+				surfaceField<vector> massFrCorr_k { mesh_, vector(0) };
+				if (molMassDiffusionFlag)
+				{
+					surfaceField<vector> explDiffFlowX_k(mesh_, vector(0));
+
+					for (std::size_t i = 0; i < explDiffFlowX_k.size(); ++i)
+						explDiffFlowX_k.val()[i] =
+								effectiveCoeffs.DFlux.cval()[i][k];
+
+					massFrCorr_k = explDiffFlowX_k - explDiffFlowW_k;
+
+					const auto divMolMassFlow = divergence(massFrCorr_k);
+
+					if constexpr (distributionOn)
+						massFractionMatrix[k].distributeSourceTerm(
+								divMolMassFlow * (-1.0),
+								diffFieldsCur.massFraction[k]);
+					else
+						massFractionMatrix[k].SLE[0].freeTerm -=
+								divMolMassFlow.cval();
+				}
+
+				if (enthalpySolverFlag != enthalpyFlow::noSolve)
+				{
+					/*Calculate enthalpy per mole per Kelvin (isobaric molar heat capacity) for k component*/
+					surfaceField<scalar> h_k { mesh_, 0 };
+					h_k.val() = gasPhase.phaseThermodynamics->hkT(
+							surfaceConcentration.v[k + 1].cval(),
+							surfaceTemperature.cval(), k);
+
+					entExplDiffFlow += (massFrCorr_k + explDiffFlowW_k) * h_k
+							/ gasPhase.phaseThermodynamics->Mv()[k];
+				}
+			}
+		}
+
+		/*Calculation of resulting nonideality correction in laplacian*/
+		const auto nonIdFlow = -1
+				* (gradCvM * surfaceTemperature + gradNonIdRho);
+		const auto nonIdealityCorrectionLaplacian = nonIdFlow * surfaceRho
+				* effectiveCoeffs.tLambda;
+
+		/*Calculation of new mass fraction*/
+		{
+			volumeField<scalar> sumMassFrac(mesh_, 0.);
+
+			for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
 			{
 				if (msolver.solverType != matrixSolver::explicitSolver)
-					diffFieldsNew.b.r() = msolver.solve(diffFieldsOld.b(),
-							bMatrix);
+					diffFieldsNew.massFraction[k].val() = msolver.solve(
+							diffFieldsCur.massFraction[k].cval(),
+							massFractionMatrix[k]);
 				else
-					diffFieldsNew.b.r() = (bMatrix.SLE[0].explOldTime
-							+ bMatrix.SLE[0].freeTerm * timestep)
-							/ bMatrix.SLE[0].centralDiagonale
-							+ sigmaSourceb() / gasPhase.density[0]() * timestep;
+					diffFieldsNew.massFraction[k].val() =
+							(massFractionMatrix[k].SLE[0].explOldTime
+									+ massFractionMatrix[k].SLE[0].freeTerm
+											* timestep)
+									/ massFractionMatrix[k].SLE[0].centralDiagonale;
+
+				std::replace_if(std::begin(diffFieldsNew.massFraction[k].val()),
+						std::end(diffFieldsNew.massFraction[k].val()),
+						[](const scalar value) 
+						{
+							return value < 0.;
+						}, 0.0);
+
+				sumMassFrac += diffFieldsNew.massFraction[k];
+			}
+
+			for (auto & newMassFrac_k : diffFieldsNew.massFraction)
+				newMassFrac_k /= sumMassFrac;
+		}
+
+		/*Calculation of new concentrations*/
+		calculatedConcentration.v[0].val() = 0;
+		for (std::size_t k = 1; k < calculatedConcentration.v.size(); ++k)
+		{
+			calculatedConcentration.v[k].boundCond_wr() =
+					gasPhase.concentration.v[k].boundCond();
+
+			calculatedConcentration.v[k].val() = (diffFieldsNew.massFraction[k
+					- 1].cval() * gasPhase.density[0].cval()
+					/ gasPhase.phaseThermodynamics->Mv()[k - 1]);
+
+			calculatedConcentration.v[0] += calculatedConcentration.v[k];
+		}
+
+		CCVNew.val() = gasPhase.phaseThermodynamics->Cv(
+				calculatedConcentration.p)
+				* calculatedConcentration.v[0].cval();
+		nonIdealCorrectionNew.val() = gasPhase.phaseThermodynamics->nonIdeality(
+				calculatedConcentration.p, diffFieldsCur.temperature.cval());
+
+		const auto oldEnergyField = CCVOld * diffFieldsOld.temperature
+				+ nonIdealCorrectionOld - nonIdealCorrectionNew;
+
+		/*Generate SLE matrix for components of the velocity vector.*/
+		if (msolver.solverType != matrixSolver::explicitSolver)
+			velocityMatrix.generateDTimeLaplacian(diffFieldsCur.velocity,
+					gasPhase.density[0],
+					gasPhase.density[0] * diffFieldsOld.velocity,
+					effectiveCoeffs.mu, timestep, bncCalc);
+		else
+			velocityMatrix.generateDTimeExplicitLaplacian(
+					diffFieldsCur.velocity, gasPhase.density[0],
+					gasPhase.density[0] * diffFieldsOld.velocity,
+					effectiveCoeffs.mu, bncCalc);
+
+		if (msolver.solverType != matrixSolver::explicitSolver)
+			temperatureMatrix.generateDTimeLaplacian(diffFieldsCur.temperature,
+					oldEnergyField, CCVNew, effectiveCoeffs.kappa, timestep,
+					bncCalc);
+		else
+			temperatureMatrix.generateDTimeExplicitLaplacian(
+					diffFieldsCur.temperature, oldEnergyField, CCVNew,
+					effectiveCoeffs.kappa, bncCalc);
+
+		/*Explicit deviatoric part of molecular viscosity tensor for energy computation.*/
+		const auto devPhysVisc = strainVol * gasPhase.physMu;
+
+		/*Deviatoric part of effective viscosity tensor minus velocity gradient for velocity matrix.*/
+		const auto devTotVisc1Surf = strainSurf1 * effectiveCoeffs.mu;
+
+		volumeField<tensor> grada { mesh_, tensor(0) };
+		volumeField<scalar> diva { mesh_, 0 };
+		volumeField<vector> gradb { mesh_, vector(0) };
+		surfaceField<tensor> devPhysViscSurf { mesh_, tensor(0) };
+
+		if (gasPhase.turbulence->turbulence())
+		{
+			switch (gasPhase.turbulence->model())
+			{
+			case turbulenceModel::kEpsAModel:
+			{
+				const auto & kEpsA =
+						dynamic_cast<kEpsAModel&>(*gasPhase.turbulence);
+
+				diffFieldsCur.b.val() = kEpsA.calculate_b(mesh_,
+						gasPhase.concentration.v, gasPhase.density).cval();
+				diffFieldsNew.b.val() = diffFieldsCur.b.cval();
+
+				if (linearRec || isNotFirstIter)
+				{
+					grada = grad(diffFieldsCur.a, bncCalc);
+					diva = divergence(diffFieldsCur.a, bncCalc);
+				}
+				else
+				{
+					grada = grad(star.a);
+					diva = divergence(star.a);
+				}
+			}
+				break;
+			case turbulenceModel::arithmeticA1Model:
+			case turbulenceModel::arithmeticA2Model:
+			case turbulenceModel::arithmeticA3Model:
+			{
+				const auto & arithmetic =
+						dynamic_cast<arithmeticAModel&>(*gasPhase.turbulence);
+
+				diffFieldsCur.a.val() = arithmetic.calculate_a(
+						gasPhase.turbulence->model(), mesh_, gasPhase, gradRho,
+						gradP).cval();
+
+				grada = grad(diffFieldsCur.a, bncCalc);
+				diva = divergence(diffFieldsCur.a, bncCalc);
+			}
+				break;
+			case turbulenceModel::BHRModel:
+			case turbulenceModel::BHRKLModel:
+			{
+				if (linearRec || isNotFirstIter)
+				{
+					grada = grad(diffFieldsCur.a, bncCalc);
+					diva = divergence(diffFieldsCur.a, bncCalc);
+					gradb = grad(diffFieldsCur.b, bncCalc);
+				}
+				else
+				{
+					grada = grad(star.a);
+					diva = divergence(star.a);
+					gradb = grad(star.b);
+				}
+			}
+				break;
+			default:
+				break;
+			}
+
+			devPhysViscSurf = strainSurf * effectiveCoeffs.physMu;
+		}
+
+		/*Reynolds tensor's components for turbulence model.*/
+		volumeField<tensor> spherTurbR { mesh_, tensor(0) };
+		volumeField<tensor> devTurbR { mesh_, tensor(0) };
+		/*Part of Reynolds tensor, which converts kinetic energy directly into internal.*/
+		volumeField<tensor> philtTurbVisc { mesh_, tensor(0) };
+
+		if (gasPhase.turbulence->turbulence())
+		{
+			const auto tNu1 = (1. - thetaS_R) * gasPhase.tNu;
+
+			philtTurbVisc = strainVol * gasPhase.density[0] * tNu1;
+
+			devTurbR = strainVol * gasPhase.density[0] * gasPhase.tNu
+					* thetaS_R;
+
+			/*Calculate turbulent pressure part*/
+			spherTurbR = tensor(1, 0, 0, 0, 1, 0, 0, 0, 1) * -twothirds
+					* gasPhase.rhokTurb;
+		}
+
+		/*Accounting of explicit part of effective viscosity tensor*/
+		const auto divDevTotVisc1 = divergence(devTotVisc1Surf);
+		for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
+			for (std::size_t j = 0; j < vector::vsize; ++j)
+				velocityMatrix.SLE[j].freeTerm[i] +=
+						divDevTotVisc1.cval()[i]()[j];
+
+		const auto divNonIdealityCorrectionLaplacian = divergence(
+				nonIdealityCorrectionLaplacian);
+
+		if constexpr (distributionOn)
+			temperatureMatrix.distributeSourceTerm(
+					divNonIdealityCorrectionLaplacian * (-1.0),
+					diffFieldsCur.temperature);
+		else
+			temperatureMatrix.SLE[0].freeTerm -=
+					divNonIdealityCorrectionLaplacian.cval();
+
+		if ((msolver.solverType != matrixSolver::explicitSolver)
+				&& (enthalpySolverFlag != enthalpyFlow::noSolve))
+		{
+			surfaceField<vector> entExplDiffFlowAfDif { mesh_, vector(0) };
+
+			concentrationsPack<quadraticSurface> surfaceConcentrationAfDif {
+					mesh_, gasPhase.phaseThermodynamics->Mv().size() };
+
+			for (std::size_t k = 1; k < surfaceConcentrationAfDif.v.size(); ++k)
+			{
+				surfaceConcentrationAfDif.v[k] = linearInterpolate(
+						calculatedConcentration.v[k], bncCalc);
+
+				surfaceConcentrationAfDif.v[0] +=
+						surfaceConcentrationAfDif.v[k];
+			}
+
+			for (std::size_t k = 1; k < calculatedConcentration.v.size(); ++k)
+				cellMolFrac[k - 1].val() = (calculatedConcentration.v[k]
+						/ calculatedConcentration.v[0]).cval();
+
+			for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+				explGradW[k] = surfGrad(diffFieldsCur.massFraction[k], bncCalc,
+						k + 1);
+
+			if (molMassDiffusionFlag)
+			{
+				for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+					explGradX[k] = surfGrad(cellMolFrac[k], bncCalc, k + 1);
+
+				effectiveCoeffs.caclulateDFluxes(explGradX,
+						gasPhase.phaseThermodynamics->Mv(),
+						surfaceConcentrationAfDif,
+						gasPhase.turbulence->turbulence());
+			}
+
+			for (std::size_t k = 0; k < massFractionMatrix.size(); ++k)
+			{
+				const auto explDiffFlowW_k = -1 * effectiveCoeffs.rhoD[k]
+						* explGradW[k];
+
+				/*Calculating molar mass correction for diffusion flow and explicit enthalpy flow.*/
+				surfaceField<vector> massFrCorr_k { mesh_, vector(0) };
+				if (molMassDiffusionFlag)
+				{
+					surfaceField<vector> explDiffFlowX_k(mesh_, vector(0));
+
+					for (std::size_t i = 0; i < explDiffFlowX_k.size(); ++i)
+						explDiffFlowX_k.val()[i] =
+								effectiveCoeffs.DFlux.cval()[i][k];
+
+					massFrCorr_k = explDiffFlowX_k - explDiffFlowW_k;
+				}
+
+				/*Calculate enthalpy per mole per Kelvin (isobaric molar heat capacity) for k component*/
+				surfaceField<scalar> h_k { mesh_, 0 };
+				h_k.val() = gasPhase.phaseThermodynamics->hkT(
+						surfaceConcentrationAfDif.v[k + 1].cval(),
+						surfaceTemperature.cval(), k);
+
+				entExplDiffFlowAfDif += (massFrCorr_k + explDiffFlowW_k) * h_k
+						/ gasPhase.phaseThermodynamics->Mv()[k];
+			}
+
+			constexpr scalar we = 0.5;
+
+			entExplDiffFlow = (entExplDiffFlowAfDif * we)
+					+ (entExplDiffFlow * (1 - we));
+		}
+
+		if (enthalpySolverFlag == enthalpyFlow::explicitSolve)
+		{
+			entExplDiffFlow *= surfaceTemperature;
+
+			const auto divEnthFlow = divergence(entExplDiffFlow);
+
+			auto & nonConstMesh = const_cast<mesh&>(mesh_);
+
+			nonConstMesh.timestepSourceRef() =
+					timestepCoeffs.first
+							* (CCVOld.cval() * diffFieldsOld.temperature.cval()
+									/ std::abs(
+											divEnthFlow.cval() + stabilizator)).min();
+
+			if constexpr (distributionOn)
+				temperatureMatrix.distributeSourceTerm(divEnthFlow * -1,
+						diffFieldsCur.temperature);
+			else
+				temperatureMatrix.SLE[0].freeTerm -= divEnthFlow.cval();
+		}
+
+		temperatureMatrix.SLE[0].freeTerm += (devPhysVisc && gradV).cval();
+
+		/*Calculating turbulent sources.*/
+		volumeField<scalar> sigmaSourcek { mesh_, scalar { 0 } };
+		volumeField<scalar> sigmaSourceeps { mesh_, 0 };
+		volumeField<vector> sigmaSourcea { mesh_, vector(0) };
+		volumeField<scalar> sigmaSourceb { mesh_, 0 };
+
+		volumeField<vector> gradMav_Mav { mesh_, vector { 0 } };
+
+		if (gasPhase.turbulence->turbulence())
+		{
+			if (gasPhase.turbulence->model() != turbulenceModel::zeroModel)
+				temperatureMatrix.SLE[0].freeTerm +=
+						gasPhase.turbulence->rhoepsilon(gasPhase,
+								*gasPhase.phaseThermodynamics, diffFieldsCur.k,
+								diffFieldsCur.eps);
+
+			if (gasPhase.turbulence->aField())
+				gradMav_Mav = grad(surfaceRho / surfaceConcentration.v[0])
+						/ avMolMass;
+
+			temperatureMatrix.SLE[0].freeTerm +=
+					(philtTurbVisc && gradV).cval();
+
+			auto & nonConstMesh = const_cast<mesh&>(mesh_);
+
+			const auto [SourcekSuSp, SourceepsSuSp, SourceaSuSp, SourcebSuSp,
+					gravEnSink] = gasPhase.turbulence->calculate(
+					nonConstMesh.timestepSourceRef(), timestepCoeffs.first,
+					gasPhase, diffFieldsCur, gradV, divergence(devPhysViscSurf),
+					gradP, gradRho, grada, diva, gradb, spherTurbR, devTurbR,
+					gradMav_Mav, *(gasPhase.phaseThermodynamics), gasPhase.tNu);
+
+			if (msolver.solverType == matrixSolver::explicitSolver)
+			{
+				sigmaSourcek = SourcekSuSp.first
+						+ SourcekSuSp.second * diffFieldsCur.k;
+				sigmaSourceeps = SourceepsSuSp.first
+						+ SourceepsSuSp.second * diffFieldsCur.eps;
+
+				for (std::size_t i = 0; i < sigmaSourcea.size(); ++i)
+				{
+					const vector vec = vector(
+							SourceaSuSp.second.cval()[i]()[0]
+									* diffFieldsCur.a.cval()[i]()[0],
+							SourceaSuSp.second.cval()[i]()[1]
+									* diffFieldsCur.a.cval()[i]()[1],
+							SourceaSuSp.second.cval()[i]()[2]
+									* diffFieldsCur.a.cval()[i]()[2]);
+
+					sigmaSourcea.val()[i] = SourceaSuSp.first.cval()[i] + vec;
+				}
+			}
+			else
+			{
+				kMatrix.freeSourceTerm(SourcekSuSp.first);
+				kMatrix.diagonaleSourceTerm(SourcekSuSp.second);
+
+				epsMatrix.freeSourceTerm(SourceepsSuSp.first);
+				epsMatrix.diagonaleSourceTerm(SourceepsSuSp.second);
+
+				if (gasPhase.turbulence->aField())
+				{
+					aMatrix.freeSourceTerm(SourceaSuSp.first);
+					aMatrix.diagonaleSourceTerm(SourceaSuSp.second);
+
+					if (gasPhase.turbulence->bField())
+					{
+						bMatrix.freeSourceTerm(SourcebSuSp.first);
+						bMatrix.diagonaleSourceTerm(SourcebSuSp.second);
+					}
+				}
+			}
+
+			switch (gasPhase.turbulence->model())
+			{
+			case turbulenceModel::kEpsAModel:
+			case turbulenceModel::BHRModel:
+			case turbulenceModel::BHRKLModel:
+			case turbulenceModel::arithmeticA1Model:
+			case turbulenceModel::arithmeticA2Model:
+			case turbulenceModel::arithmeticA3Model:
+			{
+				if constexpr (distributionOn)
+					temperatureMatrix.distributeSourceTerm(gravEnSink * (-1.0),
+							diffFieldsCur.temperature);
+				else
+					temperatureMatrix.SLE[0].freeTerm -= gravEnSink.cval();
+			}
+				break;
+			default:
+				break;
 			}
 		}
 
-		/*Check for non-negativity turbulent quantities.*/
-		std::replace_if(std::begin(diffFieldsNew.k.r()),
-				std::end(diffFieldsNew.k.r()), [&gasPhase](const scalar value) 
-				{
-					return value < gasPhase.turbulence->mink();
-				}, gasPhase.turbulence->mink());
+		/*Calculation of new velocity by components of vector*/
+		if (msolver.solverType != matrixSolver::explicitSolver)
+			diffFieldsNew.velocity.val() = msolver.solve(
+					diffFieldsCur.velocity.cval(), velocityMatrix);
+		else
+			for (std::size_t j = 0; j < vector::vsize; ++j)
+				for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
+					diffFieldsNew.velocity.val()[i].wr()[j] =
+							(velocityMatrix.SLE[j].explOldTime[i]
+									+ velocityMatrix.SLE[j].freeTerm[i]
+											* timestep)
+									/ velocityMatrix.SLE[j].centralDiagonale[i];
 
-		std::replace_if(std::begin(diffFieldsNew.eps.r()),
-				std::end(diffFieldsNew.eps.r()), [&gasPhase](const scalar value) 
-				{
-					return value < gasPhase.turbulence->minepsilon();
-				}, gasPhase.turbulence->minepsilon());
+		/*Calculation of new temperature*/
+		if (enthalpySolverFlag == enthalpyFlow::implicitSolve)
+		{
+			temperatureMatrix.addNabla(diffFieldsCur.temperature,
+					entExplDiffFlow, bncCalc);
 
-		if (gasPhase.turbulence->bField())
-			std::replace_if(std::begin(diffFieldsNew.b.r()),
-					std::end(diffFieldsNew.b.r()),
+			if (msolver.solverType != matrixSolver::explicitSolver)
+				diffFieldsNew.temperature.val() = msolver.solve(
+						diffFieldsCur.temperature.cval(), temperatureMatrix);
+			else
+				diffFieldsNew.temperature.val() = msolverForEnthalpy.solve(
+						diffFieldsCur.temperature.cval(), temperatureMatrix);
+		}
+		else
+		{
+			if (msolver.solverType != matrixSolver::explicitSolver)
+				diffFieldsNew.temperature.val() = msolver.solve(
+						diffFieldsCur.temperature.cval(), temperatureMatrix);
+			else
+				diffFieldsNew.temperature.val() =
+						(temperatureMatrix.SLE[0].explOldTime
+								+ temperatureMatrix.SLE[0].freeTerm * timestep)
+								/ temperatureMatrix.SLE[0].centralDiagonale;
+		}
+
+		if (gasPhase.turbulence->turbulence())
+		{
+			/*Explicit source integration*/
+			/*Calculation of new k*/
+			if (msolver.solverType != matrixSolver::explicitSolver)
+				diffFieldsNew.k.val() = msolver.solve(diffFieldsCur.k.cval(),
+						kMatrix);
+			else
+				diffFieldsNew.k.val() = (kMatrix.SLE[0].explOldTime
+						+ kMatrix.SLE[0].freeTerm * timestep)
+						/ kMatrix.SLE[0].centralDiagonale
+						+ sigmaSourcek.cval() / gasPhase.density[0].cval()
+								* timestep;
+
+			/*Calculation of new epsilon*/
+			if (msolver.solverType != matrixSolver::explicitSolver)
+				diffFieldsNew.eps.val() = msolver.solve(
+						diffFieldsCur.eps.cval(), epsMatrix);
+			else
+				diffFieldsNew.eps.val() = (epsMatrix.SLE[0].explOldTime
+						+ epsMatrix.SLE[0].freeTerm * timestep)
+						/ epsMatrix.SLE[0].centralDiagonale
+						+ sigmaSourceeps.cval() / gasPhase.density[0].cval()
+								* timestep;
+
+			if (gasPhase.turbulence->aField())
+			{
+				/*Calculation of new a by components of vector*/
+				if (msolver.solverType != matrixSolver::explicitSolver)
+					diffFieldsNew.a.val() = msolver.solve(
+							diffFieldsCur.a.cval(), aMatrix);
+				else
+				{
+					for (std::size_t j = 0; j < vector::vsize; ++j)
+						for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
+							diffFieldsNew.a.val()[i].wr()[j] =
+									(aMatrix.SLE[j].explOldTime[i]
+											+ aMatrix.SLE[j].freeTerm[i]
+													* timestep)
+											/ aMatrix.SLE[j].centralDiagonale[i];
+
+					diffFieldsNew.a.val() += (sigmaSourcea / gasPhase.density[0]
+							* timestep).cval();
+				}
+
+				/*Calculation of new b*/
+				if (gasPhase.turbulence->bField())
+				{
+					if (msolver.solverType != matrixSolver::explicitSolver)
+						diffFieldsNew.b.val() = msolver.solve(
+								diffFieldsCur.b.cval(), bMatrix);
+					else
+						diffFieldsNew.b.val() = (bMatrix.SLE[0].explOldTime
+								+ bMatrix.SLE[0].freeTerm * timestep)
+								/ bMatrix.SLE[0].centralDiagonale
+								+ sigmaSourceb.cval()
+										/ gasPhase.density[0].cval() * timestep;
+				}
+			}
+
+			/*Check for non-negativity turbulent quantities.*/
+			std::replace_if(std::begin(diffFieldsNew.k.val()),
+					std::end(diffFieldsNew.k.val()),
 					[&gasPhase](const scalar value) 
 					{
-						return value < gasPhase.turbulence->minb();
-					}, gasPhase.turbulence->minb());
+						return value < gasPhase.turbulence->mink();
+					}, gasPhase.turbulence->mink());
+
+			std::replace_if(std::begin(diffFieldsNew.eps.val()),
+					std::end(diffFieldsNew.eps.val()),
+					[&gasPhase](const scalar value) 
+					{
+						return value < gasPhase.turbulence->minepsilon();
+					}, gasPhase.turbulence->minepsilon());
+
+			if (gasPhase.turbulence->bField())
+				std::replace_if(std::begin(diffFieldsNew.b.val()),
+						std::end(diffFieldsNew.b.val()),
+						[&gasPhase](const scalar value) 
+						{
+							return value < gasPhase.turbulence->minb();
+						}, gasPhase.turbulence->minb());
+		}
+
+		auto deltaEpsMax = std::abs(
+				(diffFieldsNew.eps.cval() - diffFieldsCur.eps.cval())
+						/ (diffFieldsOld.eps.cval() + stabilizator)).max();
+
+#ifdef MPI_VERSION
+		/*Calculate parallel timestep*/
+		{
+			const MPIHandler::mpi_scalar deltaEpsMax_arr[1] { deltaEpsMax };
+
+			std::vector<MPIHandler::mpi_scalar> nodesDelta(0);
+			if (parallelism.isRoot())
+				nodesDelta.resize(parallelism.mpi_size);
+
+			MPI_Gather(deltaEpsMax_arr, 1, schemi_MPI_SCALAR, nodesDelta.data(),
+					1,
+					schemi_MPI_SCALAR, parallelism.root,
+					MPI_COMM_WORLD);
+
+			MPIHandler::mpi_scalar maxOfAll[1] { -1.23 };
+			if (parallelism.isRoot())
+			{
+				std::valarray<scalar> deltaEps_max(parallelism.mpi_size);
+
+				for (std::size_t i = 0; i < deltaEps_max.size(); ++i)
+					deltaEps_max[i] = nodesDelta[i];
+
+				maxOfAll[0] = deltaEps_max.max();
+			}
+			MPI_Bcast(maxOfAll, 1, schemi_MPI_SCALAR, parallelism.root,
+			MPI_COMM_WORLD);
+
+			deltaEpsMax = maxOfAll[0];
+		}
+#endif
+
+		if (deltaEpsMax < convergenceToleranceGlobal * 1E4
+				|| nonLinearIteration > 100 * nonLinearityIteratonsFlag)
+			break;
+		else
+		{
+			diffFieldsCur = diffFieldsNew;
+
+			nonLinearIteration++;
+		}
 	}
 
 	/*Recalculation of values in cells*/
-	gasPhase.concentration.v[0].r() = calculatedConcentration.v[0]();
+	gasPhase.concentration.v[0].val() = calculatedConcentration.v[0].cval();
 	for (std::size_t k = 1; k < gasPhase.density.size(); ++k)
 	{
-		gasPhase.concentration.v[k].r() = calculatedConcentration.v[k]();
+		gasPhase.concentration.v[k].val() = calculatedConcentration.v[k].cval();
 
-		gasPhase.density[k].r() = gasPhase.concentration.v[k]()
-				* gasPhase.phaseThermodynamics->Mv()[k - 1];
+		gasPhase.density[k].val() = (gasPhase.concentration.v[k]
+				* gasPhase.phaseThermodynamics->Mv()[k - 1]).cval();
 	}
 
-	gasPhase.velocity.r() = diffFieldsNew.velocity();
+	gasPhase.velocity.val() = diffFieldsNew.velocity.cval();
 
-	gasPhase.momentum.r() =
-			astProduct(gasPhase.velocity, gasPhase.density[0])();
+	gasPhase.momentum.val() = (gasPhase.velocity * gasPhase.density[0]).cval();
 
-	gasPhase.temperature.r() = diffFieldsNew.temperature();
+	gasPhase.temperature.val() = diffFieldsNew.temperature.cval();
 
-	gasPhase.internalEnergy.r() = gasPhase.phaseThermodynamics->UvcFromT(
-			gasPhase.concentration.p, gasPhase.temperature())
-			* gasPhase.concentration.v[0]();
+	gasPhase.internalEnergy.val() = gasPhase.phaseThermodynamics->UvcFromT(
+			gasPhase.concentration.p, gasPhase.temperature.cval())
+			* gasPhase.concentration.v[0].cval();
 
-	gasPhase.pressure.r() = gasPhase.phaseThermodynamics->pFromUv(
-			gasPhase.concentration.p, gasPhase.internalEnergy());
+	gasPhase.pressure.val() = gasPhase.phaseThermodynamics->pFromUv(
+			gasPhase.concentration.p, gasPhase.internalEnergy.cval());
 
 	if (gasPhase.turbulence->turbulence())
 	{
-		gasPhase.kTurb.r() = diffFieldsNew.k();
-		gasPhase.epsTurb.r() = diffFieldsNew.eps();
+		gasPhase.kTurb.val() = diffFieldsNew.k.cval();
+		gasPhase.epsTurb.val() = diffFieldsNew.eps.cval();
 		if (gasPhase.turbulence->aField())
 		{
-			gasPhase.aTurb.r() = diffFieldsNew.a();
-			gasPhase.bTurb.r() = diffFieldsNew.b();
+			gasPhase.aTurb.val() = diffFieldsNew.a.cval();
+			gasPhase.bTurb.val() = diffFieldsNew.b.cval();
 		}
 
-		gasPhase.rhokTurb.r() =
-				astProduct(gasPhase.kTurb, gasPhase.density[0])();
-		gasPhase.rhoepsTurb.r() = gasPhase.epsTurb() * gasPhase.density[0]();
+		gasPhase.rhokTurb.val() = (gasPhase.kTurb * gasPhase.density[0]).cval();
+		gasPhase.rhoepsTurb.val() = gasPhase.epsTurb.cval()
+				* gasPhase.density[0].cval();
 		if (gasPhase.turbulence->aField())
 		{
-			gasPhase.rhoaTurb.r() = astProduct(gasPhase.aTurb,
-					gasPhase.density[0])();
+			gasPhase.rhoaTurb.val() =
+					(gasPhase.aTurb * gasPhase.density[0]).cval();
 
 			if (gasPhase.turbulence->bField())
-				gasPhase.rhobTurb.r() = gasPhase.bTurb()
-						* gasPhase.density[0]();
+				gasPhase.rhobTurb.val() =
+						(gasPhase.bTurb * gasPhase.density[0]).cval();
 		}
 	}
 
 	{
-		const auto v2 = ampProduct(gasPhase.velocity, gasPhase.velocity);
+		const auto v2 = gasPhase.velocity & gasPhase.velocity;
 
-		gasPhase.totalEnergy.r() = gasPhase.internalEnergy()
-				+ gasPhase.density[0]() * v2() * 0.5 + gasPhase.rhokTurb();
+		gasPhase.totalEnergy.val() = (gasPhase.internalEnergy
+				+ gasPhase.density[0] * v2 * 0.5 + gasPhase.rhokTurb).cval();
 	}
 
-	gasPhase.HelmholtzEnergy.r() = gasPhase.phaseThermodynamics->Fv(
-			gasPhase.concentration.p, gasPhase.temperature.r());
+	gasPhase.HelmholtzEnergy.val() = gasPhase.phaseThermodynamics->Fv(
+			gasPhase.concentration.p, gasPhase.temperature.cval());
 
-	gasPhase.entropy.r() = gasPhase.phaseThermodynamics->Sv(
-			gasPhase.concentration.p, gasPhase.temperature());
+	gasPhase.entropy.val() = gasPhase.phaseThermodynamics->Sv(
+			gasPhase.concentration.p, gasPhase.temperature.cval());
 
 	/*Diffusion time-step.*/
 	if (sourceTimeFlag == timestep::CourantAndSourceAndDiffusionTimeStep)
 	{
 		const auto maxVal = effectiveCoeffs.maxValue(
 				gasPhase.turbulence->turbulence(),
-				gasPhase.turbulence->aField(), gasPhase.turbulence->bField());
+				gasPhase.turbulence->aField(), gasPhase.turbulence->bField(),
+				surfaceRho);
 
 		const scalar diffuse_dt = 0.5 * timestepCoeffs.second
-				/ (linearInterpolate(maxVal)() * minimalLengthScale()
-						* minimalLengthScale()).min();
+				/ (linearInterpolate(maxVal).cval() * minimalLengthScale.cval()
+						* minimalLengthScale.cval()).min();
 
 		auto & nonConstMesh = const_cast<mesh&>(mesh_);
 
@@ -998,7 +1048,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 				nonConstMesh.timestepSource(), diffuse_dt);
 	}
 
-	if (gasPhase.temperature().min() < 0.)
+	if (gasPhase.temperature.cval().min() < 0.)
 		throw exception("Negative temperature after diffusion.",
 				errors::negativeTemperatureError);
 

@@ -16,6 +16,10 @@
 
 namespace schemi
 {
+
+class vector;
+class tensor3;
+
 class tensor
 {
 public:
@@ -29,7 +33,7 @@ public:
 
 	const std::array<scalar, 9>& operator()() const noexcept;
 
-	std::array<scalar, 9>& r() noexcept;
+	std::array<scalar, 9>& wr() noexcept;
 
 	scalar trace() const noexcept;
 
@@ -49,6 +53,12 @@ public:
 
 	tensor& operator*=(const scalar inScalar) noexcept;
 
+	tensor3 operator*(const vector & inVector) const noexcept;
+
+	vector operator&(const vector & inVector) const noexcept;
+
+	tensor operator&(const tensor & inTensor) const noexcept;
+
 	tensor operator/(const scalar inScalar) const noexcept;
 
 	tensor& operator/=(const scalar inScalar) noexcept;
@@ -63,6 +73,10 @@ private:
 };
 
 tensor operator*(const scalar inScalar, const tensor & inTensor) noexcept;
+
+vector operator&(const vector & inVector, const tensor & inTensor) noexcept;
+
+tensor3 operator*(const vector & inVector, const tensor & inTensor) noexcept;
 }  // namespace schemi
 
 #endif /* TENSOR_HPP_ */

@@ -7,7 +7,7 @@
 
 #include "pressureStarClass.hpp"
 
-#include "vectorVectorDotProduct.hpp"
+#include "vector.hpp"
 
 schemi::scalar schemi::pressureStarClass::pressureStar(
 		const abstractMixtureThermodynamics & mix,

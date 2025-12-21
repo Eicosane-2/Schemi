@@ -11,6 +11,7 @@
 #include "kEpsModels.hpp"
 #include "diffusiveFields.hpp"
 #include "homogeneousPhase.hpp"
+#include "MPIHandler.hpp"
 
 namespace schemi
 {

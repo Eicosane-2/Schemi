@@ -79,7 +79,7 @@ std::valarray<schemi::vector> schemi::ThomasSolver::solve(
 		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].r()[j] = v_j_buf[i];
+			result[i].wr()[j] = v_j_buf[i];
 	}
 
 	return result;
@@ -101,7 +101,7 @@ std::valarray<schemi::tensor> schemi::ThomasSolver::solve(
 		v_j_buf = algorithm(v_j_buf, matrix.SLE[j], matrix.name);
 
 		for (std::size_t i = 0; i < v_j_buf.size(); ++i)
-			result[i].r()[j] = v_j_buf[i];
+			result[i].wr()[j] = v_j_buf[i];
 	}
 
 	return result;

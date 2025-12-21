@@ -31,7 +31,7 @@ void Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		const bool linearRec, const boundaryConditionValue & bncCalc,
 		const volumeField<scalar> & minimalLengthScale,
 		const MPIHandler & parallelism, const timestep sourceTimeFlag,
-		const bool molMassDiffusionFlag);
+		const bool molMassDiffusionFlag, const bool nonLinearityIteratonsFlag);
 }  // namespace schemi
 
 #endif /* DIFFUSION_HPP_ */

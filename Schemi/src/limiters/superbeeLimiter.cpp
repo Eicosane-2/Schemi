@@ -51,8 +51,8 @@ schemi::vector schemi::superbeeLimiter::calculate(const vector & r,
 	vector superbee, xiR { 2 / (1 + std::get<0>(r())), 2
 			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), superbee.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			superbee.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->superbeeLimiterCalculation(r_j, xiR_j);});
 
 	return vector { std::get<0>(superbee()) * std::get<0>(gradient()), std::get<
@@ -69,8 +69,8 @@ schemi::tensor schemi::superbeeLimiter::calculate(const tensor & r,
 			/ (1 + std::get<5>(r())), 2 / (1 + std::get<6>(r())), 2
 			/ (1 + std::get<7>(r())), 2 / (1 + std::get<8>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), superbee.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			superbee.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->superbeeLimiterCalculation(r_j, xiR_j);});
 
 	return tensor { std::get<0>(superbee()) * std::get<0>(gradient()), std::get<
@@ -102,8 +102,8 @@ schemi::tensor3 schemi::superbeeLimiter::calculate(const tensor3 & r,
 			/ (1 + std::get<23>(r())), 2 / (1 + std::get<24>(r())), 2
 			/ (1 + std::get<25>(r())), 2 / (1 + std::get<26>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), superbee.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			superbee.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->superbeeLimiterCalculation(r_j, xiR_j);});
 
 	return tensor3 { std::get<0>(superbee()) * std::get<0>(gradient()),
@@ -140,7 +140,7 @@ schemi::vector schemi::superbeeLimiter::calculateNoRSLimit(const vector & r,
 {
 	vector superbee;
 
-	std::transform(r().begin(), r().end(), superbee.r().begin(),
+	std::transform(r().cbegin(), r().cend(), superbee.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->superbeeLimiterCalculation(r_j);});
 
@@ -154,7 +154,7 @@ schemi::tensor schemi::superbeeLimiter::calculateNoRSLimit(const tensor & r,
 {
 	tensor superbee;
 
-	std::transform(r().begin(), r().end(), superbee.r().begin(),
+	std::transform(r().cbegin(), r().cend(), superbee.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->superbeeLimiterCalculation(r_j);});
 
@@ -174,7 +174,7 @@ schemi::tensor3 schemi::superbeeLimiter::calculateNoRSLimit(const tensor3 & r,
 {
 	tensor3 superbee;
 
-	std::transform(r().begin(), r().end(), superbee.r().begin(),
+	std::transform(r().cbegin(), r().cend(), superbee.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->superbeeLimiterCalculation(r_j);});
 

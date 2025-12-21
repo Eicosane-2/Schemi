@@ -12,6 +12,7 @@
 
 #include <cstddef>
 
+#include "abstractTurbulenceModel.hpp"
 #include "scalar.hpp"
 #include "structForOutput.hpp"
 
@@ -19,8 +20,8 @@ namespace schemi
 {
 namespace output
 {
-void dataOutput(const structForOutput & outputData, const std::size_t noutput,
-		const scalar Time);
+void dataOutput(const structForOutput & outputData, const std::size_t nOutput,
+		const scalar Time, const abstractTurbulenceModel & turb);
 
 void mixedZoneWidth1D(const structForOutput & outputData, const scalar Time);
 }  // namespace output

@@ -12,16 +12,16 @@
 
 namespace schemi
 {
-template<typename T>
-inline T elementsProduct(const T & a, const T & b) noexcept
-{
-	T ret;
-
-	for (std::size_t i = 0; i < T::vsize; ++i)
-		ret.v_r()[i] = a.v()[i] * b.v()[i];
-
-	return ret;
-}
+//template<typename T>
+//inline T elementsProduct(const T & a, const T & b) noexcept
+//{
+//	T ret;
+//
+//	for (std::size_t i = 0; i < T::vsize; ++i)
+//		ret.wr()[i] = a.v()[i] * b.v()[i];
+//
+//	return ret;
+//}
 
 template<typename T>
 inline T elementsDivision(const T & a, const T & b) noexcept
@@ -29,7 +29,7 @@ inline T elementsDivision(const T & a, const T & b) noexcept
 	T ret;
 
 	for (std::size_t i = 0; i < T::vsize; ++i)
-		ret.r()[i] = a()[i] / (b()[i] + stabilizator);
+		ret.wr()[i] = a()[i] / (b()[i] + stabilizator);
 
 	return ret;
 }

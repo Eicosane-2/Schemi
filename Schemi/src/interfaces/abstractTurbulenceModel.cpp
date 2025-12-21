@@ -11,8 +11,7 @@
 #include <stdexcept>
 
 #include "arithmeticAModel.hpp"
-#include "BHR2Model.hpp"
-#include "BHR3Model.hpp"
+#include "BHRModel.hpp"
 #include "BHRKLModel.hpp"
 #include "decayModel.hpp"
 #include "boundaryConditionValue.hpp"
@@ -191,8 +190,8 @@ void schemi::abstractTurbulenceModel::calculateNearWallDistance(
 
 	volumeField<scalar> phiOld = eps;
 
-	phiOld.r() = phiInit;
-	for (auto & b_i : phiOld.boundCond_r())
+	phiOld.val() = phiInit;
+	for (auto & b_i : phiOld.boundCond_wr())
 		if (b_i.first == boundaryConditionType::slip)
 		{
 			b_i.first = boundaryConditionType::fixedValueSurface;
@@ -211,14 +210,15 @@ void schemi::abstractTurbulenceModel::calculateNearWallDistance(
 	{
 		it++;
 
-		const scalar delta = std::abs((phiNew() - phiOld()) / phiOld()).max();
+		const scalar delta = std::abs(
+				(phiNew.cval() - phiOld.cval()) / phiOld.cval()).max();
 
 		if (((delta < convergenceTolerance) && (it > 1)) || (it > 10000))
 			break;
 
 		phiOld = phiNew;
 
-		phiNew.r() = solveMatrix(phiOld, boundCond);
+		phiNew.val() = solveMatrix(phiOld, boundCond);
 
 		boundCond.parallelism.correctBoundaryValues(phiNew);
 	}
@@ -228,9 +228,10 @@ void schemi::abstractTurbulenceModel::calculateNearWallDistance(
 	volumeField<scalar> distance(phiNew.meshRef());
 
 	for (std::size_t i = 0; i < distance.size(); ++i)
-		distance.r()[i] = -gradPhi()[i].mag()
+		distance.val()[i] = -gradPhi.cval()[i].mag()
 				+ std::sqrt(
-						pow<scalar, 2>(gradPhi()[i].mag()) + 2 * phiNew()[i]);
+						pow<scalar, 2>(gradPhi.cval()[i].mag())
+								+ 2 * phiNew.cval()[i]);
 
 	y = distance;
 }
@@ -239,7 +240,7 @@ std::valarray<schemi::scalar> schemi::abstractTurbulenceModel::solveMatrix(
 		const volumeField<scalar> & phi,
 		const boundaryConditionValue & boundCond) const
 {
-	const auto & mesh_ = phi.meshRef();
+	auto & mesh_ = phi.meshRef();
 
 	SLEMatrix wallDistanceMatrix(std::string("wallDistance"));
 
@@ -250,12 +251,15 @@ std::valarray<schemi::scalar> schemi::abstractTurbulenceModel::solveMatrix(
 
 	conjugateGradientSovler solv(100000, matrixSolver::conjugateGradient);
 
-	return solv.solve(phi(), wallDistanceMatrix);
+	return solv.solve(phi.cval(), wallDistanceMatrix);
 }
 
 std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel::createTurbulenceModel(
 		const mesh & meshIn, const std::string & turbulenceONString,
-		const std::string & sourceTypeString)
+		const std::string & sourceTypeString, const MPIHandler & parIn,
+		const volumeField<vector> & uCellIn,
+		const surfaceField<vector> & uSurfIn,
+		const std::pair<std::size_t, std::string> & readDataPoint)
 {
 	bool turbulenceFlag;
 	try
@@ -268,7 +272,6 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 	}
 
 	std::map<std::string, turbulenceModel> turbulenceModels;
-	turbulenceModels.insert( { "BHR", turbulenceModel::BHRModel });
 	turbulenceModels.insert( { "zero", turbulenceModel::zeroModel });
 	turbulenceModels.insert( { "decay", turbulenceModel::decayModel });
 	turbulenceModels.insert( { "shear", turbulenceModel::shearModel });
@@ -279,9 +282,8 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 	turbulenceModels.insert(
 			{ "arithmetic3", turbulenceModel::arithmeticA3Model });
 	turbulenceModels.insert( { "kEpsA", turbulenceModel::kEpsAModel });
+	turbulenceModels.insert( { "BHR", turbulenceModel::BHRModel });
 	turbulenceModels.insert( { "BHRKL", turbulenceModel::BHRKLModel });
-	turbulenceModels.insert( { "BHR2", turbulenceModel::BHR2Model });
-	turbulenceModels.insert( { "BHR3", turbulenceModel::BHR3Model });
 
 	turbulenceModel turbulenceModelFlag;
 	try
@@ -296,8 +298,6 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 	std::unique_ptr<abstractTurbulenceModel> trbl;
 	switch (turbulenceModelFlag)
 	{
-	case turbulenceModel::BHRModel:
-		break;
 	case turbulenceModel::decayModel:
 		trbl = std::make_unique<decayModel>(meshIn, turbulenceFlag);
 		break;
@@ -313,14 +313,12 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 	case turbulenceModel::kEpsAModel:
 		trbl = std::make_unique<kEpsAModel>(meshIn, turbulenceFlag);
 		break;
+	case turbulenceModel::BHRModel:
+		trbl = std::make_unique<BHRModel>(meshIn, parIn, uCellIn, uSurfIn,
+				readDataPoint, turbulenceFlag);
+		break;
 	case turbulenceModel::BHRKLModel:
 		trbl = std::make_unique<BHRKLModel>(meshIn, turbulenceFlag);
-		break;
-	case turbulenceModel::BHR2Model:
-		trbl = std::make_unique<BHR2Model>(meshIn, turbulenceFlag);
-		break;
-	case turbulenceModel::BHR3Model:
-		trbl = std::make_unique<BHR3Model>(meshIn, turbulenceFlag);
 		break;
 	default:
 		trbl = std::make_unique<zeroModel>(meshIn, turbulenceFlag);
@@ -328,6 +326,30 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 	}
 
 	return trbl;
+}
+
+void schemi::abstractTurbulenceModel::particlesTimeIntegration(
+		const volumeField<vector>&, const surfaceField<vector>&,
+		const volumeField<vector>&, const surfaceField<vector>&,
+		const concentrationsPack<cubicCell>&,
+		const std::vector<volumeField<scalar>>&, const boundaryConditionValue&,
+		const std::valarray<scalar>&, const scalar, const volumeField<vector>&,
+		const volumeField<scalar>&, const volumeField<tensor>&)
+{
+}
+
+void schemi::abstractTurbulenceModel::particlesWriteOutput(const std::string&,
+		const scalar) const
+{
+}
+
+void schemi::abstractTurbulenceModel::checkTransitionToTurbulenceModel(
+		const volumeField<scalar>&, const surfaceField<scalar>&,
+		volumeField<scalar>&, volumeField<scalar>&, volumeField<vector>&,
+		volumeField<scalar>&, const concentrationsPack<cubicCell>&,
+		const boundaryConditionValue&, const scalar) noexcept
+{
+
 }
 
 schemi::abstractTurbulenceModel::~abstractTurbulenceModel() noexcept

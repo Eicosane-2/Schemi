@@ -10,6 +10,7 @@
 
 #include "kEpsModels.hpp"
 #include "diffusiveFields.hpp"
+#include "MPIHandler.hpp"
 
 namespace schemi
 {

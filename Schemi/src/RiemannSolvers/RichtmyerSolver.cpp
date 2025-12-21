@@ -7,7 +7,7 @@
 
 #include "RichtmyerSolver.hpp"
 
-#include "vectorVectorDotProduct.hpp"
+#include "vector.hpp"
 
 std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::RichtmyerSolver::calculateFlows(
 		const homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
@@ -60,9 +60,9 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::RichtmyerSolve
 		}
 
 		const scalar turbulentPressureOwner { twothirds
-				* surfaceOwnerSide.rhokTurb()[i] };
+				* surfaceOwnerSide.rhokTurb.cval()[i] };
 		const scalar turbulentPressureNeighbour { twothirds
-				* surfaceNeighbourSide.rhokTurb()[i] };
+				* surfaceNeighbourSide.rhokTurb.cval()[i] };
 
 		std::valarray<scalar> densityState(numFluxes.density.size());
 		vector velocityState;
@@ -72,75 +72,79 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::RichtmyerSolve
 
 		for (std::size_t k = 0; k < densityState.size(); ++k)
 			densityState[k] =
-					(surfaceNeighbourSide.density[k]()[i]
-							+ surfaceOwnerSide.density[k]()[i]) / 2
+					(surfaceNeighbourSide.density[k].cval()[i]
+							+ surfaceOwnerSide.density[k].cval()[i]) / 2
 							+ (0.5 * mesh_.timestep() / deltaMag
-									* (surfaceOwnerSide.density[k]()[i]
-											* surfaceOwnerSide.velocity()[i]
-											- surfaceNeighbourSide.density[k]()[i]
-													* surfaceNeighbourSide.velocity()[i])
+									* (surfaceOwnerSide.density[k].cval()[i]
+											* surfaceOwnerSide.velocity.cval()[i]
+											- surfaceNeighbourSide.density[k].cval()[i]
+													* surfaceNeighbourSide.velocity.cval()[i])
 									& mesh_.surfaces()[i].N());
 
 		const vector momentumState =
-				(surfaceNeighbourSide.momentum()[i]
-						+ surfaceOwnerSide.momentum()[i]) / 2
+				(surfaceNeighbourSide.momentum.cval()[i]
+						+ surfaceOwnerSide.momentum.cval()[i]) / 2
 						+ (0.5 * mesh_.timestep() / deltaMag
-								* (surfaceOwnerSide.momentum()[i]
-										* surfaceOwnerSide.velocity()[i]
+								* (surfaceOwnerSide.momentum.cval()[i]
+										* surfaceOwnerSide.velocity.cval()[i]
 										+ tensor(1, 0, 0, 0, 1, 0, 0, 0, 1)
 												* (turbulentPressureOwner
-														+ surfaceOwnerSide.pressure()[i])
-										- surfaceNeighbourSide.momentum()[i]
-												* surfaceNeighbourSide.velocity()[i]
+														+ surfaceOwnerSide.pressure.cval()[i])
+										- surfaceNeighbourSide.momentum.cval()[i]
+												* surfaceNeighbourSide.velocity.cval()[i]
 										- tensor(1, 0, 0, 0, 1, 0, 0, 0, 1)
 												* (turbulentPressureNeighbour
-														+ surfaceNeighbourSide.pressure()[i]))
+														+ surfaceNeighbourSide.pressure.cval()[i]))
 								& mesh_.surfaces()[i].N());
 		const scalar totalEnergyState =
-				(surfaceNeighbourSide.totalEnergy()[i]
-						+ surfaceOwnerSide.totalEnergy()[i]) / 2
+				(surfaceNeighbourSide.totalEnergy.cval()[i]
+						+ surfaceOwnerSide.totalEnergy.cval()[i]) / 2
 						+ (0.5 * mesh_.timestep() / deltaMag
-								* ((surfaceOwnerSide.totalEnergy()[i]
+								* ((surfaceOwnerSide.totalEnergy.cval()[i]
 										+ (turbulentPressureOwner
-												+ surfaceOwnerSide.pressure()[i]))
-										* surfaceOwnerSide.velocity()[i]
-										- (surfaceNeighbourSide.totalEnergy()[i]
+												+ surfaceOwnerSide.pressure.cval()[i]))
+										* surfaceOwnerSide.velocity.cval()[i]
+										- (surfaceNeighbourSide.totalEnergy.cval()[i]
 												+ (turbulentPressureNeighbour
-														+ surfaceNeighbourSide.pressure()[i]))
-												* surfaceNeighbourSide.velocity()[i])
+														+ surfaceNeighbourSide.pressure.cval()[i]))
+												* surfaceNeighbourSide.velocity.cval()[i])
 								& mesh_.surfaces()[i].N());
-		const scalar rhokState = (surfaceNeighbourSide.rhokTurb()[i]
-				+ surfaceOwnerSide.rhokTurb()[i]) / 2
-				+ (0.5 * mesh_.timestep() / deltaMag
-						* (surfaceOwnerSide.rhokTurb()[i]
-								* surfaceOwnerSide.velocity()[i]
-								- surfaceNeighbourSide.rhokTurb()[i]
-										* surfaceNeighbourSide.velocity()[i])
-						& mesh_.surfaces()[i].N());
-		const scalar rhoepsState = (surfaceNeighbourSide.rhoepsTurb()[i]
-				+ surfaceOwnerSide.rhoepsTurb()[i]) / 2
-				+ (0.5 * mesh_.timestep() / deltaMag
-						* (surfaceOwnerSide.rhoepsTurb()[i]
-								* surfaceOwnerSide.velocity()[i]
-								- surfaceNeighbourSide.rhoepsTurb()[i]
-										* surfaceNeighbourSide.velocity()[i])
-						& mesh_.surfaces()[i].N());
-		const vector rhoaState = (surfaceNeighbourSide.rhoaTurb()[i]
-				+ surfaceOwnerSide.rhoaTurb()[i]) / 2
-				+ (0.5 * mesh_.timestep() / deltaMag
-						* (surfaceOwnerSide.rhoaTurb()[i]
-								* surfaceOwnerSide.velocity()[i]
-								- surfaceNeighbourSide.rhoaTurb()[i]
-										* surfaceNeighbourSide.velocity()[i])
-						& mesh_.surfaces()[i].N());
-		const scalar rhobState = (surfaceNeighbourSide.rhobTurb()[i]
-				+ surfaceOwnerSide.rhobTurb()[i]) / 2
-				+ (0.5 * mesh_.timestep() / deltaMag
-						* (surfaceOwnerSide.rhobTurb()[i]
-								* surfaceOwnerSide.velocity()[i]
-								- surfaceNeighbourSide.rhobTurb()[i]
-										* surfaceNeighbourSide.velocity()[i])
-						& mesh_.surfaces()[i].N());
+		const scalar rhokState =
+				(surfaceNeighbourSide.rhokTurb.cval()[i]
+						+ surfaceOwnerSide.rhokTurb.cval()[i]) / 2
+						+ (0.5 * mesh_.timestep() / deltaMag
+								* (surfaceOwnerSide.rhokTurb.cval()[i]
+										* surfaceOwnerSide.velocity.cval()[i]
+										- surfaceNeighbourSide.rhokTurb.cval()[i]
+												* surfaceNeighbourSide.velocity.cval()[i])
+								& mesh_.surfaces()[i].N());
+		const scalar rhoepsState =
+				(surfaceNeighbourSide.rhoepsTurb.cval()[i]
+						+ surfaceOwnerSide.rhoepsTurb.cval()[i]) / 2
+						+ (0.5 * mesh_.timestep() / deltaMag
+								* (surfaceOwnerSide.rhoepsTurb.cval()[i]
+										* surfaceOwnerSide.velocity.cval()[i]
+										- surfaceNeighbourSide.rhoepsTurb.cval()[i]
+												* surfaceNeighbourSide.velocity.cval()[i])
+								& mesh_.surfaces()[i].N());
+		const vector rhoaState =
+				(surfaceNeighbourSide.rhoaTurb.cval()[i]
+						+ surfaceOwnerSide.rhoaTurb.cval()[i]) / 2
+						+ (0.5 * mesh_.timestep() / deltaMag
+								* (surfaceOwnerSide.rhoaTurb.cval()[i]
+										* surfaceOwnerSide.velocity.cval()[i]
+										- surfaceNeighbourSide.rhoaTurb.cval()[i]
+												* surfaceNeighbourSide.velocity.cval()[i])
+								& mesh_.surfaces()[i].N());
+		const scalar rhobState =
+				(surfaceNeighbourSide.rhobTurb.cval()[i]
+						+ surfaceOwnerSide.rhobTurb.cval()[i]) / 2
+						+ (0.5 * mesh_.timestep() / deltaMag
+								* (surfaceOwnerSide.rhobTurb.cval()[i]
+										* surfaceOwnerSide.velocity.cval()[i]
+										- surfaceNeighbourSide.rhobTurb.cval()[i]
+												* surfaceNeighbourSide.velocity.cval()[i])
+								& mesh_.surfaces()[i].N());
 
 		velocityState = momentumState / densityState[0];
 		pressureState = pressureStar(*(surfaceOwnerSide.phaseThermodynamics),
@@ -149,33 +153,33 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::RichtmyerSolve
 		bState = rhobState / densityState[0];
 
 		for (std::size_t k = 0; k < numFluxes.density.size(); ++k)
-			numFluxes.density[k].r()[i] = densityState[k] * velocityState;
+			numFluxes.density[k].val()[i] = densityState[k] * velocityState;
 
-		numFluxes.momentum.r()[i] = momentumState * velocityState
+		numFluxes.momentum.val()[i] = momentumState * velocityState
 				+ (rhokState * twothirds + pressureState)
 						* tensor(1, 0, 0, 0, 1, 0, 0, 0, 1);
 
-		numFluxes.totalEnergy.r()[i] = (totalEnergyState
+		numFluxes.totalEnergy.val()[i] = (totalEnergyState
 				+ (rhokState * twothirds + pressureState)) * velocityState;
 
-		numFluxes.rhokTurb.r()[i] = rhokState * velocityState;
-		numFluxes.rhoepsTurb.r()[i] = rhoepsState * velocityState;
-		numFluxes.rhoaTurb.r()[i] = rhoaState * velocityState;
-		numFluxes.rhobTurb.r()[i] = rhobState * velocityState;
+		numFluxes.rhokTurb.val()[i] = rhokState * velocityState;
+		numFluxes.rhoepsTurb.val()[i] = rhoepsState * velocityState;
+		numFluxes.rhoaTurb.val()[i] = rhoaState * velocityState;
+		numFluxes.rhobTurb.val()[i] = rhobState * velocityState;
 
-		starValues.c.v[0].r()[i] = 0;
+		starValues.c.v[0].val()[i] = 0;
 		for (std::size_t k = 1; k < densityState.size(); ++k)
 		{
-			starValues.c.v[k].r()[i] = densityState[k]
+			starValues.c.v[k].val()[i] = densityState[k]
 					/ surfaceOwnerSide.phaseThermodynamics->Mv()[k - 1];
 
-			starValues.c.v[0].r()[i] += starValues.c.v[k]()[i];
+			starValues.c.v[0].val()[i] += starValues.c.v[k].cval()[i];
 		}
-		starValues.rho.r()[i] = densityState[0];
-		starValues.v.r()[i] = velocityState;
-		starValues.p.r()[i] = pressureState;
-		starValues.a.r()[i] = aState;
-		starValues.b.r()[i] = bState;
+		starValues.rho.val()[i] = densityState[0];
+		starValues.v.val()[i] = velocityState;
+		starValues.p.val()[i] = pressureState;
+		starValues.a.val()[i] = aState;
+		starValues.b.val()[i] = bState;
 	}
 
 	return std::make_tuple(numFluxes, starValues);

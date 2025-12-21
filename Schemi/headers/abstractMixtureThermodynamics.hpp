@@ -25,7 +25,7 @@ protected:
 public:
 	abstractMixtureThermodynamics(const scalar Rin, const scalar hPin) noexcept;
 
-	virtual ~abstractMixtureThermodynamics() noexcept =0;
+	virtual ~abstractMixtureThermodynamics() noexcept override =0;
 
 	/* energy/mole/temperature */
 	virtual scalar Rv() const noexcept =0;
@@ -77,6 +77,17 @@ public:
 	virtual std::valarray<scalar> TFromUv(
 			const std::vector<const std::valarray<scalar>*>& /*concentrations*/,
 			const std::valarray<scalar>& /*Uv*/) const =0;
+
+	/* concentration */
+	virtual std::valarray<scalar> cFrompT(
+			const std::vector<const std::valarray<scalar>*>& /*concentrations*/,
+			const std::valarray<scalar>& /*p*/,
+			const std::valarray<scalar>& /*T*/) const =0;
+
+	/* concentration */
+	virtual std::valarray<scalar> cFrompTk(const std::valarray<scalar>& /*p*/,
+			const std::valarray<scalar>& /*T*/,
+			const std::size_t /*componentIndex*/) const =0;
 
 	/* pressure/density */
 	virtual std::valarray<scalar> dpdrho(
@@ -176,6 +187,14 @@ public:
 	/* temperature */
 	virtual scalar TFromUv(const std::valarray<scalar>& /*concentrations*/,
 			const scalar /*Uv*/) const =0;
+
+	/* concentration */
+	virtual scalar cFrompT(const std::valarray<scalar>& /*concentrations*/,
+			const scalar /*p*/, const scalar /*T*/) const =0;
+
+	/* concentration */
+	virtual scalar cFrompTk(const scalar /*p*/, const scalar /*T*/,
+			const std::size_t /*componentIndex*/) const =0;
 
 	/* pressure/density */
 	virtual scalar dpdrho(const std::valarray<scalar>& /*concentrations*/,

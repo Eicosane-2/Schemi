@@ -187,61 +187,61 @@ void schemi::structForOutput::collectParallelData(
 	volumeField<scalar> z_node(meshRef, 0);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		z_node.r()[i] = std::get<2>(meshRef.cells()[i].rC()());
+		z_node.val()[i] = std::get<2>(meshRef.cells()[i].rC()());
 
 	parallelismRef.gatherField(z_node, z_coord);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		z_node.r()[i] = std::get<2>(cellFields.velocity()[i]());
+		z_node.val()[i] = std::get<2>(cellFields.velocity.cval()[i]());
 
 	parallelismRef.gatherField(z_node, velocity_z);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		z_node.r()[i] = std::get<2>(cellFields.aTurb()[i]());
+		z_node.val()[i] = std::get<2>(cellFields.aTurb.cval()[i]());
 
 	parallelismRef.gatherField(z_node, aTurb_z);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		z_node.r()[i] = std::get<2>(cellFields.momentum()[i]());
+		z_node.val()[i] = std::get<2>(cellFields.momentum.cval()[i]());
 
 	parallelismRef.gatherField(z_node, momentum_z);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		z_node.r()[i] = std::get<2>(cellFields.rhoaTurb()[i]());
+		z_node.val()[i] = std::get<2>(cellFields.rhoaTurb.cval()[i]());
 
 	parallelismRef.gatherField(z_node, rhoaTurb_z);
 
 	volumeField<scalar> y_node(meshRef, 0);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		y_node.r()[i] = std::get<1>(meshRef.cells()[i].rC()());
+		y_node.val()[i] = std::get<1>(meshRef.cells()[i].rC()());
 
 	parallelismRef.gatherField(y_node, y_coord);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		y_node.r()[i] = std::get<1>(cellFields.velocity()[i]());
+		y_node.val()[i] = std::get<1>(cellFields.velocity.cval()[i]());
 
 	parallelismRef.gatherField(y_node, velocity_y);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		y_node.r()[i] = std::get<1>(cellFields.aTurb()[i]());
+		y_node.val()[i] = std::get<1>(cellFields.aTurb.cval()[i]());
 
 	parallelismRef.gatherField(y_node, aTurb_y);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		y_node.r()[i] = std::get<1>(cellFields.momentum()[i]());
+		y_node.val()[i] = std::get<1>(cellFields.momentum.cval()[i]());
 
 	parallelismRef.gatherField(y_node, momentum_y);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		y_node.r()[i] = std::get<1>(cellFields.rhoaTurb()[i]());
+		y_node.val()[i] = std::get<1>(cellFields.rhoaTurb.cval()[i]());
 
 	parallelismRef.gatherField(y_node, rhoaTurb_y);
 
 	volumeField<scalar> x_node(meshRef, 0);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		x_node.r()[i] = std::get<0>(meshRef.cells()[i].rC()());
+		x_node.val()[i] = std::get<0>(meshRef.cells()[i].rC()());
 
 	parallelismRef.gatherField(x_node, x_coord);
 
@@ -253,7 +253,7 @@ void schemi::structForOutput::collectParallelData(
 		parallelismRef.gatherField(cellFields.density[k], density[k]);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		x_node.r()[i] = std::get<0>(cellFields.velocity()[i]());
+		x_node.val()[i] = std::get<0>(cellFields.velocity.cval()[i]());
 
 	parallelismRef.gatherField(x_node, velocity_x);
 
@@ -264,14 +264,14 @@ void schemi::structForOutput::collectParallelData(
 	parallelismRef.gatherField(cellFields.epsTurb, epsTurb);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		x_node.r()[i] = std::get<0>(cellFields.aTurb()[i]());
+		x_node.val()[i] = std::get<0>(cellFields.aTurb.cval()[i]());
 
 	parallelismRef.gatherField(x_node, aTurb_x);
 
 	parallelismRef.gatherField(cellFields.bTurb, bTurb);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		x_node.r()[i] = std::get<0>(cellFields.momentum()[i]());
+		x_node.val()[i] = std::get<0>(cellFields.momentum.cval()[i]());
 
 	parallelismRef.gatherField(x_node, momentum_x);
 
@@ -286,7 +286,7 @@ void schemi::structForOutput::collectParallelData(
 	parallelismRef.gatherField(cellFields.rhoepsTurb, rhoepsTurb);
 
 	for (std::size_t i = 0; i < meshRef.cellsSize(); ++i)
-		x_node.r()[i] = std::get<0>(cellFields.rhoaTurb()[i]());
+		x_node.val()[i] = std::get<0>(cellFields.rhoaTurb.cval()[i]());
 
 	parallelismRef.gatherField(x_node, rhoaTurb_x);
 

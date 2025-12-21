@@ -51,18 +51,18 @@ volumeField<std::vector<T>> thirdOrderLimiter(const surfaceField<T> & surfGrad,
 				}
 			}
 
-			const auto r = elementsDivision(surfGrad()[surfaceIndex],
-					surfGrad()[farSurface.first]);
+			const auto r = elementsDivision(surfGrad.cval()[surfaceIndex],
+					surfGrad.cval()[farSurface.first]);
 
 			const auto retr = elementsDivision(decltype(r)(1), r);
 
 			const auto limGradSurf = limiterObjectP.calculateNoRSLimit(retr,
-					surfGrad()[surfaceIndex]);
+					surfGrad.cval()[surfaceIndex]);
 
 			const auto limOppGradSurf = limiterObjectP.calculateNoRSLimit(r,
-					surfGrad()[farSurface.first]);
+					surfGrad.cval()[farSurface.first]);
 
-			limitedGradients.r()[i].emplace_back(
+			limitedGradients.val()[i].emplace_back(
 					0.5
 							* ((1 - onethirds) * limOppGradSurf
 									+ (1 + onethirds) * limGradSurf));

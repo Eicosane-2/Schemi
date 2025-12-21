@@ -10,14 +10,12 @@
 
 #include "kLModels.hpp"
 #include "diffusiveFields.hpp"
+#include "MPIHandler.hpp"
 
 namespace schemi
 {
 class BHRKLModel: public kLModels
 {
-	scalar thetaA(const vector & a, const scalar k,
-			const scalar b) const noexcept;
-
 	scalar C0() const noexcept;
 	scalar C1() const noexcept;
 	scalar C2() const noexcept;
@@ -25,10 +23,6 @@ class BHRKLModel: public kLModels
 
 	scalar Ca() const noexcept;
 	scalar Cb() const noexcept;
-
-	scalar CaMax() const noexcept;
-
-	scalar CMSA() const noexcept;
 
 public:
 	BHRKLModel(const mesh & meshIn, const bool turb_in);

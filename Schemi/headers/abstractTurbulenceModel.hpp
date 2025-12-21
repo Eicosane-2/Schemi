@@ -15,6 +15,7 @@
 #include "volumeField.hpp"
 #include "surfaceField.hpp"
 #include "turbulenceModelEnum.hpp"
+#include "MPIHandler.hpp"
 
 namespace schemi
 {
@@ -103,7 +104,9 @@ public:
 
 	virtual std::valarray<scalar> rhoepsilon(
 			const bunchOfFields<cubicCell>& /*cf*/,
-			const abstractMixtureThermodynamics& /*th*/) const noexcept =0;
+			const abstractMixtureThermodynamics& /*th*/,
+			const volumeField<scalar>& /*k*/,
+			const volumeField<scalar>& /*eps*/) const noexcept =0;
 
 	virtual scalar thetaS_R(const scalar /*divV*/, const scalar /*k*/,
 			const scalar /*eps*/) const noexcept =0;
@@ -148,7 +151,40 @@ public:
 
 	static std::unique_ptr<abstractTurbulenceModel> createTurbulenceModel(
 			const mesh & meshIn, const std::string & turbulenceONString,
-			const std::string & sourceTypeString);
+			const std::string & sourceTypeString, const MPIHandler & parIn,
+			const volumeField<vector> & uCellIn,
+			const surfaceField<vector> & uSurfIn,
+			const std::pair<std::size_t, std::string> & readDataPoint);
+
+	virtual void particlesTimeIntegration(
+			const volumeField<vector> & gradRhoCell,
+			const surfaceField<vector> & gradRhoSurf,
+			const volumeField<vector> & uCell,
+			const surfaceField<vector> & uSurf,
+			const concentrationsPack<cubicCell> & concentrations,
+			const std::vector<volumeField<scalar>> & densities,
+			const boundaryConditionValue & boundVal,
+			const std::valarray<scalar> & M, const scalar timestep,
+			const volumeField<vector> & gradP, const volumeField<scalar> & divU,
+			const volumeField<tensor> & gradU);
+
+	virtual void particlesWriteOutput(
+			const std::string & fieldDataDirectoryName,
+			const scalar Time) const;
+
+	virtual void checkTransitionToTurbulenceModel(
+			const volumeField<scalar> & nuCell,
+			const surfaceField<scalar> & nuSurface, volumeField<scalar> & k,
+			volumeField<scalar> & epsilon, volumeField<vector> & a,
+			volumeField<scalar> & b,
+			const concentrationsPack<cubicCell> & concentrations,
+			const boundaryConditionValue & boundVal,
+			const scalar timestep) noexcept;
+
+	virtual bool isInitialisationModelUsed() const noexcept
+	{
+		return false;
+	}
 };
 }  // namespace schemi
 

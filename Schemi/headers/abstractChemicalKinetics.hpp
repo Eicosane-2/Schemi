@@ -186,433 +186,432 @@ protected:
 			{
 				normalize(newIteration);
 
-				std::array<scalar, N> ret;
+				std::array<scalar, N> ret { };
 				for (std::size_t i = 0; i < N; ++i)
 					ret[i] = newIteration[i];
 
 				return ret;
 			}
 			else if (nIterations >= maxIterationNumber)
-				[[unlikely]]
-				{
-					std::clog
-							<< "Jacobi algorithm for chemical reaction did not converged. Difference is: "
-							<< diff << std::endl;
+			//[[unlikely]]
+			{
+				std::clog
+						<< "Jacobi algorithm for chemical reaction did not converged. Difference is: "
+						<< diff << std::endl;
 
-					throw exception(
-							"Jacobi algorithm for chemical reaction did not converged.",
-							errors::systemError);
+				throw exception(
+						"Jacobi algorithm for chemical reaction did not converged.",
+						errors::systemError);
 
-					normalize(newIteration);
+				normalize(newIteration);
 
-					std::array<scalar, N> ret;
-					for (std::size_t i = 0; i < N; ++i)
-						ret[i] = newIteration[i];
+				std::array<scalar, N> ret { };
+				for (std::size_t i = 0; i < N; ++i)
+					ret[i] = newIteration[i];
 
-					return ret;
-				}
-				else
-					oldIteration = newIteration;
+				return ret;
+			}
+			else
+				oldIteration = newIteration;
+		}
+	}
+
+	template<typename reactionMatrix, std::size_t N>
+	static auto solveGS(const reactionMatrix & matrix,
+			const std::array<scalar, N> & oldField,
+			const std::size_t maxIterationNumber) -> std::array<scalar, N>
+	{
+		std::valarray<scalar> oldIteration(N);
+		for (std::size_t i = 0; i < N; ++i)
+			oldIteration[i] = oldField[i];
+
+		std::valarray<scalar> newIteration(oldIteration);
+
+		std::size_t nIterations { 0 };
+
+		while (true)
+		{
+			nIterations++;
+
+			for (std::size_t i = 0; i < oldIteration.size(); ++i)
+			{
+				const scalar aii { 1. / matrix.Diagonale[i] };
+
+				const scalar bi { matrix.FreeTerm[i] };
+
+				newIteration[i] = bi * aii;
+
+				for (std::size_t j = 0; j < matrix.LeftTriangle[i].size(); ++j)
+					newIteration[i] -= matrix.LeftTriangle[i][j].first
+							* newIteration[matrix.LeftTriangle[i][j].second]
+							* aii;
+
+				for (std::size_t j = 0; j < matrix.RightTriangle[i].size(); ++j)
+					newIteration[i] -= matrix.RightTriangle[i][j].first
+							* oldIteration[matrix.RightTriangle[i][j].second]
+							* aii;
+			}
+
+			for (std::size_t i = oldIteration.size() - 1;; --i)
+			{
+				const scalar aii { 1. / matrix.Diagonale[i] };
+
+				const scalar bi { matrix.FreeTerm[i] };
+
+				newIteration[i] = bi * aii;
+
+				if (matrix.LeftTriangle[i].size() != 0)
+					for (std::size_t j = matrix.LeftTriangle[i].size() - 1;;
+							--j)
+					{
+						newIteration[i] -= matrix.LeftTriangle[i][j].first
+								* oldIteration[matrix.LeftTriangle[i][j].second]
+								* aii;
+
+						if (j == 0)
+							break;
+					}
+
+				if (matrix.RightTriangle[i].size() != 0)
+					for (std::size_t j = matrix.RightTriangle[i].size() - 1;;
+							--j)
+					{
+						newIteration[i] -=
+								matrix.RightTriangle[i][j].first
+										* newIteration[matrix.RightTriangle[i][j].second]
+										* aii;
+
+						if (j == 0)
+							break;
+					}
+
+				if (i == 0)
+					break;
+			}
+
+			const scalar diff {
+					100.
+							* std::abs(
+									(newIteration - oldIteration)
+											/ (std::abs(newIteration)
+													+ stabilizator)).max() };
+
+			if (diff < convergenceTolerance)
+			{
+				normalize(newIteration);
+
+				std::array<scalar, N> ret { };
+				for (std::size_t i = 0; i < N; ++i)
+					ret[i] = newIteration[i];
+
+				return ret;
+			}
+			else if (nIterations >= maxIterationNumber)
+			//[[unlikely]]
+			{
+				std::clog
+						<< "Gauss-Seidel algorithm for chemical reaction combustion did not converged. Difference is: "
+						<< diff << std::endl;
+
+				throw exception(
+						"Gauss-Seidel algorithm for chemical reaction combustion did not converged.",
+						errors::systemError);
+
+				normalize(newIteration);
+
+				std::array<scalar, N> ret { };
+				for (std::size_t i = 0; i < N; ++i)
+					ret[i] = newIteration[i];
+
+				return ret;
+			}
+			else
+				oldIteration = newIteration;
+		}
+	}
+
+	template<typename reactionMatrix, std::size_t N>
+	static auto solveCG(const reactionMatrix & matrix,
+			const std::array<scalar, N> & oldField,
+			const std::size_t maxIterationNumber) ->
+			std::array<scalar, N>
+	{
+		std::valarray<scalar> oldIteration(N);
+		for (std::size_t i = 0; i < N; ++i)
+			oldIteration[i] = oldField[i];
+
+		std::valarray<scalar> newIteration(oldIteration);
+
+		std::size_t nIterations { 0 };
+
+		std::valarray<scalar> mFrT(N);
+		for (std::size_t i = 0; i < N; ++i)
+			mFrT[i] = matrix.FreeTerm[i];
+
+		std::valarray<scalar> r_n { mFrT
+				- matrixDotProduct(matrix, oldIteration) };
+		std::valarray<scalar> d_n = r_n;
+
+		while (true)
+		{
+			nIterations++;
+
+			const scalar diff { std::abs(r_n).max() };
+
+			if ((diff < convergenceTolerance) && (nIterations > 1))
+			{
+				normalize(newIteration);
+
+				std::array<scalar, N> ret { };
+				for (std::size_t i = 0; i < N; ++i)
+					ret[i] = newIteration[i];
+
+				return ret;
+			}
+			else if (nIterations >= maxIterationNumber)
+			//[[unlikely]]
+			{
+				std::clog
+						<< "Conjugate gradient algorithm for chemical reaction combustion did not converged. Difference is: "
+						<< diff << std::endl;
+
+				throw exception(
+						"Conjugate gradient algorithm for chemical reaction combustion did not converged.",
+						errors::systemError);
+
+				normalize(newIteration);
+
+				std::array<scalar, N> ret { };
+				for (std::size_t i = 0; i < N; ++i)
+					ret[i] = newIteration[i];
+
+				return ret;
+			}
+			else
+			{
+				const scalar alpha = (r_n * r_n).sum()
+						/ ((d_n * matrixDotProduct(matrix, d_n)).sum()
+								+ stabilizator);
+
+				newIteration += alpha * d_n;
+
+				const std::valarray<scalar> r_n1 = r_n
+						- alpha * matrixDotProduct(matrix, d_n);
+
+				const scalar beta = (r_n1 * r_n1).sum()
+						/ ((r_n * r_n).sum() + stabilizator);
+
+				const std::valarray<scalar> d_n1 = r_n1 + beta * d_n;
+
+				r_n = r_n1;
+				d_n = d_n1;
+			}
+		}
+	}
+
+	template<typename reactionMatrix, std::size_t N>
+	static auto solveJCG(const reactionMatrix & matrix,
+			const std::array<scalar, N> & oldField,
+			const std::size_t maxIterationNumber) ->
+			std::array<scalar, N>
+	{
+		reactionMatrix JacobiPreconditioner;
+
+		for (std::size_t i = 0; i < N; ++i)
+			JacobiPreconditioner.Diagonale[i] = 1. / matrix.Diagonale[i];
+
+		std::valarray<scalar> oldIteration(N);
+		for (std::size_t i = 0; i < N; ++i)
+			oldIteration[i] = oldField[i];
+
+		std::valarray<scalar> newIteration(oldIteration);
+
+		std::size_t nIterations { 0 };
+
+		std::valarray<scalar> mFrT(N);
+		for (std::size_t i = 0; i < N; ++i)
+			mFrT[i] = matrix.FreeTerm[i];
+
+		std::valarray<scalar> r_n { mFrT
+				- matrixDotProduct(matrix, oldIteration) };
+		std::valarray<scalar> d_n = matrixDotProduct(JacobiPreconditioner, r_n);
+
+		while (true)
+		{
+			nIterations++;
+
+			const scalar diff { std::abs(r_n).max() };
+
+			if ((diff < convergenceTolerance) && (nIterations > 1))
+			{
+				normalize(newIteration);
+
+				std::array<scalar, N> ret { };
+				for (std::size_t i = 0; i < N; ++i)
+					ret[i] = newIteration[i];
+
+				return ret;
+			}
+			else if (nIterations >= maxIterationNumber)
+			//[[unlikely]]
+			{
+				std::clog
+						<< "Jacobi preconditioned conjugate gradient algorithm for chemical reaction combustion did not converged. Difference is: "
+						<< diff << std::endl;
+
+				throw exception(
+						"Jacobi preconditioned conjugate gradient algorithm for chemical reaction combustion did not converged.",
+						errors::systemError);
+
+				normalize(newIteration);
+
+				std::array<scalar, N> ret { };
+				for (std::size_t i = 0; i < N; ++i)
+					ret[i] = newIteration[i];
+
+				return ret;
+			}
+			else
+			{
+				oldIteration = newIteration;
+
+				const scalar alpha = (r_n
+						* matrixDotProduct(JacobiPreconditioner, r_n)).sum()
+						/ ((d_n * matrixDotProduct(matrix, d_n)).sum()
+								+ stabilizator);
+
+				newIteration += alpha * d_n;
+
+				const std::valarray<scalar> r_n1 = r_n
+						- alpha * matrixDotProduct(matrix, d_n);
+
+				const scalar beta =
+						(r_n1 * matrixDotProduct(JacobiPreconditioner, r_n1)).sum()
+								/ ((r_n
+										* matrixDotProduct(JacobiPreconditioner,
+												r_n)).sum() + stabilizator);
+
+				const std::valarray<scalar> d_n1 = matrixDotProduct(
+						JacobiPreconditioner, r_n1) + beta * d_n;
+
+				r_n = r_n1;
+				d_n = d_n1;
+			}
+		}
+	}
+
+	template<typename reactionMatrix, std::size_t N>
+	static auto solveGE(const reactionMatrix & matrix) ->
+	std::array<scalar, N>
+	{
+		std::array<std::array<scalar, N>, N> A { 0 };
+
+		auto b = matrix.FreeTerm;
+
+		for (std::size_t i = 0; i < N; ++i)
+			A[i][i] = matrix.Diagonale[i];
+
+		for (std::size_t i = 0; i < matrix.LeftTriangle.size(); ++i)
+		{
+			const auto & lt = matrix.LeftTriangle[i];
+
+			for (std::size_t j = 0; j < lt.size(); ++j)
+			{
+				const auto & p = lt[j];
+
+				const auto ind = p.second;
+
+				A[i][ind] = p.first;
 			}
 		}
 
-		template<typename reactionMatrix, std::size_t N>
-		static auto solveGS(const reactionMatrix & matrix,
-				const std::array<scalar, N> & oldField,
-				const std::size_t maxIterationNumber) -> std::array<scalar, N>
+		for (std::size_t i = 0; i < matrix.RightTriangle.size(); ++i)
 		{
-			std::valarray<scalar> oldIteration(N);
-			for (std::size_t i = 0; i < N; ++i)
-				oldIteration[i] = oldField[i];
+			const auto & rt = matrix.RightTriangle[i];
 
-			std::valarray<scalar> newIteration(oldIteration);
-
-			std::size_t nIterations { 0 };
-
-			while (true)
+			for (std::size_t j = 0; j < rt.size(); j++)
 			{
-				nIterations++;
+				const auto & p = rt[j];
 
-				for (std::size_t i = 0; i < oldIteration.size(); ++i)
-				{
-					const scalar aii { 1. / matrix.Diagonale[i] };
+				const auto ind = p.second;
 
-					const scalar bi { matrix.FreeTerm[i] };
+				A[i][ind] = p.first;
+			}
+		}
 
-					newIteration[i] = bi * aii;
+		/*Pivoting*/
+		for (std::size_t k = 0; k < (N - 1); ++k)
+		{
+			/*Find maximum value in column's next values.*/
+			std::pair<scalar, std::size_t> maxVal(std::make_pair(A[k][k], k));
+			for (std::size_t c = k + 1; c < N; ++c)
+				if (A[c][k] > maxVal.first)
+					maxVal = std::make_pair(A[c][k], c);
 
-					for (std::size_t j = 0; j < matrix.LeftTriangle[i].size();
-							++j)
-						newIteration[i] -= matrix.LeftTriangle[i][j].first
-								* newIteration[matrix.LeftTriangle[i][j].second]
-								* aii;
+			const auto c = maxVal.second;
 
-					for (std::size_t j = 0; j < matrix.RightTriangle[i].size();
-							++j)
-						newIteration[i] -=
-								matrix.RightTriangle[i][j].first
-										* oldIteration[matrix.RightTriangle[i][j].second]
-										* aii;
-				}
+			if (c != k)
+			{
+				auto & origArr = A[c];
+				auto & destArr = A[k];
 
-				for (std::size_t i = oldIteration.size() - 1;; --i)
-				{
-					const scalar aii { 1. / matrix.Diagonale[i] };
+				std::swap(origArr, destArr);
+				std::swap(b[c], b[k]);
+			}
+		}
+		/**/
 
-					const scalar bi { matrix.FreeTerm[i] };
+		for (std::size_t k = 0; k < N - 1; ++k)
+			for (std::size_t i = k + 1; i < N; ++i)
+			{
+				const auto ratio = A[i][k] / (A[k][k] + stabilizator);
 
-					newIteration[i] = bi * aii;
+				for (std::size_t j = k + 1; j < N; ++j)
+					A[i][j] = A[i][j] - ratio * A[k][j];
 
-					if (matrix.LeftTriangle[i].size() != 0)
-						for (std::size_t j = matrix.LeftTriangle[i].size() - 1;;
-								--j)
-						{
-							newIteration[i] -=
-									matrix.LeftTriangle[i][j].first
-											* oldIteration[matrix.LeftTriangle[i][j].second]
-											* aii;
-
-							if (j == 0)
-								break;
-						}
-
-					if (matrix.RightTriangle[i].size() != 0)
-						for (std::size_t j = matrix.RightTriangle[i].size() - 1;;
-								--j)
-						{
-							newIteration[i] -=
-									matrix.RightTriangle[i][j].first
-											* newIteration[matrix.RightTriangle[i][j].second]
-											* aii;
-
-							if (j == 0)
-								break;
-						}
-
-					if (i == 0)
-						break;
-				}
-
-				const scalar diff {
-						100.
-								* std::abs(
-										(newIteration - oldIteration)
-												/ (std::abs(newIteration)
-														+ stabilizator)).max() };
-
-				if (diff < convergenceTolerance)
-				{
-					normalize(newIteration);
-
-					std::array<scalar, N> ret;
-					for (std::size_t i = 0; i < N; ++i)
-						ret[i] = newIteration[i];
-
-					return ret;
-				}
-				else if (nIterations >= maxIterationNumber)
-					[[unlikely]]
-					{
-						std::clog
-								<< "Gauss-Seidel algorithm for chemical reaction combustion did not converged. Difference is: "
-								<< diff << std::endl;
-
-						throw exception(
-								"Gauss-Seidel algorithm for chemical reaction combustion did not converged.",
-								errors::systemError);
-
-						normalize(newIteration);
-
-						std::array<scalar, N> ret;
-						for (std::size_t i = 0; i < N; ++i)
-							ret[i] = newIteration[i];
-
-						return ret;
-					}
-					else
-						oldIteration = newIteration;
-				}
+				b[i] = b[i] - ratio * b[k];
 			}
 
-			template<typename reactionMatrix, std::size_t N>
-			static auto solveCG(const reactionMatrix & matrix,
-					const std::array<scalar, N> & oldField,
-					const std::size_t maxIterationNumber) ->
-					std::array<scalar, N>
-			{
-				std::valarray<scalar> oldIteration(N);
-				for (std::size_t i = 0; i < N; ++i)
-					oldIteration[i] = oldField[i];
+		std::valarray<scalar> phi(N);
 
-				std::valarray<scalar> newIteration(oldIteration);
+		phi[N - 1] = b[N - 1] / (A[N - 1][N - 1] + stabilizator);
 
-				std::size_t nIterations { 0 };
+		for (std::size_t i = N - 2;; --i)
+		{
+			scalar term = 0.0;
 
-				std::valarray<scalar> mFrT(N);
-				for (std::size_t i = 0; i < N; ++i)
-					mFrT[i] = matrix.FreeTerm[i];
+			for (std::size_t j = i + 1; j < N; ++j)
+				term += A[i][j] * phi[j];
 
-				std::valarray<scalar> r_n { mFrT
-						- matrixDotProduct(matrix, oldIteration) };
-				std::valarray<scalar> d_n = r_n;
+			phi[i] = (b[i] - term) / (A[i][i] + stabilizator);
 
-				while (true)
-				{
-					nIterations++;
+			if (i == 0)
+				break;
+		}
 
-					const scalar diff { std::abs(r_n).max() };
+		normalize(phi);
 
-					if ((diff < convergenceTolerance) && (nIterations > 1))
-					{
-						normalize(newIteration);
+		std::array<scalar, N> ret { };
+		for (std::size_t i = 0; i < N; ++i)
+			ret[i] = phi[i];
 
-						std::array<scalar, N> ret;
-						for (std::size_t i = 0; i < N; ++i)
-							ret[i] = newIteration[i];
+		return ret;
+	}
+public:
+	const bool chemicalReaction;
 
-						return ret;
-					}
-					else if (nIterations >= maxIterationNumber)
-						[[unlikely]]
-						{
-							std::clog
-									<< "Conjugate gradient algorithm for chemical reaction combustion did not converged. Difference is: "
-									<< diff << std::endl;
+	abstractChemicalKinetics(const bool flag, const scalar mt) noexcept;
 
-							throw exception(
-									"Conjugate gradient algorithm for chemical reaction combustion did not converged.",
-									errors::systemError);
+	virtual ~abstractChemicalKinetics() noexcept =0;
 
-							normalize(newIteration);
+	static std::unique_ptr<abstractChemicalKinetics> createChemicalKinetics(
+			const homogeneousPhase<cubicCell> & phaseIn,
+			const chemicalReactions chemReactFlag,
+			const scalar minimalTimestep) noexcept;
 
-							std::array<scalar, N> ret;
-							for (std::size_t i = 0; i < N; ++i)
-								ret[i] = newIteration[i];
-
-							return ret;
-						}
-						else
-						{
-							const scalar alpha =
-									(r_n * r_n).sum()
-											/ ((d_n
-													* matrixDotProduct(matrix,
-															d_n)).sum()
-													+ stabilizator);
-
-							newIteration += alpha * d_n;
-
-							const std::valarray<scalar> r_n1 = r_n
-									- alpha * matrixDotProduct(matrix, d_n);
-
-							const scalar beta = (r_n1 * r_n1).sum()
-									/ ((r_n * r_n).sum() + stabilizator);
-
-							const std::valarray<scalar> d_n1 = r_n1
-									+ beta * d_n;
-
-							r_n = r_n1;
-							d_n = d_n1;
-						}
-					}
-				}
-
-				template<typename reactionMatrix, std::size_t N>
-				static auto solveJCG(const reactionMatrix & matrix,
-						const std::array<scalar, N> & oldField,
-						const std::size_t maxIterationNumber) ->
-						std::array<scalar, N>
-				{
-					reactionMatrix JacobiPreconditioner;
-
-					for (std::size_t i = 0; i < N; ++i)
-						JacobiPreconditioner.Diagonale[i] = 1.
-								/ matrix.Diagonale[i];
-
-					std::valarray<scalar> oldIteration(N);
-					for (std::size_t i = 0; i < N; ++i)
-						oldIteration[i] = oldField[i];
-
-					std::valarray<scalar> newIteration(oldIteration);
-
-					std::size_t nIterations { 0 };
-
-					std::valarray<scalar> mFrT(N);
-					for (std::size_t i = 0; i < N; ++i)
-						mFrT[i] = matrix.FreeTerm[i];
-
-					std::valarray<scalar> r_n { mFrT
-							- matrixDotProduct(matrix, oldIteration) };
-					std::valarray<scalar> d_n = matrixDotProduct(
-							JacobiPreconditioner, r_n);
-
-					while (true)
-					{
-						nIterations++;
-
-						const scalar diff { std::abs(r_n).max() };
-
-						if ((diff < convergenceTolerance) && (nIterations > 1))
-						{
-							normalize(newIteration);
-
-							std::array<scalar, N> ret;
-							for (std::size_t i = 0; i < N; ++i)
-								ret[i] = newIteration[i];
-
-							return ret;
-						}
-						else if (nIterations >= maxIterationNumber)
-							[[unlikely]]
-							{
-								std::clog
-										<< "Jacobi preconditioned conjugate gradient algorithm for chemical reaction combustion did not converged. Difference is: "
-										<< diff << std::endl;
-
-								throw exception(
-										"Jacobi preconditioned conjugate gradient algorithm for chemical reaction combustion did not converged.",
-										errors::systemError);
-
-								normalize(newIteration);
-
-								std::array<scalar, N> ret;
-								for (std::size_t i = 0; i < N; ++i)
-									ret[i] = newIteration[i];
-
-								return ret;
-							}
-							else
-							{
-								oldIteration = newIteration;
-
-								const scalar alpha =
-										(r_n
-												* matrixDotProduct(
-														JacobiPreconditioner,
-														r_n)).sum()
-												/ ((d_n
-														* matrixDotProduct(
-																matrix, d_n)).sum()
-														+ stabilizator);
-
-								newIteration += alpha * d_n;
-
-								const std::valarray<scalar> r_n1 = r_n
-										- alpha * matrixDotProduct(matrix, d_n);
-
-								const scalar beta = (r_n1
-										* matrixDotProduct(JacobiPreconditioner,
-												r_n1)).sum()
-										/ ((r_n
-												* matrixDotProduct(
-														JacobiPreconditioner,
-														r_n)).sum()
-												+ stabilizator);
-
-								const std::valarray<scalar> d_n1 =
-										matrixDotProduct(JacobiPreconditioner,
-												r_n1) + beta * d_n;
-
-								r_n = r_n1;
-								d_n = d_n1;
-							}
-						}
-					}
-
-					template<typename reactionMatrix, std::size_t N>
-					static auto solveGE(const reactionMatrix & matrix) ->
-					std::array<scalar, N>
-					{
-						scalar A[N][N];
-
-						auto b = matrix.FreeTerm;
-
-						for (std::size_t i = 0; i < N; ++i)
-							A[i][i] = matrix.Diagonale[i];
-
-						for (std::size_t i = 0; i < matrix.LeftTriangle.size();
-								++i)
-						{
-							const auto & lt = matrix.LeftTriangle[i];
-
-							for (std::size_t j = 0; j < lt.size(); ++j)
-							{
-								const auto & p = lt[j];
-
-								const auto ind = p.second;
-
-								A[i][ind] = p.first;
-							}
-						}
-
-						for (std::size_t i = 0; i < matrix.RightTriangle.size();
-								++i)
-						{
-							const auto & rt = matrix.RightTriangle[i];
-
-							for (std::size_t j = 0; j < rt.size(); j++)
-							{
-								const auto & p = rt[j];
-
-								const auto ind = p.second;
-
-								A[i][ind] = p.first;
-							}
-						}
-
-						for (std::size_t k = 0; k < N - 1; ++k)
-							for (std::size_t i = k + 1; i < N; ++i)
-							{
-								const auto ratio = A[i][k] / A[k][k];
-
-								for (std::size_t j = 0; j < N; ++j)
-									A[i][j] = A[i][j] - ratio * A[k][j];
-
-								b[i] = b[i] - ratio * b[k];
-							}
-
-						std::valarray<scalar> phi(N);
-
-						phi[N - 1] = b[N - 1] / A[N - 1][N - 1];
-
-						for (std::size_t i = N - 2;; --i)
-						{
-							scalar term = 0.0;
-
-							for (std::size_t j = i + 1; j < N; ++j)
-								term += A[i][j] * phi[j];
-
-							phi[i] = (b[i] - term) / A[i][i];
-
-							if (i == 0)
-								break;
-						}
-
-						normalize(phi);
-
-						std::array<scalar, N> ret;
-						for (std::size_t i = 0; i < N; ++i)
-							ret[i] = phi[i];
-
-						return ret;
-					}
-				public:
-					const bool chemicalReaction;
-
-					abstractChemicalKinetics(const bool flag,
-							const scalar mt) noexcept;
-
-					virtual ~abstractChemicalKinetics() noexcept =0;
-
-					static std::unique_ptr<abstractChemicalKinetics> createChemicalKinetics(
-							const homogeneousPhase<cubicCell> & phaseIn,
-							const chemicalReactions chemReactFlag,
-							const scalar minimalTimestep) noexcept;
-
-					virtual void solveChemicalKinetics(
-							homogeneousPhase<cubicCell>&) const =0;
-				};
-				}
-				}  // namespace schemi
+	virtual void solveChemicalKinetics(homogeneousPhase<cubicCell>&) const =0;
+};
+}
+}  // namespace schemi
 
 #endif /* ABSTRACTCHEMICALKINETICS_HPP_ */

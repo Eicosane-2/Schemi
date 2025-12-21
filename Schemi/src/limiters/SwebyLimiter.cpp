@@ -46,7 +46,7 @@ schemi::vector schemi::SwebyLimiter::calculate(const vector & r,
 	vector Sweby, xiR { 2 / (1 + std::get<0>(r())), 2 / (1 + std::get<1>(r())),
 			2 / (1 + std::get<2>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Sweby.r().begin(),
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(), Sweby.wr().begin(),
 			[this](const auto r_j, const auto xiR_j) 
 			{	return this->SwebyLimiterCalculation(r_j, xiR_j);});
 
@@ -64,7 +64,7 @@ schemi::tensor schemi::SwebyLimiter::calculate(const tensor & r,
 					/ (1 + std::get<6>(r())), 2 / (1 + std::get<7>(r())), 2
 					/ (1 + std::get<8>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Sweby.r().begin(),
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(), Sweby.wr().begin(),
 			[this](const auto r_j, const auto xiR_j) 
 			{	return this->SwebyLimiterCalculation(r_j, xiR_j);});
 
@@ -97,7 +97,7 @@ schemi::tensor3 schemi::SwebyLimiter::calculate(const tensor3 & r,
 					/ (1 + std::get<24>(r())), 2 / (1 + std::get<25>(r())), 2
 					/ (1 + std::get<26>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Sweby.r().begin(),
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(), Sweby.wr().begin(),
 			[this](const auto r_j, const auto xiR_j) 
 			{	return this->SwebyLimiterCalculation(r_j, xiR_j);});
 
@@ -135,7 +135,7 @@ schemi::vector schemi::SwebyLimiter::calculateNoRSLimit(const vector & r,
 {
 	vector Sweby;
 
-	std::transform(r().begin(), r().end(), Sweby.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Sweby.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->SwebyLimiterCalculation(r_j);});
 
@@ -149,7 +149,7 @@ schemi::tensor schemi::SwebyLimiter::calculateNoRSLimit(const tensor & r,
 {
 	tensor Sweby;
 
-	std::transform(r().begin(), r().end(), Sweby.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Sweby.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->SwebyLimiterCalculation(r_j);});
 
@@ -169,7 +169,7 @@ schemi::tensor3 schemi::SwebyLimiter::calculateNoRSLimit(const tensor3 & r,
 {
 	tensor3 Sweby;
 
-	std::transform(r().begin(), r().end(), Sweby.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Sweby.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->SwebyLimiterCalculation(r_j);});
 

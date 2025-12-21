@@ -10,6 +10,7 @@
 #ifndef TRANSPORTCOEFFICIENTS_HPP_
 #define TRANSPORTCOEFFICIENTS_HPP_
 
+#include <algorithm>
 #include <iostream>
 
 #include "turbulenceModelEnum.hpp"
@@ -65,47 +66,47 @@ struct transportCoefficients
 			const field<scalar, typeOfEntity> & epsField,
 			const abstractTurbulenceModel & t) noexcept
 	{
-		tNu.r() = t.calculateNut(kField(), epsField());
+		tNu.val() = t.calculateNut(kField.cval(), epsField.cval());
 
 		calculateCoefficients(t);
 	}
 
 	void calculateCoefficients(const abstractTurbulenceModel & t) noexcept
 	{
-		tD.r() = tNu() / t.sigmaSc();
-		tKappa.r() = tNu() / t.sigmaT();
-		tLambda.r() = tNu() / t.sigmaE();
-		k_D.r() = tNu() / t.sigmaK();
-		eps_D.r() = tNu() / t.sigmaEps();
-		a_D.r() = tNu() / t.sigmaa();
-		b_D.r() = tNu() / t.sigmab();
+		tD = tNu / t.sigmaSc();
+		tKappa = tNu / t.sigmaT();
+		tLambda = tNu / t.sigmaE();
+		k_D = tNu / t.sigmaK();
+		eps_D = tNu / t.sigmaEps();
+		a_D = tNu / t.sigmaa();
+		b_D = tNu / t.sigmab();
 	}
 
 	void tAssign(const scalar val) noexcept
 	{
-		tNu.r() = val;
-		tD.r() = val;
-		tKappa.r() = val;
-		tLambda.r() = val;
-		k_D.r() = val;
-		eps_D.r() = val;
-		a_D.r() = val;
-		b_D.r() = val;
+		tNu.val() = val;
+		tD.val() = val;
+		tKappa.val() = val;
+		tLambda.val() = val;
+		k_D.val() = val;
+		eps_D.val() = val;
+		a_D.val() = val;
+		b_D.val() = val;
 	}
 
 	auto& operator=(const scalar val) noexcept
 	{
-		tNu.r() = val;
-		tD.r() = val;
-		tKappa.r() = val;
-		tLambda.r() = val;
-		k_D.r() = val;
-		eps_D.r() = val;
-		a_D.r() = val;
-		b_D.r() = val;
+		tNu.val() = val;
+		tD.val() = val;
+		tKappa.val() = val;
+		tLambda.val() = val;
+		k_D.val() = val;
+		eps_D.val() = val;
+		a_D.val() = val;
+		b_D.val() = val;
 
-		physMu.r() = val;
-		for (auto & dm_i : physDm.r())
+		physMu.val() = val;
+		for (auto & dm_i : physDm.val())
 			for (std::size_t k1 = 0; k1 < dm_i.size(); ++k1)
 				for (std::size_t k2 = 0; k2 < dm_i[k1].size(); ++k2)
 				{
@@ -114,8 +115,8 @@ struct transportCoefficients
 
 					dm_i[k1][k2] = val;
 				}
-		physDs.r() = std::valarray<scalar>(val, physDs()[0].size);
-		physKappa.r() = val;
+		physDs.val() = std::valarray<scalar>(val, physDs()[0].size);
+		physKappa.val() = val;
 
 		return *this;
 	}
@@ -168,43 +169,49 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 	}
 
 	field<scalar, typeOfEntity> maxValue(const bool turbulenceFlag,
-			const bool aField, const bool bField) const noexcept
+			const bool aField, const bool bField,
+			const field<scalar, typeOfEntity> & rho) const noexcept
 	{
 		auto maxFieldVal = this->physKappa;
 
 		for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
 		{
-			const auto & D = this->physDs()[i];
+			const auto & D = this->physDs.cval()[i];
 
-			maxFieldVal.r()[i] = std::max(maxFieldVal()[i], D.max());
-			maxFieldVal.r()[i] = std::max(maxFieldVal()[i], this->physMu()[i]);
+			maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+					rho.cval()[i] * D.max());
+			maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+					this->physMu.cval()[i]);
 		}
 
 		if (turbulenceFlag)
 		{
 			for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
-				maxFieldVal.r()[i] = std::max(maxFieldVal()[i], this->tNu()[i]);
+				maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+						rho.cval()[i] * this->tNu.cval()[i]);
 			for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
-				maxFieldVal.r()[i] = std::max(maxFieldVal()[i], this->tD()[i]);
+				maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+						rho.cval()[i] * this->tD.cval()[i]);
 			for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
-				maxFieldVal.r()[i] = std::max(maxFieldVal()[i],
-						2 * this->tLambda()[i]);
+				maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+						rho.cval()[i] * this->tLambda.cval()[i]);
 			for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
-				maxFieldVal.r()[i] = std::max(maxFieldVal()[i], this->k_D()[i]);
+				maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+						rho.cval()[i] * this->k_D.cval()[i]);
 			for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
-				maxFieldVal.r()[i] = std::max(maxFieldVal()[i],
-						this->eps_D()[i]);
+				maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+						rho.cval()[i] * this->eps_D.cval()[i]);
 
 			if (aField)
 			{
 				for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
-					maxFieldVal.r()[i] = std::max(maxFieldVal()[i],
-							this->a_D()[i]);
+					maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+							rho.cval()[i] * this->a_D.cval()[i]);
 
 				if (bField)
 					for (std::size_t i = 0; i < maxFieldVal.size(); ++i)
-						maxFieldVal.r()[i] = std::max(maxFieldVal()[i],
-								this->b_D()[i]);
+						maxFieldVal.val()[i] = std::max(maxFieldVal.cval()[i],
+								rho.cval()[i] * this->b_D.cval()[i]);
 			}
 		}
 
@@ -218,34 +225,35 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 	{
 		if (t.turbulence())
 		{
-			mu.r() = this->physMu() + rho() * this->tNu();
+			mu = this->physMu + rho * this->tNu;
 
 			for (std::size_t k = 0; k < rhoD.size(); ++k)
 				for (std::size_t i = 0; i < rho.size(); ++i)
-					rhoD[k].r()[i] = rho()[i]
-							* (this->physDs()[i][k] + this->tD()[i]);
+					rhoD[k].val()[i] = rho.cval()[i]
+							* (this->physDs.cval()[i][k] + this->tD.cval()[i]);
 
-			kappa.r() = this->physKappa() + conc() * Cv() * this->tLambda()
-					+ conc() * Cv() * this->tKappa();
+			kappa = this->physKappa + conc * Cv * this->tLambda
+					+ conc * Cv * this->tKappa;
 
-			rhoDk.r() = this->physMu() + rho() * this->k_D();
-			rhoDeps.r() = this->physMu() + rho() * this->eps_D();
+			rhoDk = this->physMu + rho * this->k_D;
+			rhoDeps = this->physMu + rho * this->eps_D;
 			if (t.aField())
 			{
-				rhoDa.r() = this->physMu() + rho() * this->a_D();
+				rhoDa = this->physMu + rho * this->a_D;
 				if (t.bField())
-					rhoDb.r() = this->physMu() + rho() * this->b_D();
+					rhoDb = this->physMu + rho * this->b_D;
 			}
 		}
 		else
 		{
-			mu.r() = this->physMu();
+			mu = this->physMu;
 
 			for (std::size_t k = 0; k < rhoD.size(); ++k)
 				for (std::size_t i = 0; i < rho.size(); ++i)
-					rhoD[k].r()[i] = rho()[i] * this->physDs()[i][k];
+					rhoD[k].val()[i] = rho.cval()[i]
+							* this->physDs.cval()[i][k];
 
-			kappa.r() = this->physKappa();
+			kappa = this->physKappa;
 		}
 	}
 
@@ -262,10 +270,10 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 				{
 					std::valarray<scalar> c(Ncomp);
 					for (std::size_t k = 1; k < Ncomp1; ++k)
-						c[k - 1] = N.v[k]()[i];
+						c[k - 1] = N.v[k].cval()[i];
 
 					std::size_t replaceIndex { 0 };
-					const scalar replaceC { c.max() };
+					const scalar replaceC { c.min() };
 					for (std::size_t k = 0; k < c.size(); ++k)
 						if (replaceC == c[k])
 						{
@@ -280,7 +288,7 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 						std::valarray<scalar> freeTerm(0., Ncomp);
 
 						for (std::size_t k = 0; k < Ncomp; ++k)
-							freeTerm[k] = -gradX[k]()[i]()[f];
+							freeTerm[k] = -gradX[k].cval()[i]()[f];
 
 						for (std::size_t k1 = 1; k1 < Ncomp1; ++k1)
 							if (k1 != replaceIndex)
@@ -289,15 +297,14 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 									if (k1 == k2)
 										continue;
 
-									const auto & N1 = N.v[k1]()[i];
-									const auto & N2 = N.v[k2]()[i];
-									const auto & N0 = N.v[0]()[i];
+									const auto & N1 = N.v[k1].cval()[i];
+									const auto & N2 = N.v[k2].cval()[i];
+									const auto & N0 = N.v[0].cval()[i];
 
-									const scalar Aij =
-											N1 * N2
-													/ (N0 * N0
-															* this->physDm()[i][k1
-																	- 1][k2 - 1]);
+									const scalar Aij = N1 * N2
+											/ (N0 * N0
+													* this->physDm.cval()[i][k1
+															- 1][k2 - 1]);
 
 									cellDFluxesMatrix[k1 - 1][k2 - 1] = -Aij;
 									cellDFluxesMatrix[k1 - 1][k1 - 1] += Aij;
@@ -308,7 +315,7 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 
 								for (std::size_t k2 = 1; k2 < Ncomp1; ++k2)
 									cellDFluxesMatrix[k1 - 1][k2 - 1] =
-											N.v[k2]()[i] * M[k2 - 1];
+											N.v[k2].cval()[i] * M[k2 - 1];
 							}
 
 						const std::valarray<scalar> resFlows =
@@ -316,7 +323,7 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 										freeTerm) * M * c;
 
 						for (std::size_t k = 0; k < Ncomp; ++k)
-							DFlux.r()[i][k].r()[f] = resFlows[k];
+							DFlux.val()[i][k].wr()[f] = resFlows[k];
 					}
 				}
 			else
@@ -324,10 +331,10 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 				{
 					std::valarray<scalar> c(Ncomp);
 					for (std::size_t k = 1; k < Ncomp1; ++k)
-						c[k - 1] = N.v[k]()[i];
+						c[k - 1] = N.v[k].cval()[i];
 
 					std::size_t replaceIndex { 0 };
-					const scalar replaceC { c.max() };
+					const scalar replaceC { c.min() };
 					for (std::size_t k = 0; k < c.size(); ++k)
 						if (replaceC == c[k])
 						{
@@ -342,7 +349,7 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 						std::valarray<scalar> freeTerm(0., Ncomp);
 
 						for (std::size_t k = 0; k < Ncomp; ++k)
-							freeTerm[k] = -gradX[k]()[i]()[f];
+							freeTerm[k] = -gradX[k].cval()[i]()[f];
 
 						for (std::size_t k1 = 1; k1 < Ncomp1; ++k1)
 							if (k1 != replaceIndex)
@@ -351,16 +358,16 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 									if (k1 == k2)
 										continue;
 
-									const auto & N1 = N.v[k1]()[i];
-									const auto & N2 = N.v[k2]()[i];
-									const auto & N0 = N.v[0]()[i];
+									const auto & N1 = N.v[k1].cval()[i];
+									const auto & N2 = N.v[k2].cval()[i];
+									const auto & N0 = N.v[0].cval()[i];
 
 									const scalar Aij =
 											N1 * N2
 													/ (N0 * N0
-															* (this->physDm()[i][k1
+															* (this->physDm.cval()[i][k1
 																	- 1][k2 - 1]
-																	+ this->tD()[i]));
+																	+ this->tD.cval()[i]));
 
 									cellDFluxesMatrix[k1 - 1][k2 - 1] = -Aij;
 									cellDFluxesMatrix[k1 - 1][k1 - 1] += Aij;
@@ -371,7 +378,7 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 
 								for (std::size_t k2 = 1; k2 < Ncomp1; ++k2)
 									cellDFluxesMatrix[k1 - 1][k2 - 1] =
-											N.v[k2]()[i] * M[k2 - 1];
+											N.v[k2].cval()[i] * M[k2 - 1];
 							}
 
 						const std::valarray<scalar> resFlows =
@@ -379,12 +386,12 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 										freeTerm) * M * c;
 
 						for (std::size_t k = 0; k < Ncomp; ++k)
-							DFlux.r()[i][k].r()[f] = resFlows[k];
+							DFlux.val()[i][k].wr()[f] = resFlows[k];
 					}
 				}
 		else
 			for (std::size_t i = 0; i < DFlux.size(); ++i)
-				DFlux.r()[i][0].r() = { 0, 0, 0 };
+				DFlux.val()[i][0].wr() = { 0, 0, 0 };
 	}
 private:
 	std::valarray<scalar> GaussEliminationSolver(
@@ -393,12 +400,34 @@ private:
 	{
 		const std::size_t N = b.size();
 
+		/*Pivoting*/
+		for (std::size_t k = 0; k < (N - 1); ++k)
+		{
+			/*Find maximum value in column's next values.*/
+			std::pair<scalar, std::size_t> maxVal(std::make_pair(A[k][k], k));
+			for (std::size_t c = k + 1; c < N; ++c)
+				if (A[c][k] > maxVal.first)
+					maxVal = std::make_pair(A[c][k], c);
+
+			const auto c = maxVal.second;
+
+			if (c != k)
+			{
+				auto & origArr = A[c];
+				auto & destArr = A[k];
+
+				std::swap(origArr, destArr);
+				std::swap(b[c], b[k]);
+			}
+		}
+		/**/
+
 		for (std::size_t k = 0; k < N - 1; ++k)
 			for (std::size_t i = k + 1; i < N; ++i)
 			{
 				const auto ratio = A[i][k] / (A[k][k] + stabilizator);
 
-				for (std::size_t j = 0; j < N; ++j)
+				for (std::size_t j = k + 1; j < N; ++j)
 					A[i][j] = A[i][j] - ratio * A[k][j];
 
 				b[i] = b[i] - ratio * b[k];
@@ -498,27 +527,28 @@ private:
 				return newIteration;
 			}
 			else if (nIterations >= 100)
-				[[unlikely]]
-				{
-					std::clog
-							<< "Gauss-Seidel algorithm for diffusive flows did not converged. Difference is: "
-							<< diff << std::endl;
+			//[[unlikely]]
+			{
+				std::clog
+						<< "Gauss-Seidel algorithm for diffusive flows did not converged. Difference is: "
+						<< diff << std::endl;
 
-					normalize(newIteration);
-					return newIteration;
-				}
-				else
-					oldIteration = newIteration;
+				normalize(newIteration);
+				return newIteration;
 			}
+			else
+				oldIteration = newIteration;
 		}
+	}
 
-		void normalize(std::valarray<scalar> & res) const noexcept
+	void normalize(std::valarray<scalar> & res) const noexcept
+	{
+		std::replace_if(std::begin(res), std::end(res), [](const auto & i) 
 		{
-			for (auto & i : res)
-				if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
-					i = 0;
-		}
-	};
-	}  // namespace schemi
+			return std::abs(i) < std::numeric_limits<scalar>::epsilon();
+		}, 0);
+	}
+};
+}  // namespace schemi
 
 #endif /* TRANSPORTCOEFFICIENTS_HPP_ */

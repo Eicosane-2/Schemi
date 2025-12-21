@@ -64,6 +64,15 @@ public:
 			const std::vector<const std::valarray<scalar>*> & concentrations,
 			const std::valarray<scalar> & Uv) const noexcept override;
 
+	std::valarray<scalar> cFrompT(
+			const std::vector<const std::valarray<scalar>*>&,
+			const std::valarray<scalar> & p,
+			const std::valarray<scalar> & T) const noexcept override;
+
+	virtual std::valarray<scalar> cFrompTk(const std::valarray<scalar> & p,
+			const std::valarray<scalar> & T, const std::size_t) const noexcept
+					override;
+
 	std::valarray<scalar> dpdrho(
 			const std::vector<const std::valarray<scalar>*> & concentrations,
 			const std::valarray<scalar>&) const noexcept override;
@@ -138,6 +147,12 @@ public:
 
 	scalar TFromUv(const std::valarray<scalar> & concentrations,
 			const scalar Uv) const noexcept override;
+
+	scalar cFrompT(const std::valarray<scalar>&, const scalar p,
+			const scalar T) const noexcept override;
+
+	scalar cFrompTk(const scalar p, const scalar T,
+			const std::size_t) const noexcept override;
 
 	scalar dpdrho(const std::valarray<scalar>&, const scalar) const noexcept
 			override;

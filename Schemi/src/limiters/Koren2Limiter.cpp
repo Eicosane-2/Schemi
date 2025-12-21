@@ -18,10 +18,10 @@ schemi::scalar schemi::Koren2Limiter::Koren2LimiterCalculation(const scalar r,
 
 	if (r <= 0)
 		Koren2 = std::min(static_cast<scalar>(0),
-				std::max(-2.0 / 3.0, (1 + 2 * r) / 3));
+				std::max(-twothirds, (1 + 2 * r) / 3));
 	else
 		Koren2 = std::min(
-				{ 4.0 * r / 3.0, std::min((1 + 2 * r) / 3,
+				{ 2 * twothirds * r, std::min((1 + 2 * r) / 3,
 						static_cast<scalar>(2)), 2 * xiR });
 
 	return Koren2;
@@ -34,9 +34,9 @@ schemi::scalar schemi::Koren2Limiter::Koren2LimiterCalculation(
 
 	if (r <= 0)
 		Koren2 = std::min(static_cast<scalar>(0),
-				std::max(-2.0 / 3.0, (1 + 2 * r) / 3));
+				std::max(-twothirds, (1 + 2 * r) / 3));
 	else
-		Koren2 = std::min(4.0 * r / 3.0,
+		Koren2 = std::min(2 * twothirds * r,
 				std::min((1 + 2 * r) / 3, static_cast<scalar>(2)));
 
 	return Koren2;
@@ -48,8 +48,8 @@ schemi::vector schemi::Koren2Limiter::calculate(const vector & r,
 	vector Koren2, xiR { 2 / (1 + std::get<0>(r())), 2 / (1 + std::get<1>(r())),
 			2 / (1 + std::get<2>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Koren2.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			Koren2.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->Koren2LimiterCalculation(r_j, xiR_j);});
 
 	return vector { std::get<0>(Koren2()) * std::get<0>(gradient()),
@@ -66,8 +66,8 @@ schemi::tensor schemi::Koren2Limiter::calculate(const tensor & r,
 					/ (1 + std::get<6>(r())), 2 / (1 + std::get<7>(r())), 2
 					/ (1 + std::get<8>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Koren2.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			Koren2.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->Koren2LimiterCalculation(r_j, xiR_j);});
 
 	return tensor { std::get<0>(Koren2()) * std::get<0>(gradient()),
@@ -99,8 +99,8 @@ schemi::tensor3 schemi::Koren2Limiter::calculate(const tensor3 & r,
 			/ (1 + std::get<23>(r())), 2 / (1 + std::get<24>(r())), 2
 			/ (1 + std::get<25>(r())), 2 / (1 + std::get<26>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Koren2.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			Koren2.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->Koren2LimiterCalculation(r_j, xiR_j);});
 
 	return tensor3 { std::get<0>(Koren2()) * std::get<0>(gradient()),
@@ -137,7 +137,7 @@ schemi::vector schemi::Koren2Limiter::calculateNoRSLimit(const vector & r,
 {
 	vector Koren2;
 
-	std::transform(r().begin(), r().end(), Koren2.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Koren2.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->Koren2LimiterCalculation(r_j);});
 
@@ -151,7 +151,7 @@ schemi::tensor schemi::Koren2Limiter::calculateNoRSLimit(const tensor & r,
 {
 	tensor Koren2;
 
-	std::transform(r().begin(), r().end(), Koren2.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Koren2.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->Koren2LimiterCalculation(r_j);});
 
@@ -171,7 +171,7 @@ schemi::tensor3 schemi::Koren2Limiter::calculateNoRSLimit(const tensor3 & r,
 {
 	tensor3 Koren2;
 
-	std::transform(r().begin(), r().end(), Koren2.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Koren2.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->Koren2LimiterCalculation(r_j);});
 

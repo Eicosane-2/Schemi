@@ -44,8 +44,8 @@ schemi::vector schemi::minmod2Limiter::calculate(const vector & r,
 	vector minmod2, xiR { 2 / (1 + std::get<0>(r())), 2
 			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), minmod2.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			minmod2.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->minmod2LimiterCalculation(r_j, xiR_j);});
 
 	return vector { std::get<0>(minmod2()) * std::get<0>(gradient()),
@@ -62,8 +62,8 @@ schemi::tensor schemi::minmod2Limiter::calculate(const tensor & r,
 			/ (1 + std::get<5>(r())), 2 / (1 + std::get<6>(r())), 2
 			/ (1 + std::get<7>(r())), 2 / (1 + std::get<8>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), minmod2.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			minmod2.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->minmod2LimiterCalculation(r_j, xiR_j);});
 
 	return tensor { std::get<0>(minmod2()) * std::get<0>(gradient()),
@@ -95,8 +95,8 @@ schemi::tensor3 schemi::minmod2Limiter::calculate(const tensor3 & r,
 			/ (1 + std::get<23>(r())), 2 / (1 + std::get<24>(r())), 2
 			/ (1 + std::get<25>(r())), 2 / (1 + std::get<26>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), minmod2.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			minmod2.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->minmod2LimiterCalculation(r_j, xiR_j);});
 
 	return tensor3 { std::get<0>(minmod2()) * std::get<0>(gradient()), std::get<
@@ -133,7 +133,7 @@ schemi::vector schemi::minmod2Limiter::calculateNoRSLimit(const vector & r,
 {
 	vector minmod2;
 
-	std::transform(r().begin(), r().end(), minmod2.r().begin(),
+	std::transform(r().cbegin(), r().cend(), minmod2.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->minmod2LimiterCalculation(r_j);});
 
@@ -147,7 +147,7 @@ schemi::tensor schemi::minmod2Limiter::calculateNoRSLimit(const tensor & r,
 {
 	tensor minmod2;
 
-	std::transform(r().begin(), r().end(), minmod2.r().begin(),
+	std::transform(r().cbegin(), r().cend(), minmod2.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->minmod2LimiterCalculation(r_j);});
 
@@ -167,7 +167,7 @@ schemi::tensor3 schemi::minmod2Limiter::calculateNoRSLimit(const tensor3 & r,
 {
 	tensor3 minmod2;
 
-	std::transform(r().begin(), r().end(), minmod2.r().begin(),
+	std::transform(r().cbegin(), r().cend(), minmod2.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->minmod2LimiterCalculation(r_j);});
 

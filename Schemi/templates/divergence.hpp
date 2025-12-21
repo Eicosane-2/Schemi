@@ -27,7 +27,7 @@ volumeField<returnTypeDivergence<Type>> divergence(
 	const surfaceField<Type> interpolatedField { linearInterpolate(inField,
 			bncCalc, compt) };
 
-	volumeField<returnTypeDivergence<Type>> divergence { mesh_,
+	volumeField<returnTypeDivergence<Type>> divergenceResult { mesh_,
 			returnTypeDivergence<Type> { 0 } };
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
@@ -42,20 +42,20 @@ volumeField<returnTypeDivergence<Type>> divergence(
 			if (mesh_.surfaceOwner()[surfaceIndex] == i)
 				normalVector = mesh_.surfaces()[surfaceIndex].N();
 			else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
-				normalVector = mesh_.surfaces()[surfaceIndex].N() * (-1);
+				normalVector = mesh_.surfaces()[surfaceIndex].N() * -1;
 			else
 				[[unlikely]]
 				throw exception("Couldn't choose normal's orientation.",
 						errors::systemError);
 
-			cellDivValue += (interpolatedField()[surfaceIndex] & normalVector)
-					* mesh_.surfaces()[surfaceIndex].S();
+			cellDivValue += (interpolatedField.cval()[surfaceIndex]
+					& normalVector) * mesh_.surfaces()[surfaceIndex].S();
 		}
 
-		divergence.r()[i] = cellDivValue / mesh_.cells()[i].V();
+		divergenceResult.val()[i] = cellDivValue / mesh_.cells()[i].V();
 	}
 
-	return divergence;
+	return divergenceResult;
 }
 
 template<typename Type>
@@ -64,7 +64,7 @@ volumeField<returnTypeDivergence<Type>> divergence(
 {
 	auto & mesh_ { inField.meshRef() };
 
-	volumeField<returnTypeDivergence<Type>> divergence { mesh_,
+	volumeField<returnTypeDivergence<Type>> divergenceResult { mesh_,
 			returnTypeDivergence<Type> { 0 } };
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
@@ -79,20 +79,20 @@ volumeField<returnTypeDivergence<Type>> divergence(
 			if (mesh_.surfaceOwner()[surfaceIndex] == i)
 				normalVector = mesh_.surfaces()[surfaceIndex].N();
 			else if (mesh_.surfaceNeighbour()[surfaceIndex] == i)
-				normalVector = mesh_.surfaces()[surfaceIndex].N() * (-1);
+				normalVector = mesh_.surfaces()[surfaceIndex].N() * -1;
 			else
 				[[unlikely]]
 				throw exception("Couldn't choose normal's orientation.",
 						errors::systemError);
 
-			cellDivValue += (inField()[surfaceIndex] & normalVector)
+			cellDivValue += (inField.cval()[surfaceIndex] & normalVector)
 					* mesh_.surfaces()[surfaceIndex].S();
 		}
 
-		divergence.r()[i] = cellDivValue / mesh_.cells()[i].V();
+		divergenceResult.val()[i] = cellDivValue / mesh_.cells()[i].V();
 	}
 
-	return divergence;
+	return divergenceResult;
 }
 
 template<typename Type>
@@ -103,7 +103,7 @@ surfaceField<returnTypeDivergence<Type>> surfDivergence(
 {
 	auto & mesh_ { inField.meshRef() };
 
-	surfaceField<returnTypeDivergence<Type>> divergence { mesh_,
+	surfaceField<returnTypeDivergence<Type>> divergenceResult { mesh_,
 			returnTypeDivergence<Type> { 0 } };
 
 	for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
@@ -117,8 +117,9 @@ surfaceField<returnTypeDivergence<Type>> surfDivergence(
 			const vector deltaVec { mesh_.cells()[neiIndex].rC()
 					- mesh_.cells()[ownIndex].rC() };
 
-			divergence.r()[i] = (inField()[neiIndex] - inField()[ownIndex])
-					/ pow<scalar, 2>(deltaVec.mag()) & deltaVec;
+			divergenceResult.val()[i] = (inField.cval()[neiIndex]
+					- inField.cval()[ownIndex]) / pow<scalar, 2>(deltaVec.mag())
+					& deltaVec;
 		}
 			break;
 		case boundaryConditionType::calculatedParallelBoundary:
@@ -126,8 +127,8 @@ surfaceField<returnTypeDivergence<Type>> surfDivergence(
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
 			const Type outerCellValue { bncCalc.boundaryConditionValueCell(
-					inField()[ownIndex], inField.boundCond()[i], ownIndex, i,
-					compt) };
+					inField.cval()[ownIndex], inField.boundCond()[i], ownIndex,
+					i, compt) };
 
 			const vector deltaR(
 					(mesh_.surfaces()[i].rC() - mesh_.cells()[ownIndex].rC())
@@ -137,9 +138,9 @@ surfaceField<returnTypeDivergence<Type>> surfDivergence(
 
 			const vector deltaRNorm(deltaR / deltaRMag);
 
-			const Type deltaV { outerCellValue - inField()[ownIndex] };
+			const Type deltaV { outerCellValue - inField.cval()[ownIndex] };
 
-			divergence.r()[i] = (deltaV / deltaRMag) & deltaRNorm;
+			divergenceResult.val()[i] = (deltaV / deltaRMag) & deltaRNorm;
 		}
 			break;
 		[[unlikely]] default:
@@ -147,8 +148,8 @@ surfaceField<returnTypeDivergence<Type>> surfDivergence(
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
 			const Type outerCellValue { bncCalc.boundaryConditionValueCell(
-					inField()[ownIndex], inField.boundCond()[i], ownIndex, i,
-					compt) };
+					inField.cval()[ownIndex], inField.boundCond()[i], ownIndex,
+					i, compt) };
 
 			const vector deltaR(
 					(mesh_.surfaces()[i].rC() - mesh_.cells()[ownIndex].rC())
@@ -158,14 +159,14 @@ surfaceField<returnTypeDivergence<Type>> surfDivergence(
 
 			const vector deltaRNorm(deltaR / deltaRMag);
 
-			const Type deltaV { outerCellValue - inField()[ownIndex] };
+			const Type deltaV { outerCellValue - inField.cval()[ownIndex] };
 
-			divergence.r()[i] = (deltaV / deltaRMag) & deltaRNorm;
+			divergenceResult.val()[i] = (deltaV / deltaRMag) & deltaRNorm;
 		}
 			break;
 		}
 
-	return divergence;
+	return divergenceResult;
 }
 }  // namespace schemi
 

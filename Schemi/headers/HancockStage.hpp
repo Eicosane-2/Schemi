@@ -40,22 +40,24 @@ volumeField<T> HancockDivergence(
 			const std::size_t surfaceIndex { surfacesOfCell_i[j] };
 
 			if (i == mesh_.surfaceOwner()[surfaceIndex])
-				divTVHancock.r()[i] += ((surfaceOwnerSideT()[surfaceIndex]
-						* surfaceOwnerSideVelocity()[surfaceIndex])
-						& mesh_.surfaces()[surfaceIndex].N())
-						* mesh_.surfaces()[surfaceIndex].S();
+				divTVHancock.val()[i] +=
+						((surfaceOwnerSideT.cval()[surfaceIndex]
+								* surfaceOwnerSideVelocity.cval()[surfaceIndex])
+								& mesh_.surfaces()[surfaceIndex].N())
+								* mesh_.surfaces()[surfaceIndex].S();
 			else if (i == mesh_.surfaceNeighbour()[surfaceIndex])
-				divTVHancock.r()[i] += ((surfaceNeighbourSideT()[surfaceIndex]
-						* surfaceNeighbourSideVelocity()[surfaceIndex])
-						& (mesh_.surfaces()[surfaceIndex].N() * (-1)))
-						* mesh_.surfaces()[surfaceIndex].S();
+				divTVHancock.val()[i] +=
+						((surfaceNeighbourSideT.cval()[surfaceIndex]
+								* surfaceNeighbourSideVelocity.cval()[surfaceIndex])
+								& (mesh_.surfaces()[surfaceIndex].N() * -1))
+								* mesh_.surfaces()[surfaceIndex].S();
 			else
 				[[unlikely]]
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
 						errors::systemError);
 		}
-		divTVHancock.r()[i] /= mesh_.cells()[i].V();
+		divTVHancock.val()[i] /= mesh_.cells()[i].V();
 	}
 
 	return divTVHancock;
@@ -78,11 +80,11 @@ void HancockTimeIntegration(const volumeField<T> & flowDivergence,
 			const std::size_t surfaceIndex { surfacesOfCell_i[j] };
 
 			if (i == mesh_.surfaceOwner()[surfaceIndex])
-				surfaceOwnerSideT.r()[surfaceIndex] -= flowDivergence()[i]
-						* halfTimestep;
+				surfaceOwnerSideT.val()[surfaceIndex] -=
+						flowDivergence.cval()[i] * halfTimestep;
 			else if (i == mesh_.surfaceNeighbour()[surfaceIndex])
-				surfaceNeighbourSideT.r()[surfaceIndex] -= flowDivergence()[i]
-						* halfTimestep;
+				surfaceNeighbourSideT.val()[surfaceIndex] -=
+						flowDivergence.cval()[i] * halfTimestep;
 			else
 				[[unlikely]]
 				throw exception(

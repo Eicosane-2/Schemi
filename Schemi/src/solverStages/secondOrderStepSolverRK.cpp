@@ -10,6 +10,8 @@
 #include "Advection2dOrder.hpp"
 #include "Diffusion.hpp"
 #include "linearInterpolate.hpp"
+#include "gradient.hpp"
+#include "divergence.hpp"
 
 schemi::secondOrderStepSolverRK::secondOrderStepSolverRK(
 		homogeneousPhase<cubicCell> & gasPhase_in,
@@ -30,7 +32,8 @@ schemi::secondOrderStepSolverRK::secondOrderStepSolverRK(
 		const volumeField<scalar> & minimalLengthScale_in,
 		const timestep & sourceTimeFlag_in,
 		const bool & molMassDiffusionFlag_in,
-		const chemicalKinetics::abstractChemicalKinetics & chemKin_in) noexcept :
+		const chemicalKinetics::abstractChemicalKinetics & chemKin_in,
+		const bool & nonLinearityIteratonsFlag_in) noexcept :
 		abstractStepSolver(gasPhase_in, limiter_in, fsolver_in,
 				gravitationFlag_in, g_in, boundaryConditionValueCalc_in,
 				timeForTVD_in, timeForHancock_in, timeForFlowCalculation_in,
@@ -38,7 +41,8 @@ schemi::secondOrderStepSolverRK::secondOrderStepSolverRK(
 				msolver_in, msolverEnthFl_in, timestepCoeffs_in,
 				timeForDiffusion_in, commonConditions_in, enthalpyFlowFlag_in,
 				linearFlag_in, bncCalc_in, minimalLengthScale_in,
-				sourceTimeFlag_in, molMassDiffusionFlag_in, chemKin_in)
+				sourceTimeFlag_in, molMassDiffusionFlag_in, chemKin_in,
+				nonLinearityIteratonsFlag_in)
 {
 }
 
@@ -54,9 +58,10 @@ void schemi::secondOrderStepSolverRK::calculateStep()
 
 	parallelism.correctBoundaryValues(gasPhase);
 
-	Advection2dOrder(gasPhase, limiter, fsolver, { gravitationFlag, g },
-			boundaryConditionValueCalc, timeForTVD, timeForHancock,
-			timeForFlowCalculation, timeForTimeIntegration, parallelism);
+	const auto star1 = Advection2dOrder(gasPhase, limiter, fsolver, {
+			gravitationFlag, g }, boundaryConditionValueCalc, timeForTVD,
+			timeForHancock, timeForFlowCalculation, timeForTimeIntegration,
+			parallelism);
 
 	/* gasPhase: Un2 = Un1 - dt*divF(Un1) */
 
@@ -66,30 +71,42 @@ void schemi::secondOrderStepSolverRK::calculateStep()
 
 	parallelism.correctBoundaryValues(gasPhase);
 
+	star.c.v[0].val() = 0;
+	for (std::size_t k = 1; k < star.c.v.size(); ++k)
+	{
+		star.c.v[k] = (star.c.v[k] + star1.c.v[k]) / 2;
+
+		star.c.v[0] += star.c.v[k];
+	}
+
+	star.rho = (star.rho + star1.rho) / 2;
+	star.v = (star.v + star1.v) / 2;
+	star.p = (star.p + star1.p) / 2;
+	star.a = (star.a + star1.a) / 2;
+	star.b = (star.b + star1.b) / 2;
+
+	if (gasPhase.turbulence->isInitialisationModelUsed())
+	{
+		const volumeField<vector> gradRho_c(grad(star.rho));
+		const surfaceField<vector> gradRho_s(
+				surfGrad(gasPhase.density[0], bncCalc));
+		const volumeField<vector> gradP(grad(star.p));
+		const volumeField<scalar> divU(divergence(star.v));
+		const volumeField<tensor> gradU(grad(star.v));
+
+		gasPhase.turbulence->particlesTimeIntegration(gradRho_c, gradRho_s,
+				gasPhase.velocity, star.v, gasPhase.concentration,
+				gasPhase.density, bncCalc, gasPhase.phaseThermodynamics->Mv(),
+				gasPhase.pressure.meshRef().timestep(), gradP, divU, gradU);
+	}
+
 	if (diffusionFlag)
 	{
-		star.c.v[0].r() = 0;
-		for (std::size_t k = 1; k < star.c.v.size(); ++k)
-		{
-			star.c.v[k] = linearInterpolate(gasPhase.concentration.v[k],
-					boundaryConditionValueCalc);
-
-			star.c.v[0].r() += star.c.v[k]();
-		}
-
-		star.rho = linearInterpolate(gasPhase.density[0],
-				boundaryConditionValueCalc);
-		star.v = linearInterpolate(gasPhase.velocity,
-				boundaryConditionValueCalc);
-		star.p = linearInterpolate(gasPhase.pressure,
-				boundaryConditionValueCalc);
-		star.a = linearInterpolate(gasPhase.aTurb, boundaryConditionValueCalc);
-		star.b = linearInterpolate(gasPhase.bTurb, boundaryConditionValueCalc);
-
 		Diffusion(gasPhase, msolver, msolverEnthFl, timestepCoeffs,
 				timeForDiffusion, commonConditions, star, enthalpyFlowFlag,
 				linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-				parallelism, sourceTimeFlag, molMassDiffusionFlag);
+				parallelism, sourceTimeFlag, molMassDiffusionFlag,
+				nonLinearityIteratonsFlag);
 
 		parallelism.correctBoundaryValues(gasPhase);
 	}

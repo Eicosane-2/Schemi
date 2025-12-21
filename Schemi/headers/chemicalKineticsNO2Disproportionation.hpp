@@ -28,9 +28,10 @@ class NO2Disproportionation: public abstractChemicalKinetics
 	scalar n_backward { 2.478 };
 	scalar E_backward { 3199 * R_SI };
 
-	scalar ΔН_298 = (-76.73 - 134.31 + 241.826 - 2 * 33.1) * 1000;
-	scalar ΔU_298 = ΔН_298;
-	constexpr static scalar Δn = -1;
+	/*ΔH*/
+	scalar deltaH_298 = (-76.73 - 134.31 + 241.826 - 2 * 33.1) * 1000;
+	scalar deltaU_298 = deltaH_298;
+	constexpr static scalar deltan = -1;
 
 	iterativeSolver itSolv;
 

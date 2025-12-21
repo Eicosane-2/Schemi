@@ -11,6 +11,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "doubleDotProduct.hpp"
+
 schemi::arithmeticAModel::arithmeticAModel(const mesh & meshIn,
 		const bool turb_in, const turbulenceModel model) :
 		kEpsModels(meshIn, turb_in, false, false, model)
@@ -120,7 +122,7 @@ std::tuple<
 			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
 	volumeField<scalar> gravGenField(mesh_, 0);
 
-	std::valarray<scalar> modeps(diffFieldsOld.eps());
+	std::valarray<scalar> modeps(diffFieldsOld.eps.cval());
 	const scalar maxeps { modeps.max() };
 	std::replace_if(std::begin(modeps), std::end(modeps),
 			[maxeps](const scalar value) 
@@ -130,33 +132,37 @@ std::tuple<
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
-		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
+		const scalar ek { diffFieldsOld.eps.cval()[i]
+				/ diffFieldsOld.k.cval()[i] };
 
-		const scalar rhoSpherRGen = spherR()[i] && gradV()[i];
+		const scalar rhoSpherRGen = spherR.cval()[i] && gradV.cval()[i];
 
-		const scalar rhoDevRGen = devR()[i] && gradV()[i];
+		const scalar rhoDevRGen = devR.cval()[i] && gradV.cval()[i];
 
 		const scalar gravGen(
-				diffFieldsOld.a()[i] & (gradP()[i] - divDevPhysVisc()[i]));
+				diffFieldsOld.a.cval()[i]
+						& (gradP.cval()[i] - divDevPhysVisc.cval()[i]));
 
-		const scalar dissip(-cellFields.rhoepsTurb()[i]);
+		const scalar dissip(-cellFields.rhoepsTurb.cval()[i]);
 
-		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen + gravGen;
-		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
+		Sourcek.first.val()[i] = rhoSpherRGen + rhoDevRGen + gravGen;
+		Sourcek.second.val()[i] = dissip / cellFields.kTurb.cval()[i];
 
-		Sourceeps.first.r()[i] = (C1() * rhoDevRGen + C3() * rhoSpherRGen
+		Sourceeps.first.val()[i] = (C1() * rhoDevRGen + C3() * rhoSpherRGen
 				+ C0() * gravGen) * ek;
-		Sourceeps.second.r()[i] = C2() * dissip / cellFields.kTurb()[i];
+		Sourceeps.second.val()[i] = C2() * dissip / cellFields.kTurb.cval()[i];
 
 		/*Time-step calculation*/
-		modeps[i] = std::abs(
-				sourceTimestepCoeff * modeps[i]
-						/ ((Sourceeps.first()[i]
-								+ Sourceeps.second()[i]
-										* cellFields.epsTurb()[i])
-								/ cellFields.density[0]()[i] + stabilizator));
+		modeps[i] =
+				std::abs(
+						sourceTimestepCoeff * modeps[i]
+								/ ((Sourceeps.first.cval()[i]
+										+ Sourceeps.second.cval()[i]
+												* cellFields.epsTurb.cval()[i])
+										/ cellFields.density[0].cval()[i]
+										+ stabilizator));
 
-		gravGenField.r()[i] = gravGen;
+		gravGenField.val()[i] = gravGen;
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());
@@ -177,31 +183,31 @@ schemi::volumeField<schemi::vector> schemi::arithmeticAModel::calculate_a(
 	case turbulenceModel::arithmeticA1Model:
 	{
 		volumeField<scalar> sonicSpeed2 { msh, 0 };
-		sonicSpeed2.r() = gasPhase.phaseThermodynamics->sqSonicSpeed(
-				gasPhase.concentration.p, gasPhase.density[0](),
-				gasPhase.internalEnergy(), gasPhase.pressure());
+		sonicSpeed2.val() = gasPhase.phaseThermodynamics->sqSonicSpeed(
+				gasPhase.concentration.p, gasPhase.density[0].cval(),
+				gasPhase.internalEnergy.cval(), gasPhase.pressure.cval());
 
 		for (std::size_t i = 0; i < msh.cellsSize(); ++i)
-			a.r()[i] = -gasPhase.tNu()[i] / sigmaRho()
-					* (gradRho()[i] / gasPhase.density[0]()[i]
-							- gradP()[i]
-									/ (gasPhase.density[0]()[i]
-											* sonicSpeed2()[i]));
+			a.val()[i] = -gasPhase.tNu.cval()[i] / sigmaRho()
+					* (gradRho.cval()[i] / gasPhase.density[0].cval()[i]
+							- gradP.cval()[i]
+									/ (gasPhase.density[0].cval()[i]
+											* sonicSpeed2.cval()[i]));
 	}
 		break;
 	case turbulenceModel::arithmeticA2Model:
 	{
 		for (std::size_t i = 0; i < msh.cellsSize(); ++i)
-			a.r()[i] = -gasPhase.tNu()[i] / sigmaRho()
-					* (gradRho()[i] / gasPhase.density[0]()[i]
-							- gradP()[i] / gasPhase.pressure()[i]);
+			a.val()[i] = -gasPhase.tNu.cval()[i] / sigmaRho()
+					* (gradRho.cval()[i] / gasPhase.density[0].cval()[i]
+							- gradP.cval()[i] / gasPhase.pressure.cval()[i]);
 	}
 		break;
 	case turbulenceModel::arithmeticA3Model:
 	{
 		for (std::size_t i = 0; i < msh.cellsSize(); ++i)
-			a.r()[i] = -gasPhase.tNu()[i] / sigmaRho() * gradRho()[i]
-					/ gasPhase.density[0]()[i];
+			a.val()[i] = -gasPhase.tNu.cval()[i] / sigmaRho()
+					* gradRho.cval()[i] / gasPhase.density[0].cval()[i];
 	}
 		break;
 	default:

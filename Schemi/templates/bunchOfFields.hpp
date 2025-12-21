@@ -18,7 +18,7 @@
 #include "vector.hpp"
 #include "concentrationsPack.hpp"
 #include "field.hpp"
-#include "fieldProducts.hpp"
+#include "fieldOperations.hpp"
 
 namespace schemi
 {
@@ -86,7 +86,7 @@ struct bunchOfFields
 	}
 
 	template<typename typeOfEnity2>
-	bunchOfFields(
+	explicit bunchOfFields(
 			const bunchOfFields<typeOfEnity2> & otherFieldforCopy) noexcept :
 			concentration { otherFieldforCopy.pressure.meshRef(),
 					otherFieldforCopy.concentration.v.size() - std::size_t(1) },
@@ -135,7 +135,7 @@ struct bunchOfFields
 		for (std::size_t k = 0; k < otherFieldforCopy.concentration.v.size();
 				++k)
 			if (k != 0)
-				concentration.v[k].boundCond_r() =
+				concentration.v[k].boundCond_wr() =
 						otherFieldforCopy.concentration.v[k].boundCond();
 	}
 
@@ -171,34 +171,35 @@ struct bunchOfFields
 
 		for (std::size_t k = 0; k < in.concentration.v.size(); ++k)
 		{
-			concentration.v[k].r() = ownWeight * concentration.v[k]()
-					+ inWeight * in.concentration.v[k]();
+			concentration.v[k].val() = (ownWeight * concentration.v[k]
+					+ inWeight * in.concentration.v[k]).cval();
 
-			density[k].r() = ownWeight * density[k]()
-					+ inWeight * in.density[k]();
+			density[k].val() = (ownWeight * density[k]
+					+ inWeight * in.density[k]).cval();
 		}
-		momentum.r() = astProduct(momentum, ownWeight)()
-				+ astProduct(in.momentum, inWeight)();
-		totalEnergy.r() = ownWeight * totalEnergy()
-				+ inWeight * in.totalEnergy();
-		rhokTurb.r() = ownWeight * rhokTurb() + inWeight * in.rhokTurb();
-		rhoepsTurb.r() = ownWeight * rhoepsTurb() + inWeight * in.rhoepsTurb();
-		rhoaTurb.r() = astProduct(rhoaTurb, ownWeight)()
-				+ astProduct(in.rhoaTurb, inWeight)();
-		rhobTurb.r() = ownWeight * rhobTurb() + inWeight * in.rhobTurb();
+		momentum.val() = (momentum * ownWeight + in.momentum * inWeight).cval();
+		totalEnergy.val() =
+				(ownWeight * totalEnergy + inWeight * in.totalEnergy).cval();
+		rhokTurb.val() = (ownWeight * rhokTurb + inWeight * in.rhokTurb).cval();
+		rhoepsTurb.val() =
+				(ownWeight * rhoepsTurb + inWeight * in.rhoepsTurb).cval();
+		rhoaTurb.val() = (rhoaTurb * ownWeight + in.rhoaTurb * inWeight).cval();
+		rhobTurb.val() = (ownWeight * rhobTurb + inWeight * in.rhobTurb).cval();
 
-		velocity.r() = division(momentum, density[0])();
-		kTurb.r() = rhokTurb() / density[0]();
-		epsTurb.r() = rhoepsTurb() / density[0]();
-		aTurb.r() = division(rhoaTurb, density[0])();
+		velocity.val() = (momentum / density[0]).cval();
+		kTurb.val() = (rhokTurb / density[0]).cval();
+		epsTurb.val() = (rhoepsTurb / density[0]).cval();
+		aTurb.val() = (rhoaTurb / density[0]).cval();
 		{
-			internalEnergy.r() = totalEnergy() - rhokTurb()
-					- 0.5 * density[0]() * ampProduct(velocity, velocity)();
+			internalEnergy.val() = (totalEnergy - rhokTurb
+					- 0.5 * density[0] * (velocity & velocity)).cval();
 		}
-		pressure.r() = mixture.pFromUv(concentration.p, internalEnergy());
-		temperature.r() = mixture.TFromUv(concentration.p, internalEnergy());
-		HelmholtzEnergy.r() = mixture.Fv(concentration.p, temperature());
-		entropy.r() = mixture.Sv(concentration.p, temperature());
+		pressure.val() = mixture.pFromUv(concentration.p,
+				internalEnergy.cval());
+		temperature.val() = mixture.TFromUv(concentration.p,
+				internalEnergy.cval());
+		HelmholtzEnergy.val() = mixture.Fv(concentration.p, temperature.cval());
+		entropy.val() = mixture.Sv(concentration.p, temperature.cval());
 	}
 
 	void copyFrom(const bunchOfFields<typeOfEnity1> & in,
@@ -206,29 +207,31 @@ struct bunchOfFields
 	{
 		for (std::size_t k = 0; k < in.concentration.v.size(); ++k)
 		{
-			concentration.v[k].r() = in.concentration.v[k]();
+			concentration.v[k].val() = in.concentration.v[k].cval();
 
-			density[k].r() = in.density[k]();
+			density[k].val() = in.density[k].cval();
 		}
-		momentum.r() = in.momentum();
-		totalEnergy.r() = in.totalEnergy();
-		rhokTurb.r() = in.rhokTurb();
-		rhoepsTurb.r() = in.rhoepsTurb();
-		rhoaTurb.r() = in.rhoaTurb();
-		rhobTurb.r() = in.rhobTurb();
+		momentum.val() = in.momentum.cval();
+		totalEnergy.val() = in.totalEnergy.cval();
+		rhokTurb.val() = in.rhokTurb.cval();
+		rhoepsTurb.val() = in.rhoepsTurb.cval();
+		rhoaTurb.val() = in.rhoaTurb.cval();
+		rhobTurb.val() = in.rhobTurb.cval();
 
-		velocity.r() = division(momentum, density[0])();
-		kTurb.r() = rhokTurb() / density[0]();
-		epsTurb.r() = rhoepsTurb() / density[0]();
-		aTurb.r() = division(rhoaTurb, density[0])();
+		velocity.val() = (momentum / density[0]).cval();
+		kTurb.val() = (rhokTurb / density[0]).cval();
+		epsTurb.val() = (rhoepsTurb / density[0]).cval();
+		aTurb.val() = (rhoaTurb / density[0]).cval();
 		{
-			internalEnergy.r() = totalEnergy() - rhokTurb()
-					- 0.5 * density[0]() * ampProduct(velocity, velocity)();
+			internalEnergy.val() = (totalEnergy - rhokTurb
+					- 0.5 * density[0] * (velocity & velocity)).cval();
 		}
-		pressure.r() = mixture.pFromUv(concentration.p, internalEnergy());
-		temperature.r() = mixture.TFromUv(concentration.p, internalEnergy());
-		HelmholtzEnergy.r() = mixture.Fv(concentration.p, temperature());
-		entropy.r() = mixture.Sv(concentration.p, temperature());
+		pressure.val() = mixture.pFromUv(concentration.p,
+				internalEnergy.cval());
+		temperature.val() = mixture.TFromUv(concentration.p,
+				internalEnergy.cval());
+		HelmholtzEnergy.val() = mixture.Fv(concentration.p, temperature.cval());
+		entropy.val() = mixture.Sv(concentration.p, temperature.cval());
 	}
 };
 }  // namespace schemi

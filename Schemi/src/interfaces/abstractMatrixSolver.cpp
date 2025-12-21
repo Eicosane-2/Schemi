@@ -7,6 +7,7 @@
 
 #include "abstractMatrixSolver.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 #include "biConjugateGradientSolver.hpp"
@@ -30,9 +31,10 @@ schemi::scalar schemi::abstractMatrixSolver::relativeIterationDifference(
 void schemi::abstractMatrixSolver::normalize(
 		std::valarray<scalar> & res) const noexcept
 {
-	for (auto & r_i : res)
-		if (std::abs(r_i) < std::numeric_limits<scalar>::epsilon())
-			r_i = 0;
+	std::replace_if(std::begin(res), std::end(res), [](const auto & i) 
+	{
+		return std::abs(i) < std::numeric_limits<scalar>::epsilon();
+	}, 0);
 }
 
 schemi::abstractMatrixSolver::abstractMatrixSolver(const std::size_t maxIt_in,
