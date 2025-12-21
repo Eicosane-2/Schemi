@@ -27,7 +27,7 @@ on
 #Type_of_SLE_solver_flag
 GaussSeidel
 #Type_of_source_flag
-BHR2
+BHR
 #Type_of_flow_solver
 HLLC
 #Dimensions_of_the_task
@@ -43,4 +43,6 @@ SecondOrder
 #Start_From_Time-Step
 no
 #Calculation_of_mixing_zone_width
+on
+#Nonlinearity_iterations
 on

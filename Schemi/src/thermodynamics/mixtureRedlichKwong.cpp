@@ -284,6 +284,47 @@ std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::TFromUv(
 	return TemperatureOutput;
 }
 
+std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::cFrompT(
+		const std::vector<const std::valarray<scalar>*> & concentrations,
+		const std::valarray<scalar> & p, const std::valarray<scalar> & T) const
+{
+	std::valarray<scalar> concentrationOutput(concentrations[0]->size());
+
+	const auto X = calcMolarFrac(concentrations);
+
+	std::valarray<scalar> aMixture(0., concentrationOutput.size()), bMixture(0.,
+			concentrationOutput.size());
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+		{
+			aMixture += X[k] * X[l] * aMatrix[k][l];
+			bMixture += X[k] * X[l] * bMatrix[k][l];
+		}
+
+	for (std::size_t i = 0; i < concentrationOutput.size(); ++i)
+		concentrationOutput[i] = RedlichKwongFluid::cFrompT(R, p[i], T[i],
+				aMixture[i], bMixture[i]);
+
+	return concentrationOutput;
+}
+
+std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::cFrompTk(
+		const std::valarray<scalar> & p, const std::valarray<scalar> & T,
+		const std::size_t componentIndex) const
+{
+	std::valarray<scalar> concentrationOutput(p.size());
+
+	const auto & ak = aMatrix[componentIndex][componentIndex];
+	const auto & bk = bMatrix[componentIndex][componentIndex];
+
+	for (std::size_t i = 0; i < concentrationOutput.size(); ++i)
+		concentrationOutput[i] = RedlichKwongFluid::cFrompT(R, p[i], T[i], ak,
+				bk);
+
+	return concentrationOutput;
+}
+
 std::valarray<schemi::scalar> schemi::mixtureRedlichKwong::dpdrho(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & Uv) const
@@ -691,6 +732,33 @@ schemi::scalar schemi::mixtureRedlichKwong::TFromUv(
 
 	return RedlichKwongFluid::TFromUv(CvMixture, Uv, concentrations[0],
 			aMixture, bMixture);
+}
+
+schemi::scalar schemi::mixtureRedlichKwong::cFrompT(
+		const std::valarray<scalar> & concentrations, const scalar p,
+		const scalar T) const
+{
+	const auto X = calcMolarFrac(concentrations);
+
+	scalar aMixture { 0 }, bMixture { 0 };
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+		{
+			aMixture += X[k] * X[l] * aMatrix[k][l];
+			bMixture += X[k] * X[l] * bMatrix[k][l];
+		}
+
+	return RedlichKwongFluid::cFrompT(R, p, T, aMixture, bMixture);
+}
+
+schemi::scalar schemi::mixtureRedlichKwong::cFrompTk(const scalar p,
+		const scalar T, const std::size_t componentIndex) const
+{
+	const auto & ak = aMatrix[componentIndex][componentIndex];
+	const auto & bk = bMatrix[componentIndex][componentIndex];
+
+	return RedlichKwongFluid::cFrompT(R, p, T, ak, bk);
 }
 
 schemi::scalar schemi::mixtureRedlichKwong::dpdrho(

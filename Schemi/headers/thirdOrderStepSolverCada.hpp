@@ -35,7 +35,8 @@ public:
 			const volumeField<scalar> & minimalLengthScale_in,
 			const timestep & sourceTimeFlag_in,
 			const bool & molMassDiffusionFlag_in,
-			const chemicalKinetics::abstractChemicalKinetics & chemKin_in) noexcept;
+			const chemicalKinetics::abstractChemicalKinetics & chemKin_in,
+			const bool & nonLinearityIteratonsFlag_in) noexcept;
 
 	thirdOrderStepSolverCada(const thirdOrderStepSolverCada&) = delete;
 	auto& operator=(const thirdOrderStepSolverCada&) = delete;

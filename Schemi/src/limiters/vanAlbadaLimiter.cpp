@@ -45,8 +45,8 @@ schemi::vector schemi::vanAlbadaLimiter::calculate(const vector & r,
 	vector vanAlbada, xiR { 2 / (1 + std::get<0>(r())), 2
 			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), vanAlbada.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			vanAlbada.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->vanAlbadaLimiterCalculation(r_j, xiR_j);});
 
 	return vector { std::get<0>(vanAlbada()) * std::get<0>(gradient()),
@@ -63,8 +63,8 @@ schemi::tensor schemi::vanAlbadaLimiter::calculate(const tensor & r,
 			/ (1 + std::get<5>(r())), 2 / (1 + std::get<6>(r())), 2
 			/ (1 + std::get<7>(r())), 2 / (1 + std::get<8>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), vanAlbada.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			vanAlbada.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->vanAlbadaLimiterCalculation(r_j, xiR_j);});
 
 	return tensor { std::get<0>(vanAlbada()) * std::get<0>(gradient()),
@@ -96,8 +96,8 @@ schemi::tensor3 schemi::vanAlbadaLimiter::calculate(const tensor3 & r,
 			/ (1 + std::get<23>(r())), 2 / (1 + std::get<24>(r())), 2
 			/ (1 + std::get<25>(r())), 2 / (1 + std::get<26>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), vanAlbada.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			vanAlbada.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->vanAlbadaLimiterCalculation(r_j, xiR_j);});
 
 	return tensor3 { std::get<0>(vanAlbada()) * std::get<0>(gradient()),
@@ -134,7 +134,7 @@ schemi::vector schemi::vanAlbadaLimiter::calculateNoRSLimit(const vector & r,
 {
 	vector vanAlbada;
 
-	std::transform(r().begin(), r().end(), vanAlbada.r().begin(),
+	std::transform(r().cbegin(), r().cend(), vanAlbada.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->vanAlbadaLimiterCalculation(r_j);});
 
@@ -148,7 +148,7 @@ schemi::tensor schemi::vanAlbadaLimiter::calculateNoRSLimit(const tensor & r,
 {
 	tensor vanAlbada;
 
-	std::transform(r().begin(), r().end(), vanAlbada.r().begin(),
+	std::transform(r().cbegin(), r().cend(), vanAlbada.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->vanAlbadaLimiterCalculation(r_j);});
 
@@ -168,7 +168,7 @@ schemi::tensor3 schemi::vanAlbadaLimiter::calculateNoRSLimit(const tensor3 & r,
 {
 	tensor3 vanAlbada;
 
-	std::transform(r().begin(), r().end(), vanAlbada.r().begin(),
+	std::transform(r().cbegin(), r().cend(), vanAlbada.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->vanAlbadaLimiterCalculation(r_j);});
 

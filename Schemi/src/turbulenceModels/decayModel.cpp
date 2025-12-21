@@ -112,7 +112,7 @@ std::tuple<
 			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
 	const volumeField<scalar> gravGenField(mesh_, 0);
 
-	std::valarray<scalar> modeps(diffFieldsOld.eps());
+	std::valarray<scalar> modeps(diffFieldsOld.eps.cval());
 	const scalar maxeps { modeps.max() };
 	std::replace_if(std::begin(modeps), std::end(modeps),
 			[maxeps](const scalar value) 
@@ -122,29 +122,32 @@ std::tuple<
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
-		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
+		const scalar ek { diffFieldsOld.eps.cval()[i]
+				/ diffFieldsOld.k.cval()[i] };
 
-		const scalar dissip(-cellFields.rhoepsTurb()[i]);
+		const scalar dissip(-cellFields.rhoepsTurb.cval()[i]);
 
-		Sourcek.first.r()[i] = 0;
-		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
+		Sourcek.first.val()[i] = 0;
+		Sourcek.second.val()[i] = dissip / cellFields.kTurb.cval()[i];
 
-		Sourceeps.first.r()[i] = 0;
-		Sourceeps.second.r()[i] = C2() * dissip / cellFields.kTurb()[i];
+		Sourceeps.first.val()[i] = 0;
+		Sourceeps.second.val()[i] = C2() * dissip / cellFields.kTurb.cval()[i];
 
 		/*Time-step calculation*/
-		modeps[i] = std::abs(
-				sourceTimestepCoeff * modeps[i]
-						/ ((Sourceeps.first()[i]
-								+ Sourceeps.second()[i]
-										* cellFields.epsTurb()[i])
-								/ cellFields.density[0]()[i] + stabilizator));
+		modeps[i] =
+				std::abs(
+						sourceTimestepCoeff * modeps[i]
+								/ ((Sourceeps.first.cval()[i]
+										+ Sourceeps.second.cval()[i]
+												* cellFields.epsTurb.cval()[i])
+										/ cellFields.density[0].cval()[i]
+										+ stabilizator));
 
-		Sourcea.first.r()[i] = 0.0;
-		Sourcea.second.r()[i] = -cellFields.density[0]()[i] * ek * Ca();
+		Sourcea.first.val()[i] = 0.0;
+		Sourcea.second.val()[i] = -cellFields.density[0].cval()[i] * ek * Ca();
 
-		Sourceb.first.r()[i] = 0;
-		Sourceb.second.r()[i] = -cellFields.density[0]()[i] * ek * Cb();
+		Sourceb.first.val()[i] = 0;
+		Sourceb.second.val()[i] = -cellFields.density[0].cval()[i] * ek * Cb();
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());

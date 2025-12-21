@@ -171,7 +171,8 @@ schemi::scalar schemi::RedlichKwongFluid::Sv(const scalar c, const scalar T,
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
 	return c * R
-			* (log(nQ * (1. / (c + stabilizator) - b) / NAvogardro) + 5. / 2.)
+			* (std::log(nQ * (1. / (c + stabilizator) - b) / NAvogardro)
+					+ 5. / 2.)
 			- 0.5 * a * c / (b * T * std::sqrt(T)) * std::log1p(c * b);
 }
 

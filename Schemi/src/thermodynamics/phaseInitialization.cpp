@@ -19,7 +19,6 @@
 #include "mixtureRedlichKwong.hpp"
 #include "mixtureStiffened.hpp"
 #include "mixtureVanDerWaals.hpp"
-#include "fieldProducts.hpp"
 
 std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		schemi::enthalpyFlow, bool> schemi::phaseInitialization(
@@ -39,9 +38,147 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::string skipBuffer;
 
+	volumeField<vector> temporaryVelocityField { meshReference };
+	std::array<std::vector<subPatchData<vector>>, 6> boundaryConditionsVelocityTemporaryField;
+	boundaryConditionsVelocityTemporaryField.fill(
+			std::vector<subPatchData<vector>>(0));
+	std::vector<std::string> velocityTemporaryFieldConditions(
+			3 * numberOfZones.size());
+	{
+		std::ifstream velocityTemporaryFieldConditionsFile {
+				"./set/velocity.txt" };
+
+		if (velocityTemporaryFieldConditionsFile.is_open())
+			std::cout << "./set/velocity.txt is opened." << std::endl;
+		else
+			[[unlikely]]
+			throw std::ifstream::failure("./set/velocity.txt not found.");
+
+		/*Read boundary*/
+		for (std::size_t boundaryI = 0;
+				boundaryI < boundaryConditionsVelocityTemporaryField.size();
+				++boundaryI)
+		{
+			velocityTemporaryFieldConditionsFile >> skipBuffer;
+			std::string patchBoundary;
+			velocityTemporaryFieldConditionsFile >> patchBoundary;
+			if (patchBoundary != "subPatches")
+			{
+				const auto boundTp = boundaryConditionFromString(patchBoundary);
+
+				if (boundTp == boundaryConditionType::fixedValueCell)
+				{
+					scalar fv1, fv2, fv3;
+					velocityTemporaryFieldConditionsFile >> fv1 >> fv2 >> fv3;
+
+					boundaryConditionsVelocityTemporaryField[boundaryI].emplace_back(
+							boundTp, vector { fv1, fv2, fv3 });
+				}
+				else
+					boundaryConditionsVelocityTemporaryField[boundaryI].emplace_back(
+							boundTp);
+			}
+			else
+			{
+				std::size_t subPatchNumber;
+
+				velocityTemporaryFieldConditionsFile >> subPatchNumber;
+
+				if (subPatchNumber == 1)
+					throw exception("SubPatches must be more than one.",
+							errors::initialisationError);
+
+				for (std::size_t sp = 0; sp < subPatchNumber; ++sp)
+				{
+					std::string subPatchBoundary;
+					velocityTemporaryFieldConditionsFile >> subPatchBoundary;
+
+					const auto boundTp = boundaryConditionFromString(
+							subPatchBoundary);
+
+					if (boundTp == boundaryConditionType::fixedValueCell)
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						velocityTemporaryFieldConditionsFile >> skipBuffer
+								>> vb1 >> vb2 >> vb3 >> skipBuffer >> ve1 >> ve2
+								>> ve3 >> skipBuffer;
+
+						scalar fv1, fv2, fv3;
+						velocityTemporaryFieldConditionsFile >> fv1 >> fv2
+								>> fv3;
+
+						boundaryConditionsVelocityTemporaryField[boundaryI].emplace_back(
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 }, vector { fv1, fv2, fv3 });
+					}
+					else
+					{
+						scalar vb1, vb2, vb3, ve1, ve2, ve3;
+
+						velocityTemporaryFieldConditionsFile >> skipBuffer
+								>> vb1 >> vb2 >> vb3 >> skipBuffer >> ve1 >> ve2
+								>> ve3 >> skipBuffer;
+
+						boundaryConditionsVelocityTemporaryField[boundaryI].emplace_back(
+								boundTp, vector { vb1, vb2, vb3 }, vector { ve1,
+										ve2, ve3 });
+					}
+				}
+			}
+		}
+
+		velocityTemporaryFieldConditionsFile >> skipBuffer;
+		if (skipBuffer != "#Values_in_zones")
+			throw exception("Wrong position in file.",
+					errors::initialisationError);
+		for (std::size_t i = 0; i < numberOfZones.size(); ++i)
+			velocityTemporaryFieldConditionsFile
+					>> velocityTemporaryFieldConditions[3 * i]
+					>> velocityTemporaryFieldConditions[1 + 3 * i]
+					>> velocityTemporaryFieldConditions[2 + 3 * i];
+
+		velocityTemporaryFieldConditionsFile.close();
+
+		parallelism.correctBoundaryConditions(
+				boundaryConditionsVelocityTemporaryField);
+
+		temporaryVelocityField = volumeField<vector>(meshReference, vector(0),
+				std::get<0>(boundaryConditionsVelocityTemporaryField),
+				std::get<1>(boundaryConditionsVelocityTemporaryField),
+				std::get<2>(boundaryConditionsVelocityTemporaryField),
+				std::get<3>(boundaryConditionsVelocityTemporaryField),
+				std::get<4>(boundaryConditionsVelocityTemporaryField),
+				std::get<5>(boundaryConditionsVelocityTemporaryField));
+	}
+	surfaceField<vector> temporaryVelocityFieldSurf { meshReference };
+	for (std::size_t i = 0; i < temporaryVelocityFieldSurf.size(); ++i)
+	{
+		if (meshReference.bndType()[i] == boundaryConditionType::innerSurface)
+		{
+			const auto owner { meshReference.surfaceOwner()[i] };
+			const auto neighbour { meshReference.surfaceNeighbour()[i] };
+
+			temporaryVelocityFieldSurf.val()[i] =
+					temporaryVelocityField.cval()[owner]
+							* meshReference.surfOwnW()[i]
+							+ temporaryVelocityField.cval()[neighbour]
+									* meshReference.surfNeiW()[i];
+		}
+		else
+		{
+			const auto owner { meshReference.surfaceOwner()[i] };
+
+			temporaryVelocityFieldSurf.val()[i] =
+					temporaryVelocityField.cval()[owner]
+							* meshReference.surfOwnW()[i];
+		}
+	}
 	std::unique_ptr<abstractTurbulenceModel> turbul(
 			abstractTurbulenceModel::createTurbulenceModel(meshReference,
-					turbulenceONString, sourceTypeString));
+					turbulenceONString, sourceTypeString, parallelism,
+					temporaryVelocityField, temporaryVelocityFieldSurf,
+					readDataPoint));
 
 	transportCoefficients<cubicCell> tCoeffsPhase { meshReference };
 
@@ -80,6 +217,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	std::map<std::string, transportModel> transportModels;
 	transportModels.insert( { "constant", transportModel::constant });
 	transportModels.insert( { "hardSpheres", transportModel::hardSpheres });
+	transportModels.insert( { "LennardJones", transportModel::LennardJones });
 	transportModel transpModel;
 	try
 	{
@@ -118,9 +256,11 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	for (auto & arr : boundaryConditionsMatrix)
 		arr.fill(std::vector<subPatchData<scalar>>(0));
 
+	constexpr std::size_t numberOfThermodParameters(7);
 	std::vector<std::vector<std::string>> matrixOfSubstancesConditions(
 			numberOfComponents,
-			std::vector<std::string>(5 + numberOfZones.size()));
+			std::vector<std::string>(
+					numberOfThermodParameters + numberOfZones.size()));
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
 	{
@@ -141,7 +281,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				>> skipBuffer >> matrixOfSubstancesConditions[k][1] /*Cv*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][2] /*Tcrit*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][3] /*Pcrit*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][4]; /*Molecular diameter*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][4] /*Molecular diameter [A]*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][5] /*LJ eps/k [K]*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][6]; /*LJ sigma [A]*/
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -220,7 +362,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			throw exception("Wrong position in file.",
 					errors::initialisationError);
 		for (std::size_t j = 0; j < numberOfZones.size(); ++j)
-			substanceConditionsFile >> matrixOfSubstancesConditions[k][5 + j]; /*Values in zones*/
+			substanceConditionsFile
+					>> matrixOfSubstancesConditions[k][numberOfThermodParameters
+							+ j]; /*Values in zones*/
 		substanceConditionsFile.close();
 	}
 
@@ -293,6 +437,11 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	{
 		R = R_SI * 1E7;
 		hPlanck = PlanckConstant_SI * 1E7;
+	}
+	else if (universalGasConstant == "CGmS")
+	{
+		R = R_SI * 1E1;
+		hPlanck = PlanckConstant_SI * 1E4;
 	}
 	else
 		[[unlikely]]
@@ -1155,8 +1304,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 					if (zoneFounded)
 					{
-						phase->concentration.v[k].r()[i] = std::stod(
-								matrixOfSubstancesConditions[k - 1][5 + j]);
+						phase->concentration.v[k].val()[i] =
+								std::stod(
+										matrixOfSubstancesConditions[k - 1][numberOfThermodParameters
+												+ j]);
 						break;
 					}
 				}
@@ -1199,7 +1350,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 						const vector & radiusOfCell {
 								meshReference.cells()[i].rC() };
 
-						phase->concentration.v[k].r()[i] *= f(
+						phase->concentration.v[k].val()[i] *= f(
 								std::get<0>(radiusOfCell()));
 					}
 				}
@@ -1220,7 +1371,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (zoneFounded)
 				{
-					phase->velocity.r()[i] = vector(
+					phase->velocity.val()[i] = vector(
 							std::stod(velocityConditions[3 * j]),
 							std::stod(velocityConditions[1 + 3 * j]),
 							std::stod(velocityConditions[2 + 3 * j]));
@@ -1247,7 +1398,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (zoneFounded)
 				{
-					phase->pressure.r()[i] = std::stod(pressureConditions[j]);
+					phase->pressure.val()[i] = std::stod(pressureConditions[j]);
 					break;
 				}
 			}
@@ -1270,7 +1421,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (zoneFounded)
 				{
-					phase->kTurb.r()[i] = std::stod(kTurbConditions[j]);
+					phase->kTurb.val()[i] = std::stod(kTurbConditions[j]);
 					break;
 				}
 			}
@@ -1293,7 +1444,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (zoneFounded)
 				{
-					phase->epsTurb.r()[i] = std::stod(epsTurbConditions[j]);
+					phase->epsTurb.val()[i] = std::stod(epsTurbConditions[j]);
 					break;
 				}
 			}
@@ -1316,7 +1467,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (zoneFounded)
 				{
-					phase->aTurb.r()[i] = vector(
+					phase->aTurb.val()[i] = vector(
 							std::stod(aTurbConditions[3 * j]),
 							std::stod(aTurbConditions[1 + 3 * j]),
 							std::stod(aTurbConditions[2 + 3 * j]));
@@ -1343,7 +1494,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				if (zoneFounded)
 				{
-					phase->bTurb.r()[i] = std::stod(bTurbConditions[j]);
+					phase->bTurb.val()[i] = std::stod(bTurbConditions[j]);
 					break;
 				}
 			}
@@ -1424,7 +1575,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->aTurb.r()[i_local] = vector(std::stod(vectorData1),
+					phase->aTurb.val()[i_local] = vector(std::stod(vectorData1),
 							std::stod(vectorData2), std::stod(vectorData3));
 				}
 			}
@@ -1449,7 +1600,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->bTurb.r()[i_local] = bData;
+					phase->bTurb.val()[i_local] = bData;
 				}
 			}
 			input_bScalar.close();
@@ -1473,7 +1624,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->epsTurb.r()[i_local] = epsilonData;
+					phase->epsTurb.val()[i_local] = epsilonData;
 				}
 			}
 			input_epsilonScalar.close();
@@ -1497,7 +1648,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->kTurb.r()[i_local] = kData;
+					phase->kTurb.val()[i_local] = kData;
 				}
 			}
 			input_kScalar.close();
@@ -1521,7 +1672,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->pressure.r()[i_local] = pressureData;
+					phase->pressure.val()[i_local] = pressureData;
 				}
 			}
 			input_pressureScalar.close();
@@ -1547,7 +1698,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->velocity.r()[i_local] = vector(
+					phase->velocity.val()[i_local] = vector(
 							std::stod(vectorData1), std::stod(vectorData2),
 							std::stod(vectorData3));
 				}
@@ -1576,7 +1727,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				{
 					const auto i_local = i - localCellInterval.first;
 
-					phase->concentration.v[k + 1].r()[i_local] =
+					phase->concentration.v[k + 1].val()[i_local] =
 							concentrationData;
 				}
 			}
@@ -1597,7 +1748,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 				input_aVector >> vectorData1 >> vectorData2 >> vectorData3;
 
-				phase->aTurb.r()[i] = vector(std::stod(vectorData1),
+				phase->aTurb.val()[i] = vector(std::stod(vectorData1),
 						std::stod(vectorData2), std::stod(vectorData3));
 			}
 			input_aVector.close();
@@ -1616,7 +1767,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				scalar bData;
 				input_bScalar >> bData;
 
-				phase->bTurb.r()[i] = bData;
+				phase->bTurb.val()[i] = bData;
 			}
 			input_bScalar.close();
 		}
@@ -1634,7 +1785,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				scalar epsilonData;
 				input_epsilonScalar >> epsilonData;
 
-				phase->epsTurb.r()[i] = epsilonData;
+				phase->epsTurb.val()[i] = epsilonData;
 			}
 			input_epsilonScalar.close();
 		}
@@ -1652,7 +1803,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				scalar kData;
 				input_kScalar >> kData;
 
-				phase->kTurb.r()[i] = kData;
+				phase->kTurb.val()[i] = kData;
 			}
 			input_kScalar.close();
 		}
@@ -1670,7 +1821,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				scalar pressureData;
 				input_pressureScalar >> pressureData;
 
-				phase->pressure.r()[i] = pressureData;
+				phase->pressure.val()[i] = pressureData;
 			}
 			input_pressureScalar.close();
 		}
@@ -1690,7 +1841,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				input_velocityVector >> vectorData1 >> vectorData2
 						>> vectorData3;
 
-				phase->velocity.r()[i] = vector(std::stod(vectorData1),
+				phase->velocity.val()[i] = vector(std::stod(vectorData1),
 						std::stod(vectorData2), std::stod(vectorData3));
 			}
 			input_velocityVector.close();
@@ -1712,7 +1863,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				scalar concentrationData;
 				input_concentrationScalar >> concentrationData;
 
-				phase->concentration.v[k + 1].r()[i] = concentrationData;
+				phase->concentration.v[k + 1].val()[i] = concentrationData;
 			}
 			input_concentrationScalar.close();
 		}
@@ -1761,21 +1912,21 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 				if ((xCoord >= leftX) && (xCoord < xCenter))
 				{
 					const scalar relX = xCoord - leftX;
-					kAdd.r()[i] = fL_k * relX;
-					epsAdd.r()[i] = fL_eps * relX;
+					kAdd.val()[i] = fL_k * relX;
+					epsAdd.val()[i] = fL_eps * relX;
 				}
 				else if ((xCoord >= xCenter) && (xCoord <= rightX))
 				{
 					const scalar relX = xCoord - xCenter;
-					kAdd.r()[i] = kMax - fR_k * relX;
-					epsAdd.r()[i] = epsMax - fR_eps * relX;
+					kAdd.val()[i] = kMax - fR_k * relX;
+					epsAdd.val()[i] = epsMax - fR_eps * relX;
 				}
 			}
 
-			epsAdd.r() = std::pow(kAdd(), 3. / 2.) / (lBound + rBound);
+			epsAdd.val() = std::pow(kAdd.cval(), 3. / 2.) / (lBound + rBound);
 
-			phase->kTurb.r() += kAdd();
-			phase->epsTurb.r() += epsAdd();
+			phase->kTurb.val() += kAdd.cval();
+			phase->epsTurb.val() += epsAdd.cval();
 
 			std::cout << "Added linear peak for k and epsilon." << std::endl;
 		}
@@ -1788,44 +1939,44 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	/**/
 
 	/*Check for minimum values.*/
-	std::replace_if(std::begin(phase->kTurb.r()), std::end(phase->kTurb.r()),
-			[&phase](const scalar value) 
+	std::replace_if(std::begin(phase->kTurb.val()),
+			std::end(phase->kTurb.val()), [&phase](const scalar value) 
 			{
 				return value < phase->turbulence->mink();
 			}, phase->turbulence->mink());
 
-	std::replace_if(std::begin(phase->epsTurb.r()),
-			std::end(phase->epsTurb.r()), [&phase](const scalar value) 
+	std::replace_if(std::begin(phase->epsTurb.val()),
+			std::end(phase->epsTurb.val()), [&phase](const scalar value) 
 			{
 				return value < phase->turbulence->minepsilon();
 			}, phase->turbulence->minepsilon());
 
 	/*Calculate derived fields.*/
 	for (std::size_t k = 1; k < phase->concentration.v.size(); ++k)
-		phase->concentration.v[0].r() += phase->concentration.v[k]();
+		phase->concentration.v[0] += phase->concentration.v[k];
 
 	for (std::size_t k = 1; k < phase->density.size(); ++k)
-		phase->density[k].r() = phase->concentration.v[k]()
-				* phase->phaseThermodynamics->Mv()[k - 1];
+		phase->density[k].val() = (phase->concentration.v[k]
+				* phase->phaseThermodynamics->Mv()[k - 1]).cval();
 
 	for (std::size_t k = 1; k < phase->density.size(); ++k)
-		phase->density[0].r() += phase->density[k]();
+		phase->density[0] += phase->density[k];
 
-	phase->momentum.r() = astProduct(phase->velocity, phase->density[0])();
+	phase->momentum.val() = (phase->velocity * phase->density[0]).cval();
 
-	phase->internalEnergy.r() = phase->phaseThermodynamics->UvFromp(
-			phase->concentration.p, phase->pressure());
+	phase->internalEnergy.val() = phase->phaseThermodynamics->UvFromp(
+			phase->concentration.p, phase->pressure.cval());
 
-	phase->temperature.r() = phase->phaseThermodynamics->TFromUv(
-			phase->concentration.p, phase->internalEnergy());
+	phase->temperature.val() = phase->phaseThermodynamics->TFromUv(
+			phase->concentration.p, phase->internalEnergy.cval());
 
-	phase->rhokTurb.r() = phase->kTurb() * phase->density[0]();
+	phase->rhokTurb.val() = (phase->kTurb * phase->density[0]).cval();
 
-	phase->rhoepsTurb.r() = phase->density[0]() * phase->epsTurb();
+	phase->rhoepsTurb.val() = (phase->density[0] * phase->epsTurb).cval();
 
-	phase->rhoaTurb.r() = astProduct(phase->aTurb, phase->density[0])();
+	phase->rhoaTurb.val() = (phase->aTurb * phase->density[0]).cval();
 
-	phase->rhobTurb.r() = phase->density[0]() * phase->bTurb();
+	phase->rhobTurb.val() = (phase->density[0] * phase->bTurb).cval();
 
 	phase->calculateCoefficients(phase->kTurb, phase->epsTurb,
 			*phase->turbulence);
@@ -1833,30 +1984,30 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	/*Set turbulent quantities to zero, if it is non-turbulent task.*/
 	if (!phase->turbulence->turbulence())
 	{
-		phase->kTurb.r() = scalar { 0 };
-		phase->epsTurb.r() = 0;
-		phase->rhokTurb.r() = scalar { 0 };
-		phase->rhoepsTurb.r() = 0;
-		phase->aTurb.r() = vector(0);
-		phase->bTurb.r() = 0;
-		phase->rhoaTurb.r() = vector(0);
-		phase->rhobTurb.r() = 0;
+		phase->kTurb.val() = scalar { 0 };
+		phase->epsTurb.val() = 0;
+		phase->rhokTurb.val() = scalar { 0 };
+		phase->rhoepsTurb.val() = 0;
+		phase->aTurb.val() = vector(0);
+		phase->bTurb.val() = 0;
+		phase->rhoaTurb.val() = vector(0);
+		phase->rhobTurb.val() = 0;
 
 		phase->tAssign(0.);
 	}
 
 	{
-		const auto v2 = ampProduct(phase->velocity, phase->velocity);
+		const auto v2 = phase->velocity & phase->velocity;
 
-		phase->totalEnergy.r() = phase->internalEnergy()
-				+ phase->density[0]() * v2() * 0.5 + phase->rhokTurb();
+		phase->totalEnergy.val() = (phase->internalEnergy
+				+ phase->density[0] * v2 * 0.5 + phase->rhokTurb).cval();
 	}
 
-	phase->HelmholtzEnergy.r() = phase->phaseThermodynamics->Fv(
-			phase->concentration.p, phase->temperature());
+	phase->HelmholtzEnergy.val() = phase->phaseThermodynamics->Fv(
+			phase->concentration.p, phase->temperature.cval());
 
-	phase->entropy.r() = phase->phaseThermodynamics->Sv(phase->concentration.p,
-			phase->temperature());
+	phase->entropy.val() = phase->phaseThermodynamics->Sv(
+			phase->concentration.p, phase->temperature.cval());
 
 	return std::make_tuple(std::move(phase), enthalpyFlowFlag,
 			molMassDiffusionFlag);

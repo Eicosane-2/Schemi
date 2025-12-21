@@ -39,28 +39,28 @@ schemi::diffusiveFields::diffusiveFields(const mesh & meshRef,
 					subPatchData<scalar> { bndCon[4] }, subPatchData<scalar> {
 							bndCon[5] }));
 
-	std::valarray<scalar> sumMassFrac(scalar(0), meshRef.cellsSize());
+	volumeField<scalar> sumMassFrac(meshRef, 0.0);
 	for (std::size_t k_ind = 0; k_ind < massFraction.size(); ++k_ind)
 	{
-		massFraction[k_ind].r() = cellFields.density[k_ind + 1]()
-				/ cellFields.density[0]();
-		sumMassFrac += massFraction[k_ind]();
+		massFraction[k_ind].val() = (cellFields.density[k_ind + 1]
+				/ cellFields.density[0]).cval();
+		sumMassFrac += massFraction[k_ind];
 	}
 
 	for (auto & diffFieldMassFrac_k : massFraction)
-		diffFieldMassFrac_k.r() /= sumMassFrac;
+		diffFieldMassFrac_k /= sumMassFrac;
 
-	velocity.r() = cellFields.velocity();
-	temperature.r() = cellFields.temperature();
+	velocity.val() = cellFields.velocity.cval();
+	temperature.val() = cellFields.temperature.cval();
 	if (turbulenceFlag)
 	{
-		k.r() = cellFields.kTurb();
-		eps.r() = cellFields.epsTurb();
+		k.val() = cellFields.kTurb.cval();
+		eps.val() = cellFields.epsTurb.cval();
 		if (aField)
 		{
-			a.r() = cellFields.aTurb();
+			a.val() = cellFields.aTurb.cval();
 			if (bField)
-				b.r() = cellFields.bTurb();
+				b.val() = cellFields.bTurb.cval();
 		}
 	}
 }

@@ -140,13 +140,13 @@ void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
 				phaseN.density.size() - 1);
 
 		for (std::size_t k = 0; k < concs.size(); ++k)
-			concs[k] = phaseN.concentration.v[k]()[i];
+			concs[k] = phaseN.concentration.v[k].cval()[i];
 
 		for (std::size_t k = 0; k < dens.size(); ++k)
-			dens[k] = phaseN.density[k + 1]()[i];
+			dens[k] = phaseN.density[k + 1].cval()[i];
 
-		const cellReactingFields oldValues(phaseN.internalEnergy()[i],
-				phaseN.temperature()[i], concs, dens);
+		const cellReactingFields oldValues(phaseN.internalEnergy.cval()[i],
+				phaseN.temperature.cval()[i], concs, dens);
 
 		cellReactingFields newValues(oldValues);
 
@@ -159,33 +159,38 @@ void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
 				for (std::size_t st = 0; st < subItNum; ++st)
 				{
 					const std::array<scalar, N> oldMassFraction {
-							newValues.density[0] / phaseN.density[0]()[i],
-							newValues.density[1] / phaseN.density[0]()[i] };
+							newValues.density[0] / phaseN.density[0].cval()[i],
+							newValues.density[1] / phaseN.density[0].cval()[i] };
 
 					const scalar sumFracOld = std::accumulate(
-							oldMassFraction.begin(), oldMassFraction.end(), 0.);
+							oldMassFraction.cbegin(), oldMassFraction.cend(),
+							0.);
 
 					if (sumFracOld == 0.0)
 						continue;
 
 					const auto cellReactionVel = velocityCalculation(
-							subTimeStep, phaseN.temperature()[i],
+							subTimeStep, phaseN.temperature.cval()[i],
 							{ newValues.concentration[0],
 									newValues.concentration[1],
 									newValues.concentration[2] },
 							{ phaseN.phaseThermodynamics->Mv()[0],
 									phaseN.phaseThermodynamics->Mv()[1] },
-							phaseN.density[0]()[i],
+							phaseN.density[0].cval()[i],
 							phaseN.phaseThermodynamics->Rv());
 
 					auto reactionResult = cellReactionVel.solve(oldMassFraction,
 							maxIterationNumber);
 
-					for (auto & w_k : reactionResult)
-						w_k = std::max(static_cast<scalar>(0.), w_k);
+					std::transform(reactionResult.cbegin(),
+							reactionResult.cend(), reactionResult.begin(),
+							[](const auto & w_k) 
+							{
+								return std::max(static_cast<scalar>(0.), w_k);
+							});
 
 					const scalar sumFracNew = std::accumulate(
-							reactionResult.begin(), reactionResult.end(), 0.);
+							reactionResult.cbegin(), reactionResult.cend(), 0.);
 
 					if (std::abs(sumFracNew - sumFracOld) > massFracTolerance)
 						throw exception(
@@ -205,7 +210,7 @@ void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
 
 					for (std::size_t k = 0; k < N; ++k)
 						newValues.concentration[k + 1] = reactionResult[k]
-								* phaseN.density[0]()[i]
+								* phaseN.density[0].cval()[i]
 								/ phaseN.phaseThermodynamics->Mv()[k];
 
 					newValues.concentration[0] = 0;
@@ -243,12 +248,12 @@ void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
 			}
 		}
 
-		phaseN.internalEnergy.r()[i] = newValues.internalEnergy;
-		phaseN.temperature.r()[i] = newValues.temperature;
+		phaseN.internalEnergy.val()[i] = newValues.internalEnergy;
+		phaseN.temperature.val()[i] = newValues.temperature;
 		for (std::size_t k = 0; k < newValues.concentration.size(); ++k)
-			phaseN.concentration.v[k].r()[i] = newValues.concentration[k];
+			phaseN.concentration.v[k].val()[i] = newValues.concentration[k];
 		for (std::size_t k = 0; k < newValues.density.size(); ++k)
-			phaseN.density[k + 1].r()[i] = newValues.density[k];
+			phaseN.density[k + 1].val()[i] = newValues.density[k];
 	}
 }
 
@@ -307,20 +312,20 @@ void schemi::chemicalKinetics::ChlorumDissociation::solveChemicalKinetics(
 
 	timeStepIntegration(phaseN1);
 
-	phaseN1.pressure.r() = phaseN1.phaseThermodynamics->pFromUv(
-			phaseN1.concentration.p, phaseN1.internalEnergy());
+	phaseN1.pressure.val() = phaseN1.phaseThermodynamics->pFromUv(
+			phaseN1.concentration.p, phaseN1.internalEnergy.cval());
 
-	phaseN1.HelmholtzEnergy.r() = phaseN1.phaseThermodynamics->Fv(
-			phaseN1.concentration.p, phaseN1.temperature());
+	phaseN1.HelmholtzEnergy.val() = phaseN1.phaseThermodynamics->Fv(
+			phaseN1.concentration.p, phaseN1.temperature.cval());
 
-	phaseN1.entropy.r() = phaseN1.phaseThermodynamics->Sv(
-			phaseN1.concentration.p, phaseN1.temperature());
+	phaseN1.entropy.val() = phaseN1.phaseThermodynamics->Sv(
+			phaseN1.concentration.p, phaseN1.temperature.cval());
 
 	{
-		const auto v2 = ampProduct(phaseN1.velocity, phaseN1.velocity);
+		const auto v2 = phaseN1.velocity & phaseN1.velocity;
 
-		phaseN1.totalEnergy.r() = phaseN1.internalEnergy()
-				+ phaseN1.density[0]() * v2() * 0.5 + phaseN1.rhokTurb();
+		phaseN1.totalEnergy.val() = (phaseN1.internalEnergy
+				+ phaseN1.density[0] * v2 * 0.5 + phaseN1.rhokTurb).cval();
 	}
 
 	phaseIn.average(phaseN1, *phaseIn.phaseThermodynamics, 0.5);

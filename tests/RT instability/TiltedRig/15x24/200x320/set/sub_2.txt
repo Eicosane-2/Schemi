@@ -1,12 +1,16 @@
 #Molar_mass_(kg/mol)
-246.77673E-3
+246.77673
 #Molar_isohoric_heat_capacity_(J/T/mol)
-12.47169
+12.47169E1
 #Critical_temperature_(K)
 1
 #Critical_pressure_(Pa)
 1
 #Kinetic_diameter_(A)
+1
+#Lennard_Jones_eps/kB_(K)
+1
+#Lennard_Jones_sigma_(A)
 1
 #Tail_boundary_condition
 slip
@@ -22,4 +26,4 @@ slip
 blank
 #Values_in_zones
 0
-7659
+7.65875E-3

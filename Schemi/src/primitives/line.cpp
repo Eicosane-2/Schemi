@@ -7,7 +7,7 @@
 
 #include "line.hpp"
 
-#include "vectorVectorDotProduct.hpp"
+#include "vector.hpp"
 
 schemi::line::line(const vector & t, const vector & p) noexcept :
 		tangent(t / t.mag()), point(p)

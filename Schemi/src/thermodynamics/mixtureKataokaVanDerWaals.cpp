@@ -305,6 +305,50 @@ std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::TFromUv(
 	return TemperatureOutput;
 }
 
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::cFrompT(
+		const std::vector<const std::valarray<scalar>*> & concentrations,
+		const std::valarray<scalar> & p, const std::valarray<scalar> & T) const
+{
+	std::valarray<scalar> concentrationOutput(concentrations[0]->size());
+
+	const auto X = calcMolarFrac(concentrations);
+
+	std::valarray<scalar> V0Mixture(0., concentrationOutput.size()), epsMixture(
+			0., concentrationOutput.size()), bMixture(0.,
+			concentrationOutput.size());
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+		{
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
+			bMixture += X[k] * X[l] * bMatrix[k][l];
+		}
+
+	for (std::size_t i = 0; i < concentrationOutput.size(); ++i)
+		concentrationOutput[i] = KataokaVanDerWaalsFluid::cFrompT(p[i], T[i],
+				V0Mixture[i], epsMixture[i], R, bMixture[i]);
+
+	return concentrationOutput;
+}
+
+std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::cFrompTk(
+		const std::valarray<scalar> & p, const std::valarray<scalar> & T,
+		const std::size_t componentIndex) const
+{
+	std::valarray<scalar> concentrationOutput(p.size());
+
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
+	const auto & bk = bMatrix[componentIndex][componentIndex];
+
+	for (std::size_t i = 0; i < concentrationOutput.size(); ++i)
+		concentrationOutput[i] = KataokaVanDerWaalsFluid::cFrompT(p[i], T[i],
+				V0k, epsk, R, bk);
+
+	return concentrationOutput;
+}
+
 std::valarray<schemi::scalar> schemi::mixtureKataokaVanDerWaals::dpdrho(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar> & Uv) const
@@ -731,6 +775,36 @@ schemi::scalar schemi::mixtureKataokaVanDerWaals::TFromUv(
 
 	return KataokaVanDerWaalsFluid::TFromUv(concentrations[0], CvMixture, Uv,
 			V0Mixture, epsMixture, R);
+}
+
+schemi::scalar schemi::mixtureKataokaVanDerWaals::cFrompT(
+		const std::valarray<scalar> & concentrations, const scalar p,
+		const scalar T) const
+{
+	const auto X = calcMolarFrac(concentrations);
+
+	scalar V0Mixture { 0. }, epsMixture { 0. }, bMixture { 0. };
+
+	for (std::size_t k = 0; k < X.size(); ++k)
+		for (std::size_t l = 0; l < X.size(); ++l)
+		{
+			V0Mixture += X[k] * X[l] * V0Matrix[k][l];
+			epsMixture += X[k] * X[l] * epsMatrix[k][l];
+			bMixture += X[k] * X[l] * bMatrix[k][l];
+		}
+
+	return KataokaVanDerWaalsFluid::cFrompT(p, T, V0Mixture, epsMixture, R,
+			bMixture);
+}
+
+schemi::scalar schemi::mixtureKataokaVanDerWaals::cFrompTk(const scalar p,
+		const scalar T, const std::size_t componentIndex) const
+{
+	const auto & V0k = V0Matrix[componentIndex][componentIndex];
+	const auto & epsk = epsMatrix[componentIndex][componentIndex];
+	const auto & bk = bMatrix[componentIndex][componentIndex];
+
+	return KataokaVanDerWaalsFluid::cFrompT(p, T, V0k, epsk, R, bk);
 }
 
 schemi::scalar schemi::mixtureKataokaVanDerWaals::dpdrho(

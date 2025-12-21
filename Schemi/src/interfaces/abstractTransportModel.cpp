@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "hardSpheresTransportModel.hpp"
+#include "LennardJonesTransportModel.hpp"
 
 schemi::scalar schemi::abstractTransportModel::muConst() const noexcept
 {
@@ -47,13 +48,32 @@ std::unique_ptr<schemi::abstractTransportModel> schemi::abstractTransportModel::
 	{
 		std::valarray<scalar> molDiams(matrixOfSubstancesConditions.size());
 
-		std::transform(matrixOfSubstancesConditions.begin(),
-				matrixOfSubstancesConditions.end(), std::begin(molDiams),
+		std::transform(matrixOfSubstancesConditions.cbegin(),
+				matrixOfSubstancesConditions.cend(), std::begin(molDiams),
 				[](const auto & strVec) -> scalar 
 				{	return std::stod(strVec[4]);});
 
 		return std::make_unique<hardSpheresTransportModel>(constNu, constD,
 				constKappa, molDiams);
+	}
+		break;
+	case transportModel::LennardJones:
+	{
+		std::valarray<scalar> epskLJ(matrixOfSubstancesConditions.size());
+		std::valarray<scalar> sigmaLJ(matrixOfSubstancesConditions.size());
+
+		std::transform(matrixOfSubstancesConditions.cbegin(),
+				matrixOfSubstancesConditions.cend(), std::begin(epskLJ),
+				[](const auto & strVec) -> scalar 
+				{	return std::stod(strVec[5]);});
+
+		std::transform(matrixOfSubstancesConditions.cbegin(),
+				matrixOfSubstancesConditions.cend(), std::begin(sigmaLJ),
+				[](const auto & strVec) -> scalar 
+				{	return std::stod(strVec[6]);});
+
+		return std::make_unique<LennardJonesTransportModel>(constNu, constD,
+				constKappa, epskLJ, sigmaLJ);
 	}
 		break;
 	case transportModel::constant:
@@ -81,7 +101,7 @@ schemi::volumeField<std::valarray<std::valarray<schemi::scalar>>> schemi::abstra
 
 	const std::size_t compNumber { concentrations.v.size() - 1 };
 
-	Dmatrix.r() = std::valarray<std::valarray<scalar>>(
+	Dmatrix.val() = std::valarray<std::valarray<scalar>>(
 			std::valarray<scalar>(0., compNumber), compNumber);
 
 	for (std::size_t i = 0; i < temperature.size(); ++i)
@@ -92,7 +112,7 @@ schemi::volumeField<std::valarray<std::valarray<schemi::scalar>>> schemi::abstra
 				if (k1 == k2)
 					continue;
 
-				Dmatrix.r()[i][k1][k2] = D;
+				Dmatrix.val()[i][k1][k2] = D;
 			}
 	}
 
@@ -132,7 +152,7 @@ schemi::surfaceField<std::valarray<std::valarray<schemi::scalar>>> schemi::abstr
 
 	const std::size_t compNumber { concentrations.v.size() - 1 };
 
-	Dmatrix.r() = std::valarray<std::valarray<scalar>>(
+	Dmatrix.val() = std::valarray<std::valarray<scalar>>(
 			std::valarray<scalar>(0., compNumber), compNumber);
 
 	for (std::size_t i = 0; i < temperature.size(); ++i)
@@ -143,7 +163,7 @@ schemi::surfaceField<std::valarray<std::valarray<schemi::scalar>>> schemi::abstr
 				if (k1 == k2)
 					continue;
 
-				Dmatrix.r()[i][k1][k2] = D;
+				Dmatrix.val()[i][k1][k2] = D;
 			}
 	}
 

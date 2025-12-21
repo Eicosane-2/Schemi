@@ -27,7 +27,7 @@ int MPI_Barrier(int)
 {
 	return 4;
 }
-int MPI_Gather(const std::size_t*, int, int, std::size_t*, int, int, int, int)
+int MPI_Gather(const bool*, int, int, bool*, int, int, int, int)
 {
 	return 51;
 }
@@ -35,21 +35,45 @@ int MPI_Gather(const double*, int, int, double*, int, int, int, int)
 {
 	return 52;
 }
+int MPI_Gather(const std::size_t*, int, int, std::size_t*, int, int, int, int)
+{
+	return 53;
+}
+int MPI_Send(const int*, int, int, int, int, int)
+{
+	return 61;
+}
 int MPI_Send(const double*, int, int, int, int, int)
 {
-	return 6;
+	return 62;
+}
+int MPI_Send(const std::size_t*, int, int, int, int, int)
+{
+	return 63;
+}
+int MPI_Recv(int*, int, int, int, int, int, int)
+{
+	return 71;
 }
 int MPI_Recv(double*, int, int, int, int, int, int)
 {
-	return 7;
+	return 72;
 }
-int MPI_Bcast(double*, int, int, int, int)
+int MPI_Recv(std::size_t*, int, int, int, int, int, int)
+{
+	return 73;
+}
+int MPI_Bcast(int*, int, int, int, int)
 {
 	return 81;
 }
-int MPI_Bcast(std::size_t*, int, int, int, int)
+int MPI_Bcast(double*, int, int, int, int)
 {
 	return 82;
+}
+int MPI_Bcast(std::size_t*, int, int, int, int)
+{
+	return 83;
 }
 int MPI_Finalize()
 {
@@ -138,9 +162,9 @@ std::pair<schemi::vector, schemi::vector> schemi::MPIHandler::correctParallelepi
 	const scalar dy = parallelepiped()[1] / rankDirMax[1];
 	const scalar dz = parallelepiped()[2] / rankDirMax[2];
 
-	resultParallelepiped.r()[0] = dx;
-	resultParallelepiped.r()[1] = dy;
-	resultParallelepiped.r()[2] = dz;
+	resultParallelepiped.wr()[0] = dx;
+	resultParallelepiped.wr()[1] = dy;
+	resultParallelepiped.wr()[2] = dz;
 
 	const scalar pointX000 = dx * rankDir[0];
 	const scalar pointY000 = dy * rankDir[1];
@@ -288,6 +312,14 @@ void schemi::MPIHandler::initialiseParalleMeshData(const mesh & mesh_)
 
 	parallCellVolume = std::make_unique<volumeField<scalar>>(mesh_, 0);
 
+	parallCellVolume->boundCond_wr().resize(mesh_.surfacesSize());
+
+	for (std::size_t i = 0; i < parallCellVolume->boundCond().size(); ++i)
+	{
+		parallCellVolume->boundCond_wr()[i].first = mesh_.bndType()[i];
+		parallCellVolume->boundCond_wr()[i].second = 0.0;
+	}
+
 	std::vector<std::pair<boundaryConditionType, vector>> ownerSurfaceDeltaR_BC(
 			parallCellVolume->boundCond().size());
 
@@ -304,13 +336,13 @@ void schemi::MPIHandler::initialiseParalleMeshData(const mesh & mesh_)
 	correctBoundaryConditions(*ownerSurfaceDeltaR);
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-		parallCellVolume->r()[i] = mesh_.cells()[i].V();
+		parallCellVolume->val()[i] = mesh_.cells()[i].V();
 
 	for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
 	{
 		const std::size_t surfOwner = mesh_.surfaceOwner()[i];
 
-		ownerSurfaceDeltaR->r()[i] = mesh_.surfaces()[i].rC()
+		ownerSurfaceDeltaR->val()[i] = mesh_.surfaces()[i].rC()
 				- mesh_.cells()[surfOwner].rC();
 	}
 
@@ -335,24 +367,24 @@ void schemi::MPIHandler::correctBoundaryValues(
 						corField.meshRef().surfaceOwner()[i];
 
 				bottomData_to_send.get()[i - bottomSurfaceStart] =
-						corField()[cellIndex];
+						corField.cval()[cellIndex];
 			}
 
 			MPI_Send(bottomData_to_send.get(),
 					bottomSurfaceEnd - bottomSurfaceStart,
-					MPI_DOUBLE, envNodes.bottom,
+					schemi_MPI_SCALAR, envNodes.bottom,
 					static_cast<int>(MPITags::bottom),
 					MPI_COMM_WORLD);
 		}
 		if (!(envNodes.top < 0))
 		{
 			MPI_Recv(bottomData_to_rec.get(), topSurfaceEnd - topSurfaceStart,
-			MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::bottom),
+			schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::bottom),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = bottomData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = bottomData_to_rec.get()[i
 						- topSurfaceStart];
 		}
 		/* Send top surface data */
@@ -364,23 +396,24 @@ void schemi::MPIHandler::correctBoundaryValues(
 						corField.meshRef().surfaceOwner()[i];
 
 				topData_to_send.get()[i - topSurfaceStart] =
-						corField()[cellIndex];
+						corField.cval()[cellIndex];
 			}
 
 			MPI_Send(topData_to_send.get(), topSurfaceEnd - topSurfaceStart,
-			MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::top),
+			schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::top),
 			MPI_COMM_WORLD);
 		}
 		if (!(envNodes.bottom < 0))
 		{
 			MPI_Recv(topData_to_rec.get(),
 					bottomSurfaceEnd - bottomSurfaceStart,
-					MPI_DOUBLE, envNodes.bottom, static_cast<int>(MPITags::top),
+					schemi_MPI_SCALAR, envNodes.bottom,
+					static_cast<int>(MPITags::top),
 					MPI_COMM_WORLD,
 					MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = topData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = topData_to_rec.get()[i
 						- bottomSurfaceStart];
 		}
 	}
@@ -396,24 +429,24 @@ void schemi::MPIHandler::correctBoundaryValues(
 						corField.meshRef().surfaceOwner()[i];
 
 				rightData_to_send.get()[i - rightSurfaceStart] =
-						corField()[cellIndex];
+						corField.cval()[cellIndex];
 			}
 
 			MPI_Send(rightData_to_send.get(),
 					rightSurfaceEnd - rightSurfaceStart,
-					MPI_DOUBLE, envNodes.right,
+					schemi_MPI_SCALAR, envNodes.right,
 					static_cast<int>(MPITags::right),
 					MPI_COMM_WORLD);
 		}
 		if (!(envNodes.left < 0))
 		{
 			MPI_Recv(rightData_to_rec.get(), leftSurfaceEnd - leftSurfaceStart,
-			MPI_DOUBLE, envNodes.left, static_cast<int>(MPITags::right),
+			schemi_MPI_SCALAR, envNodes.left, static_cast<int>(MPITags::right),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = rightData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = rightData_to_rec.get()[i
 						- leftSurfaceStart];
 		}
 		/* Send left surface data */
@@ -425,22 +458,22 @@ void schemi::MPIHandler::correctBoundaryValues(
 						corField.meshRef().surfaceOwner()[i];
 
 				leftData_to_send.get()[i - leftSurfaceStart] =
-						corField()[cellIndex];
+						corField.cval()[cellIndex];
 			}
 
 			MPI_Send(leftData_to_send.get(), leftSurfaceEnd - leftSurfaceStart,
-			MPI_DOUBLE, envNodes.left, static_cast<int>(MPITags::left),
+			schemi_MPI_SCALAR, envNodes.left, static_cast<int>(MPITags::left),
 			MPI_COMM_WORLD);
 		}
 		if (!(envNodes.right < 0))
 		{
 			MPI_Recv(leftData_to_rec.get(), rightSurfaceEnd - rightSurfaceStart,
-			MPI_DOUBLE, envNodes.right, static_cast<int>(MPITags::left),
+			schemi_MPI_SCALAR, envNodes.right, static_cast<int>(MPITags::left),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = leftData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = leftData_to_rec.get()[i
 						- rightSurfaceStart];
 		}
 	}
@@ -456,22 +489,22 @@ void schemi::MPIHandler::correctBoundaryValues(
 						corField.meshRef().surfaceOwner()[i];
 
 				tailData_to_send.get()[i - tailSurfaceStart] =
-						corField()[cellIndex];
+						corField.cval()[cellIndex];
 			}
 
 			MPI_Send(tailData_to_send.get(), tailSurfaceEnd - tailSurfaceStart,
-			MPI_DOUBLE, envNodes.tail, static_cast<int>(MPITags::tail),
+			schemi_MPI_SCALAR, envNodes.tail, static_cast<int>(MPITags::tail),
 			MPI_COMM_WORLD);
 		}
 		if (!(envNodes.point < 0))
 		{
 			MPI_Recv(tailData_to_rec.get(), pointSurfaceEnd - pointSurfaceStart,
-			MPI_DOUBLE, envNodes.point, static_cast<int>(MPITags::tail),
+			schemi_MPI_SCALAR, envNodes.point, static_cast<int>(MPITags::tail),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = tailData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = tailData_to_rec.get()[i
 						- pointSurfaceStart];
 		}
 		/* Send point surface data. */
@@ -483,24 +516,24 @@ void schemi::MPIHandler::correctBoundaryValues(
 						corField.meshRef().surfaceOwner()[i];
 
 				pointData_to_send.get()[i - pointSurfaceStart] =
-						corField()[cellIndex];
+						corField.cval()[cellIndex];
 			}
 
 			MPI_Send(pointData_to_send.get(),
 					pointSurfaceEnd - pointSurfaceStart,
-					MPI_DOUBLE, envNodes.point,
+					schemi_MPI_SCALAR, envNodes.point,
 					static_cast<int>(MPITags::point),
 					MPI_COMM_WORLD);
 		}
 		if (!(envNodes.tail < 0))
 		{
 			MPI_Recv(pointData_to_rec.get(), tailSurfaceEnd - tailSurfaceStart,
-			MPI_DOUBLE, envNodes.tail, static_cast<int>(MPITags::point),
+			schemi_MPI_SCALAR, envNodes.tail, static_cast<int>(MPITags::point),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = pointData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = pointData_to_rec.get()[i
 						- tailSurfaceStart];
 		}
 	}
@@ -529,12 +562,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					bottomData_to_send.get()[i - bottomSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(bottomData_to_send.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD);
 			}
@@ -542,13 +575,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(bottomData_to_rec.get(),
 						topSurfaceEnd - topSurfaceStart,
-						MPI_DOUBLE, envNodes.top,
+						schemi_MPI_SCALAR, envNodes.top,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							bottomData_to_rec.get()[i - topSurfaceStart];
 			}
 			/* Send top surface data */
@@ -560,25 +593,25 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					topData_to_send.get()[i - topSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(topData_to_send.get(), topSurfaceEnd - topSurfaceStart,
-				MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::top),
+				schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::top),
 				MPI_COMM_WORLD);
 			}
 			if (!(envNodes.bottom < 0))
 			{
 				MPI_Recv(topData_to_rec.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::top),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							topData_to_rec.get()[i - bottomSurfaceStart];
 			}
 		}
@@ -595,12 +628,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					rightData_to_send.get()[i - rightSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(rightData_to_send.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD);
 			}
@@ -608,13 +641,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(rightData_to_rec.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							rightData_to_rec.get()[i - leftSurfaceStart];
 			}
 			/* Send left surface data */
@@ -626,12 +659,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					leftData_to_send.get()[i - leftSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(leftData_to_send.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD);
 			}
@@ -639,14 +672,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(leftData_to_rec.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							leftData_to_rec.get()[i - rightSurfaceStart];
 			}
 		}
@@ -662,12 +695,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					tailData_to_send.get()[i - tailSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(tailData_to_send.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD);
 			}
@@ -675,14 +708,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(tailData_to_rec.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							tailData_to_rec.get()[i - pointSurfaceStart];
 			}
 			/* Send point surface data. */
@@ -695,12 +728,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					pointData_to_send.get()[i - pointSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(pointData_to_send.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD);
 			}
@@ -708,13 +741,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(pointData_to_rec.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							pointData_to_rec.get()[i - tailSurfaceStart];
 			}
 		}
@@ -744,12 +777,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					bottomData_to_send.get()[i - bottomSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(bottomData_to_send.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD);
 			}
@@ -757,13 +790,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(bottomData_to_rec.get(),
 						topSurfaceEnd - topSurfaceStart,
-						MPI_DOUBLE, envNodes.top,
+						schemi_MPI_SCALAR, envNodes.top,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							bottomData_to_rec.get()[i - topSurfaceStart];
 			}
 			/* Send top surface data */
@@ -775,25 +808,25 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					topData_to_send.get()[i - topSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(topData_to_send.get(), topSurfaceEnd - topSurfaceStart,
-				MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::top),
+				schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::top),
 				MPI_COMM_WORLD);
 			}
 			if (!(envNodes.bottom < 0))
 			{
 				MPI_Recv(topData_to_rec.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::top),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							topData_to_rec.get()[i - bottomSurfaceStart];
 			}
 		}
@@ -810,12 +843,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					rightData_to_send.get()[i - rightSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(rightData_to_send.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD);
 			}
@@ -823,13 +856,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(rightData_to_rec.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							rightData_to_rec.get()[i - leftSurfaceStart];
 			}
 			/* Send left surface data */
@@ -841,12 +874,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					leftData_to_send.get()[i - leftSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(leftData_to_send.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD);
 			}
@@ -854,14 +887,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(leftData_to_rec.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							leftData_to_rec.get()[i - rightSurfaceStart];
 			}
 		}
@@ -877,12 +910,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					tailData_to_send.get()[i - tailSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(tailData_to_send.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD);
 			}
@@ -890,14 +923,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(tailData_to_rec.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							tailData_to_rec.get()[i - pointSurfaceStart];
 			}
 			/* Send point surface data. */
@@ -910,12 +943,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					pointData_to_send.get()[i - pointSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(pointData_to_send.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD);
 			}
@@ -923,13 +956,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(pointData_to_rec.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							pointData_to_rec.get()[i - tailSurfaceStart];
 			}
 		}
@@ -959,12 +992,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					bottomData_to_send.get()[i - bottomSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(bottomData_to_send.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD);
 			}
@@ -972,13 +1005,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(bottomData_to_rec.get(),
 						topSurfaceEnd - topSurfaceStart,
-						MPI_DOUBLE, envNodes.top,
+						schemi_MPI_SCALAR, envNodes.top,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							bottomData_to_rec.get()[i - topSurfaceStart];
 			}
 			/* Send top surface data */
@@ -990,25 +1023,25 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					topData_to_send.get()[i - topSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(topData_to_send.get(), topSurfaceEnd - topSurfaceStart,
-				MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::top),
+				schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::top),
 				MPI_COMM_WORLD);
 			}
 			if (!(envNodes.bottom < 0))
 			{
 				MPI_Recv(topData_to_rec.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::top),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							topData_to_rec.get()[i - bottomSurfaceStart];
 			}
 		}
@@ -1025,12 +1058,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					rightData_to_send.get()[i - rightSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(rightData_to_send.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD);
 			}
@@ -1038,13 +1071,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(rightData_to_rec.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							rightData_to_rec.get()[i - leftSurfaceStart];
 			}
 			/* Send left surface data */
@@ -1056,12 +1089,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					leftData_to_send.get()[i - leftSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(leftData_to_send.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD);
 			}
@@ -1069,14 +1102,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(leftData_to_rec.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							leftData_to_rec.get()[i - rightSurfaceStart];
 			}
 		}
@@ -1092,12 +1125,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					tailData_to_send.get()[i - tailSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(tailData_to_send.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD);
 			}
@@ -1105,14 +1138,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(tailData_to_rec.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							tailData_to_rec.get()[i - pointSurfaceStart];
 			}
 			/* Send point surface data. */
@@ -1125,12 +1158,12 @@ void schemi::MPIHandler::correctBoundaryValues(
 							corField.meshRef().surfaceOwner()[i];
 
 					pointData_to_send.get()[i - pointSurfaceStart] =
-							corField()[cellIndex]()[j];
+							corField.cval()[cellIndex]()[j];
 				}
 
 				MPI_Send(pointData_to_send.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD);
 			}
@@ -1138,13 +1171,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(pointData_to_rec.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							pointData_to_rec.get()[i - tailSurfaceStart];
 			}
 		}
@@ -1167,45 +1200,46 @@ void schemi::MPIHandler::correctBoundaryValues(
 		{
 			for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd; ++i)
 				bottomData_to_send.get()[i - bottomSurfaceStart] =
-						corField()[i];
+						corField.cval()[i];
 
 			MPI_Send(bottomData_to_send.get(),
 					bottomSurfaceEnd - bottomSurfaceStart,
-					MPI_DOUBLE, envNodes.bottom,
+					schemi_MPI_SCALAR, envNodes.bottom,
 					static_cast<int>(MPITags::bottom),
 					MPI_COMM_WORLD);
 		}
 		if (!(envNodes.top < 0))
 		{
 			MPI_Recv(bottomData_to_rec.get(), topSurfaceEnd - topSurfaceStart,
-			MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::bottom),
+			schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::bottom),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = bottomData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = bottomData_to_rec.get()[i
 						- topSurfaceStart];
 		}
 		/* Send top surface data */
 		if (!(envNodes.top < 0))
 		{
 			for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-				topData_to_send.get()[i - topSurfaceStart] = corField()[i];
+				topData_to_send.get()[i - topSurfaceStart] = corField.cval()[i];
 
 			MPI_Send(topData_to_send.get(), topSurfaceEnd - topSurfaceStart,
-			MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::top),
+			schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::top),
 			MPI_COMM_WORLD);
 		}
 		if (!(envNodes.bottom < 0))
 		{
 			MPI_Recv(topData_to_rec.get(),
 					bottomSurfaceEnd - bottomSurfaceStart,
-					MPI_DOUBLE, envNodes.bottom, static_cast<int>(MPITags::top),
+					schemi_MPI_SCALAR, envNodes.bottom,
+					static_cast<int>(MPITags::top),
 					MPI_COMM_WORLD,
 					MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = topData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = topData_to_rec.get()[i
 						- bottomSurfaceStart];
 		}
 	}
@@ -1216,44 +1250,46 @@ void schemi::MPIHandler::correctBoundaryValues(
 		if (!(envNodes.right < 0))
 		{
 			for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd; ++i)
-				rightData_to_send.get()[i - rightSurfaceStart] = corField()[i];
+				rightData_to_send.get()[i - rightSurfaceStart] =
+						corField.cval()[i];
 
 			MPI_Send(rightData_to_send.get(),
 					rightSurfaceEnd - rightSurfaceStart,
-					MPI_DOUBLE, envNodes.right,
+					schemi_MPI_SCALAR, envNodes.right,
 					static_cast<int>(MPITags::right),
 					MPI_COMM_WORLD);
 		}
 		if (!(envNodes.left < 0))
 		{
 			MPI_Recv(rightData_to_rec.get(), leftSurfaceEnd - leftSurfaceStart,
-			MPI_DOUBLE, envNodes.left, static_cast<int>(MPITags::right),
+			schemi_MPI_SCALAR, envNodes.left, static_cast<int>(MPITags::right),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = rightData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = rightData_to_rec.get()[i
 						- leftSurfaceStart];
 		}
 		/* Send left surface data */
 		if (!(envNodes.left < 0))
 		{
 			for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-				leftData_to_send.get()[i - leftSurfaceStart] = corField()[i];
+				leftData_to_send.get()[i - leftSurfaceStart] =
+						corField.cval()[i];
 
 			MPI_Send(leftData_to_send.get(), leftSurfaceEnd - leftSurfaceStart,
-			MPI_DOUBLE, envNodes.left, static_cast<int>(MPITags::left),
+			schemi_MPI_SCALAR, envNodes.left, static_cast<int>(MPITags::left),
 			MPI_COMM_WORLD);
 		}
 		if (!(envNodes.right < 0))
 		{
 			MPI_Recv(leftData_to_rec.get(), rightSurfaceEnd - rightSurfaceStart,
-			MPI_DOUBLE, envNodes.right, static_cast<int>(MPITags::left),
+			schemi_MPI_SCALAR, envNodes.right, static_cast<int>(MPITags::left),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = leftData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = leftData_to_rec.get()[i
 						- rightSurfaceStart];
 		}
 	}
@@ -1264,44 +1300,46 @@ void schemi::MPIHandler::correctBoundaryValues(
 		if (!(envNodes.tail < 0))
 		{
 			for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-				tailData_to_send.get()[i - tailSurfaceStart] = corField()[i];
+				tailData_to_send.get()[i - tailSurfaceStart] =
+						corField.cval()[i];
 
 			MPI_Send(tailData_to_send.get(), tailSurfaceEnd - tailSurfaceStart,
-			MPI_DOUBLE, envNodes.tail, static_cast<int>(MPITags::tail),
+			schemi_MPI_SCALAR, envNodes.tail, static_cast<int>(MPITags::tail),
 			MPI_COMM_WORLD);
 		}
 		if (!(envNodes.point < 0))
 		{
 			MPI_Recv(tailData_to_rec.get(), pointSurfaceEnd - pointSurfaceStart,
-			MPI_DOUBLE, envNodes.point, static_cast<int>(MPITags::tail),
+			schemi_MPI_SCALAR, envNodes.point, static_cast<int>(MPITags::tail),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = tailData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = tailData_to_rec.get()[i
 						- pointSurfaceStart];
 		}
 		/* Send point surface data. */
 		if (!(envNodes.point < 0))
 		{
 			for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd; ++i)
-				pointData_to_send.get()[i - pointSurfaceStart] = corField()[i];
+				pointData_to_send.get()[i - pointSurfaceStart] =
+						corField.cval()[i];
 
 			MPI_Send(pointData_to_send.get(),
 					pointSurfaceEnd - pointSurfaceStart,
-					MPI_DOUBLE, envNodes.point,
+					schemi_MPI_SCALAR, envNodes.point,
 					static_cast<int>(MPITags::point),
 					MPI_COMM_WORLD);
 		}
 		if (!(envNodes.tail < 0))
 		{
 			MPI_Recv(pointData_to_rec.get(), tailSurfaceEnd - tailSurfaceStart,
-			MPI_DOUBLE, envNodes.tail, static_cast<int>(MPITags::point),
+			schemi_MPI_SCALAR, envNodes.tail, static_cast<int>(MPITags::point),
 			MPI_COMM_WORLD,
 			MPI_STATUSES_IGNORE);
 
 			for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-				corField.boundCond_r()[i].second = pointData_to_rec.get()[i
+				corField.boundCond_wr()[i].second = pointData_to_rec.get()[i
 						- tailSurfaceStart];
 		}
 	}
@@ -1326,11 +1364,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
 					bottomData_to_send.get()[i - bottomSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(bottomData_to_send.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD);
 			}
@@ -1338,13 +1376,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(bottomData_to_rec.get(),
 						topSurfaceEnd - topSurfaceStart,
-						MPI_DOUBLE, envNodes.top,
+						schemi_MPI_SCALAR, envNodes.top,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							bottomData_to_rec.get()[i - topSurfaceStart];
 			}
 			/* Send top surface data */
@@ -1352,24 +1390,24 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
 					topData_to_send.get()[i - topSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(topData_to_send.get(), topSurfaceEnd - topSurfaceStart,
-				MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::top),
+				schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::top),
 				MPI_COMM_WORLD);
 			}
 			if (!(envNodes.bottom < 0))
 			{
 				MPI_Recv(topData_to_rec.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::top),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							topData_to_rec.get()[i - bottomSurfaceStart];
 			}
 		}
@@ -1382,11 +1420,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
 					rightData_to_send.get()[i - rightSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(rightData_to_send.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD);
 			}
@@ -1394,13 +1432,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(rightData_to_rec.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							rightData_to_rec.get()[i - leftSurfaceStart];
 			}
 			/* Send left surface data */
@@ -1408,11 +1446,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
 					leftData_to_send.get()[i - leftSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(leftData_to_send.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD);
 			}
@@ -1420,14 +1458,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(leftData_to_rec.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							leftData_to_rec.get()[i - rightSurfaceStart];
 			}
 		}
@@ -1439,11 +1477,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
 					tailData_to_send.get()[i - tailSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(tailData_to_send.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD);
 			}
@@ -1451,14 +1489,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(tailData_to_rec.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							tailData_to_rec.get()[i - pointSurfaceStart];
 			}
 			/* Send point surface data. */
@@ -1467,11 +1505,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
 					pointData_to_send.get()[i - pointSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(pointData_to_send.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD);
 			}
@@ -1479,13 +1517,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(pointData_to_rec.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							pointData_to_rec.get()[i - tailSurfaceStart];
 			}
 		}
@@ -1511,11 +1549,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
 					bottomData_to_send.get()[i - bottomSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(bottomData_to_send.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD);
 			}
@@ -1523,13 +1561,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(bottomData_to_rec.get(),
 						topSurfaceEnd - topSurfaceStart,
-						MPI_DOUBLE, envNodes.top,
+						schemi_MPI_SCALAR, envNodes.top,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							bottomData_to_rec.get()[i - topSurfaceStart];
 			}
 			/* Send top surface data */
@@ -1537,24 +1575,24 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
 					topData_to_send.get()[i - topSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(topData_to_send.get(), topSurfaceEnd - topSurfaceStart,
-				MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::top),
+				schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::top),
 				MPI_COMM_WORLD);
 			}
 			if (!(envNodes.bottom < 0))
 			{
 				MPI_Recv(topData_to_rec.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::top),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							topData_to_rec.get()[i - bottomSurfaceStart];
 			}
 		}
@@ -1567,11 +1605,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
 					rightData_to_send.get()[i - rightSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(rightData_to_send.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD);
 			}
@@ -1579,13 +1617,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(rightData_to_rec.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							rightData_to_rec.get()[i - leftSurfaceStart];
 			}
 			/* Send left surface data */
@@ -1593,11 +1631,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
 					leftData_to_send.get()[i - leftSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(leftData_to_send.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD);
 			}
@@ -1605,14 +1643,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(leftData_to_rec.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							leftData_to_rec.get()[i - rightSurfaceStart];
 			}
 		}
@@ -1624,11 +1662,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
 					tailData_to_send.get()[i - tailSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(tailData_to_send.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD);
 			}
@@ -1636,14 +1674,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(tailData_to_rec.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							tailData_to_rec.get()[i - pointSurfaceStart];
 			}
 			/* Send point surface data. */
@@ -1652,11 +1690,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
 					pointData_to_send.get()[i - pointSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(pointData_to_send.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD);
 			}
@@ -1664,13 +1702,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(pointData_to_rec.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							pointData_to_rec.get()[i - tailSurfaceStart];
 			}
 		}
@@ -1696,11 +1734,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
 					bottomData_to_send.get()[i - bottomSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(bottomData_to_send.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD);
 			}
@@ -1708,13 +1746,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(bottomData_to_rec.get(),
 						topSurfaceEnd - topSurfaceStart,
-						MPI_DOUBLE, envNodes.top,
+						schemi_MPI_SCALAR, envNodes.top,
 						static_cast<int>(MPITags::bottom),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							bottomData_to_rec.get()[i - topSurfaceStart];
 			}
 			/* Send top surface data */
@@ -1722,24 +1760,24 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
 					topData_to_send.get()[i - topSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(topData_to_send.get(), topSurfaceEnd - topSurfaceStart,
-				MPI_DOUBLE, envNodes.top, static_cast<int>(MPITags::top),
+				schemi_MPI_SCALAR, envNodes.top, static_cast<int>(MPITags::top),
 				MPI_COMM_WORLD);
 			}
 			if (!(envNodes.bottom < 0))
 			{
 				MPI_Recv(topData_to_rec.get(),
 						bottomSurfaceEnd - bottomSurfaceStart,
-						MPI_DOUBLE, envNodes.bottom,
+						schemi_MPI_SCALAR, envNodes.bottom,
 						static_cast<int>(MPITags::top),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							topData_to_rec.get()[i - bottomSurfaceStart];
 			}
 		}
@@ -1752,11 +1790,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
 					rightData_to_send.get()[i - rightSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(rightData_to_send.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD);
 			}
@@ -1764,13 +1802,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(rightData_to_rec.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::right),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							rightData_to_rec.get()[i - leftSurfaceStart];
 			}
 			/* Send left surface data */
@@ -1778,11 +1816,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
 					leftData_to_send.get()[i - leftSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(leftData_to_send.get(),
 						leftSurfaceEnd - leftSurfaceStart,
-						MPI_DOUBLE, envNodes.left,
+						schemi_MPI_SCALAR, envNodes.left,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD);
 			}
@@ -1790,14 +1828,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(leftData_to_rec.get(),
 						rightSurfaceEnd - rightSurfaceStart,
-						MPI_DOUBLE, envNodes.right,
+						schemi_MPI_SCALAR, envNodes.right,
 						static_cast<int>(MPITags::left),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							leftData_to_rec.get()[i - rightSurfaceStart];
 			}
 		}
@@ -1809,11 +1847,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
 					tailData_to_send.get()[i - tailSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(tailData_to_send.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD);
 			}
@@ -1821,14 +1859,14 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(tailData_to_rec.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::tail),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							tailData_to_rec.get()[i - pointSurfaceStart];
 			}
 			/* Send point surface data. */
@@ -1837,11 +1875,11 @@ void schemi::MPIHandler::correctBoundaryValues(
 				for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd;
 						++i)
 					pointData_to_send.get()[i - pointSurfaceStart] =
-							corField()[i]()[j];
+							corField.cval()[i]()[j];
 
 				MPI_Send(pointData_to_send.get(),
 						pointSurfaceEnd - pointSurfaceStart,
-						MPI_DOUBLE, envNodes.point,
+						schemi_MPI_SCALAR, envNodes.point,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD);
 			}
@@ -1849,13 +1887,13 @@ void schemi::MPIHandler::correctBoundaryValues(
 			{
 				MPI_Recv(pointData_to_rec.get(),
 						tailSurfaceEnd - tailSurfaceStart,
-						MPI_DOUBLE, envNodes.tail,
+						schemi_MPI_SCALAR, envNodes.tail,
 						static_cast<int>(MPITags::point),
 						MPI_COMM_WORLD,
 						MPI_STATUSES_IGNORE);
 
 				for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-					corField.boundCond_r()[i].second.r()[j] =
+					corField.boundCond_wr()[i].second.wr()[j] =
 							pointData_to_rec.get()[i - tailSurfaceStart];
 			}
 		}
@@ -1870,21 +1908,21 @@ void schemi::MPIHandler::gatherField(const volumeField<scalar> & inField,
 {
 #ifdef MPI_VERSION
 	for (std::size_t i = 0; i < inField.size(); ++i)
-		cellSendBuf.get()[i] = inField()[i];
+		cellSendBuf.get()[i] = inField.cval()[i];
 
-	MPI_Gather(cellSendBuf.get(), localCellSize[0], MPI_DOUBLE, gathBuf.get(),
-			localCellSize[0], MPI_DOUBLE, root,
+	MPI_Gather(cellSendBuf.get(), localCellSize[0], schemi_MPI_SCALAR,
+			gathBuf.get(), localCellSize[0], schemi_MPI_SCALAR, root,
 			MPI_COMM_WORLD);
 
 	if (mpi_rank == root)
 		for (std::size_t i = 0; i < retField.size(); ++i)
 			retField[i] = gathBuf.get()[i];
 #else
-	retField = inField();
+	retField = inField.cval();
 #endif
 }
 
-bool schemi::MPIHandler::isRoot()
+bool schemi::MPIHandler::isRoot() const
 {
 	return mpi_rank == root;
 }

@@ -76,6 +76,8 @@ class mesh
 
 	std::array<std::size_t, 3> n_cells { 0, 0, 0 };
 
+	vector deltaParallelepiped = vector(0), zeroPoint = vector(0);
+
 	scalar timestep_val, timestepSource_val;
 
 	void calculateNormales() noexcept;
@@ -141,6 +143,10 @@ public:
 	dimensions taskDimension() const noexcept;
 
 	const std::array<std::size_t, 3>& nCells() const noexcept;
+
+	const vector& delta() const noexcept;
+
+	const vector& zero() const noexcept;
 
 	scalar timestep() const noexcept;
 

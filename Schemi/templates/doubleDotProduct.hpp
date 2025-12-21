@@ -10,18 +10,22 @@
 #ifndef DOUBLEDOTPRODUCT_HPP_
 #define DOUBLEDOTPRODUCT_HPP_
 
+#include "mathObjects.hpp"
+
 namespace schemi
 {
-template<typename T>
+template<tensors T>
 scalar operator&&(const T & inTensor1, const T & inTensor2) noexcept
 {
-	scalar result { 0 };
+	scalar result
+	{	0};
 
 	for (std::size_t i = 0; i < T::vsize; ++i)
-		result += inTensor1()[i] * inTensor2()[i];
+	result += inTensor1()[i] * inTensor2()[i];
 
 	return result;
 }
-}  // namespace schemi
+}
+ // namespace schemi
 
 #endif /* DOUBLEDOTPRODUCT_HPP_ */

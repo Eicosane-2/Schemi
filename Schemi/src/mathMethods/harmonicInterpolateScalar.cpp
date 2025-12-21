@@ -25,19 +25,19 @@ schemi::surfaceField<schemi::scalar> schemi::harmonicInterpolate(
 			const std::size_t neiIndex { mesh_.surfaceNeighbour()[i] };
 
 			const scalar reversedValue = mesh_.surfOwnW()[i]
-					/ inField()[ownIndex]
-					+ mesh_.surfNeiW()[i] / inField()[neiIndex];
+					/ inField.cval()[ownIndex]
+					+ mesh_.surfNeiW()[i] / inField.cval()[neiIndex];
 
-			retSurfField.r()[i] = 1. / reversedValue;
+			retSurfField.val()[i] = 1. / reversedValue;
 		}
 			break;
 		default:
 		{
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
-			retSurfField.r()[i] = bncCalc.boundaryConditionValueSurface(
-					inField()[ownIndex], inField.boundCond()[i], ownIndex, i,
-					compt);
+			retSurfField.val()[i] = bncCalc.boundaryConditionValueSurface(
+					inField.cval()[ownIndex], inField.boundCond()[i], ownIndex,
+					i, compt);
 		}
 			break;
 		}

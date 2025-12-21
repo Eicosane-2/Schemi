@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <string>
 
 #include "timestepEnum.hpp"
 #include "chemicalReactionsEnum.hpp"
@@ -74,8 +75,9 @@ int main()
 				matrixSolverString, gravitationONString, sourceTypeString,
 				flowSolwerString, dimensionsOfTask, sourceTimeFlagString,
 				linearFlagString, thirdOrderString, readFromOutput,
-				mixedZoneWidthCalString;
-		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag;
+				mixedZoneWidthCalcString, nonLinearityIteratonsString;
+		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag,
+				nonLinearityIteratonsFlag;
 		typeOfSolverEnum order;
 		vector g { 0 }, gDelta { 0 };
 		dimensions dimensionsFlag;
@@ -94,10 +96,10 @@ int main()
 				throw std::ifstream::failure("./set/g.txt not found.");
 
 			gFile >> skipBuffer >> gravitationONString >> skipBuffer
-					>> std::get<0>(g.r()) >> std::get<1>(g.r())
-					>> std::get<2>(g.r()) >> skipBuffer
-					>> std::get<0>(gDelta.r()) >> std::get<1>(gDelta.r())
-					>> std::get<2>(gDelta.r());
+					>> std::get<0>(g.wr()) >> std::get<1>(g.wr())
+					>> std::get<2>(g.wr()) >> skipBuffer
+					>> std::get<0>(gDelta.wr()) >> std::get<1>(gDelta.wr())
+					>> std::get<2>(gDelta.wr());
 
 			gFile.close();
 		}
@@ -113,8 +115,8 @@ int main()
 
 			mainParametersFile >> skipBuffer
 
-			>> std::get<0>(systemSize.r()) >> std::get<1>(systemSize.r())
-					>> std::get<2>(systemSize.r())
+			>> std::get<0>(systemSize.wr()) >> std::get<1>(systemSize.wr())
+					>> std::get<2>(systemSize.wr())
 
 					>> skipBuffer >> numberOfCells_x >> numberOfCells_y
 					>> numberOfCells_z
@@ -159,7 +161,9 @@ int main()
 
 					>> skipBuffer >> readFromOutput
 
-					>> skipBuffer >> mixedZoneWidthCalString;
+					>> skipBuffer >> mixedZoneWidthCalcString
+
+					>> skipBuffer >> nonLinearityIteratonsString;
 
 			mainParametersFile.close();
 		}
@@ -183,10 +187,10 @@ int main()
 			constTimeStep.first = true;
 
 		{
-			const auto eqCount = std::count(sourceTimeFlagString.begin(),
-					sourceTimeFlagString.end(), '=');
-			const auto comCount = std::count(sourceTimeFlagString.begin(),
-					sourceTimeFlagString.end(), ',');
+			const auto eqCount = std::count(sourceTimeFlagString.cbegin(),
+					sourceTimeFlagString.cend(), '=');
+			const auto comCount = std::count(sourceTimeFlagString.cbegin(),
+					sourceTimeFlagString.cend(), ',');
 
 			const auto eqFind = sourceTimeFlagString.find('=');
 			const auto comFind = sourceTimeFlagString.find(',');
@@ -309,7 +313,17 @@ int main()
 
 		try
 		{
-			mixedZoneWidthCalcFlag = onOffMap.at(mixedZoneWidthCalString);
+			mixedZoneWidthCalcFlag = onOffMap.at(mixedZoneWidthCalcString);
+		} catch (const std::out_of_range&)
+		{
+			throw exception("Unknown flag for mixed zone width calculation.",
+					errors::initialisationError);
+		}
+
+		try
+		{
+			nonLinearityIteratonsFlag = onOffMap.at(
+					nonLinearityIteratonsString);
 		} catch (const std::out_of_range&)
 		{
 			throw exception("Unknown flag for mixed zone width calculation.",
@@ -396,19 +410,16 @@ int main()
 				if (lineNumberEnd == lineNumber)
 					isLastOutput = true;
 
-				auto tab = timeString.begin();
+				const auto tab1 = std::find(timeString.begin(),
+						timeString.end(), '\t');
 
-				for (auto ts_striter = timeString.begin();
-						ts_striter != timeString.end(); ++ts_striter)
-					if (*ts_striter == '\t')
-					{
-						tab = ts_striter;
-						break;
-					}
+				if (tab1 == timeString.end())
+					throw exception("Could not find tab delimiter.",
+							errors::initialisationError);
 
-				std::string noutsString = std::string(timeString.begin(), tab);
+				std::string noutsString = std::string(timeString.begin(), tab1);
 
-				auto TimeIter = tab;
+				auto TimeIter = tab1;
 				TimeIter++;
 
 				std::string TimeString = std::string(TimeIter,
@@ -505,18 +516,15 @@ int main()
 						{
 							scalar timeLastWidth;
 
-							tab = widthData.begin();
+							const auto tab2 = std::find(widthData.begin(),
+									widthData.end(), '\t');
 
-							for (auto ts_striter = widthData.begin();
-									ts_striter != widthData.end(); ++ts_striter)
-								if (*ts_striter == '\t')
-								{
-									tab = ts_striter;
-									break;
-								}
+							if (tab2 == widthData.end())
+								throw exception("Could not find tab delimiter.",
+										errors::initialisationError);
 
 							timeLastWidth = std::stod(
-									std::string(widthData.begin(), tab));
+									std::string(widthData.begin(), tab2));
 
 							if (timeLastWidth == Time)
 								break;
@@ -574,7 +582,7 @@ int main()
 				MPI_COMM_WORLD);
 				MPI_Bcast(noutsWBroadcast, 1, schemi_MPI_SIZE, parallelism.root,
 				MPI_COMM_WORLD);
-				MPI_Bcast(TimeBroadcast, 1, MPI_DOUBLE, parallelism.root,
+				MPI_Bcast(TimeBroadcast, 1, schemi_MPI_SCALAR, parallelism.root,
 				MPI_COMM_WORLD);
 
 				nouts = noutsBroadcast[0];
@@ -652,10 +660,11 @@ int main()
 						readDataPoint);
 
 		volumeField<scalar> sonicSpeed { mesh_, 0 };
-		sonicSpeed.r() = std::sqrt(
+		sonicSpeed.val() = std::sqrt(
 				gasPhase->phaseThermodynamics->sqSonicSpeed(
-						gasPhase->concentration.p, gasPhase->density[0](),
-						gasPhase->internalEnergy(), gasPhase->pressure()));
+						gasPhase->concentration.p, gasPhase->density[0].cval(),
+						gasPhase->internalEnergy.cval(),
+						gasPhase->pressure.cval()));
 
 		/*Calculate effective length for time-step calculation and set first time-step.*/
 		volumeField<scalar> minimalLengthScale { mesh_, 0 };
@@ -670,17 +679,16 @@ int main()
 
 			const auto minEdge = std::min(std::min(edge1, edge2), edge3);
 
-			minimalLengthScale.r()[i] = 1. / minEdge;
+			minimalLengthScale.val()[i] = 1. / minEdge;
 		}
 
 		/*Set small initial step for safe source integration.*/
 		if (!constTimeStep.first)
-		{
 			mesh_.setTimestep(minTime);
-			mesh_.setTimestep(std::min(mesh_.timestep(), timeOfCalculation));
-		}
 		else
 			mesh_.setTimestep(constTimeStep.second);
+
+		mesh_.setTimestep(std::min(mesh_.timestep(), timeOfCalculation));
 
 		chemicalReactions chemReactionFlag;
 		{
@@ -742,7 +750,8 @@ int main()
 						sonicSpeed);
 				if (parallelism.isRoot())
 				{
-					output::dataOutput(outputData, nouts, Time);
+					output::dataOutput(outputData, nouts, Time,
+							*gasPhase->turbulence);
 
 					if ((dimensionsFlag == dimensions::task1D)
 							&& mixedZoneWidthCalcFlag)
@@ -773,7 +782,8 @@ int main()
 					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
 					timeForDiffusion, commonConditions, enthalpyFlowFlag,
 					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk);
+					sourceTimeFlag, molMassDiffusionFlag, *chmk,
+					nonLinearityIteratonsFlag);
 			break;
 		case typeOfSolverEnum::SecondOrderRK:
 			stepSolver = std::make_unique<secondOrderStepSolverRK>(*gasPhase,
@@ -783,7 +793,8 @@ int main()
 					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
 					timeForDiffusion, commonConditions, enthalpyFlowFlag,
 					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk);
+					sourceTimeFlag, molMassDiffusionFlag, *chmk,
+					nonLinearityIteratonsFlag);
 			break;
 		case typeOfSolverEnum::ThirdOrder:
 			stepSolver = std::make_unique<thirdOrderStepSolver>(*gasPhase,
@@ -793,7 +804,8 @@ int main()
 					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
 					timeForDiffusion, commonConditions, enthalpyFlowFlag,
 					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk);
+					sourceTimeFlag, molMassDiffusionFlag, *chmk,
+					nonLinearityIteratonsFlag);
 			break;
 		case typeOfSolverEnum::ThirdOrderCada:
 			stepSolver = std::make_unique<thirdOrderStepSolverCada>(*gasPhase,
@@ -803,7 +815,8 @@ int main()
 					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
 					timeForDiffusion, commonConditions, enthalpyFlowFlag,
 					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk);
+					sourceTimeFlag, molMassDiffusionFlag, *chmk,
+					nonLinearityIteratonsFlag);
 			break;
 		[[unlikely]] default:
 			throw exception("Unknown type of approximation order.",
@@ -840,7 +853,8 @@ int main()
 					outputData.collectParallelData(*gasPhase, gasPhase->tNu,
 							sonicSpeed);
 					if (parallelism.isRoot())
-						output::dataOutput(outputData, nouts, Time);
+						output::dataOutput(outputData, nouts, Time,
+								*gasPhase->turbulence);
 
 					nouts++;
 				}
@@ -857,20 +871,21 @@ int main()
 			/*Calculation of new time-step through speed of sound.*/
 			if (!constTimeStep.first)
 			{
-				sonicSpeed.r() = std::sqrt(
+				sonicSpeed.val() = std::sqrt(
 						gasPhase->phaseThermodynamics->sqSonicSpeed(
 								gasPhase->concentration.p,
-								gasPhase->density[0](),
-								gasPhase->internalEnergy(),
-								gasPhase->pressure()));
+								gasPhase->density[0].cval(),
+								gasPhase->internalEnergy.cval(),
+								gasPhase->pressure.cval()));
 
-				std::valarray<scalar> signalSpeed(gasPhase->velocity().size());
+				std::valarray<scalar> signalSpeed(
+						gasPhase->velocity.cval().size());
 
 				for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
-					signalSpeed[i] = gasPhase->velocity()[i].mag()
-							+ sonicSpeed()[i];
+					signalSpeed[i] = gasPhase->velocity.cval()[i].mag()
+							+ sonicSpeed.cval()[i];
 
-				signalSpeed *= minimalLengthScale();
+				signalSpeed *= minimalLengthScale.cval();
 
 				const scalar maxSignalSpeed { signalSpeed.max() };
 
@@ -887,15 +902,16 @@ int main()
 					const MPIHandler::mpi_scalar timestep_arr[1] {
 							mesh_.timestep() };
 
-					MPIHandler::mpi_scalar * nodesTimes = nullptr;
+					std::vector<MPIHandler::mpi_scalar> nodesTimes(0);
 					if (parallelism.isRoot())
-						nodesTimes =
-								new MPIHandler::mpi_scalar[parallelism.mpi_size];
+						nodesTimes.resize(parallelism.mpi_size);
 
-					MPI_Gather(timestep_arr, 1, MPI_DOUBLE, nodesTimes, 1,
-					MPI_DOUBLE, parallelism.root, MPI_COMM_WORLD);
+					MPI_Gather(timestep_arr, 1, schemi_MPI_SCALAR,
+							nodesTimes.data(), 1,
+							schemi_MPI_SCALAR, parallelism.root,
+							MPI_COMM_WORLD);
 
-					MPIHandler::mpi_scalar minOfAllTimes[1] { 0 };
+					MPIHandler::mpi_scalar minOfAllTimes[1] { -1.23 };
 					if (parallelism.isRoot())
 					{
 						std::valarray<scalar> nodesTimes_min(
@@ -905,11 +921,10 @@ int main()
 							nodesTimes_min[i] = nodesTimes[i];
 
 						minOfAllTimes[0] = nodesTimes_min.min();
-
-						delete[] nodesTimes;
 					}
-					MPI_Bcast(minOfAllTimes, 1, MPI_DOUBLE, parallelism.root,
-					MPI_COMM_WORLD);
+					MPI_Bcast(minOfAllTimes, 1, schemi_MPI_SCALAR,
+							parallelism.root,
+							MPI_COMM_WORLD);
 
 					mesh_.setTimestep(minOfAllTimes[0]);
 				}
@@ -917,12 +932,17 @@ int main()
 			}
 
 			/*Write output.*/
+			bool wasOutputPreformed(false);
 			if ((nsteps == (nouts * frequencyOfOutput))
 					|| (Time == timeOfCalculation))
 			{
-				std::cout << "Time = " << Time << std::endl;
-				std::cout << "Time-step = " << mesh_.timestep() << std::endl;
-				std::cout << "Step number = " << nsteps << std::endl;
+				if (parallelism.isRoot())
+				{
+					std::cout << "Time = " << Time << std::endl;
+					std::cout << "Time-step = " << mesh_.timestep()
+							<< std::endl;
+					std::cout << "Step number = " << nsteps << std::endl;
+				}
 
 				structForOutput outputData(parallelism, mesh_,
 						numberOfComponents);
@@ -934,7 +954,8 @@ int main()
 				try
 				{
 					if (parallelism.isRoot())
-						output::dataOutput(outputData, nouts, Time);
+						output::dataOutput(outputData, nouts, Time,
+								*gasPhase->turbulence);
 				} catch (const std::exception & exception)
 				{
 					std::clog << exception.what() << std::endl;
@@ -946,6 +967,8 @@ int main()
 					std::exit(EXIT_FAILURE);
 				}
 
+				wasOutputPreformed = true;
+
 				nouts++;
 			}
 			if (((nsteps == (noutsW * frequencyOfOutputWidth))
@@ -953,9 +976,13 @@ int main()
 					&& (dimensionsFlag == dimensions::task1D)
 					&& mixedZoneWidthCalcFlag)
 			{
-				std::cout << "Time = " << Time << std::endl;
-				std::cout << "Time-step = " << mesh_.timestep() << std::endl;
-				std::cout << "Step number = " << nsteps << std::endl;
+				if (parallelism.isRoot() && !wasOutputPreformed)
+				{
+					std::cout << "Time = " << Time << std::endl;
+					std::cout << "Time-step = " << mesh_.timestep()
+							<< std::endl;
+					std::cout << "Step number = " << nsteps << std::endl;
+				}
 				structForOutput outputData(parallelism, mesh_,
 						numberOfComponents);
 				if (parallelism.isRoot())

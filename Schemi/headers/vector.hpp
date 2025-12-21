@@ -16,6 +16,9 @@
 
 namespace schemi
 {
+
+class tensor;
+
 class vector
 {
 public:
@@ -27,7 +30,7 @@ public:
 
 	const std::array<scalar, 3>& operator()() const noexcept;
 
-	std::array<scalar, 3>& r() noexcept;
+	std::array<scalar, 3>& wr() noexcept;
 
 	scalar mag() const noexcept;
 
@@ -42,6 +45,14 @@ public:
 	vector operator*(const scalar inScalar) const noexcept;
 
 	vector& operator*=(const scalar inScalar) noexcept;
+
+	tensor operator*(const vector & inVector) const noexcept;
+
+	scalar operator&(const vector & inVector) const noexcept;
+
+	vector operator^(const vector & inVector) const noexcept;
+
+	vector& operator^=(const vector & inVector) noexcept;
 
 	vector operator/(const scalar inScalar) const noexcept;
 

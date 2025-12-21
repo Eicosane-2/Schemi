@@ -12,19 +12,20 @@
 #include <filesystem>
 
 void schemi::output::dataOutput(const structForOutput & outputData,
-		const std::size_t noutput, const scalar Time)
+		const std::size_t nOutput, const scalar Time,
+		const abstractTurbulenceModel & turb)
 {
-	const auto noutputStr = std::to_string(noutput);
-	const std::size_t length_of_noutput = noutputStr.size();
+	const auto nOutputStr = std::to_string(nOutput);
+	const std::size_t length_of_output = nOutputStr.size();
 
-	if (lengthOfNumber < length_of_noutput)
+	if (lengthOfNumber < length_of_output)
 		throw exception(
 				"Output number length larger than specified number of digits.",
 				errors::tooBigOutputNumberError);
 
-	std::string bufOutputN(lengthOfNumber - length_of_noutput, '0');
+	std::string bufOutputN(lengthOfNumber - length_of_output, '0');
 
-	bufOutputN.append(noutputStr);
+	bufOutputN.append(nOutputStr);
 
 	std::string outputFileName { "./result/output_" };
 
@@ -41,7 +42,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 	if (outputFile.is_open())
 		std::cout << outputFileName
-				<< " output file is opened. Number of output: " << noutput
+				<< " output file is opened. Number of output: " << nOutput
 				<< '.' << std::endl;
 	else
 		[[unlikely]]
@@ -175,7 +176,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		outputFile << outputData.sonicSpeed[i] << '\n';
 	}
 
-	timeFile << noutput << '\t' << Time << '\n';
+	timeFile << nOutput << '\t' << Time << '\n';
 
 	outputFile.close();
 
@@ -288,7 +289,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 	{
 		std::ofstream output_concentrationScalar {
 				fieldDataFileName_concentration[k] };
-		output_concentrationScalar.precision(20);
+		output_concentrationScalar.precision(ioPrecision);
 		if (!output_concentrationScalar.is_open())
 			throw std::ofstream::failure(
 					std::string("Couldn't create output file for field data ")
@@ -302,6 +303,8 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 
 		output_concentrationScalar.close();
 	}
+
+	turb.particlesWriteOutput(fieldDataDirectoryName, Time);
 }
 
 void schemi::output::mixedZoneWidth1D(const structForOutput & outputData,

@@ -74,7 +74,8 @@ std::unique_ptr<schemi::chemicalKinetics::abstractChemicalKinetics> schemi::chem
 void schemi::chemicalKinetics::abstractChemicalKinetics::normalize(
 		std::valarray<scalar> & res) noexcept
 {
-	for (auto & i : res)
-		if (std::abs(i) < std::numeric_limits<scalar>::epsilon())
-			i = 0;
+	std::replace_if(std::begin(res), std::end(res), [](const auto & i) 
+	{
+		return std::abs(i) < std::numeric_limits<scalar>::epsilon();
+	}, 0);
 }

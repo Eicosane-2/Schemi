@@ -11,23 +11,12 @@
 #include <iostream>
 #include <fstream>
 
-schemi::scalar schemi::BHRKLModel::thetaA(const vector & a, const scalar k,
-		const scalar b) const noexcept
-{
-	if (CMSA() < aFlag)
-	{
-		const auto aa = (a & a);
-
-		return aa / (2 * k) < CMSA() && b < CMSA() && aa / (2 * k) < b ?
-				1 : CaMax() / std::min(Ca(), Cb());
-	}
-	return 1;
-}
+#include "doubleDotProduct.hpp"
 
 schemi::BHRKLModel::BHRKLModel(const mesh & meshIn, const bool turb_in) :
 		kLModels(meshIn, turb_in, true, true, turbulenceModel::BHRKLModel)
 {
-	modelParametersSet().resize(8);
+	modelParametersSet().resize(6);
 
 	/*Read turbulent parameters.*/
 	{
@@ -78,8 +67,6 @@ schemi::BHRKLModel::BHRKLModel(const mesh & meshIn, const bool turb_in) :
 		turbulentParametersFile >> skipBuffer >> modelParametersSet()[3];
 		turbulentParametersFile >> skipBuffer >> modelParametersSet()[4];
 		turbulentParametersFile >> skipBuffer >> modelParametersSet()[5];
-		turbulentParametersFile >> skipBuffer >> modelParametersSet()[6];
-		turbulentParametersFile >> skipBuffer >> modelParametersSet()[7];
 
 		turbulentParametersFile.close();
 	}
@@ -109,16 +96,6 @@ schemi::scalar schemi::BHRKLModel::Ca() const noexcept
 schemi::scalar schemi::BHRKLModel::Cb() const noexcept
 {
 	return modelParameters()[5];
-}
-
-schemi::scalar schemi::BHRKLModel::CaMax() const noexcept
-{
-	return modelParameters()[6];
-}
-
-schemi::scalar schemi::BHRKLModel::CMSA() const noexcept
-{
-	return modelParameters()[7];
 }
 
 std::tuple<
@@ -155,7 +132,7 @@ std::tuple<
 			scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
 	volumeField<scalar> gravGenField(mesh_, 0);
 
-	std::valarray<scalar> modeps(diffFieldsOld.eps());
+	std::valarray<scalar> modeps(diffFieldsOld.eps.cval());
 	const scalar maxeps { modeps.max() };
 	std::replace_if(std::begin(modeps), std::end(modeps),
 			[maxeps](const scalar value) 
@@ -164,69 +141,73 @@ std::tuple<
 			}, veryBig);
 
 	const auto a_s2 = mixture.sqSonicSpeed(cellFields.concentration.p,
-			cellFields.density[0](), cellFields.internalEnergy(),
-			cellFields.pressure());
+			cellFields.density[0].cval(), cellFields.internalEnergy.cval(),
+			cellFields.pressure.cval());
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
-		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
-		const scalar sqrtke { std::sqrt(diffFieldsOld.k()[i])
-				/ diffFieldsOld.eps()[i] };
+		const scalar ek { diffFieldsOld.eps.cval()[i]
+				/ diffFieldsOld.k.cval()[i] };
+		const scalar sqrtke { std::sqrt(diffFieldsOld.k.cval()[i])
+				/ diffFieldsOld.eps.cval()[i] };
 
-		const auto thetaS_i = thetaS_R(gradV()[i].trace(), diffFieldsOld.k()[i],
-				diffFieldsOld.eps()[i]);
+		const auto thetaS_i = thetaS_R(gradV.cval()[i].trace(),
+				diffFieldsOld.k.cval()[i], diffFieldsOld.eps.cval()[i]);
 
-		const auto thetaA_i = thetaA(diffFieldsOld.a()[i], diffFieldsOld.k()[i],
-				diffFieldsOld.b()[i]);
+		const scalar rhoSpherRGen(spherR.cval()[i] && gradV.cval()[i]);
 
-		const scalar rhoSpherRGen(spherR()[i] && gradV()[i]);
-
-		const scalar rhoDevRGen(thetaS_i * devR()[i] && gradV()[i]);
+		const scalar rhoDevRGen(thetaS_i * devR.cval()[i] && gradV.cval()[i]);
 
 		const scalar gravGen(
-				(diffFieldsOld.a()[i] & (gradP()[i] - divDevPhysVisc()[i])));
+				(diffFieldsOld.a.cval()[i]
+						& (gradP.cval()[i] - divDevPhysVisc.cval()[i])));
 
 		const scalar dissip(
-				-cellFields.density[0]()[i] * diffFieldsOld.k()[i] * sqrtke);
+				-cellFields.density[0].cval()[i] * diffFieldsOld.k.cval()[i]
+						* sqrtke);
 
-		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen + gravGen;
-		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
+		Sourcek.first.val()[i] = rhoSpherRGen + rhoDevRGen + gravGen;
+		Sourcek.second.val()[i] = dissip / cellFields.kTurb.cval()[i];
 
-		Sourceeps.first.r()[i] = (C1() * rhoDevRGen + C3() * rhoSpherRGen
+		Sourceeps.first.val()[i] = (C1() * rhoDevRGen + C3() * rhoSpherRGen
 				+ C0() * gravGen) * ek;
-		Sourceeps.second.r()[i] = C2() * dissip / cellFields.kTurb()[i];
+		Sourceeps.second.val()[i] = C2() * dissip / cellFields.kTurb.cval()[i];
 
 		/*Time-step calculation*/
-		modeps[i] = std::abs(
-				sourceTimestepCoeff * modeps[i]
-						/ ((Sourceeps.first()[i]
-								+ Sourceeps.second()[i]
-										* cellFields.epsTurb()[i])
-								/ cellFields.density[0]()[i] + stabilizator));
+		modeps[i] =
+				std::abs(
+						sourceTimestepCoeff * modeps[i]
+								/ ((Sourceeps.first.cval()[i]
+										+ Sourceeps.second.cval()[i]
+												* cellFields.epsTurb.cval()[i])
+										/ cellFields.density[0].cval()[i]
+										+ stabilizator));
 
 		const vector bGradP(
-				(gradP()[i] - divDevPhysVisc()[i]) * diffFieldsOld.b()[i]);
+				(gradP.cval()[i] - divDevPhysVisc.cval()[i])
+						* diffFieldsOld.b.cval()[i]);
 
 		const vector tauGradRho(
-				(devR()[i] * thetaS_i + spherR()[i])
-						/ cellFields.density[0]()[i] & gradRho()[i]);
+				(devR.cval()[i] * thetaS_i + spherR.cval()[i])
+						/ cellFields.density[0].cval()[i] & gradRho.cval()[i]);
 
 		const vector rhoAgradV(
-				cellFields.rhoaTurb()[i] & (grada()[i] - gradV()[i]));
+				cellFields.rhoaTurb.cval()[i]
+						& (grada.cval()[i] - gradV.cval()[i]));
 
-		Sourcea.first.r()[i] = bGradP + tauGradRho + rhoAgradV;
-		Sourcea.second.r()[i] = -cellFields.density[0]()[i] * sqrtke * Ca()
-				* thetaA_i;
+		Sourcea.first.val()[i] = bGradP + tauGradRho + rhoAgradV;
+		Sourcea.second.val()[i] = -cellFields.density[0].cval()[i] * sqrtke
+				* Ca();
 
 		const scalar bagradRho(
-				-2. * (diffFieldsOld.b()[i] + 1.)
-						* (diffFieldsOld.a()[i] & gradRho()[i]));
+				-2. * (diffFieldsOld.b.cval()[i] + 1.)
+						* (diffFieldsOld.a.cval()[i] & gradRho.cval()[i]));
 
-		Sourceb.first.r()[i] = bagradRho;
-		Sourceb.second.r()[i] = -cellFields.density[0]()[i] * sqrtke * Cb()
-				* thetaA_i;
+		Sourceb.first.val()[i] = bagradRho;
+		Sourceb.second.val()[i] = -cellFields.density[0].cval()[i] * sqrtke
+				* Cb();
 
-		gravGenField.r()[i] = gravGen;
+		gravGenField.val()[i] = gravGen;
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());

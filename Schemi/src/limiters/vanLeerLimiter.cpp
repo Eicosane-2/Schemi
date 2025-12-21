@@ -43,8 +43,8 @@ schemi::vector schemi::vanLeerLimiter::calculate(const vector & r,
 	vector vanLeer, xiR { 2 / (1 + std::get<0>(r())), 2
 			/ (1 + std::get<1>(r())), 2 / (1 + std::get<2>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), vanLeer.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			vanLeer.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->vanLeerLimiterCalculation(r_j, xiR_j);});
 
 	return vector { std::get<0>(vanLeer()) * std::get<0>(gradient()),
@@ -61,8 +61,8 @@ schemi::tensor schemi::vanLeerLimiter::calculate(const tensor & r,
 			/ (1 + std::get<5>(r())), 2 / (1 + std::get<6>(r())), 2
 			/ (1 + std::get<7>(r())), 2 / (1 + std::get<8>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), vanLeer.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			vanLeer.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->vanLeerLimiterCalculation(r_j, xiR_j);});
 
 	return tensor { std::get<0>(vanLeer()) * std::get<0>(gradient()),
@@ -94,8 +94,8 @@ schemi::tensor3 schemi::vanLeerLimiter::calculate(const tensor3 & r,
 			/ (1 + std::get<23>(r())), 2 / (1 + std::get<24>(r())), 2
 			/ (1 + std::get<25>(r())), 2 / (1 + std::get<26>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), vanLeer.r().begin(),
-			[this](const auto r_j, const auto xiR_j) 
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(),
+			vanLeer.wr().begin(), [this](const auto r_j, const auto xiR_j) 
 			{	return this->vanLeerLimiterCalculation(r_j, xiR_j);});
 
 	return tensor3 { std::get<0>(vanLeer()) * std::get<0>(gradient()), std::get<
@@ -132,7 +132,7 @@ schemi::vector schemi::vanLeerLimiter::calculateNoRSLimit(const vector & r,
 {
 	vector vanLeer;
 
-	std::transform(r().begin(), r().end(), vanLeer.r().begin(),
+	std::transform(r().cbegin(), r().cend(), vanLeer.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->vanLeerLimiterCalculation(r_j);});
 
@@ -146,7 +146,7 @@ schemi::tensor schemi::vanLeerLimiter::calculateNoRSLimit(const tensor & r,
 {
 	tensor vanLeer;
 
-	std::transform(r().begin(), r().end(), vanLeer.r().begin(),
+	std::transform(r().cbegin(), r().cend(), vanLeer.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->vanLeerLimiterCalculation(r_j);});
 
@@ -166,7 +166,7 @@ schemi::tensor3 schemi::vanLeerLimiter::calculateNoRSLimit(const tensor3 & r,
 {
 	tensor3 vanLeer;
 
-	std::transform(r().begin(), r().end(), vanLeer.r().begin(),
+	std::transform(r().cbegin(), r().cend(), vanLeer.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->vanLeerLimiterCalculation(r_j);});
 

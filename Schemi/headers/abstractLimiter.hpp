@@ -13,9 +13,9 @@
 #include <memory>
 #include <string>
 
+#include "vector.hpp"
 #include "tensor.hpp"
 #include "tensor3.hpp"
-#include "vector.hpp"
 
 namespace schemi
 {

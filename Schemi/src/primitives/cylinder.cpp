@@ -13,7 +13,7 @@ schemi::cylinder::cylinder(const vector & n1, const vector & c1,
 		const vector & c2, const scalar r) :
 		radius(r)
 {
-	const auto n2 = n1 * (-1);
+	const auto n2 = n1 * -1;
 
 	planes = { plane(n1 / n1.mag(), c1), plane(n2 / n2.mag(), c2) };
 

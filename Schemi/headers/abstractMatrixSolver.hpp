@@ -17,8 +17,8 @@
 
 #include "scalar.hpp"
 #include "SLEMatrix.hpp"
-#include "tensor.hpp"
 #include "vector.hpp"
+#include "tensor.hpp"
 
 namespace schemi
 {

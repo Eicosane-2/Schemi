@@ -13,8 +13,6 @@
 #include "exception.hpp"
 #include "globalConstants.hpp"
 #include "vector.hpp"
-#include "vectorProduct.hpp"
-#include "vectorVectorDotProduct.hpp"
 
 schemi::meshDestroyer::meshDestroyer() noexcept :
 		p(nullptr)
@@ -40,7 +38,7 @@ void schemi::mesh::calculateNormales() noexcept
 		const vector V1(surfacesA[i].rX0() - surfacesA[i].r00());
 		const vector V2(surfacesA[i].r0Y() - surfacesA[i].r00());
 
-		vector Normal = vectorProduct(V1, V2);
+		vector Normal = V1 ^ V2;
 		Normal /= Normal.mag();
 
 		const std::size_t cellIndex = surfaceOwnerA[i];
@@ -265,6 +263,16 @@ const std::array<std::size_t, 3>& schemi::mesh::nCells() const noexcept
 	return n_cells;
 }
 
+const schemi::vector& schemi::mesh::delta() const noexcept
+{
+	return deltaParallelepiped;
+}
+
+const schemi::vector& schemi::mesh::zero() const noexcept
+{
+	return zeroPoint;
+}
+
 schemi::scalar schemi::mesh::timestep() const noexcept
 {
 	return timestep_val;
@@ -293,6 +301,9 @@ void schemi::mesh::oneDParallelepiped(
 	taskDim = dimensions::task1D;
 
 	n_cells = { N_x, 1, 1 };
+
+	deltaParallelepiped = vectorOfParallelepiped.first;
+	zeroPoint = vectorOfParallelepiped.second;
 
 	const scalar dx { std::get<0>(vectorOfParallelepiped.first()) / N_x };
 
@@ -516,6 +527,9 @@ void schemi::mesh::twoDParallelepiped(
 	taskDim = dimensions::task2D;
 
 	n_cells = { N_x, N_y, 1 };
+
+	deltaParallelepiped = vectorOfParallelepiped.first;
+	zeroPoint = vectorOfParallelepiped.second;
 
 	const scalar dx { std::get<0>(vectorOfParallelepiped.first()) / N_x };
 	const scalar dy { std::get<1>(vectorOfParallelepiped.first()) / N_y };
@@ -1196,6 +1210,9 @@ void schemi::mesh::threeDParallelepiped(
 	taskDim = dimensions::task3D;
 
 	n_cells = { N_x, N_y, N_z };
+
+	deltaParallelepiped = vectorOfParallelepiped.first;
+	zeroPoint = vectorOfParallelepiped.second;
 
 	const scalar dx { std::get<0>(vectorOfParallelepiped.first()) / N_x };
 	const scalar dy { std::get<1>(vectorOfParallelepiped.first()) / N_y };
@@ -3011,8 +3028,8 @@ std::size_t schemi::mesh::findSeparatingSurface(std::size_t cell1,
 
 	decltype(surfs1) intersection;
 
-	std::set_intersection(surfs1.begin(), surfs1.end(), surfs2.begin(),
-			surfs2.end(), std::back_inserter(intersection));
+	std::set_intersection(surfs1.cbegin(), surfs1.cend(), surfs2.cbegin(),
+			surfs2.cend(), std::back_inserter(intersection));
 
 	if (intersection.size() > 1)
 		throw exception("More than one surface, separating cells.",

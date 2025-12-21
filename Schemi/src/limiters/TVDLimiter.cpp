@@ -41,8 +41,9 @@ schemi::volumeField<schemi::vector> schemi::TVDLimiter(
 
 			for (std::size_t j = 0; j < vector::vsize; ++j)
 			{
-				neighbourGradientsOfSurfaces[cx].r()[j] = (value()[cellIndex]
-						- value()[i]) / deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[j] =
+						(value.cval()[cellIndex] - value.cval()[i])
+								/ deltaVectorMag * deltaVectorNorm()[j];
 			}
 		}
 
@@ -74,20 +75,19 @@ schemi::volumeField<schemi::vector> schemi::TVDLimiter(
 					const vector deltaVectorNorm(deltaVector / deltaVectorMag);
 
 					const scalar boundaryCellValue =
-							bncCalc.boundaryConditionValueCell(value()[i],
-									value.boundCond()[surfaceIndex],
-
-									i, surfaceIndex, compt);
+							bncCalc.boundaryConditionValueCell(value.cval()[i],
+									value.boundCond()[surfaceIndex], i,
+									surfaceIndex, compt);
 
 					neighbourGradientsOfSurfaces.emplace_back(
 							vector(
-									(boundaryCellValue - value()[i])
+									(boundaryCellValue - value.cval()[i])
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
-									(boundaryCellValue - value()[i])
+									(boundaryCellValue - value.cval()[i])
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
-									(boundaryCellValue - value()[i])
+									(boundaryCellValue - value.cval()[i])
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm())));
 				}
@@ -106,19 +106,19 @@ schemi::volumeField<schemi::vector> schemi::TVDLimiter(
 		for (std::size_t cx = 1; cx < neighbourGradientsOfSurfaces.size(); ++cx)
 		{
 			for (std::size_t j = 0; j < vector::vsize; ++j)
-				min.r()[j] = std::min(min()[j],
+				min.wr()[j] = std::min(min()[j],
 						neighbourGradientsOfSurfaces[cx]()[j]);
 
 			for (std::size_t j = 0; j < vector::vsize; ++j)
-				max.r()[j] = std::max(max()[j],
+				max.wr()[j] = std::max(max()[j],
 						neighbourGradientsOfSurfaces[cx]()[j]);
 		}
 
-		std::transform(min().begin(), min().end(), max().begin(), r.r().begin(),
-				[](const auto num, const auto denom) 
+		std::transform(min().cbegin(), min().cend(), max().cbegin(),
+				r.wr().begin(), [](const auto num, const auto denom) 
 				{	return num/(denom + stabilizator);});
 
-		retField.r()[i] = limiterObjectP.calculate(r, gradient()[i]);
+		retField.val()[i] = limiterObjectP.calculate(r, gradient.cval()[i]);
 	}
 
 	return retField;
@@ -156,15 +156,15 @@ schemi::volumeField<schemi::tensor> schemi::TVDLimiter(
 
 			for (std::size_t j = 0; j < vector::vsize; ++j)
 			{
-				neighbourGradientsOfSurfaces[cx].r()[3 * j] = std::get<0>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 1] = std::get<1>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 2] = std::get<2>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j] = std::get<0>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 1] = std::get<1>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 2] = std::get<2>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
 			}
 		}
 
@@ -196,46 +196,46 @@ schemi::volumeField<schemi::tensor> schemi::TVDLimiter(
 					const vector deltaVectorNorm(deltaVector / deltaVectorMag);
 
 					const vector boundaryCellValue(
-							bncCalc.boundaryConditionValueCell(value()[i],
+							bncCalc.boundaryConditionValueCell(value.cval()[i],
 									value.boundCond()[surfaceIndex], i,
 									surfaceIndex, compt));
 
 					neighbourGradientsOfSurfaces.emplace_back(
 							tensor(
 									std::get<0>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<1>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<2>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<0>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<1>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<2>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<0>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<1>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<2>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm())));
 				}
@@ -254,19 +254,19 @@ schemi::volumeField<schemi::tensor> schemi::TVDLimiter(
 		for (std::size_t cx = 1; cx < neighbourGradientsOfSurfaces.size(); ++cx)
 		{
 			for (std::size_t j = 0; j < tensor::vsize; ++j)
-				min.r()[j] = std::min(min()[j],
+				min.wr()[j] = std::min(min()[j],
 						neighbourGradientsOfSurfaces[cx]()[j]);
 
 			for (std::size_t j = 0; j < tensor::vsize; ++j)
-				max.r()[j] = std::max(max()[j],
+				max.wr()[j] = std::max(max()[j],
 						neighbourGradientsOfSurfaces[cx]()[j]);
 		}
 
-		std::transform(min().begin(), min().end(), max().begin(), r.r().begin(),
-				[](const auto num, const auto denom) 
+		std::transform(min().cbegin(), min().cend(), max().cbegin(),
+				r.wr().begin(), [](const auto num, const auto denom) 
 				{	return num/(denom + stabilizator);});
 
-		retField.r()[i] = limiterObjectP.calculate(r, gradient()[i]);
+		retField.val()[i] = limiterObjectP.calculate(r, gradient.cval()[i]);
 	}
 
 	return retField;
@@ -305,33 +305,33 @@ schemi::volumeField<schemi::tensor3> schemi::TVDLimiter(
 
 			for (std::size_t j = 0; j < vector::vsize; ++j)
 			{
-				neighbourGradientsOfSurfaces[cx].r()[3 * j] = std::get<0>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 1] = std::get<1>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 2] = std::get<2>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 3] = std::get<3>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 4] = std::get<4>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 5] = std::get<5>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 6] = std::get<6>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 7] = std::get<7>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
-				neighbourGradientsOfSurfaces[cx].r()[3 * j + 8] = std::get<8>(
-						(value()[cellIndex] - value()[i])()) / deltaVectorMag
-						* deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j] = std::get<0>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 1] = std::get<1>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 2] = std::get<2>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 3] = std::get<3>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 4] = std::get<4>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 5] = std::get<5>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 6] = std::get<6>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 7] = std::get<7>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
+				neighbourGradientsOfSurfaces[cx].wr()[3 * j + 8] = std::get<8>(
+						(value.cval()[cellIndex] - value.cval()[i])())
+						/ deltaVectorMag * deltaVectorNorm()[j];
 			}
 		}
 
@@ -363,120 +363,120 @@ schemi::volumeField<schemi::tensor3> schemi::TVDLimiter(
 					const vector deltaVectorNorm(deltaVector / deltaVectorMag);
 
 					const tensor boundaryCellValue(
-							bncCalc.boundaryConditionValueCell(value()[i],
+							bncCalc.boundaryConditionValueCell(value.cval()[i],
 									value.boundCond()[surfaceIndex], i,
 									surfaceIndex, compt));
 
 					neighbourGradientsOfSurfaces.emplace_back(
 							tensor3(
 									std::get<0>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<1>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<2>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<3>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<4>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<5>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<6>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<7>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 									std::get<8>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<0>(deltaVectorNorm()),
 
 									std::get<0>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<1>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<2>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<3>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<4>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<5>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<6>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<7>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 									std::get<8>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<1>(deltaVectorNorm()),
 
 									std::get<0>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<1>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<2>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<3>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<4>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<5>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<6>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<7>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm()),
 									std::get<8>(
-											(boundaryCellValue - value()[i])())
+											(boundaryCellValue - value.cval()[i])())
 											/ deltaVectorMag
 											* std::get<2>(deltaVectorNorm())));
 				}
@@ -495,19 +495,19 @@ schemi::volumeField<schemi::tensor3> schemi::TVDLimiter(
 		for (std::size_t cx = 1; cx < neighbourGradientsOfSurfaces.size(); ++cx)
 		{
 			for (std::size_t j = 0; j < tensor3::vsize; ++j)
-				min.r()[j] = std::min(min()[j],
+				min.wr()[j] = std::min(min()[j],
 						neighbourGradientsOfSurfaces[cx]()[j]);
 
 			for (std::size_t j = 0; j < tensor3::vsize; ++j)
-				max.r()[j] = std::max(max()[j],
+				max.wr()[j] = std::max(max()[j],
 						neighbourGradientsOfSurfaces[cx]()[j]);
 		}
 
-		std::transform(min().begin(), min().end(), max().begin(), r.r().begin(),
-				[](const auto num, const auto denom) 
+		std::transform(min().cbegin(), min().cend(), max().cbegin(),
+				r.wr().begin(), [](const auto num, const auto denom) 
 				{	return num/(denom + stabilizator);});
 
-		retField.r()[i] = limiterObjectP.calculate(r, gradient()[i]);
+		retField.val()[i] = limiterObjectP.calculate(r, gradient.cval()[i]);
 	}
 
 	return retField;

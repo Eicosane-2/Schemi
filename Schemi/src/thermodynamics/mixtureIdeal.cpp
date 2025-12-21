@@ -173,6 +173,31 @@ std::valarray<schemi::scalar> schemi::mixtureIdeal::TFromUv(
 	return TemperatureOutput;
 }
 
+std::valarray<schemi::scalar> schemi::mixtureIdeal::cFrompT(
+		const std::vector<const std::valarray<scalar>*>&,
+		const std::valarray<scalar> & p,
+		const std::valarray<scalar> & T) const noexcept
+{
+	std::valarray<scalar> concentratonOutput((p.size()));
+
+	for (std::size_t i = 0; i < concentratonOutput.size(); ++i)
+		concentratonOutput[i] = idealFluid::cFrompT(R, p[i], T[i]);
+
+	return concentratonOutput;
+}
+
+std::valarray<schemi::scalar> schemi::mixtureIdeal::cFrompTk(
+		const std::valarray<scalar> & p, const std::valarray<scalar> & T,
+		const std::size_t) const noexcept
+{
+	std::valarray<scalar> concentratonOutput((p.size()));
+
+	for (std::size_t i = 0; i < concentratonOutput.size(); ++i)
+		concentratonOutput[i] = idealFluid::cFrompT(R, p[i], T[i]);
+
+	return concentratonOutput;
+}
+
 std::valarray<schemi::scalar> schemi::mixtureIdeal::dpdrho(
 		const std::vector<const std::valarray<scalar>*> & concentrations,
 		const std::valarray<scalar>&) const noexcept
@@ -427,6 +452,18 @@ schemi::scalar schemi::mixtureIdeal::TFromUv(
 		CvMixture += X[k] * CvArr[k];
 
 	return idealFluid::TFromUv(CvMixture, Uv, concentrations[0]);
+}
+
+schemi::scalar schemi::mixtureIdeal::cFrompT(const std::valarray<scalar>&,
+		const scalar p, const scalar T) const noexcept
+{
+	return idealFluid::cFrompT(R, p, T);
+}
+
+schemi::scalar schemi::mixtureIdeal::cFrompTk(const scalar p, const scalar T,
+		const std::size_t) const noexcept
+{
+	return idealFluid::cFrompT(R, p, T);
 }
 
 schemi::scalar schemi::mixtureIdeal::dpdrho(const std::valarray<scalar>&,

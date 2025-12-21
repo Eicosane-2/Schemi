@@ -8,6 +8,10 @@
 3.9E6
 #Kinetic_diameter_(A)
 3.64
+#Lennard_Jones_eps/kB_(K)
+71.4
+#Lennard_Jones_sigma_(A)
+3.798
 #Tail_boundary_condition
 slip
 #Point_boundary_condition

@@ -11,5 +11,5 @@ slip
 #Top_boundary_condition
 blank
 #Values_in_zones
-2E6
-2E6
+2E1
+2E1

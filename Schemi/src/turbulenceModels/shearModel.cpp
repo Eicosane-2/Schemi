@@ -11,6 +11,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "doubleDotProduct.hpp"
+
 schemi::shearModel::shearModel(const mesh & meshIn, const bool turb_in) :
 		kEpsModels(meshIn, turb_in, false, false, turbulenceModel::shearModel)
 {
@@ -108,7 +110,7 @@ std::tuple<
 			volumeField<scalar>(mesh_, 0), volumeField<scalar>(mesh_, 0) };
 	const volumeField<scalar> gravGenField(mesh_, 0);
 
-	std::valarray<scalar> modeps(diffFieldsOld.eps());
+	std::valarray<scalar> modeps(diffFieldsOld.eps.cval());
 	const scalar maxeps { modeps.max() };
 	std::replace_if(std::begin(modeps), std::end(modeps),
 			[maxeps](const scalar value) 
@@ -118,27 +120,31 @@ std::tuple<
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
-		const scalar ek { diffFieldsOld.eps()[i] / diffFieldsOld.k()[i] };
+		const scalar ek { diffFieldsOld.eps.cval()[i]
+				/ diffFieldsOld.k.cval()[i] };
 
-		const scalar rhoSpherRGen(spherR()[i] && gradV()[i]);
+		const scalar rhoSpherRGen(spherR.cval()[i] && gradV.cval()[i]);
 
-		const scalar rhoDevRGen(devR()[i] && gradV()[i]);
+		const scalar rhoDevRGen(devR.cval()[i] && gradV.cval()[i]);
 
-		const scalar dissip(-cellFields.rhoepsTurb()[i]);
+		const scalar dissip(-cellFields.rhoepsTurb.cval()[i]);
 
-		Sourcek.first.r()[i] = rhoSpherRGen + rhoDevRGen;
-		Sourcek.second.r()[i] = dissip / cellFields.kTurb()[i];
+		Sourcek.first.val()[i] = rhoSpherRGen + rhoDevRGen;
+		Sourcek.second.val()[i] = dissip / cellFields.kTurb.cval()[i];
 
-		Sourceeps.first.r()[i] = (C1() * rhoDevRGen + C3() * rhoSpherRGen) * ek;
-		Sourceeps.second.r()[i] = C2() * dissip / cellFields.kTurb()[i];
+		Sourceeps.first.val()[i] = (C1() * rhoDevRGen + C3() * rhoSpherRGen)
+				* ek;
+		Sourceeps.second.val()[i] = C2() * dissip / cellFields.kTurb.cval()[i];
 
 		/*Time-step calculation*/
-		modeps[i] = std::abs(
-				sourceTimestepCoeff * modeps[i]
-						/ ((Sourceeps.first()[i]
-								+ Sourceeps.second()[i]
-										* cellFields.epsTurb()[i])
-								/ cellFields.density[0]()[i] + stabilizator));
+		modeps[i] =
+				std::abs(
+						sourceTimestepCoeff * modeps[i]
+								/ ((Sourceeps.first.cval()[i]
+										+ Sourceeps.second.cval()[i]
+												* cellFields.epsTurb.cval()[i])
+										/ cellFields.density[0].cval()[i]
+										+ stabilizator));
 	}
 
 	sourceTimestep = std::min(mesh_.timestepSource(), modeps.min());

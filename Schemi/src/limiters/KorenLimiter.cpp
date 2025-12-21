@@ -44,7 +44,7 @@ schemi::vector schemi::KorenLimiter::calculate(const vector & r,
 	vector Koren, xiR { 2 / (1 + std::get<0>(r())), 2 / (1 + std::get<1>(r())),
 			2 / (1 + std::get<2>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Koren.r().begin(),
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(), Koren.wr().begin(),
 			[this](const auto r_j, const auto xiR_j) 
 			{	return this->KorenLimiterCalculation(r_j, xiR_j);});
 
@@ -62,7 +62,7 @@ schemi::tensor schemi::KorenLimiter::calculate(const tensor & r,
 					/ (1 + std::get<6>(r())), 2 / (1 + std::get<7>(r())), 2
 					/ (1 + std::get<8>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Koren.r().begin(),
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(), Koren.wr().begin(),
 			[this](const auto r_j, const auto xiR_j) 
 			{	return this->KorenLimiterCalculation(r_j, xiR_j);});
 
@@ -95,7 +95,7 @@ schemi::tensor3 schemi::KorenLimiter::calculate(const tensor3 & r,
 					/ (1 + std::get<24>(r())), 2 / (1 + std::get<25>(r())), 2
 					/ (1 + std::get<26>(r())) };
 
-	std::transform(r().begin(), r().end(), xiR().begin(), Koren.r().begin(),
+	std::transform(r().cbegin(), r().cend(), xiR().cbegin(), Koren.wr().begin(),
 			[this](const auto r_j, const auto xiR_j) 
 			{	return this->KorenLimiterCalculation(r_j, xiR_j);});
 
@@ -133,7 +133,7 @@ schemi::vector schemi::KorenLimiter::calculateNoRSLimit(const vector & r,
 {
 	vector Koren;
 
-	std::transform(r().begin(), r().end(), Koren.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Koren.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->KorenLimiterCalculation(r_j);});
 
@@ -147,7 +147,7 @@ schemi::tensor schemi::KorenLimiter::calculateNoRSLimit(const tensor & r,
 {
 	tensor Koren;
 
-	std::transform(r().begin(), r().end(), Koren.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Koren.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->KorenLimiterCalculation(r_j);});
 
@@ -167,7 +167,7 @@ schemi::tensor3 schemi::KorenLimiter::calculateNoRSLimit(const tensor3 & r,
 {
 	tensor3 Koren;
 
-	std::transform(r().begin(), r().end(), Koren.r().begin(),
+	std::transform(r().cbegin(), r().cend(), Koren.wr().begin(),
 			[this](const auto r_j) 
 			{	return this->KorenLimiterCalculation(r_j);});
 

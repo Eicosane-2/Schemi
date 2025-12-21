@@ -87,7 +87,7 @@ schemi::scalar schemi::stiffenedFluid::Sv(const scalar c, const scalar T,
 			(2 * Pi_number * M * R * T) / pow<scalar, 2>(NAvogardro * h)) };
 	const auto nQ { pow<scalar, 3>(sqrt_nQ) };
 
-	return c * R * (log(nQ / ((c + stabilizator) * NAvogardro)) + 5. / 2.);
+	return c * R * (std::log(nQ / ((c + stabilizator) * NAvogardro)) + 5. / 2.);
 }
 
 schemi::scalar schemi::stiffenedFluid::Fmx(const scalar h,

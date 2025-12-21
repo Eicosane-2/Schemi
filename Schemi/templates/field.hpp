@@ -30,7 +30,7 @@ struct field
 			throw exception("Fields have different boundary condition size.",
 					errors::fieldInitialisationError);
 
-		valueField = f();
+		valueField = f.cval();
 		boundaryConditionInfo = f.boundCond();
 
 		fieldSize = f.size();
@@ -50,12 +50,12 @@ struct field
 			valueField = std::valarray<typeOfValue>(value,
 					meshReference.cellsSize());
 
-			boundaryConditionInfo.resize(meshReference.surfacesSize());
-			for (std::size_t i = 0; i < boundaryConditionInfo.size(); ++i)
-			{
-				boundaryConditionInfo[i].first = meshReference.bndType()[i];
-				boundaryConditionInfo[i].second = value;
-			}
+			//boundaryConditionInfo.resize(meshReference.surfacesSize());
+			//for (std::size_t i = 0; i < boundaryConditionInfo.size(); ++i)
+			//{
+			//	boundaryConditionInfo[i].first = meshReference.bndType()[i];
+			//	boundaryConditionInfo[i].second = value;
+			//}
 
 			fieldSize = meshReference.cellsSize();
 		}
@@ -385,7 +385,7 @@ struct field
 	}
 
 	field(const mesh & meshIn, const typeOfValue & value,
-			const std::vector<std::pair<boundaryConditionType, typeOfValue>> & boundCondtIn) :
+			const std::vector<std::pair<boundaryConditionType, typeOfValue>> & boundCondIn) :
 			valueField(0), boundaryConditionInfo(0), meshReference { meshIn }, fieldSize {
 					0 }
 	{
@@ -393,32 +393,61 @@ struct field
 
 		if constexpr (std::is_same_v<typeOfEntity, cubicCell>)
 		{
-			valueField = std::valarray<typeOfValue>(value,
-					meshReference.cellsSize());
-
 			fieldSize = meshReference.cellsSize();
+
+			valueField = std::valarray<typeOfValue>(value, fieldSize);
 		}
 		else if constexpr (std::is_same_v<typeOfEntity, quadraticSurface>)
 		{
-			valueField = std::valarray<typeOfValue>(value,
-					meshReference.surfacesSize());
-
 			fieldSize = meshReference.surfacesSize();
+
+			valueField = std::valarray<typeOfValue>(value, fieldSize);
 		}
 		else
 			[[unlikely]]
 			throw exception("Unknown type of field.",
 					errors::fieldInitialisationError);
 
-		boundaryConditionInfo = boundCondtIn;
+		boundaryConditionInfo = boundCondIn;
 	}
 
-	const std::valarray<typeOfValue>& operator()() const noexcept
+	field(const mesh & meshIn, const std::valarray<typeOfValue> & value,
+			const std::vector<std::pair<boundaryConditionType, typeOfValue>> & boundCondIn) :
+			valueField(0), boundaryConditionInfo(0), meshReference { meshIn }, fieldSize {
+					0 }
+	{
+		is_mesh_initialised();
+
+		if constexpr (std::is_same_v<typeOfEntity, cubicCell>)
+		{
+			fieldSize = meshReference.cellsSize();
+
+			valueField.resize(fieldSize);
+
+			valueField = value;
+		}
+		else if constexpr (std::is_same_v<typeOfEntity, quadraticSurface>)
+		{
+			fieldSize = meshReference.surfacesSize();
+
+			valueField.resize(fieldSize);
+
+			valueField = value;
+		}
+		else
+			[[unlikely]]
+			throw exception("Unknown type of field.",
+					errors::fieldInitialisationError);
+
+		boundaryConditionInfo = boundCondIn;
+	}
+
+	const std::valarray<typeOfValue>& cval() const noexcept
 	{
 		return valueField;
 	}
 
-	std::valarray<typeOfValue>& r() noexcept
+	std::valarray<typeOfValue>& val() noexcept
 	{
 		return valueField;
 	}
@@ -428,7 +457,7 @@ struct field
 		return boundaryConditionInfo;
 	}
 
-	std::vector<std::pair<boundaryConditionType, typeOfValue>>& boundCond_r() noexcept
+	std::vector<std::pair<boundaryConditionType, typeOfValue>>& boundCond_wr() noexcept
 	{
 		return boundaryConditionInfo;
 	}

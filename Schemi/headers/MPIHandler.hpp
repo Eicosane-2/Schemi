@@ -28,16 +28,24 @@
 #define MPI_UNSIGNED_LONG 303
 #define MPI_UNSIGNED_LONG_LONG 404
 #define MPI_DOUBLE 505
+#define MPI_C_BOOL 606
+#define MPI_INT 707
 #define MPI_STATUSES_IGNORE 123
 
 int MPI_Init(int*, char***);
 int MPI_Comm_rank(int, int*);
 int MPI_Comm_size(int, int*);
 int MPI_Barrier(int);
-int MPI_Gather(const std::size_t*, int, int, std::size_t*, int, int, int, int);
+int MPI_Gather(const bool*, int, int, bool*, int, int, int, int);
 int MPI_Gather(const double*, int, int, double*, int, int, int, int);
+int MPI_Gather(const std::size_t*, int, int, std::size_t*, int, int, int, int);
+int MPI_Send(const int*, int, int, int, int, int);
 int MPI_Send(const double*, int, int, int, int, int);
+int MPI_Send(const std::size_t*, int, int, int, int, int);
+int MPI_Recv(int*, int, int, int, int, int, int);
 int MPI_Recv(double*, int, int, int, int, int, int);
+int MPI_Recv(std::size_t*, int, int, int, int, int, int);
+int MPI_Bcast(int*, int, int, int, int);
 int MPI_Bcast(double*, int, int, int, int);
 int MPI_Bcast(std::size_t*, int, int, int, int);
 int MPI_Finalize();
@@ -56,6 +64,7 @@ namespace schemi
 #else
 #error schemi_MPI_SIZE undefined.
 #endif
+#define schemi_MPI_SCALAR MPI_DOUBLE
 
 class MPIHandler
 {
@@ -92,11 +101,6 @@ private:
 
 	bool arraysInit = false;
 
-	enum class MPITags
-	{
-		tail, point, bottom, right, left, top
-	};
-
 	struct
 	{
 		int & tail { a[0] }, & point { a[1] }, & bottom { a[2] },
@@ -106,6 +110,27 @@ private:
 	} envNodes;
 
 public:
+	enum class MPITags
+	{
+		tail,
+		point,
+		bottom,
+		right,
+		left,
+		top,
+		GoncharovPosition,
+		GoncharovSubstances,
+		GoncharovVelocity,
+		GoncharovWeights,
+		GoncharovGradRho,
+		GoncharovRho,
+		GoncharovGradP,
+		GoncharovDivU,
+		GoncharovGradU,
+		GoncharovViscosityAndRadiuses,
+		GoncharovInterfaceStatus
+	};
+
 	const std::size_t mpi_rank, mpi_size, root = 0;
 
 	std::unique_ptr<volumeField<scalar>> parallCellVolume { nullptr };
@@ -205,27 +230,27 @@ public:
 #ifdef MPI_VERSION
 		if (!(envNodes.tail < 0))
 			for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.point < 0))
 			for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.bottom < 0))
 			for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.right < 0))
 			for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.left < 0))
 			for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.top < 0))
 			for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 #endif
 	}
@@ -237,27 +262,27 @@ public:
 #ifdef MPI_VERSION
 		if (!(envNodes.tail < 0))
 			for (std::size_t i = tailSurfaceStart; i < tailSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.point < 0))
 			for (std::size_t i = pointSurfaceStart; i < pointSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.bottom < 0))
 			for (std::size_t i = bottomSurfaceStart; i < bottomSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.right < 0))
 			for (std::size_t i = rightSurfaceStart; i < rightSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.left < 0))
 			for (std::size_t i = leftSurfaceStart; i < leftSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 		if (!(envNodes.top < 0))
 			for (std::size_t i = topSurfaceStart; i < topSurfaceEnd; ++i)
-				corField.boundCond_r()[i].first =
+				corField.boundCond_wr()[i].first =
 						boundaryConditionType::calculatedParallelBoundary;
 #endif
 	}
@@ -282,7 +307,7 @@ public:
 	void gatherField(const volumeField<scalar> & inField,
 			std::valarray<scalar> & retField) noexcept;
 
-	bool isRoot();
+	bool isRoot() const;
 
 	const std::array<std::size_t, 3>& rankDirection() const noexcept;
 	const std::array<std::size_t, 3>& rankDirectionMax() const noexcept;

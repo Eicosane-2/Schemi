@@ -7,7 +7,7 @@
 
 #include "SLEMatrix.hpp"
 
-#include "vectorVectorDotProduct.hpp"
+#include "vector.hpp"
 #include "divergence.hpp"
 #include "gradient.hpp"
 
@@ -32,36 +32,30 @@ schemi::SLEMatrix::SLEMatrixStorage::SLEMatrixStorage(
 void schemi::SLEMatrix::SLEMatrixStorage::transpose() noexcept
 {
 	std::vector<std::vector<std::pair<scalar, std::size_t>>> lowerTriangleNew(
-			0), upperTriangleNew(0);
+			centralDiagonale.size()), upperTriangleNew(centralDiagonale.size());
 
 	for (std::size_t i = 0; i < centralDiagonale.size(); ++i)
 	{
-		for (std::size_t j = 0; j < lowerTriangle[i].size(); ++j)
+		for (std::size_t k = 0; k < lowerTriangle[i].size(); ++k)
 		{
-			const std::size_t jOld = lowerTriangle[i][j].second;
-			const auto Avalue = lowerTriangle[i][j].first;
+			const std::size_t j = lowerTriangle[i][k].second;
+			const auto Avalue = lowerTriangle[i][k].first;
 
-			const std::size_t iNew = jOld;
+			const std::size_t iNew = j;
 			const std::size_t jNew = i;
 
-			if ((iNew + 1) > upperTriangleNew.size())
-				upperTriangleNew.resize(iNew + 1);
-
-			upperTriangleNew[iNew].emplace_back(Avalue, jNew);
+			upperTriangleNew[iNew].push_back( { Avalue, jNew });
 		}
 
-		for (std::size_t j = 0; j < upperTriangle[i].size(); ++j)
+		for (std::size_t k = 0; k < upperTriangle[i].size(); ++k)
 		{
-			const std::size_t jOld = upperTriangle[i][j].second;
-			const auto Avalue = upperTriangle[i][j].first;
+			const std::size_t j = upperTriangle[i][k].second;
+			const auto Avalue = upperTriangle[i][k].first;
 
-			const std::size_t iNew = jOld;
+			const std::size_t iNew = j;
 			const std::size_t jNew = i;
 
-			if ((iNew + 1) > lowerTriangleNew.size())
-				lowerTriangleNew.resize(iNew + 1);
-
-			lowerTriangleNew[iNew].emplace_back(Avalue, jNew);
+			lowerTriangleNew[iNew].push_back( { Avalue, jNew });
 		}
 	}
 
@@ -105,7 +99,7 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 				}
 				else
 					[[unlikely]]
@@ -120,17 +114,17 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 				const vector deltaRNorm(deltaR / deltaRMag);
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				if (oIndex < i)
 					SLE[0].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 				else
 					SLE[0].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 			}
@@ -138,7 +132,7 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 			case boundaryConditionType::calculatedParallelBoundary:
 			{
 				const scalar boundaryValue { bncCalc.boundaryConditionValueCell(
-						vField()[i], vField.boundCond()[surfaceIndex], i,
+						vField.cval()[i], vField.boundCond()[surfaceIndex], i,
 						surfaceIndex, compt) };
 
 				const vector deltaR(
@@ -156,11 +150,11 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* boundaryValue;
 			}
@@ -168,7 +162,7 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 			[[unlikely]] default:
 			{
 				const scalar boundaryValue {
-						bncCalc.boundaryConditionValueSurface(vField()[i],
+						bncCalc.boundaryConditionValueSurface(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt) };
 
@@ -186,11 +180,11 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* boundaryValue;
 			}
@@ -211,9 +205,9 @@ void schemi::SLEMatrix::generateDTimeNabla(const volumeField<scalar> & vField,
 
 	const scalar reversedTimestep { 1 / timestep };
 
-	SLE[0].centralDiagonale = rFieldNew() * reversedTimestep;
+	SLE[0].centralDiagonale = rFieldNew.cval() * reversedTimestep;
 
-	SLE[0].freeTerm = rFieldOld() * reversedTimestep;
+	SLE[0].freeTerm = rFieldOld.cval() * reversedTimestep;
 
 	for (std::size_t i = 0; i < vField.size(); ++i)
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
@@ -243,28 +237,28 @@ void schemi::SLEMatrix::generateDTimeNabla(const volumeField<scalar> & vField,
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 				}
 				else
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
-				if ((outerNormale & additionalField()[surfaceIndex]) > 0)
+				if ((outerNormale & additionalField.cval()[surfaceIndex]) > 0)
 				{
 					SLE[0].centralDiagonale[i] +=
-							(additionalField()[surfaceIndex] & outerNormale);
+							(additionalField.cval()[surfaceIndex] & outerNormale);
 				}
 				else
 				{
 					if (oIndex < i)
 						SLE[0].lowerTriangle[i].emplace_back(
-								(additionalField()[surfaceIndex] & outerNormale),
-								oIndex);
+								(additionalField.cval()[surfaceIndex]
+										& outerNormale), oIndex);
 					else
 						SLE[0].upperTriangle[i].emplace_back(
-								(additionalField()[surfaceIndex] & outerNormale),
-								oIndex);
+								(additionalField.cval()[surfaceIndex]
+										& outerNormale), oIndex);
 				}
 			}
 				break;
@@ -275,17 +269,17 @@ void schemi::SLEMatrix::generateDTimeNabla(const volumeField<scalar> & vField,
 								* mesh_.surfaces()[surfaceIndex].S()
 								/ mesh_.cells()[i].V());
 
-				if ((outerNormale & additionalField()[surfaceIndex]) > 0)
+				if ((outerNormale & additionalField.cval()[surfaceIndex]) > 0)
 					SLE[0].centralDiagonale[i] +=
-							(additionalField()[surfaceIndex] & outerNormale);
+							(additionalField.cval()[surfaceIndex] & outerNormale);
 				else
 				{
 					const scalar boundaryValue {
-							bncCalc.boundaryConditionValueCell(vField()[i],
+							bncCalc.boundaryConditionValueCell(vField.cval()[i],
 									vField.boundCond()[surfaceIndex], i,
 									surfaceIndex, compt) };
 
-					SLE[0].freeTerm[i] -= (additionalField()[surfaceIndex]
+					SLE[0].freeTerm[i] -= (additionalField.cval()[surfaceIndex]
 							& outerNormale) * boundaryValue;
 				}
 			}
@@ -328,17 +322,17 @@ void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 				}
 				else
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 
-				if ((outerNormale & additionalField()[surfaceIndex]) > 0)
+				if ((outerNormale & additionalField.cval()[surfaceIndex]) > 0)
 				{
 					SLE[0].centralDiagonale[i] +=
-							(additionalField()[surfaceIndex] & outerNormale);
+							(additionalField.cval()[surfaceIndex] & outerNormale);
 				}
 				else
 				{
@@ -355,11 +349,12 @@ void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
 													else return false;});
 
 						if (Iterator != SLE[0].lowerTriangle[i].end())
-							Iterator->first += (additionalField()[surfaceIndex]
-									& outerNormale);
+							Iterator->first +=
+									(additionalField.cval()[surfaceIndex]
+											& outerNormale);
 						else
 							SLE[0].lowerTriangle[i].emplace_back(
-									(additionalField()[surfaceIndex]
+									(additionalField.cval()[surfaceIndex]
 											& outerNormale), oIndex);
 					}
 					else
@@ -375,11 +370,12 @@ void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
 													else return false;});
 
 						if (Iterator != SLE[0].upperTriangle[i].end())
-							Iterator->first += (additionalField()[surfaceIndex]
-									& outerNormale);
+							Iterator->first +=
+									(additionalField.cval()[surfaceIndex]
+											& outerNormale);
 						else
 							SLE[0].upperTriangle[i].emplace_back(
-									(additionalField()[surfaceIndex]
+									(additionalField.cval()[surfaceIndex]
 											& outerNormale), oIndex);
 					}
 				}
@@ -392,17 +388,17 @@ void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
 								* mesh_.surfaces()[surfaceIndex].S()
 								/ mesh_.cells()[i].V());
 
-				if ((outerNormale & additionalField()[surfaceIndex]) > 0)
+				if ((outerNormale & additionalField.cval()[surfaceIndex]) > 0)
 					SLE[0].centralDiagonale[i] +=
-							(additionalField()[surfaceIndex] & outerNormale);
+							(additionalField.cval()[surfaceIndex] & outerNormale);
 				else
 				{
 					const scalar boundaryValue {
-							bncCalc.boundaryConditionValueCell(vField()[i],
+							bncCalc.boundaryConditionValueCell(vField.cval()[i],
 									vField.boundCond()[surfaceIndex], i,
 									surfaceIndex, compt) };
 
-					SLE[0].freeTerm[i] -= (additionalField()[surfaceIndex]
+					SLE[0].freeTerm[i] -= (additionalField.cval()[surfaceIndex]
 							& outerNormale) * boundaryValue;
 				}
 			}
@@ -425,9 +421,9 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 
 	const scalar reversedTimestep { 1 / timestep };
 
-	SLE[0].centralDiagonale = rFieldNew() * reversedTimestep;
+	SLE[0].centralDiagonale = rFieldNew.cval() * reversedTimestep;
 
-	SLE[0].freeTerm = rFieldOld() * reversedTimestep;
+	SLE[0].freeTerm = rFieldOld.cval() * reversedTimestep;
 
 	for (std::size_t i = 0; i < vField.size(); ++i)
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
@@ -456,7 +452,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 				}
 				else
 					[[unlikely]]
@@ -471,17 +467,17 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 				const vector deltaRNorm(deltaR / deltaRMag);
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				if (oIndex < i)
 					SLE[0].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 				else
 					SLE[0].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 			}
@@ -489,7 +485,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 			case boundaryConditionType::calculatedParallelBoundary:
 			{
 				const scalar boundaryValue { bncCalc.boundaryConditionValueCell(
-						vField()[i], vField.boundCond()[surfaceIndex], i,
+						vField.cval()[i], vField.boundCond()[surfaceIndex], i,
 						surfaceIndex, compt) };
 
 				const vector deltaR(
@@ -507,11 +503,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* boundaryValue;
 			}
@@ -519,7 +515,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 			[[unlikely]] default:
 			{
 				const scalar boundaryValue { bncCalc.boundaryConditionValueCell(
-						vField()[i], vField.boundCond()[surfaceIndex], i,
+						vField.cval()[i], vField.boundCond()[surfaceIndex], i,
 						surfaceIndex, compt) };
 
 				const vector deltaR(
@@ -536,11 +532,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* boundaryValue;
 			}
@@ -563,9 +559,9 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 
 	const scalar reversedTimestep { 1 / timestep };
 
-	SLE[0].centralDiagonale = rFieldNew() * reversedTimestep;
+	SLE[0].centralDiagonale = rFieldNew.cval() * reversedTimestep;
 
-	SLE[0].freeTerm = rFieldOld() * reversedTimestep;
+	SLE[0].freeTerm = rFieldOld.cval() * reversedTimestep;
 
 	for (std::size_t i = 0; i < vField.size(); ++i)
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
@@ -594,7 +590,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 				}
 				else
 					[[unlikely]]
@@ -609,35 +605,35 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 				const vector deltaRNorm(deltaR / deltaRMag);
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* vField()[i];
+								* vField.cval()[i];
 
 				if (oIndex < i)
 					SLE[0].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 				else
 					SLE[0].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* vField()[oIndex];
+								* vField.cval()[oIndex];
 			}
 				break;
 			case boundaryConditionType::calculatedParallelBoundary:
 			{
 				const scalar boundaryValue { bncCalc.boundaryConditionValueCell(
-						vField()[i], vField.boundCond()[surfaceIndex], i,
+						vField.cval()[i], vField.boundCond()[surfaceIndex], i,
 						surfaceIndex, compt) };
 
 				const vector deltaR(
@@ -655,16 +651,16 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* vField()[i];
+								* vField.cval()[i];
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* boundaryValue;
 			}
@@ -672,7 +668,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 			[[unlikely]] default:
 			{
 				const scalar boundaryValue { bncCalc.boundaryConditionValueCell(
-						vField()[i], vField.boundCond()[surfaceIndex], i,
+						vField.cval()[i], vField.boundCond()[surfaceIndex], i,
 						surfaceIndex, compt) };
 
 				const vector deltaR(
@@ -689,16 +685,16 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* vField()[i];
+								* vField.cval()[i];
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* boundaryValue;
 			}
@@ -708,7 +704,9 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 }
 
 void schemi::SLEMatrix::generateDTimeLaplacian(
-		const volumeField<vector> & vField, const volumeField<scalar> & rField,
+		const volumeField<vector> & vField,
+		const volumeField<scalar> & rFieldNew,
+		const volumeField<vector> & rFieldOld,
 		const surfaceField<scalar> & effectiveDiffusionCoefficient,
 		const scalar timestep, const boundaryConditionValue & bncCalc,
 		const std::size_t compt)
@@ -720,12 +718,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 	const scalar reversedTimestep { 1 / timestep };
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
-		SLE[j].centralDiagonale = rField() * reversedTimestep;
+		SLE[j].centralDiagonale = rFieldNew.cval() * reversedTimestep;
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
 		for (std::size_t i = 0; i < vField.size(); ++i)
-			SLE[j].freeTerm[i] = rField()[i] * vField()[i]()[j]
-					* reversedTimestep;
+			SLE[j].freeTerm[i] = rFieldOld.cval()[i]()[j] * reversedTimestep;
 
 	for (std::size_t i = 0; i < vField.size(); ++i)
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
@@ -754,7 +751,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 				}
 				else
 					[[unlikely]]
@@ -769,44 +766,44 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 				const vector deltaRNorm(deltaR / deltaRMag);
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				if (oIndex < i)
 				{
 					SLE[0].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[1].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[2].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 				}
 				else
 				{
 					SLE[0].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[1].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[2].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 				}
@@ -815,7 +812,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 			case boundaryConditionType::calculatedParallelBoundary:
 			{
 				const vector boundaryValue(
-						bncCalc.boundaryConditionValueCell(vField()[i],
+						bncCalc.boundaryConditionValueCell(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt));
 
@@ -834,27 +831,27 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<0>(boundaryValue());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<1>(boundaryValue());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<2>(boundaryValue());
 			}
@@ -862,7 +859,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 			[[unlikely]] default:
 			{
 				const vector boundaryValue(
-						bncCalc.boundaryConditionValueCell(vField()[i],
+						bncCalc.boundaryConditionValueCell(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt));
 
@@ -880,27 +877,27 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<0>(boundaryValue());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<1>(boundaryValue());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<2>(boundaryValue());
 			}
@@ -910,7 +907,9 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 }
 
 void schemi::SLEMatrix::generateDTimeLaplacian2TO(
-		const volumeField<vector> & vField, const volumeField<scalar> & rField,
+		const volumeField<vector> & vField,
+		const volumeField<scalar> & rFieldNew,
+		const volumeField<vector> & rFieldOld,
 		const surfaceField<scalar> & effectiveDiffusionCoefficient,
 		const scalar timestep, const boundaryConditionValue & bncCalc,
 		const std::size_t compt)
@@ -922,12 +921,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 	const scalar reversedTimestep { 1 / timestep };
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
-		SLE[j].centralDiagonale = rField() * reversedTimestep;
+		SLE[j].centralDiagonale = rFieldNew.cval() * reversedTimestep;
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
 		for (std::size_t i = 0; i < vField.size(); ++i)
-			SLE[j].freeTerm[i] = rField()[i] * vField()[i]()[j]
-					* reversedTimestep;
+			SLE[j].freeTerm[i] = rFieldOld.cval()[i]()[j] * reversedTimestep;
 
 	for (std::size_t i = 0; i < vField.size(); ++i)
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
@@ -957,7 +955,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 
 				}
 				else
@@ -973,78 +971,78 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 				const vector deltaRNorm(deltaR / deltaRMag);
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<0>(vField()[i]());
+								* std::get<0>(vField.cval()[i]());
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<1>(vField()[i]());
+								* std::get<1>(vField.cval()[i]());
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<2>(vField()[i]());
+								* std::get<2>(vField.cval()[i]());
 
 				if (oIndex < i)
 				{
 					SLE[0].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[1].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[2].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 				}
 				else
 				{
 					SLE[0].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[1].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[2].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 				}
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<0>(vField()[oIndex]());
+								* std::get<0>(vField.cval()[oIndex]());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<1>(vField()[oIndex]());
+								* std::get<1>(vField.cval()[oIndex]());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<2>(vField()[oIndex]());
+								* std::get<2>(vField.cval()[oIndex]());
 			}
 				break;
 			case boundaryConditionType::calculatedParallelBoundary:
 			{
 				const vector boundaryValue(
-						bncCalc.boundaryConditionValueCell(vField()[i],
+						bncCalc.boundaryConditionValueCell(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt));
 
@@ -1063,39 +1061,39 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<0>(vField()[i]());
+								* std::get<0>(vField.cval()[i]());
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<1>(vField()[i]());
+								* std::get<1>(vField.cval()[i]());
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<2>(vField()[i]());
+								* std::get<2>(vField.cval()[i]());
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<0>(boundaryValue());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<1>(boundaryValue());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<2>(boundaryValue());
 			}
@@ -1103,7 +1101,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 			[[unlikely]] default:
 			{
 				const vector boundaryValue(
-						bncCalc.boundaryConditionValueCell(vField()[i],
+						bncCalc.boundaryConditionValueCell(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt));
 
@@ -1121,39 +1119,39 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<0>(vField()[i]());
+								* std::get<0>(vField.cval()[i]());
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<1>(vField()[i]());
+								* std::get<1>(vField.cval()[i]());
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<2>(vField()[i]());
+								* std::get<2>(vField.cval()[i]());
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<0>(boundaryValue());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<1>(boundaryValue());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<2>(boundaryValue());
 			}
@@ -1163,7 +1161,9 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 }
 
 void schemi::SLEMatrix::generateDTimeLaplacian(
-		const volumeField<tensor> & vField, const volumeField<scalar> & rField,
+		const volumeField<tensor> & vField,
+		const volumeField<scalar> & rFieldNew,
+		const volumeField<tensor> & rFieldOld,
 		const surfaceField<scalar> & effectiveDiffusionCoefficient,
 		const scalar timestep, const boundaryConditionValue & bncCalc,
 		const std::size_t compt)
@@ -1175,12 +1175,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 	const scalar reversedTimestep { 1 / timestep };
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
-		SLE[j].centralDiagonale = rField() * reversedTimestep;
+		SLE[j].centralDiagonale = rFieldNew.cval() * reversedTimestep;
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
 		for (std::size_t i = 0; i < vField.size(); ++i)
-			SLE[j].freeTerm[i] = rField()[i] * vField()[i]()[j]
-					* reversedTimestep;
+			SLE[j].freeTerm[i] = rFieldOld.cval()[i]()[j] * reversedTimestep;
 
 	for (std::size_t i = 0; i < vField.size(); ++i)
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
@@ -1210,7 +1209,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 
 				}
 				else
@@ -1226,116 +1225,116 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 				const vector deltaRNorm(deltaR / deltaRMag);
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[3].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[4].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[5].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[6].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[7].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[8].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				if (oIndex < i)
 				{
 					SLE[0].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[1].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[2].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[3].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[4].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[5].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[6].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[7].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[8].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 				}
 				else
 				{
 					SLE[0].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[1].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[2].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[3].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[4].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[5].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[6].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[7].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 					SLE[8].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm),
 							oIndex);
 				}
@@ -1344,7 +1343,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 			case boundaryConditionType::calculatedParallelBoundary:
 			{
 				const tensor boundaryValue(
-						bncCalc.boundaryConditionValueCell(vField()[i],
+						bncCalc.boundaryConditionValueCell(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt));
 
@@ -1363,75 +1362,75 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[3].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[4].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[5].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[6].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[7].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[8].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<0>(boundaryValue());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<1>(boundaryValue());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<2>(boundaryValue());
 				SLE[3].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<3>(boundaryValue());
 				SLE[4].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<4>(boundaryValue());
 				SLE[5].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<5>(boundaryValue());
 				SLE[6].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<6>(boundaryValue());
 				SLE[7].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<7>(boundaryValue());
 				SLE[8].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<8>(boundaryValue());
 			}
@@ -1439,7 +1438,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 			[[unlikely]] default:
 			{
 				const tensor boundaryValue(
-						bncCalc.boundaryConditionValueCell(vField()[i],
+						bncCalc.boundaryConditionValueCell(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt));
 
@@ -1457,75 +1456,75 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[3].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[4].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[5].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[6].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[7].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[8].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<0>(boundaryValue());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<1>(boundaryValue());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<2>(boundaryValue());
 				SLE[3].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<3>(boundaryValue());
 				SLE[4].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<4>(boundaryValue());
 				SLE[5].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<5>(boundaryValue());
 				SLE[6].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<6>(boundaryValue());
 				SLE[7].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<7>(boundaryValue());
 				SLE[8].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<8>(boundaryValue());
 			}
@@ -1535,7 +1534,9 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 }
 
 void schemi::SLEMatrix::generateDTimeLaplacian2TO(
-		const volumeField<tensor> & vField, const volumeField<scalar> & rField,
+		const volumeField<tensor> & vField,
+		const volumeField<scalar> & rFieldNew,
+		const volumeField<tensor> & rFieldOld,
 		const surfaceField<scalar> & effectiveDiffusionCoefficient,
 		const scalar timestep, const boundaryConditionValue & bncCalc,
 		const std::size_t compt)
@@ -1547,12 +1548,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 	const scalar reversedTimestep { 1 / timestep };
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
-		SLE[j].centralDiagonale = rField() * reversedTimestep;
+		SLE[j].centralDiagonale = rFieldNew.cval() * reversedTimestep;
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
 		for (std::size_t i = 0; i < vField.size(); ++i)
-			SLE[j].freeTerm[i] = rField()[i] * vField()[i]()[j]
-					* reversedTimestep;
+			SLE[j].freeTerm[i] = rFieldOld.cval()[i]()[j] * reversedTimestep;
 
 	for (std::size_t i = 0; i < vField.size(); ++i)
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
@@ -1582,7 +1582,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 
 					outerNormale = mesh_.surfaces()[surfaceIndex].N()
 							* mesh_.surfaces()[surfaceIndex].S()
-							/ mesh_.cells()[i].V() * (-1);
+							/ mesh_.cells()[i].V() * -1;
 
 				}
 				else
@@ -1598,198 +1598,198 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 				const vector deltaRNorm(deltaR / deltaRMag);
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<0>(vField()[i]());
+								* std::get<0>(vField.cval()[i]());
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<1>(vField()[i]());
+								* std::get<1>(vField.cval()[i]());
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<2>(vField()[i]());
+								* std::get<2>(vField.cval()[i]());
 
 				SLE[3].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[3].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<3>(vField()[i]());
+								* std::get<3>(vField.cval()[i]());
 
 				SLE[4].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[4].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<4>(vField()[i]());
+								* std::get<4>(vField.cval()[i]());
 
 				SLE[5].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[5].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<5>(vField()[i]());
+								* std::get<5>(vField.cval()[i]());
 
 				SLE[6].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[6].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<6>(vField()[i]());
+								* std::get<6>(vField.cval()[i]());
 
 				SLE[7].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[7].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<7>(vField()[i]());
+								* std::get<7>(vField.cval()[i]());
 
 				SLE[8].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[8].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<8>(vField()[i]());
+								* std::get<8>(vField.cval()[i]());
 
 				if (oIndex < i)
 				{
 					SLE[0].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[1].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[2].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[3].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[4].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[5].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[6].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[7].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[8].lowerTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 				}
 				else
 				{
 					SLE[0].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[1].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[2].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[3].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[4].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[5].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[6].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[7].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 					SLE[8].upperTriangle[i].emplace_back(
-							-effectiveDiffusionCoefficient()[surfaceIndex]
+							-effectiveDiffusionCoefficient.cval()[surfaceIndex]
 									/ deltaRMag * (outerNormale & deltaRNorm)
 									* 0.5, oIndex);
 				}
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<0>(vField()[oIndex]());
+								* std::get<0>(vField.cval()[oIndex]());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<1>(vField()[oIndex]());
+								* std::get<1>(vField.cval()[oIndex]());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<2>(vField()[oIndex]());
+								* std::get<2>(vField.cval()[oIndex]());
 				SLE[3].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<3>(vField()[oIndex]());
+								* std::get<3>(vField.cval()[oIndex]());
 				SLE[4].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<4>(vField()[oIndex]());
+								* std::get<4>(vField.cval()[oIndex]());
 				SLE[5].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<5>(vField()[oIndex]());
+								* std::get<5>(vField.cval()[oIndex]());
 				SLE[6].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<6>(vField()[oIndex]());
+								* std::get<6>(vField.cval()[oIndex]());
 				SLE[7].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<7>(vField()[oIndex]());
+								* std::get<7>(vField.cval()[oIndex]());
 				SLE[8].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<8>(vField()[oIndex]());
+								* std::get<8>(vField.cval()[oIndex]());
 			}
 				break;
 			case boundaryConditionType::calculatedParallelBoundary:
 			{
 				const tensor boundaryValue(
-						bncCalc.boundaryConditionValueCell(vField()[i],
+						bncCalc.boundaryConditionValueCell(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt));
 
@@ -1808,111 +1808,111 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<0>(vField()[i]());
+								* std::get<0>(vField.cval()[i]());
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<1>(vField()[i]());
+								* std::get<1>(vField.cval()[i]());
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<2>(vField()[i]());
+								* std::get<2>(vField.cval()[i]());
 
 				SLE[3].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[3].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<3>(vField()[i]());
+								* std::get<3>(vField.cval()[i]());
 
 				SLE[4].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[4].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<4>(vField()[i]());
+								* std::get<4>(vField.cval()[i]());
 
 				SLE[5].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[5].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<5>(vField()[i]());
+								* std::get<5>(vField.cval()[i]());
 
 				SLE[6].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[6].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<6>(vField()[i]());
+								* std::get<6>(vField.cval()[i]());
 
 				SLE[7].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[7].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<7>(vField()[i]());
+								* std::get<7>(vField.cval()[i]());
 
 				SLE[8].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[8].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<8>(vField()[i]());
+								* std::get<8>(vField.cval()[i]());
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<0>(boundaryValue());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<1>(boundaryValue());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<2>(boundaryValue());
 				SLE[3].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<3>(boundaryValue());
 				SLE[4].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<4>(boundaryValue());
 				SLE[5].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<5>(boundaryValue());
 				SLE[6].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<6>(boundaryValue());
 				SLE[7].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<7>(boundaryValue());
 				SLE[8].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<8>(boundaryValue());
 			}
@@ -1920,7 +1920,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 			[[unlikely]] default:
 			{
 				const tensor boundaryValue(
-						bncCalc.boundaryConditionValueCell(vField()[i],
+						bncCalc.boundaryConditionValueCell(vField.cval()[i],
 								vField.boundCond()[surfaceIndex], i,
 								surfaceIndex, compt));
 
@@ -1938,111 +1938,111 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 								/ mesh_.cells()[i].V());
 
 				SLE[0].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<0>(vField()[i]());
+								* std::get<0>(vField.cval()[i]());
 
 				SLE[1].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm);
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<1>(vField()[i]());
+								* std::get<1>(vField.cval()[i]());
 
 				SLE[2].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<2>(vField()[i]());
+								* std::get<2>(vField.cval()[i]());
 
 				SLE[3].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[3].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<3>(vField()[i]());
+								* std::get<3>(vField.cval()[i]());
 
 				SLE[4].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[4].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<4>(vField()[i]());
+								* std::get<4>(vField.cval()[i]());
 
 				SLE[5].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[5].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<5>(vField()[i]());
+								* std::get<5>(vField.cval()[i]());
 
 				SLE[6].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[6].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<6>(vField()[i]());
+								* std::get<6>(vField.cval()[i]());
 
 				SLE[7].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[7].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<7>(vField()[i]());
+								* std::get<7>(vField.cval()[i]());
 
 				SLE[8].centralDiagonale[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5;
 				SLE[8].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm) * 0.5
-								* std::get<8>(vField()[i]());
+								* std::get<8>(vField.cval()[i]());
 
 				SLE[0].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<0>(boundaryValue());
 				SLE[1].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<1>(boundaryValue());
 				SLE[2].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<2>(boundaryValue());
 				SLE[3].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<3>(boundaryValue());
 				SLE[4].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<4>(boundaryValue());
 				SLE[5].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<5>(boundaryValue());
 				SLE[6].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<6>(boundaryValue());
 				SLE[7].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<7>(boundaryValue());
 				SLE[8].freeTerm[i] +=
-						effectiveDiffusionCoefficient()[surfaceIndex]
+						effectiveDiffusionCoefficient.cval()[surfaceIndex]
 								/ deltaRMag * (outerNormale & deltaRNorm)
 								* std::get<8>(boundaryValue());
 			}
@@ -2060,87 +2060,91 @@ void schemi::SLEMatrix::generateDTimeExplicitLaplacian(
 {
 	SLE.resize(1, SLEMatrixStorage(vField.meshRef()));
 
-	SLE[0].centralDiagonale = rFieldNew();
+	SLE[0].centralDiagonale = rFieldNew.cval();
 
 	SLE[0].explOldTime.resize(SLE[0].freeTerm.size(), 0.0);
 
-	SLE[0].explOldTime = rFieldOld();
+	SLE[0].explOldTime = rFieldOld.cval();
 
 	auto flowThroughSurface = surfGrad(vField, bncCalc, compt);
 
 	for (std::size_t i = 0; i < flowThroughSurface.size(); ++i)
-		flowThroughSurface.r()[i] = flowThroughSurface()[i]
-				* effectiveDiffusionCoefficient()[i] * (-1);
+		flowThroughSurface.val()[i] = flowThroughSurface.cval()[i]
+				* effectiveDiffusionCoefficient.cval()[i] * -1;
 
 	auto divFlow = divergence(flowThroughSurface);
 
-	SLE[0].freeTerm -= divFlow();
+	SLE[0].freeTerm -= divFlow.cval();
 }
 
 void schemi::SLEMatrix::generateDTimeExplicitLaplacian(
-		const volumeField<vector> & vField, const volumeField<scalar> & rField,
+		const volumeField<vector> & vField,
+		const volumeField<scalar> & rFieldNew,
+		const volumeField<vector> & rFieldOld,
 		const surfaceField<scalar> & effectiveDiffusionCoefficient,
 		const boundaryConditionValue & bncCalc, const std::size_t compt)
 {
 	SLE.resize(3, SLEMatrixStorage(vField.meshRef()));
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
-		SLE[j].centralDiagonale = rField();
+		SLE[j].centralDiagonale = rFieldNew.cval();
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
 	{
 		SLE[j].explOldTime.resize(SLE[j].freeTerm.size(), 0.0);
 		for (std::size_t i = 0; i < vField.size(); ++i)
-			SLE[j].explOldTime[i] = rField()[i] * vField()[i]()[j];
+			SLE[j].explOldTime[i] = rFieldOld.cval()[i]()[j];
 	}
 
 	auto flowThroughSurface = surfGrad(vField, bncCalc, compt);
 
 	for (std::size_t i = 0; i < flowThroughSurface.size(); ++i)
-		flowThroughSurface.r()[i] = flowThroughSurface()[i]
-				* effectiveDiffusionCoefficient()[i] * (-1);
+		flowThroughSurface.val()[i] = flowThroughSurface.cval()[i]
+				* effectiveDiffusionCoefficient.cval()[i] * -1;
 
 	auto divFlow = divergence(flowThroughSurface);
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
 		for (std::size_t i = 0; i < vField.size(); ++i)
-			SLE[j].freeTerm[i] -= divFlow()[i]()[j];
+			SLE[j].freeTerm[i] -= divFlow.cval()[i]()[j];
 }
 
 void schemi::SLEMatrix::generateDTimeExplicitLaplacian(
-		const volumeField<tensor> & vField, const volumeField<scalar> & rField,
+		const volumeField<tensor> & vField,
+		const volumeField<scalar> & rFieldNew,
+		const volumeField<tensor> & rFieldOld,
 		const surfaceField<scalar> & effectiveDiffusionCoefficient,
 		const boundaryConditionValue & bncCalc, const std::size_t compt)
 {
 	SLE.resize(9, SLEMatrixStorage(vField.meshRef()));
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
-		SLE[j].centralDiagonale = rField();
+		SLE[j].centralDiagonale = rFieldNew.cval();
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
 	{
 		SLE[j].explOldTime.resize(SLE[j].freeTerm.size(), 0.0);
 		for (std::size_t i = 0; i < vField.size(); ++i)
-			SLE[j].explOldTime[i] = rField()[i] * vField()[i]()[j];
+			SLE[j].explOldTime[i] = rFieldOld.cval()[i]()[j];
 	}
 
 	auto flowThroughSurface = surfGrad(vField, bncCalc, compt);
 
 	for (std::size_t i = 0; i < flowThroughSurface.size(); ++i)
-		flowThroughSurface.r()[i] = flowThroughSurface()[i]
-				* effectiveDiffusionCoefficient()[i] * (-1);
+		flowThroughSurface.val()[i] = flowThroughSurface.cval()[i]
+				* effectiveDiffusionCoefficient.cval()[i] * -1;
 
 	auto divFlow = divergence(flowThroughSurface);
 
 	for (std::size_t j = 0; j < SLE.size(); ++j)
 		for (std::size_t i = 0; i < vField.size(); ++i)
-			SLE[j].freeTerm[i] -= divFlow()[i]()[j];
+			SLE[j].freeTerm[i] -= divFlow.cval()[i]()[j];
 }
 
 void schemi::SLEMatrix::freeSourceTerm(
 		const volumeField<scalar> & source) noexcept
 {
-	SLE[0].freeTerm += source();
+	SLE[0].freeTerm += source.cval();
 }
 
 void schemi::SLEMatrix::freeSourceTerm(
@@ -2148,7 +2152,7 @@ void schemi::SLEMatrix::freeSourceTerm(
 {
 	for (std::size_t j = 0; j < vector::vsize; j++)
 		for (std::size_t i = 0; i < source.size(); ++i)
-			SLE[j].freeTerm[i] += source()[i]()[j];
+			SLE[j].freeTerm[i] += source.cval()[i]()[j];
 }
 
 void schemi::SLEMatrix::freeSourceTerm(
@@ -2156,18 +2160,18 @@ void schemi::SLEMatrix::freeSourceTerm(
 {
 	for (std::size_t j = 0; j < tensor::vsize; j++)
 		for (std::size_t i = 0; i < source.size(); ++i)
-			SLE[j].freeTerm[i] += source()[i]()[j];
+			SLE[j].freeTerm[i] += source.cval()[i]()[j];
 }
 
 void schemi::SLEMatrix::distributeSourceTerm(const volumeField<scalar> & source,
 		const volumeField<scalar> & basicField) noexcept
 {
 	for (std::size_t i = 0; i < source.size(); ++i)
-		if (source()[i] >= 0.)
-			SLE[0].freeTerm[i] += source()[i];
+		if (source.cval()[i] >= 0.)
+			SLE[0].freeTerm[i] += source.cval()[i];
 		else
-			SLE[0].centralDiagonale[i] -= source()[i]
-					/ (basicField()[i] + stabilizator);
+			SLE[0].centralDiagonale[i] -= source.cval()[i]
+					/ (basicField.cval()[i] + stabilizator);
 }
 
 void schemi::SLEMatrix::distributeSourceTerm(const volumeField<vector> & source,
@@ -2175,11 +2179,11 @@ void schemi::SLEMatrix::distributeSourceTerm(const volumeField<vector> & source,
 {
 	for (std::size_t j = 0; j < vector::vsize; j++)
 		for (std::size_t i = 0; i < source.size(); ++i)
-			if (source()[i]()[j] >= 0.)
-				SLE[j].freeTerm[i] += source()[i]()[j];
+			if (source.cval()[i]()[j] >= 0.)
+				SLE[j].freeTerm[i] += source.cval()[i]()[j];
 			else
-				SLE[j].centralDiagonale[i] -= source()[i]()[j]
-						/ (basicField()[i]()[j] + stabilizator);
+				SLE[j].centralDiagonale[i] -= source.cval()[i]()[j]
+						/ (basicField.cval()[i]()[j] + stabilizator);
 }
 
 void schemi::SLEMatrix::distributeSourceTerm(const volumeField<tensor> & source,
@@ -2187,17 +2191,17 @@ void schemi::SLEMatrix::distributeSourceTerm(const volumeField<tensor> & source,
 {
 	for (std::size_t j = 0; j < tensor::vsize; j++)
 		for (std::size_t i = 0; i < source.size(); ++i)
-			if (source()[i]()[j] >= 0.)
-				SLE[j].freeTerm[i] += source()[i]()[j];
+			if (source.cval()[i]()[j] >= 0.)
+				SLE[j].freeTerm[i] += source.cval()[i]()[j];
 			else
-				SLE[j].centralDiagonale[i] -= source()[i]()[j]
-						/ (basicField()[i]()[j] + stabilizator);
+				SLE[j].centralDiagonale[i] -= source.cval()[i]()[j]
+						/ (basicField.cval()[i]()[j] + stabilizator);
 }
 
 void schemi::SLEMatrix::diagonaleSourceTerm(
 		const volumeField<scalar> & source) noexcept
 {
-	SLE[0].centralDiagonale -= source();
+	SLE[0].centralDiagonale -= source.cval();
 }
 
 void schemi::SLEMatrix::diagonaleSourceTerm(
@@ -2205,7 +2209,7 @@ void schemi::SLEMatrix::diagonaleSourceTerm(
 {
 	for (std::size_t j = 0; j < vector::vsize; j++)
 		for (std::size_t i = 0; i < source.size(); ++i)
-			SLE[j].centralDiagonale[i] -= source()[i]()[j];
+			SLE[j].centralDiagonale[i] -= source.cval()[i]()[j];
 }
 
 void schemi::SLEMatrix::diagonaleSourceTerm(
@@ -2213,5 +2217,5 @@ void schemi::SLEMatrix::diagonaleSourceTerm(
 {
 	for (std::size_t j = 0; j < tensor::vsize; j++)
 		for (std::size_t i = 0; i < source.size(); ++i)
-			SLE[j].centralDiagonale[i] -= source()[i]()[j];
+			SLE[j].centralDiagonale[i] -= source.cval()[i]()[j];
 }

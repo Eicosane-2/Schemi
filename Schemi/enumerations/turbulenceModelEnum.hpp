@@ -14,7 +14,6 @@ namespace schemi
 {
 enum class turbulenceModel
 {
-	BHRModel,
 	zeroModel,
 	decayModel,
 	shearModel,
@@ -22,9 +21,8 @@ enum class turbulenceModel
 	arithmeticA2Model,
 	arithmeticA3Model,
 	kEpsAModel,
+	BHRModel,
 	BHRKLModel,
-	BHR2Model,
-	BHR3Model,
 	unknownModel
 };
 }  // namespace schemi
