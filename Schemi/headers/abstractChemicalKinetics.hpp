@@ -501,8 +501,9 @@ protected:
 	}
 
 	template<typename reactionMatrix, std::size_t N>
-	static auto solveGE(const reactionMatrix & matrix) ->
-	std::array<scalar, N>
+	static auto solveGE(const reactionMatrix & matrix,
+			const std::array<scalar, N>&, const std::size_t) ->
+			std::array<scalar, N>
 	{
 		std::array<std::array<scalar, N>, N> A { 0 };
 
@@ -609,7 +610,7 @@ public:
 			const chemicalReactions chemReactFlag,
 			const scalar minimalTimestep) noexcept;
 
-	virtual void solveChemicalKinetics(homogeneousPhase<cubicCell>&) const =0;
+	virtual void solveChemicalKinetics(homogeneousPhase<cubicCell>&) =0;
 };
 }
 }  // namespace schemi

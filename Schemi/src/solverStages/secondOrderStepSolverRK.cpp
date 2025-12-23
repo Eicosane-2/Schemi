@@ -32,7 +32,7 @@ schemi::secondOrderStepSolverRK::secondOrderStepSolverRK(
 		const volumeField<scalar> & minimalLengthScale_in,
 		const timestep & sourceTimeFlag_in,
 		const bool & molMassDiffusionFlag_in,
-		const chemicalKinetics::abstractChemicalKinetics & chemKin_in,
+		chemicalKinetics::abstractChemicalKinetics & chemKin_in,
 		const bool & nonLinearityIteratonsFlag_in) noexcept :
 		abstractStepSolver(gasPhase_in, limiter_in, fsolver_in,
 				gravitationFlag_in, g_in, boundaryConditionValueCalc_in,
@@ -95,8 +95,9 @@ void schemi::secondOrderStepSolverRK::calculateStep()
 		const volumeField<tensor> gradU(grad(star.v));
 
 		gasPhase.turbulence->particlesTimeIntegration(gradRho_c, gradRho_s,
-				gasPhase.velocity, star.v, gasPhase.concentration,
-				gasPhase.density, bncCalc, gasPhase.phaseThermodynamics->Mv(),
+				gasPhase.velocity, star.v, g * gravitationFlag,
+				gasPhase.concentration, gasPhase.density, bncCalc,
+				gasPhase.phaseThermodynamics->Mv(),
 				gasPhase.pressure.meshRef().timestep(), gradP, divU, gradU);
 	}
 

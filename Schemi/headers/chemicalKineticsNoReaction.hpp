@@ -19,7 +19,7 @@ class NoReaction: public abstractChemicalKinetics
 public:
 	NoReaction() noexcept;
 
-	void solveChemicalKinetics(homogeneousPhase<cubicCell>&) const override;
+	void solveChemicalKinetics(homogeneousPhase<cubicCell>&) override;
 };
 }
 }  // namespace schemi

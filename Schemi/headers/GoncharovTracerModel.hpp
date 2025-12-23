@@ -139,9 +139,10 @@ public:
 	virtual void writeOutput(std::ofstream & output) const override;
 
 	virtual void timeIntegration(const scalar density1, const scalar density2,
-			const vector & gradRho, const vector & u, const scalar timestep,
-			const vector & gradP = vector(0), const scalar rho = 0,
-			const scalar divU = 0, const tensor & gradU = tensor(0));
+			const vector & gradRho, const vector & u, const vector & g,
+			const scalar timestep, const vector & gradP = vector(0),
+			const scalar rho = 0, const scalar divU = 0, const tensor & gradU =
+					tensor(0));
 
 	virtual interfaceStatus checkTransition(const scalar nu,
 			const scalar timestep, const vector & cellRadius,

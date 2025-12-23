@@ -92,8 +92,8 @@ void schemi::GoncharovTracerModel::writeOutput(std::ofstream & output) const
 
 void schemi::GoncharovTracerModel::timeIntegration(const scalar density1,
 		const scalar density2, const vector & gradRho, const vector & u,
-		const scalar timestep, const vector&, const scalar, const scalar,
-		const tensor&)
+		const vector & g, const scalar timestep, const vector&, const scalar,
+		const scalar, const tensor&)
 {
 	tracerParticle::timeIntegration(u, timestep);
 
@@ -128,11 +128,11 @@ void schemi::GoncharovTracerModel::timeIntegration(const scalar density1,
 
 		const auto D = eta2 - c * k / (4 * (1 + c));
 
-		const auto g = std::abs(gVec & normale);
+		const auto g_sum = std::abs((gVec + g) & normale);
 
 		const auto A = F1 / D;
 		const auto B = F2 * pow<scalar, 2>(c * k / D) / 8 / A;
-		const auto C = 2 * g * At * eta2 / A;
+		const auto C = 2 * g_sum * At * eta2 / A;
 
 		eta = 2 * eta_1 - eta_2 - pow<scalar, 2>(eta_1 - eta_2) * B
 				- C * pow<scalar, 2>(timestep);

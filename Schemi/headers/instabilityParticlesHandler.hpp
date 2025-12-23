@@ -104,7 +104,7 @@ public:
 	void timeIntegration(const volumeField<vector> & gradRho,
 			const surfaceField<vector> & gradRhoSurf,
 			const volumeField<vector> & uCell,
-			const surfaceField<vector> & uSurf,
+			const surfaceField<vector> & uSurf, const vector & g,
 			const concentrationsPack<cubicCell> & concentrations,
 			const std::vector<volumeField<scalar>> & densities,
 			const boundaryConditionValue & boundVal,

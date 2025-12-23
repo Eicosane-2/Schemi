@@ -1504,7 +1504,7 @@ void schemi::instabilityParticlesHandler::timeIntegration(
 		const volumeField<vector> & gradRhoCell,
 		const surfaceField<vector> & gradRhoSurf,
 		const volumeField<vector> & uCell, const surfaceField<vector> & uSurf,
-		const concentrationsPack<cubicCell> & concentrations,
+		const vector & g, const concentrationsPack<cubicCell> & concentrations,
 		const std::vector<volumeField<scalar>> & densities,
 		const boundaryConditionValue & boundVal,
 		const std::valarray<scalar> & M, const scalar timestep,
@@ -1709,7 +1709,7 @@ void schemi::instabilityParticlesHandler::timeIntegration(
 					gradU_arr[7], gradU_arr[8]);
 
 			particlesList[prt].timeIntegration(rho1, rho2, particleDensityGrad,
-					particleVelocity, timestep, gradP_cell, rho_cell, divU_cell,
+					particleVelocity, g, timestep, gradP_cell, rho_cell, divU_cell,
 					gradU_cell);
 
 			newPositionVector_prt = particlesList[prt].getPosition();
@@ -1812,7 +1812,7 @@ void schemi::instabilityParticlesHandler::timeIntegration(
 				particlePosition[prt]);
 
 		particlesList[prt].timeIntegration(rho1, rho2, particleDensityGrad,
-				particleVelocity, timestep, gradP.cval()[cellIndex],
+				particleVelocity, g, timestep, gradP.cval()[cellIndex],
 				densities[0].cval()[cellIndex], divU.cval()[cellIndex],
 				gradU.cval()[cellIndex]);
 

@@ -12,10 +12,10 @@ namespace schemi
 {
 #if __cplusplus > 201703L
 template<typename T>
-concept nonPowIntegral =  std::same_as<T, bool> || std::same_as<T, char>
-		|| std::same_as<T, unsigned char> || std::same_as<T, signed char>
-		|| std::same_as<T, char8_t> || std::same_as<T, char16_t>
-		|| std::same_as<T, char32_t> || std::same_as<T, wchar_t>;
+concept nonPowIntegral = std::same_as<T, bool> || std::same_as<T, char>
+|| std::same_as<T, unsigned char> || std::same_as<T, signed char>
+|| std::same_as<T, char8_t> || std::same_as<T, char16_t>
+|| std::same_as<T, char32_t> || std::same_as<T, wchar_t>;
 
 template<typename T>
 concept powNumber = std::floating_point<T>

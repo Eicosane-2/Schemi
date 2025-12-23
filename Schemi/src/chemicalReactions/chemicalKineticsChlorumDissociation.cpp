@@ -50,6 +50,37 @@ schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::cellReactionM
 }
 
 schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::cellReactionMatrix(
+		const iterativeSolver solverType) :
+		solverFlag(solverType), matrix()
+{
+	if (!solverF)
+	{
+		switch (solverFlag)
+		{
+		case iterativeSolver::GaussSeidel:
+			solverF = my_solveGS;
+			break;
+		case iterativeSolver::ConjugateGradient:
+			solverF = my_solveCG;
+			break;
+		case iterativeSolver::JacobiConjugateGradient:
+			solverF = my_solveJCG;
+			break;
+		case iterativeSolver::Jacobi:
+			solverF = my_solveJ;
+			break;
+		case iterativeSolver::GaussElimination:
+			solverF = my_solveGE;
+			break;
+		[[unlikely]] default:
+			throw exception("Unknown chemical iterative solver type.",
+					errors::initialisationError);
+			break;
+		}
+	}
+}
+
+schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::cellReactionMatrix(
 		const scalar timeStep, const scalar k_diss, const scalar k_recomb,
 		const scalar C_Cl2_0, const scalar C_Cl_0, const scalar M_0,
 		const scalar rho_0, const std::array<scalar, N> & molMass,
@@ -76,38 +107,17 @@ schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::cellReactionM
 
 auto schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::solve(
 		const std::array<scalar, N> & oldField,
-		const std::size_t maxIterationNumber) const -> std::array<
+		const std::size_t maxIterationNumber) -> std::array<
 		scalar, N>
 {
-	switch (solverFlag)
-	{
-	case iterativeSolver::GaussSeidel:
-		return solveGS<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::ConjugateGradient:
-		return solveCG<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::JacobiConjugateGradient:
-		return solveJCG<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::Jacobi:
-		return solveJ<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::GaussElimination:
-		return solveGE<reactionMatrix, N>(matrix);
-		break;
-	[[unlikely]] default:
-		throw exception("Unknown chemical iterative solver type.",
-				errors::initialisationError);
-		break;
-	}
+	return solverF(matrix, oldField, maxIterationNumber);
 }
 
 schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix schemi::chemicalKinetics::ChlorumDissociation::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
-		const scalar R) const noexcept
+		const scalar R) noexcept
 {
 	const scalar k_forw = A_forw * std::pow(T, n_forw)
 			* std::exp(-E_forw / (R * T));
@@ -124,7 +134,7 @@ schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix schemi::chemic
 }
 
 void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
-		homogeneousPhase<cubicCell> & phaseN) const
+		homogeneousPhase<cubicCell> & phaseN)
 {
 	auto & mesh_ = phaseN.pressure.meshRef();
 
@@ -169,15 +179,16 @@ void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
 					if (sumFracOld == 0.0)
 						continue;
 
-					const auto cellReactionVel = velocityCalculation(
-							subTimeStep, phaseN.temperature.cval()[i],
-							{ newValues.concentration[0],
-									newValues.concentration[1],
-									newValues.concentration[2] },
-							{ phaseN.phaseThermodynamics->Mv()[0],
-									phaseN.phaseThermodynamics->Mv()[1] },
-							phaseN.density[0].cval()[i],
-							phaseN.phaseThermodynamics->Rv());
+					cellReactionVel.extractMatrix(
+							velocityCalculation(subTimeStep,
+									phaseN.temperature.cval()[i],
+									{ newValues.concentration[0],
+											newValues.concentration[1],
+											newValues.concentration[2] },
+									{ phaseN.phaseThermodynamics->Mv()[0],
+											phaseN.phaseThermodynamics->Mv()[1] },
+									phaseN.density[0].cval()[i],
+									phaseN.phaseThermodynamics->Rv()));
 
 					auto reactionResult = cellReactionVel.solve(oldMassFraction,
 							maxIterationNumber);
@@ -298,13 +309,15 @@ schemi::chemicalKinetics::ChlorumDissociation::ChlorumDissociation(
 				errors::initialisationError);
 	}
 
+	cellReactionVel = cellReactionMatrix(itSolv);
+
 	chem >> skipBuffer >> maxIterationNumber;
 
 	chem.close();
 }
 
 void schemi::chemicalKinetics::ChlorumDissociation::solveChemicalKinetics(
-		homogeneousPhase<cubicCell> & phaseIn) const
+		homogeneousPhase<cubicCell> & phaseIn)
 {
 	auto phaseN1 = phaseIn;
 

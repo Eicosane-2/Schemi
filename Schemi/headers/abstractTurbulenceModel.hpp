@@ -160,7 +160,7 @@ public:
 			const volumeField<vector> & gradRhoCell,
 			const surfaceField<vector> & gradRhoSurf,
 			const volumeField<vector> & uCell,
-			const surfaceField<vector> & uSurf,
+			const surfaceField<vector> & uSurf, const vector & g,
 			const concentrationsPack<cubicCell> & concentrations,
 			const std::vector<volumeField<scalar>> & densities,
 			const boundaryConditionValue & boundVal,

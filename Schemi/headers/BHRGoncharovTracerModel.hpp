@@ -40,9 +40,9 @@ public:
 	virtual ~BHRGoncharovTracerModel() noexcept override;
 
 	virtual void timeIntegration(const scalar density1, const scalar density2,
-			const vector & gradRho, const vector & u, const scalar timestep,
-			const vector & gradP, const scalar rho, const scalar divU,
-			const tensor & gradU) override;
+			const vector & gradRho, const vector & u, const vector & g,
+			const scalar timestep, const vector & gradP, const scalar rho,
+			const scalar divU, const tensor & gradU) override;
 
 	virtual interfaceStatus checkTransition(const scalar nu,
 			const scalar timestep, const vector & cellRadius,

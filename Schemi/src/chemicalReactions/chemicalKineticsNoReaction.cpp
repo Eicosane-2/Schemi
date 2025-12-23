@@ -13,6 +13,6 @@ schemi::chemicalKinetics::NoReaction::NoReaction() noexcept :
 }
 
 void schemi::chemicalKinetics::NoReaction::solveChemicalKinetics(
-		homogeneousPhase<cubicCell>&) const
+		homogeneousPhase<cubicCell>&)
 {
 }

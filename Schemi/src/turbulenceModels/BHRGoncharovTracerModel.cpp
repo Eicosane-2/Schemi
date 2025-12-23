@@ -53,14 +53,14 @@ schemi::BHRGoncharovTracerModel::~BHRGoncharovTracerModel() noexcept
 
 void schemi::BHRGoncharovTracerModel::timeIntegration(const scalar density1,
 		const scalar density2, const vector & gradRho, const vector & u,
-		const scalar timestep, const vector & gradP, const scalar rho,
-		const scalar divU, const tensor & gradU)
+		const vector & g, const scalar timestep, const vector & gradP,
+		const scalar rho, const scalar divU, const tensor & gradU)
 {
 	const auto currentStatus { getStatus() };
 
 	if (currentStatus == interfaceStatus::notDeveloped)
 	{
-		GoncharovTracerModel::timeIntegration(density1, density2, gradRho, u,
+		GoncharovTracerModel::timeIntegration(density1, density2, gradRho, u, g,
 				timestep);
 	}
 	else if (currentStatus == interfaceStatus::developedNotResolvable)

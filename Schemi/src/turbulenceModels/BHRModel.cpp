@@ -238,7 +238,8 @@ std::tuple<
 						* diffFieldsOld.b.cval()[i]);
 
 		const vector tauGradRho(
-				(devR.cval()[i] * thetaS_i + spherR.cval()[i])
+				buoyancyGenerationFlag.cval()[i]
+						* (devR.cval()[i] * thetaS_i + spherR.cval()[i])
 						/ cellFields.density[0].cval()[i] & gradRho.cval()[i]);
 
 		const vector rhoAgradV(
@@ -291,14 +292,14 @@ void schemi::BHRModel::particlesTimeIntegration(
 		const volumeField<vector> & gradRhoCell,
 		const surfaceField<vector> & gradRhoSurf,
 		const volumeField<vector> & uCell, const surfaceField<vector> & uSurf,
-		const concentrationsPack<cubicCell> & concentrations,
+		const vector & g, const concentrationsPack<cubicCell> & concentrations,
 		const std::vector<volumeField<scalar>> & densities,
 		const boundaryConditionValue & boundVal,
 		const std::valarray<scalar> & M, const scalar timestep,
 		const volumeField<vector> & gradP, const volumeField<scalar> & divU,
 		const volumeField<tensor> & gradU)
 {
-	initialisation.timeIntegration(gradRhoCell, gradRhoSurf, uCell, uSurf,
+	initialisation.timeIntegration(gradRhoCell, gradRhoSurf, uCell, uSurf, g,
 			concentrations, densities, boundVal, M, timestep, gradP, divU,
 			gradU);
 }
