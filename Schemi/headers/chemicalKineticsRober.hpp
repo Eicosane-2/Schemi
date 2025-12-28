@@ -88,6 +88,11 @@ class Rober: public abstractChemicalKinetics
 		std::function<
 				std::array<scalar, N>(const reactionMatrix&,
 						const std::array<scalar, N>&, const std::size_t)> solverF;
+
+		void setMatrix(const scalar timeStep, const scalar k_1,
+				const scalar k_2, const scalar k_3, const scalar C_1_0,
+				const scalar C_2_0, const scalar C_3_0, const scalar rho_0,
+				const std::array<scalar, N> & molMass) noexcept;
 	public:
 		cellReactionMatrix() noexcept;
 
@@ -95,30 +100,21 @@ class Rober: public abstractChemicalKinetics
 
 		cellReactionMatrix(const scalar timeStep, const scalar k_1,
 				const scalar k_2, const scalar k_3, const scalar C_1_0,
-				const scalar C_2_0, const scalar C_3_0, const scalar M_0,
-				const scalar rho_0, const std::array<scalar, N> & molMass,
+				const scalar C_2_0, const scalar C_3_0, const scalar rho_0,
+				const std::array<scalar, N> & molMass,
 				const iterativeSolver solverType);
 
 		auto solve(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) -> std::array<scalar, N>;
 
-		const reactionMatrix& getMaxtrix() const noexcept
-		{
-			return matrix;
-		}
-
-		void extractMatrix(const cellReactionMatrix & inReactionMatrix)
-		{
-			matrix = inReactionMatrix.getMaxtrix();
-		}
+		void velocityCalculation(const scalar timestep, const scalar T,
+				const std::array<scalar, N + 1> & concentrations,
+				const std::array<scalar, N> & molarMasses, const scalar rho,
+				const scalar R, const kineticParams & eq1,
+				const kineticParams & eq2, const kineticParams & eq3) noexcept;
 	};
 
 	cellReactionMatrix cellReactionVel;
-
-	cellReactionMatrix velocityCalculation(const scalar timestep,
-			const scalar T, const std::array<scalar, N + 1> & concentrations,
-			const std::array<scalar, N> & molarMasses, const scalar rho,
-			const scalar R) noexcept;
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN);
 public:

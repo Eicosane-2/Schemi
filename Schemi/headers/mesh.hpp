@@ -65,7 +65,7 @@ class mesh
 	std::size_t leftSurfacesNumber = 0;
 	std::size_t topSurfacesNumber = 0;
 
-	std::size_t nonexistentCell = -1;
+	std::size_t nonexistentCell = static_cast<std::size_t>(-1);
 
 	std::size_t cellsNumber = 0;
 	std::size_t surfacesNumber = 0;

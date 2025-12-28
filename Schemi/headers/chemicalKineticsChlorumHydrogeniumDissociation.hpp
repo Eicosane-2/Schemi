@@ -34,9 +34,9 @@ class ChlorumHydrogeniumDissociation: public abstractChemicalKinetics
 	scalar n_H2_forw { -0.5 };
 	scalar E_H2_forw { 454.0 * 1000 };
 
-	scalar A_H2_backw { 6.53E17 / 1E12 };
-	scalar n_H2_backw { -1 };
-	scalar E_H2_backw { 0 };
+	scalar A_H_backw { 6.53E17 / 1E12 };
+	scalar n_H_backw { -1 };
+	scalar E_H_backw { 0 };
 
 	iterativeSolver itSolv;
 
@@ -96,6 +96,13 @@ class ChlorumHydrogeniumDissociation: public abstractChemicalKinetics
 		std::function<
 				std::array<scalar, N>(const reactionMatrix&,
 						const std::array<scalar, N>&, const std::size_t)> solverF;
+
+		void setMatrix(const scalar timeStep, const scalar k_diss_Cl2,
+				const scalar k_recomb_Cl2, const scalar k_diss_H2,
+				const scalar k_recomb_H2, const scalar C_Cl2_0,
+				const scalar C_Cl_0, const scalar C_H2_0, const scalar C_H_0,
+				const scalar M_0, const scalar rho_0,
+				const std::array<scalar, N> & molMass) noexcept;
 	public:
 		cellReactionMatrix() noexcept;
 
@@ -112,23 +119,15 @@ class ChlorumHydrogeniumDissociation: public abstractChemicalKinetics
 		auto solve(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) -> std::array<scalar, N>;
 
-		const reactionMatrix& getMaxtrix() const noexcept
-		{
-			return matrix;
-		}
-
-		void extractMatrix(const cellReactionMatrix & inReactionMatrix)
-		{
-			matrix = inReactionMatrix.getMaxtrix();
-		}
+		void velocityCalculation(const scalar timestep, const scalar T,
+				const std::array<scalar, N + 1> & concentrations,
+				const std::array<scalar, N> & molarMasses, const scalar rho,
+				const scalar R, const kineticParams & Cl2forw,
+				const kineticParams & Clbackw, const kineticParams & H2forw,
+				const kineticParams & Hbackw) noexcept;
 	};
 
 	cellReactionMatrix cellReactionVel;
-
-	cellReactionMatrix velocityCalculation(const scalar timestep,
-			const scalar T, const std::array<scalar, N + 1> & concentrations,
-			const std::array<scalar, N> & molarMasses, const scalar rho,
-			const scalar R) noexcept;
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN);
 public:

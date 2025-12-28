@@ -44,14 +44,37 @@ void schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::reaction
 	RightTriangle = RightTriangleNew;
 }
 
+void schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::setMatrix(
+		const scalar timeStep, const scalar k_diss, const scalar k_recomb,
+		const scalar C_Cl2_0, const scalar C_Cl_0, const scalar M_0,
+		const scalar rho_0, const std::array<scalar, N> & molMass) noexcept
+{
+	const scalar A11 { (1 / timeStep + k_diss * M_0) / molMass[0] };
+	const scalar A12 { (-k_recomb * C_Cl_0 * M_0) / molMass[1] };
+	const scalar B1 { C_Cl2_0 / (rho_0 * timeStep) };
+
+	const scalar A21 { (-2 * k_diss * M_0) / molMass[0] };
+	const scalar A22 { (1 / timeStep + 2 * k_recomb * C_Cl_0 * M_0) / molMass[1] };
+	const scalar B2 { C_Cl_0 / (rho_0 * timeStep) };
+
+	std::get<0>(matrix.Diagonale) = A11;
+	std::get<1>(matrix.Diagonale) = A22;
+
+	std::get<0>(matrix.RightTriangle)[0].first = A12;
+	std::get<1>(matrix.LeftTriangle)[0].first = A21;
+
+	std::get<0>(matrix.FreeTerm) = B1;
+	std::get<1>(matrix.FreeTerm) = B2;
+}
+
 schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::cellReactionMatrix() noexcept :
-		solverFlag(iterativeSolver::noSolver), matrix()
+		solverFlag(iterativeSolver::noSolver), matrix(), solverF(nullptr)
 {
 }
 
 schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::cellReactionMatrix(
 		const iterativeSolver solverType) :
-		solverFlag(solverType), matrix()
+		solverFlag(solverType), matrix(), solverF(nullptr)
 {
 	if (!solverF)
 	{
@@ -85,24 +108,9 @@ schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::cellReactionM
 		const scalar C_Cl2_0, const scalar C_Cl_0, const scalar M_0,
 		const scalar rho_0, const std::array<scalar, N> & molMass,
 		const iterativeSolver solverType) :
-		solverFlag(solverType), matrix()
+		cellReactionMatrix(solverType)
 {
-	const scalar A11 { (1 / timeStep + k_diss * M_0) / molMass[0] };
-	const scalar A12 { (-k_recomb * C_Cl_0 * M_0) / molMass[1] };
-	const scalar B1 { C_Cl2_0 / (rho_0 * timeStep) };
-
-	const scalar A21 { (-2 * k_diss * M_0) / molMass[0] };
-	const scalar A22 { (1 / timeStep + 2 * k_recomb * C_Cl_0 * M_0) / molMass[1] };
-	const scalar B2 { C_Cl_0 / (rho_0 * timeStep) };
-
-	std::get<0>(matrix.Diagonale) = A11;
-	std::get<1>(matrix.Diagonale) = A22;
-
-	std::get<0>(matrix.RightTriangle)[0].first = A12;
-	std::get<1>(matrix.LeftTriangle)[0].first = A21;
-
-	std::get<0>(matrix.FreeTerm) = B1;
-	std::get<1>(matrix.FreeTerm) = B2;
+	setMatrix(timeStep, k_diss, k_recomb, C_Cl2_0, C_Cl_0, M_0, rho_0, molMass);
 }
 
 auto schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::solve(
@@ -113,24 +121,24 @@ auto schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::solve(
 	return solverF(matrix, oldField, maxIterationNumber);
 }
 
-schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix schemi::chemicalKinetics::ChlorumDissociation::velocityCalculation(
+void schemi::chemicalKinetics::ChlorumDissociation::cellReactionMatrix::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
-		const scalar R) noexcept
+		const scalar R, const kineticParams & forw,
+		const kineticParams & backw) noexcept
 {
-	const scalar k_forw = A_forw * std::pow(T, n_forw)
-			* std::exp(-E_forw / (R * T));
+	const scalar k_forw = forw.A * std::pow(T, forw.n)
+			* std::exp(-forw.E / (R * T));
 
-	const scalar k_backw = A_backw * std::pow(T, n_backw)
-			* std::exp(-E_backw / (R * T));
+	const scalar k_backw = backw.A * std::pow(T, backw.n)
+			* std::exp(-backw.E / (R * T));
 
 	const scalar & Cl2 = std::get<1>(concentrations);
 	const scalar & Cl = std::get<2>(concentrations);
 	const scalar & M = std::get<0>(concentrations);
 
-	return cellReactionMatrix(timestep, k_forw, k_backw, Cl2, Cl, M, rho,
-			molarMasses, itSolv);
+	setMatrix(timestep, k_forw, k_backw, Cl2, Cl, M, rho, molarMasses);
 }
 
 void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
@@ -179,19 +187,19 @@ void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
 					if (sumFracOld == 0.0)
 						continue;
 
-					cellReactionVel.extractMatrix(
-							velocityCalculation(subTimeStep,
-									phaseN.temperature.cval()[i],
-									{ newValues.concentration[0],
-											newValues.concentration[1],
-											newValues.concentration[2] },
-									{ phaseN.phaseThermodynamics->Mv()[0],
-											phaseN.phaseThermodynamics->Mv()[1] },
-									phaseN.density[0].cval()[i],
-									phaseN.phaseThermodynamics->Rv()));
+					cellReactionVel.velocityCalculation(subTimeStep,
+							phaseN.temperature.cval()[i],
+							{ newValues.concentration[0],
+									newValues.concentration[1],
+									newValues.concentration[2] },
+							{ phaseN.phaseThermodynamics->Mv()[0],
+									phaseN.phaseThermodynamics->Mv()[1] },
+							phaseN.density[0].cval()[i],
+							phaseN.phaseThermodynamics->Rv(), { A_forw, n_forw,
+									E_forw }, { A_backw, n_backw, E_backw });
 
 					auto reactionResult = cellReactionVel.solve(oldMassFraction,
-							maxIterationNumber);
+							maxIterationNumber_);
 
 					std::transform(reactionResult.cbegin(),
 							reactionResult.cend(), reactionResult.begin(),
@@ -270,7 +278,7 @@ void schemi::chemicalKinetics::ChlorumDissociation::timeStepIntegration(
 
 schemi::chemicalKinetics::ChlorumDissociation::ChlorumDissociation(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
-		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
+		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver), cellReactionVel()
 {
 	if (phaseIn.concentration.v.size() < N + 1)
 		throw exception("Wrong number of substances.",
@@ -311,7 +319,7 @@ schemi::chemicalKinetics::ChlorumDissociation::ChlorumDissociation(
 
 	cellReactionVel = cellReactionMatrix(itSolv);
 
-	chem >> skipBuffer >> maxIterationNumber;
+	chem >> skipBuffer >> maxIterationNumber_;
 
 	chem.close();
 }

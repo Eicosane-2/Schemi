@@ -44,80 +44,43 @@ void schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::reacti
 	RightTriangle = RightTriangleNew;
 }
 
-schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactionMatrix() noexcept :
-		solverFlag(iterativeSolver::noSolver), matrix()
-{
-}
-
-schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactionMatrix(
-		const iterativeSolver solverType) :
-		solverFlag(solverType), matrix()
-{
-	if (!solverF)
-	{
-		switch (solverFlag)
-		{
-		case iterativeSolver::GaussSeidel:
-			solverF = my_solveGS;
-			break;
-		case iterativeSolver::ConjugateGradient:
-			solverF = my_solveCG;
-			break;
-		case iterativeSolver::JacobiConjugateGradient:
-			solverF = my_solveJCG;
-			break;
-		case iterativeSolver::Jacobi:
-			solverF = my_solveJ;
-			break;
-		case iterativeSolver::GaussElimination:
-			solverF = my_solveGE;
-			break;
-		[[unlikely]] default:
-			throw exception("Unknown chemical iterative solver type.",
-					errors::initialisationError);
-			break;
-		}
-	}
-}
-
-schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactionMatrix(
-		const scalar timeStep, const scalar k_f, const scalar k_b,
+void schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::setMatrix(
+		const scalar timeStep, const scalar k_forw, const scalar k_backw,
 		const scalar C_NO2_0, const scalar C_H2O_0, const scalar C_HNO2_0,
 		const scalar C_HNO3_0, const scalar rho_0,
-		const std::array<scalar, N> & molMass, const iterativeSolver solverType) :
-		solverFlag(solverType), matrix()
+		const std::array<scalar, N> & molMass) noexcept
 {
-	const scalar A11 { (1 / timeStep + k_f * C_NO2_0 * C_H2O_0) / molMass[0] };
+	const scalar A11 { (1 / timeStep + k_forw * C_NO2_0 * C_H2O_0) / molMass[0] };
 
-	const scalar A12 { (k_f * C_NO2_0 * C_NO2_0) / molMass[1] };
-	const scalar A13 { -(k_b * C_HNO3_0) / molMass[2] };
-	const scalar A14 { -(k_b * C_HNO2_0) / molMass[3] };
+	const scalar A12 { (k_forw * C_NO2_0 * C_NO2_0) / molMass[1] };
+	const scalar A13 { -(k_backw * C_HNO3_0) / molMass[2] };
+	const scalar A14 { -(k_backw * C_HNO2_0) / molMass[3] };
 
 	const scalar B1 { C_NO2_0 / (timeStep * rho_0) };
 
-	const scalar A21 { (0.5 * k_f * C_NO2_0 * C_H2O_0) / molMass[0] };
+	const scalar A21 { (0.5 * k_forw * C_NO2_0 * C_H2O_0) / molMass[0] };
 
-	const scalar A22 { (1 / timeStep + 0.5 * k_f * C_NO2_0 * C_NO2_0)
+	const scalar A22 { (1 / timeStep + 0.5 * k_forw * C_NO2_0 * C_NO2_0)
 			/ molMass[1] };
 
-	const scalar A23 { (-0.5 * k_b * C_HNO3_0) / molMass[2] };
-	const scalar A24 { (-0.5 * k_b * C_HNO2_0) / molMass[3] };
+	const scalar A23 { (-0.5 * k_backw * C_HNO3_0) / molMass[2] };
+	const scalar A24 { (-0.5 * k_backw * C_HNO2_0) / molMass[3] };
 
 	const scalar B2 { C_H2O_0 / (timeStep * rho_0) };
 
-	const scalar A31 { (-0.5 * k_f * C_NO2_0 * C_H2O_0) / molMass[0] };
-	const scalar A32 { (-0.5 * k_f * C_NO2_0 * C_NO2_0) / molMass[1] };
+	const scalar A31 { (-0.5 * k_forw * C_NO2_0 * C_H2O_0) / molMass[0] };
+	const scalar A32 { (-0.5 * k_forw * C_NO2_0 * C_NO2_0) / molMass[1] };
 
-	const scalar A33 { (1 / timeStep + 0.5 * k_b * C_HNO3_0) / molMass[2] };
+	const scalar A33 { (1 / timeStep + 0.5 * k_backw * C_HNO3_0) / molMass[2] };
 
-	const scalar A34 { (0.5 * k_b * C_HNO2_0) / molMass[3] };
+	const scalar A34 { (0.5 * k_backw * C_HNO2_0) / molMass[3] };
 
 	const scalar B3 { C_HNO2_0 / (timeStep * rho_0) };
 
-	const scalar A41 { (-0.5 * k_f * C_NO2_0 * C_H2O_0) / molMass[0] };
-	const scalar A42 { (-0.5 * k_f * C_NO2_0 * C_NO2_0) / molMass[1] };
-	const scalar A43 { (0.5 * k_b * C_HNO3_0) / molMass[2] };
-	const scalar A44 { (1 / timeStep + 0.5 * k_b * C_HNO2_0) / molMass[3] };
+	const scalar A41 { (-0.5 * k_forw * C_NO2_0 * C_H2O_0) / molMass[0] };
+	const scalar A42 { (-0.5 * k_forw * C_NO2_0 * C_NO2_0) / molMass[1] };
+	const scalar A43 { (0.5 * k_backw * C_HNO3_0) / molMass[2] };
+	const scalar A44 { (1 / timeStep + 0.5 * k_backw * C_HNO2_0) / molMass[3] };
 
 	const scalar B4 { C_HNO3_0 / (timeStep * rho_0) };
 
@@ -150,6 +113,53 @@ schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactio
 	std::get<3>(matrix.FreeTerm) = B4;
 }
 
+schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactionMatrix() noexcept :
+		solverFlag(iterativeSolver::noSolver), matrix(), solverF(nullptr)
+{
+}
+
+schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactionMatrix(
+		const iterativeSolver solverType) :
+		solverFlag(solverType), matrix(), solverF(nullptr)
+{
+	if (!solverF)
+	{
+		switch (solverFlag)
+		{
+		case iterativeSolver::GaussSeidel:
+			solverF = my_solveGS;
+			break;
+		case iterativeSolver::ConjugateGradient:
+			solverF = my_solveCG;
+			break;
+		case iterativeSolver::JacobiConjugateGradient:
+			solverF = my_solveJCG;
+			break;
+		case iterativeSolver::Jacobi:
+			solverF = my_solveJ;
+			break;
+		case iterativeSolver::GaussElimination:
+			solverF = my_solveGE;
+			break;
+		[[unlikely]] default:
+			throw exception("Unknown chemical iterative solver type.",
+					errors::initialisationError);
+			break;
+		}
+	}
+}
+
+schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::cellReactionMatrix(
+		const scalar timeStep, const scalar k_forw, const scalar k_backw,
+		const scalar C_NO2_0, const scalar C_H2O_0, const scalar C_HNO2_0,
+		const scalar C_HNO3_0, const scalar rho_0,
+		const std::array<scalar, N> & molMass, const iterativeSolver solverType) :
+		cellReactionMatrix(solverType)
+{
+	setMatrix(timeStep, k_forw, k_backw, C_NO2_0, C_H2O_0, C_HNO2_0, C_HNO3_0,
+			rho_0, molMass);
+}
+
 auto schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::solve(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) -> std::array<
@@ -158,25 +168,26 @@ auto schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::solve(
 	return solverF(matrix, oldField, maxIterationNumber);
 }
 
-schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix schemi::chemicalKinetics::NO2Disproportionation::velocityCalculation(
+void schemi::chemicalKinetics::NO2Disproportionation::cellReactionMatrix::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
-		const scalar R) noexcept
+		const scalar R, const kineticParams & forw,
+		const kineticParams & backw) noexcept
 {
-	const scalar k_forward = A_forward * std::pow(T, n_forward)
-			* std::exp(-E_forward / (R * T));
+	const scalar k_forward = forw.A * std::pow(T, forw.n)
+			* std::exp(-forw.E / (R * T));
 
-	const scalar k_backward = A_backward * std::pow(T, n_backward)
-			* std::exp(-E_backward / (R * T));
+	const scalar k_backward = backw.A * std::pow(T, backw.n)
+			* std::exp(-backw.E / (R * T));
 
 	const scalar & NO2 = std::get<1>(concentrations);
 	const scalar & H2O = std::get<2>(concentrations);
 	const scalar & HNO2 = std::get<3>(concentrations);
 	const scalar & HNO3 = std::get<4>(concentrations);
 
-	return cellReactionMatrix(timestep, k_forward, k_backward, NO2, H2O, HNO2,
-			HNO3, rho, molarMasses, itSolv);
+	setMatrix(timestep, k_forward, k_backward, NO2, H2O, HNO2, HNO3, rho,
+			molarMasses);
 }
 
 void schemi::chemicalKinetics::NO2Disproportionation::timeStepIntegration(
@@ -229,23 +240,24 @@ void schemi::chemicalKinetics::NO2Disproportionation::timeStepIntegration(
 					if (sumFracOld == 0.0)
 						continue;
 
-					cellReactionVel.extractMatrix(
-							velocityCalculation(subTimeStep,
-									phaseN.temperature.cval()[i],
-									{ newValues.concentration[0],
-											newValues.concentration[1],
-											newValues.concentration[2],
-											newValues.concentration[3],
-											newValues.concentration[4] },
-									{ phaseN.phaseThermodynamics->Mv()[0],
-											phaseN.phaseThermodynamics->Mv()[1],
-											phaseN.phaseThermodynamics->Mv()[2],
-											phaseN.phaseThermodynamics->Mv()[3] },
-									phaseN.density[0].cval()[i],
-									phaseN.phaseThermodynamics->Rv()));
+					cellReactionVel.velocityCalculation(subTimeStep,
+							phaseN.temperature.cval()[i],
+							{ newValues.concentration[0],
+									newValues.concentration[1],
+									newValues.concentration[2],
+									newValues.concentration[3],
+									newValues.concentration[4] },
+							{ phaseN.phaseThermodynamics->Mv()[0],
+									phaseN.phaseThermodynamics->Mv()[1],
+									phaseN.phaseThermodynamics->Mv()[2],
+									phaseN.phaseThermodynamics->Mv()[3] },
+							phaseN.density[0].cval()[i],
+							phaseN.phaseThermodynamics->Rv(), { A_forward,
+									n_forward, E_forward }, { A_backward,
+									n_backward, E_backward });
 
 					auto reactionResult = cellReactionVel.solve(oldMassFraction,
-							maxIterationNumber);
+							maxIterationNumber_);
 
 					std::transform(reactionResult.cbegin(),
 							reactionResult.cend(), reactionResult.begin(),
@@ -342,7 +354,7 @@ void schemi::chemicalKinetics::NO2Disproportionation::timeStepIntegration(
 
 schemi::chemicalKinetics::NO2Disproportionation::NO2Disproportionation(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
-		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
+		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver), cellReactionVel()
 {
 	if (phaseIn.concentration.v.size() < N + 1)
 		throw exception("Wrong number of substances.",
@@ -385,7 +397,7 @@ schemi::chemicalKinetics::NO2Disproportionation::NO2Disproportionation(
 
 	cellReactionVel = cellReactionMatrix(itSolv);
 
-	chem >> skipBuffer >> maxIterationNumber;
+	chem >> skipBuffer >> maxIterationNumber_;
 
 	//ΔU_298 = ΔН_298 - Δn * phaseIn.phaseThermodynamics->Rv() * 298.15;
 	deltaU_298 = deltaH_298;

@@ -30,7 +30,7 @@ protected:
 	constexpr static scalar convergenceTolerance { 100
 			* convergenceToleranceGlobal };
 	constexpr static scalar massFracTolerance { 1E-2 };
-	std::size_t maxIterationNumber { 0 };
+	std::size_t maxIterationNumber_ { 0 };
 	const scalar minTimestep { 0 };
 
 	enum class iterativeSolver
@@ -62,6 +62,11 @@ protected:
 						concentration_in), density(density_in)
 		{
 		}
+	};
+
+	struct kineticParams
+	{
+		const scalar A, n, E;
 	};
 
 	static void normalize(std::valarray<scalar> & res) noexcept;
@@ -203,13 +208,13 @@ protected:
 						"Jacobi algorithm for chemical reaction did not converged.",
 						errors::systemError);
 
-				normalize(newIteration);
+				//normalize(newIteration);
 
-				std::array<scalar, N> ret { };
-				for (std::size_t i = 0; i < N; ++i)
-					ret[i] = newIteration[i];
+				//std::array<scalar, N> ret { };
+				//for (std::size_t i = 0; i < N; ++i)
+				//	ret[i] = newIteration[i];
 
-				return ret;
+				//return ret;
 			}
 			else
 				oldIteration = newIteration;
@@ -317,13 +322,13 @@ protected:
 						"Gauss-Seidel algorithm for chemical reaction combustion did not converged.",
 						errors::systemError);
 
-				normalize(newIteration);
+				//normalize(newIteration);
 
-				std::array<scalar, N> ret { };
-				for (std::size_t i = 0; i < N; ++i)
-					ret[i] = newIteration[i];
+				//std::array<scalar, N> ret { };
+				//for (std::size_t i = 0; i < N; ++i)
+				//	ret[i] = newIteration[i];
 
-				return ret;
+				//return ret;
 			}
 			else
 				oldIteration = newIteration;
@@ -379,13 +384,13 @@ protected:
 						"Conjugate gradient algorithm for chemical reaction combustion did not converged.",
 						errors::systemError);
 
-				normalize(newIteration);
+				//normalize(newIteration);
 
-				std::array<scalar, N> ret { };
-				for (std::size_t i = 0; i < N; ++i)
-					ret[i] = newIteration[i];
+				//std::array<scalar, N> ret { };
+				//for (std::size_t i = 0; i < N; ++i)
+				//	ret[i] = newIteration[i];
 
-				return ret;
+				//return ret;
 			}
 			else
 			{
@@ -415,7 +420,7 @@ protected:
 			const std::size_t maxIterationNumber) ->
 			std::array<scalar, N>
 	{
-		reactionMatrix JacobiPreconditioner;
+		reactionMatrix JacobiPreconditioner { };
 
 		for (std::size_t i = 0; i < N; ++i)
 			JacobiPreconditioner.Diagonale[i] = 1. / matrix.Diagonale[i];
@@ -463,13 +468,13 @@ protected:
 						"Jacobi preconditioned conjugate gradient algorithm for chemical reaction combustion did not converged.",
 						errors::systemError);
 
-				normalize(newIteration);
+				//normalize(newIteration);
 
-				std::array<scalar, N> ret { };
-				for (std::size_t i = 0; i < N; ++i)
-					ret[i] = newIteration[i];
+				//std::array<scalar, N> ret { };
+				//for (std::size_t i = 0; i < N; ++i)
+				//	ret[i] = newIteration[i];
 
-				return ret;
+				//return ret;
 			}
 			else
 			{

@@ -96,37 +96,35 @@ class NO2Disproportionation: public abstractChemicalKinetics
 		std::function<
 				std::array<scalar, N>(const reactionMatrix&,
 						const std::array<scalar, N>&, const std::size_t)> solverF;
+
+		void setMatrix(const scalar timeStep, const scalar k_forw,
+				const scalar k_backw, const scalar C_NO2_0,
+				const scalar C_H2O_0, const scalar C_HNO2_0,
+				const scalar C_HNO3_0, const scalar rho_0,
+				const std::array<scalar, N> & molMass) noexcept;
 	public:
 		cellReactionMatrix() noexcept;
 
 		cellReactionMatrix(const iterativeSolver solverType);
 
-		cellReactionMatrix(const scalar timeStep, const scalar k_f,
-				const scalar k_b, const scalar C_NO2_0, const scalar C_H2O_0,
-				const scalar C_HNO2_0, const scalar C_HNO3_0,
-				const scalar rho_0, const std::array<scalar, N> & molMass,
+		cellReactionMatrix(const scalar timeStep, const scalar k_forw,
+				const scalar k_backw, const scalar C_NO2_0,
+				const scalar C_H2O_0, const scalar C_HNO2_0,
+				const scalar C_HNO3_0, const scalar rho_0,
+				const std::array<scalar, N> & molMass,
 				const iterativeSolver solverType);
 
 		auto solve(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) -> std::array<scalar, N>;
 
-		const reactionMatrix& getMaxtrix() const noexcept
-		{
-			return matrix;
-		}
-
-		void extractMatrix(const cellReactionMatrix & inReactionMatrix)
-		{
-			matrix = inReactionMatrix.getMaxtrix();
-		}
+		void velocityCalculation(const scalar timestep, const scalar T,
+				const std::array<scalar, N + 1> & concentrations,
+				const std::array<scalar, N> & molarMasses, const scalar rho,
+				const scalar R, const kineticParams & forw,
+				const kineticParams & backw) noexcept;
 	};
 
 	cellReactionMatrix cellReactionVel;
-
-	cellReactionMatrix velocityCalculation(const scalar timestep,
-			const scalar T, const std::array<scalar, N + 1> & concentrations,
-			const std::array<scalar, N> & molarMasses, const scalar rho,
-			const scalar R) noexcept;
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN);
 public:

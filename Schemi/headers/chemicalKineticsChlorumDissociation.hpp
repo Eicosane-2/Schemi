@@ -80,6 +80,11 @@ class ChlorumDissociation: public abstractChemicalKinetics
 		std::function<
 				std::array<scalar, N>(const reactionMatrix&,
 						const std::array<scalar, N>&, const std::size_t)> solverF;
+
+		void setMatrix(const scalar timeStep, const scalar k_diss,
+				const scalar k_recomb, const scalar C_Cl2_0,
+				const scalar C_Cl_0, const scalar M_0, const scalar rho_0,
+				const std::array<scalar, N> & molMas) noexcept;
 	public:
 		cellReactionMatrix() noexcept;
 
@@ -94,23 +99,14 @@ class ChlorumDissociation: public abstractChemicalKinetics
 		auto solve(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) -> std::array<scalar, N>;
 
-		const reactionMatrix& getMaxtrix() const noexcept
-		{
-			return matrix;
-		}
-
-		void extractMatrix(const cellReactionMatrix & inReactionMatrix)
-		{
-			matrix = inReactionMatrix.getMaxtrix();
-		}
+		void velocityCalculation(const scalar timestep, const scalar T,
+				const std::array<scalar, N + 1> & concentrations,
+				const std::array<scalar, N> & molarMasses, const scalar rho,
+				const scalar R, const kineticParams & forw,
+				const kineticParams & backw) noexcept;
 	};
 
 	cellReactionMatrix cellReactionVel;
-
-	cellReactionMatrix velocityCalculation(const scalar timestep,
-			const scalar T, const std::array<scalar, N + 1> & concentrations,
-			const std::array<scalar, N> & molarMasses, const scalar rho,
-			const scalar R) noexcept;
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN);
 public:

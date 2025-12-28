@@ -151,6 +151,16 @@ class H2O2Combustion: public abstractChemicalKinetics
 		std::function<
 				std::array<scalar, N>(const reactionMatrix&,
 						const std::array<scalar, N>&, const std::size_t)> solverF;
+
+		void setMatrix(const scalar timeStep, const scalar k_R1,
+				const scalar k_R2, const scalar k_R3, const scalar k_R4,
+				const scalar k_R5, const scalar k_R6, const scalar k_R7,
+				const scalar k_R8, const scalar k_R9, const scalar k_R10,
+				const scalar k_R11, const scalar k_R12, const scalar C_O2_0,
+				const scalar C_O_0, const scalar C_H2_0, const scalar C_H_0,
+				const scalar C_OH_0, const scalar C_HO2_0, const scalar C_H2O_0,
+				const scalar M_0, const scalar rho_0,
+				const std::array<scalar, N> & molMass) noexcept;
 	public:
 		cellReactionMatrix() noexcept;
 
@@ -170,23 +180,19 @@ class H2O2Combustion: public abstractChemicalKinetics
 		auto solve(const std::array<scalar, N> & oldField,
 				const std::size_t maxIterationNumber) -> std::array<scalar, N>;
 
-		const reactionMatrix& getMaxtrix() const noexcept
-		{
-			return matrix;
-		}
-
-		void extractMatrix(const cellReactionMatrix & inReactionMatrix)
-		{
-			matrix = inReactionMatrix.getMaxtrix();
-		}
+		void velocityCalculation(const scalar timestep, const scalar T,
+				const std::array<scalar, N + 1> & concentrations,
+				const std::array<scalar, N> & molarMasses, const scalar rho,
+				const scalar R, const kineticParams & eq1,
+				const kineticParams & eq2, const kineticParams & eq3,
+				const kineticParams & eq4, const kineticParams & eq5,
+				const kineticParams & eq6, const kineticParams & eq7,
+				const kineticParams & eq8, const kineticParams & eq9,
+				const kineticParams & eq10, const kineticParams & eq11,
+				const kineticParams & eq12) noexcept;
 	};
 
 	cellReactionMatrix cellReactionVel;
-
-	cellReactionMatrix velocityCalculation(const scalar timestep,
-			const scalar T, const std::array<scalar, N + 1> & concentrations,
-			const std::array<scalar, N> & molarMasses, const scalar rho,
-			const scalar R) noexcept;
 
 	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN);
 public:

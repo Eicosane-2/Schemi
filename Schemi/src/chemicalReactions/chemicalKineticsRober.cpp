@@ -44,49 +44,11 @@ void schemi::chemicalKinetics::Rober::cellReactionMatrix::reactionMatrix::transp
 	RightTriangle = RightTriangleNew;
 }
 
-schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix() noexcept :
-		solverFlag(iterativeSolver::noSolver), matrix()
-{
-}
-
-schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix(
-		const iterativeSolver solverType) :
-		solverFlag(solverType), matrix()
-{
-	if (!solverF)
-	{
-		switch (solverFlag)
-		{
-		case iterativeSolver::GaussSeidel:
-			solverF = my_solveGS;
-			break;
-		case iterativeSolver::ConjugateGradient:
-			solverF = my_solveCG;
-			break;
-		case iterativeSolver::JacobiConjugateGradient:
-			solverF = my_solveJCG;
-			break;
-		case iterativeSolver::Jacobi:
-			solverF = my_solveJ;
-			break;
-		case iterativeSolver::GaussElimination:
-			solverF = my_solveGE;
-			break;
-		[[unlikely]] default:
-			throw exception("Unknown chemical iterative solver type.",
-					errors::initialisationError);
-			break;
-		}
-	}
-}
-
-schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix(
+void schemi::chemicalKinetics::Rober::cellReactionMatrix::setMatrix(
 		const scalar timeStep, const scalar k_1, const scalar k_2,
 		const scalar k_3, const scalar C_1_0, const scalar C_2_0,
-		const scalar C_3_0, [[maybe_unused]] const scalar M_0,
-		const scalar rho_0, const std::array<scalar, N> & molMass,
-		const iterativeSolver solverType) :
-		solverFlag(solverType), matrix()
+		const scalar C_3_0, const scalar rho_0,
+		const std::array<scalar, N> & molMass) noexcept
 {
 	const scalar A11 { (1 / timeStep + k_1) / molMass[0] };
 	const scalar A12 { (-0.5 * k_3 * C_3_0) / molMass[1] };
@@ -121,6 +83,52 @@ schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix(
 	std::get<2>(matrix.FreeTerm) = B3;
 }
 
+schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix() noexcept :
+		solverFlag(iterativeSolver::noSolver), matrix(), solverF(nullptr)
+{
+}
+
+schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix(
+		const iterativeSolver solverType) :
+		solverFlag(solverType), matrix(), solverF(nullptr)
+{
+	if (!solverF)
+	{
+		switch (solverFlag)
+		{
+		case iterativeSolver::GaussSeidel:
+			solverF = my_solveGS;
+			break;
+		case iterativeSolver::ConjugateGradient:
+			solverF = my_solveCG;
+			break;
+		case iterativeSolver::JacobiConjugateGradient:
+			solverF = my_solveJCG;
+			break;
+		case iterativeSolver::Jacobi:
+			solverF = my_solveJ;
+			break;
+		case iterativeSolver::GaussElimination:
+			solverF = my_solveGE;
+			break;
+		[[unlikely]] default:
+			throw exception("Unknown chemical iterative solver type.",
+					errors::initialisationError);
+			break;
+		}
+	}
+}
+
+schemi::chemicalKinetics::Rober::cellReactionMatrix::cellReactionMatrix(
+		const scalar timeStep, const scalar k_1, const scalar k_2,
+		const scalar k_3, const scalar C_1_0, const scalar C_2_0,
+		const scalar C_3_0, const scalar rho_0,
+		const std::array<scalar, N> & molMass, const iterativeSolver solverType) :
+		cellReactionMatrix(solverType)
+{
+	setMatrix(timeStep, k_1, k_2, k_3, C_1_0, C_2_0, C_3_0, rho_0, molMass);
+}
+
 auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solve(
 		const std::array<scalar, N> & oldField,
 		const std::size_t maxIterationNumber) -> std::array<
@@ -129,25 +137,24 @@ auto schemi::chemicalKinetics::Rober::cellReactionMatrix::solve(
 	return solverF(matrix, oldField, maxIterationNumber);
 }
 
-schemi::chemicalKinetics::Rober::cellReactionMatrix schemi::chemicalKinetics::Rober::velocityCalculation(
+void schemi::chemicalKinetics::Rober::cellReactionMatrix::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
-		const scalar R) noexcept
+		const scalar R, const kineticParams & eq1, const kineticParams & eq2,
+		const kineticParams & eq3) noexcept
 {
-	const scalar k_1 = A_1 * std::pow(T, n_1) * std::exp(-E_1 / (R * T));
+	const scalar k_1 = eq1.A * std::pow(T, eq1.n) * std::exp(-eq1.E / (R * T));
 
-	const scalar k_2 = A_2 * std::pow(T, n_2) * std::exp(-E_2 / (R * T));
+	const scalar k_2 = eq2.A * std::pow(T, eq2.n) * std::exp(-eq2.E / (R * T));
 
-	const scalar k_3 = A_3 * std::pow(T, n_3) * std::exp(-E_3 / (R * T));
+	const scalar k_3 = eq3.A * std::pow(T, eq3.n) * std::exp(-eq3.E / (R * T));
 
 	const scalar & C_1 = std::get<1>(concentrations);
 	const scalar & C_2 = std::get<2>(concentrations);
 	const scalar & C_3 = std::get<3>(concentrations);
-	const scalar & M = std::get<0>(concentrations);
 
-	return cellReactionMatrix(timestep, k_1, k_2, k_3, C_1, C_2, C_3, M, rho,
-			molarMasses, itSolv);
+	setMatrix(timestep, k_1, k_2, k_3, C_1, C_2, C_3, rho, molarMasses);
 }
 
 void schemi::chemicalKinetics::Rober::timeStepIntegration(
@@ -197,21 +204,21 @@ void schemi::chemicalKinetics::Rober::timeStepIntegration(
 					if (sumFracOld == 0.0)
 						continue;
 
-					cellReactionVel.extractMatrix(
-							velocityCalculation(subTimeStep,
-									phaseN.temperature.cval()[i],
-									{ newValues.concentration[0],
-											newValues.concentration[1],
-											newValues.concentration[2],
-											newValues.concentration[3] },
-									{ phaseN.phaseThermodynamics->Mv()[0],
-											phaseN.phaseThermodynamics->Mv()[1],
-											phaseN.phaseThermodynamics->Mv()[2] },
-									phaseN.density[0].cval()[i],
-									phaseN.phaseThermodynamics->Rv()));
+					cellReactionVel.velocityCalculation(subTimeStep,
+							phaseN.temperature.cval()[i],
+							{ newValues.concentration[0],
+									newValues.concentration[1],
+									newValues.concentration[2],
+									newValues.concentration[3] },
+							{ phaseN.phaseThermodynamics->Mv()[0],
+									phaseN.phaseThermodynamics->Mv()[1],
+									phaseN.phaseThermodynamics->Mv()[2] },
+							phaseN.density[0].cval()[i],
+							phaseN.phaseThermodynamics->Rv(), { A_1, n_1, E_1 },
+							{ A_2, n_2, E_2 }, { A_3, n_3, E_3 });
 
 					auto reactionResult = cellReactionVel.solve(oldMassFraction,
-							maxIterationNumber);
+							maxIterationNumber_);
 
 					std::transform(reactionResult.cbegin(),
 							reactionResult.cend(), reactionResult.begin(),
@@ -290,7 +297,7 @@ void schemi::chemicalKinetics::Rober::timeStepIntegration(
 
 schemi::chemicalKinetics::Rober::Rober(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
-		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
+		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver), cellReactionVel()
 {
 	if (phaseIn.concentration.v.size() < N + 1)
 		throw exception("Wrong number of substances.",
@@ -335,7 +342,7 @@ schemi::chemicalKinetics::Rober::Rober(
 
 	cellReactionVel = cellReactionMatrix(itSolv);
 
-	chem >> skipBuffer >> maxIterationNumber;
+	chem >> skipBuffer >> maxIterationNumber_;
 
 	chem.close();
 }
