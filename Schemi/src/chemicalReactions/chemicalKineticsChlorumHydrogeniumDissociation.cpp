@@ -44,19 +44,12 @@ void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatri
 	RightTriangle = RightTriangleNew;
 }
 
-schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::cellReactionMatrix() noexcept :
-		solverFlag(iterativeSolver::noSolver), matrix()
-{
-}
-
-schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::cellReactionMatrix(
+void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::setMatrix(
 		const scalar timeStep, const scalar k_diss_Cl2,
 		const scalar k_recomb_Cl2, const scalar k_diss_H2,
 		const scalar k_recomb_H2, const scalar C_Cl2_0, const scalar C_Cl_0,
 		const scalar C_H2_0, const scalar C_H_0, const scalar M_0,
-		const scalar rho_0, const std::array<scalar, N> & molMass,
-		const iterativeSolver solverType) :
-		solverFlag(solverType), matrix()
+		const scalar rho_0, const std::array<scalar, N> & molMass) noexcept
 {
 	const scalar A11 { (1 / timeStep + k_diss_Cl2 * M_0) / molMass[0] };
 	const scalar A12 { (-k_recomb_Cl2 * C_Cl_0 * M_0) / molMass[1] };
@@ -93,52 +86,82 @@ schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::ce
 	std::get<3>(matrix.FreeTerm) = B4;
 }
 
-auto schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::solve(
-		const std::array<scalar, N> & oldField,
-		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, N>
+schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::cellReactionMatrix() noexcept :
+		solverFlag(iterativeSolver::noSolver), matrix(), solverF(nullptr)
 {
-	switch (solverFlag)
+}
+
+schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::cellReactionMatrix(
+		const iterativeSolver solverType) :
+		solverFlag(solverType), matrix(), solverF(nullptr)
+{
+	if (!solverF)
 	{
-	case iterativeSolver::GaussSeidel:
-		return solveGS<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::ConjugateGradient:
-		return solveCG<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::JacobiConjugateGradient:
-		return solveJCG<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::Jacobi:
-		return solveJ<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::GaussElimination:
-		return solveGE<reactionMatrix, N>(matrix);
-		break;
-	[[unlikely]] default:
-		throw exception("Unknown chemical iterative solver type.",
-				errors::initialisationError);
-		break;
+		switch (solverFlag)
+		{
+		case iterativeSolver::GaussSeidel:
+			solverF = my_solveGS;
+			break;
+		case iterativeSolver::ConjugateGradient:
+			solverF = my_solveCG;
+			break;
+		case iterativeSolver::JacobiConjugateGradient:
+			solverF = my_solveJCG;
+			break;
+		case iterativeSolver::Jacobi:
+			solverF = my_solveJ;
+			break;
+		case iterativeSolver::GaussElimination:
+			solverF = my_solveGE;
+			break;
+		[[unlikely]] default:
+			throw exception("Unknown chemical iterative solver type.",
+					errors::initialisationError);
+			break;
+		}
 	}
 }
 
-schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::velocityCalculation(
+schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::cellReactionMatrix(
+		const scalar timeStep, const scalar k_diss_Cl2,
+		const scalar k_recomb_Cl2, const scalar k_diss_H2,
+		const scalar k_recomb_H2, const scalar C_Cl2_0, const scalar C_Cl_0,
+		const scalar C_H2_0, const scalar C_H_0, const scalar M_0,
+		const scalar rho_0, const std::array<scalar, N> & molMass,
+		const iterativeSolver solverType) :
+		cellReactionMatrix(solverType)
+{
+	setMatrix(timeStep, k_diss_Cl2, k_recomb_Cl2, k_diss_H2, k_recomb_H2,
+			C_Cl2_0, C_Cl_0, C_H2_0, C_H_0, M_0, rho_0, molMass);
+}
+
+auto schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::solve(
+		const std::array<scalar, N> & oldField,
+		const std::size_t maxIterationNumber) -> std::array<
+		scalar, N>
+{
+	return solverF(matrix, oldField, maxIterationNumber);
+}
+
+void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
-		const scalar R) const noexcept
+		const scalar R, const kineticParams & Cl2forw,
+		const kineticParams & Clbackw, const kineticParams & H2forw,
+		const kineticParams & Hbackw) noexcept
 {
-	const scalar k_Cl2_forw = A_Cl2_forw * std::pow(T, n_Cl2_forw)
-			* std::exp(-E_Cl2_forw / (R * T));
+	const scalar k_Cl2_forw = Cl2forw.A * std::pow(T, Cl2forw.n)
+			* std::exp(-Cl2forw.E / (R * T));
 
-	const scalar k_Cl_backw = A_Cl_backw * std::pow(T, n_Cl_backw)
-			* std::exp(-E_Cl_backw / (R * T));
+	const scalar k_Cl_backw = Clbackw.A * std::pow(T, Clbackw.n)
+			* std::exp(-Clbackw.E / (R * T));
 
-	const scalar k_H2_forw = A_H2_forw * std::pow(T, n_H2_forw)
-			* std::exp(-E_H2_forw / (R * T));
+	const scalar k_H2_forw = H2forw.A * std::pow(T, H2forw.n)
+			* std::exp(-H2forw.E / (R * T));
 
-	const scalar k_H_backw = A_H2_backw * std::pow(T, n_H2_backw)
-			* std::exp(-E_H2_backw / (R * T));
+	const scalar k_H_backw = Hbackw.A * std::pow(T, Hbackw.n)
+			* std::exp(-Hbackw.E / (R * T));
 
 	const scalar & Cl2 = std::get<1>(concentrations);
 	const scalar & Cl = std::get<2>(concentrations);
@@ -146,12 +169,12 @@ schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::cellReactionMatrix sch
 	const scalar & H = std::get<4>(concentrations);
 	const scalar & M = std::get<0>(concentrations);
 
-	return cellReactionMatrix(timestep, k_Cl2_forw, k_Cl_backw, k_H2_forw,
-			k_H_backw, Cl2, Cl, H2, H, M, rho, molarMasses, itSolv);
+	setMatrix(timestep, k_Cl2_forw, k_Cl_backw, k_H2_forw, k_H_backw, Cl2, Cl,
+			H2, H, M, rho, molarMasses);
 }
 
 void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::timeStepIntegration(
-		homogeneousPhase<cubicCell> & phaseN) const
+		homogeneousPhase<cubicCell> & phaseN)
 {
 	auto & mesh_ = phaseN.pressure.meshRef();
 
@@ -198,8 +221,8 @@ void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::timeStepIntegrati
 					if (sumFracOld == 0.0)
 						continue;
 
-					const auto cellReactionVel = velocityCalculation(
-							subTimeStep, phaseN.temperature.cval()[i],
+					cellReactionVel.velocityCalculation(subTimeStep,
+							phaseN.temperature.cval()[i],
 							{ newValues.concentration[0],
 									newValues.concentration[1],
 									newValues.concentration[2],
@@ -210,10 +233,14 @@ void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::timeStepIntegrati
 									phaseN.phaseThermodynamics->Mv()[2],
 									phaseN.phaseThermodynamics->Mv()[3] },
 							phaseN.density[0].cval()[i],
-							phaseN.phaseThermodynamics->Rv());
+							phaseN.phaseThermodynamics->Rv(), { A_Cl2_forw,
+									n_Cl2_forw, E_Cl2_forw }, { A_Cl_backw,
+									n_Cl_backw, E_Cl_backw }, { A_H2_forw,
+									n_H2_forw, E_H2_forw }, { A_H_backw,
+									n_H_backw, E_H_backw });
 
 					auto reactionResult = cellReactionVel.solve(oldMassFraction,
-							maxIterationNumber);
+							maxIterationNumber_);
 
 					std::transform(reactionResult.cbegin(),
 							reactionResult.cend(), reactionResult.begin(),
@@ -292,7 +319,7 @@ void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::timeStepIntegrati
 
 schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::ChlorumHydrogeniumDissociation(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
-		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
+		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver), cellReactionVel()
 {
 	if (phaseIn.concentration.v.size() < N + 1)
 		throw exception("Wrong number of substances.",
@@ -322,9 +349,9 @@ schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::ChlorumHydrogeniumDiss
 	chem >> skipBuffer >> n_H2_forw;
 	chem >> skipBuffer >> E_H2_forw;
 
-	chem >> skipBuffer >> A_H2_backw;
-	chem >> skipBuffer >> n_H2_backw;
-	chem >> skipBuffer >> E_H2_backw;
+	chem >> skipBuffer >> A_H_backw;
+	chem >> skipBuffer >> n_H_backw;
+	chem >> skipBuffer >> E_H_backw;
 
 	std::string solverName;
 
@@ -339,13 +366,15 @@ schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::ChlorumHydrogeniumDiss
 				errors::initialisationError);
 	}
 
-	chem >> skipBuffer >> maxIterationNumber;
+	cellReactionVel = cellReactionMatrix(itSolv);
+
+	chem >> skipBuffer >> maxIterationNumber_;
 
 	chem.close();
 }
 
 void schemi::chemicalKinetics::ChlorumHydrogeniumDissociation::solveChemicalKinetics(
-		homogeneousPhase<cubicCell> & phaseIn) const
+		homogeneousPhase<cubicCell> & phaseIn)
 {
 	auto phaseN1 = phaseIn;
 

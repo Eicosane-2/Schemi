@@ -10,6 +10,8 @@
 
 #include "abstractChemicalKinetics.hpp"
 
+#include <functional>
+
 namespace schemi
 {
 namespace chemicalKinetics
@@ -66,31 +68,59 @@ class Rober: public abstractChemicalKinetics
 
 			void transpose() noexcept;
 		} matrix;
+
+		std::array<scalar, N> (*my_solveJ)(const reactionMatrix&,
+				const std::array<scalar, N>&,
+				const std::size_t) = solveJ<reactionMatrix, N>;
+		std::array<scalar, N> (*my_solveGS)(const reactionMatrix&,
+				const std::array<scalar, N>&,
+				const std::size_t) = solveGS<reactionMatrix, N>;
+		std::array<scalar, N> (*my_solveCG)(const reactionMatrix&,
+				const std::array<scalar, N>&,
+				const std::size_t) = solveCG<reactionMatrix, N>;
+		std::array<scalar, N> (*my_solveJCG)(const reactionMatrix&,
+				const std::array<scalar, N>&,
+				const std::size_t) = solveJCG<reactionMatrix, N>;
+		std::array<scalar, N> (*my_solveGE)(const reactionMatrix&,
+				const std::array<scalar, N>&,
+				const std::size_t) = solveGE<reactionMatrix, N>;
+
+		std::function<
+				std::array<scalar, N>(const reactionMatrix&,
+						const std::array<scalar, N>&, const std::size_t)> solverF;
+
+		void setMatrix(const scalar timeStep, const scalar k_1,
+				const scalar k_2, const scalar k_3, const scalar C_1_0,
+				const scalar C_2_0, const scalar C_3_0, const scalar rho_0,
+				const std::array<scalar, N> & molMass) noexcept;
 	public:
 		cellReactionMatrix() noexcept;
 
+		explicit cellReactionMatrix(const iterativeSolver solverType);
+
 		cellReactionMatrix(const scalar timeStep, const scalar k_1,
 				const scalar k_2, const scalar k_3, const scalar C_1_0,
-				const scalar C_2_0, const scalar C_3_0, const scalar M_0,
-				const scalar rho_0, const std::array<scalar, N> & molMass,
+				const scalar C_2_0, const scalar C_3_0, const scalar rho_0,
+				const std::array<scalar, N> & molMass,
 				const iterativeSolver solverType);
 
 		auto solve(const std::array<scalar, N> & oldField,
-				const std::size_t maxIterationNumber) const ->
-						std::array<scalar, N>;
+				const std::size_t maxIterationNumber) -> std::array<scalar, N>;
+
+		void velocityCalculation(const scalar timestep, const scalar T,
+				const std::array<scalar, N + 1> & concentrations,
+				const std::array<scalar, N> & molarMasses, const scalar rho,
+				const scalar R, const kineticParams & eq1,
+				const kineticParams & eq2, const kineticParams & eq3) noexcept;
 	};
 
-	cellReactionMatrix velocityCalculation(const scalar timestep,
-			const scalar T, const std::array<scalar, N + 1> & concentrations,
-			const std::array<scalar, N> & molarMasses, const scalar rho,
-			const scalar R) const noexcept;
+	cellReactionMatrix cellReactionVel;
 
-	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN) const;
+	void timeStepIntegration(homogeneousPhase<cubicCell> & phaseN);
 public:
 	Rober(const homogeneousPhase<cubicCell> & phaseIn, const scalar mt);
 
-	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) const
-			override;
+	void solveChemicalKinetics(homogeneousPhase<cubicCell> & phaseIn) override;
 };
 }
 }  // namespace schemi

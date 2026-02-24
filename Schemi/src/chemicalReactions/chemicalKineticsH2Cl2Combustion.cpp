@@ -44,12 +44,7 @@ void schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::reactionMatr
 	RightTriangle = RightTriangleNew;
 }
 
-schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::cellReactionMatrix() noexcept :
-		solverFlag(iterativeSolver::noSolver), matrix()
-{
-}
-
-schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::cellReactionMatrix(
+void schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::setMatrix(
 		const scalar timeStep, const scalar k_diss_Cl2,
 		const scalar k_recomb_Cl, const scalar k_diss_H2,
 		const scalar k_recomb_H, const scalar k_prop_Cl_H2,
@@ -57,8 +52,7 @@ schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::cellReactionMatri
 		const scalar k_diss_HCl, const scalar C_Cl2_0, const scalar C_Cl_0,
 		const scalar C_H2_0, const scalar C_H_0, const scalar C_HCl_0,
 		const scalar M_0, const scalar rho_0,
-		const std::array<scalar, N> & molMass, const iterativeSolver solverType) :
-		solverFlag(solverType), matrix()
+		const std::array<scalar, N> & molMass) noexcept
 {
 	const scalar A11 { (1 / timeStep + k_diss_Cl2 * M_0
 			+ 0.5 * k_prop_H_Cl2 * C_H_0) / molMass[0] };
@@ -153,64 +147,99 @@ schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::cellReactionMatri
 	std::get<4>(matrix.FreeTerm) = B5;
 }
 
-auto schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::solve(
-		const std::array<scalar, N> & oldField,
-		const std::size_t maxIterationNumber) const -> std::array<
-		scalar, N>
+schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::cellReactionMatrix() noexcept :
+		solverFlag(iterativeSolver::noSolver), matrix(), solverF(nullptr)
 {
-	switch (solverFlag)
+}
+
+schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::cellReactionMatrix(
+		const iterativeSolver solverType) :
+		solverFlag(solverType), matrix(), solverF(nullptr)
+{
+	if (!solverF)
 	{
-	case iterativeSolver::GaussSeidel:
-		return solveGS<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::ConjugateGradient:
-		return solveCG<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::JacobiConjugateGradient:
-		return solveJCG<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::Jacobi:
-		return solveJ<reactionMatrix, N>(matrix, oldField, maxIterationNumber);
-		break;
-	case iterativeSolver::GaussElimination:
-		return solveGE<reactionMatrix, N>(matrix);
-		break;
-	[[unlikely]] default:
-		throw exception("Unknown chemical iterative solver type.",
-				errors::initialisationError);
-		break;
+		switch (solverFlag)
+		{
+		case iterativeSolver::GaussSeidel:
+			solverF = my_solveGS;
+			break;
+		case iterativeSolver::ConjugateGradient:
+			solverF = my_solveCG;
+			break;
+		case iterativeSolver::JacobiConjugateGradient:
+			solverF = my_solveJCG;
+			break;
+		case iterativeSolver::Jacobi:
+			solverF = my_solveJ;
+			break;
+		case iterativeSolver::GaussElimination:
+			solverF = my_solveGE;
+			break;
+		[[unlikely]] default:
+			throw exception("Unknown chemical iterative solver type.",
+					errors::initialisationError);
+			break;
+		}
 	}
 }
 
-schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix schemi::chemicalKinetics::H2Cl2Combustion::velocityCalculation(
+schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::cellReactionMatrix(
+		const scalar timeStep, const scalar k_diss_Cl2,
+		const scalar k_recomb_Cl, const scalar k_diss_H2,
+		const scalar k_recomb_H, const scalar k_prop_Cl_H2,
+		const scalar k_prop_H_Cl2, const scalar k_recomb_H_Cl,
+		const scalar k_diss_HCl, const scalar C_Cl2_0, const scalar C_Cl_0,
+		const scalar C_H2_0, const scalar C_H_0, const scalar C_HCl_0,
+		const scalar M_0, const scalar rho_0,
+		const std::array<scalar, N> & molMass, const iterativeSolver solverType) :
+		cellReactionMatrix(solverType)
+{
+	setMatrix(timeStep, k_diss_Cl2, k_recomb_Cl, k_diss_H2, k_recomb_H,
+			k_prop_Cl_H2, k_prop_H_Cl2, k_recomb_H_Cl, k_diss_HCl, C_Cl2_0,
+			C_Cl_0, C_H2_0, C_H_0, C_HCl_0, M_0, rho_0, molMass);
+}
+
+auto schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::solve(
+		const std::array<scalar, N> & oldField,
+		const std::size_t maxIterationNumber) -> std::array<
+		scalar, N>
+{
+	return solverF(matrix, oldField, maxIterationNumber);
+}
+
+void schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix::velocityCalculation(
 		const scalar timestep, const scalar T,
 		const std::array<scalar, N + 1> & concentrations,
 		const std::array<scalar, N> & molarMasses, const scalar rho,
-		const scalar R) const noexcept
+		const scalar R, const kineticParams & Cl2diss,
+		const kineticParams & Clrecomb, const kineticParams & H2diss,
+		const kineticParams & Hrecomb, const kineticParams & ClH2prop,
+		const kineticParams & HCl2prop, const kineticParams & HClrecomb,
+		const kineticParams & HCldiss) noexcept
 {
-	const scalar k_Cl2_diss = A_Cl2_diss * std::pow(T, n_Cl2_diss)
-			* std::exp(-E_Cl2_diss / (R * T));
+	const scalar k_Cl2_diss = Cl2diss.A * std::pow(T, Cl2diss.n)
+			* std::exp(-Cl2diss.E / (R * T));
 
-	const scalar k_Cl_recomb = A_Cl_recomb * std::pow(T, n_Cl_recomb)
-			* std::exp(-E_Cl_recomb / (R * T));
+	const scalar k_Cl_recomb = Clrecomb.A * std::pow(T, Clrecomb.n)
+			* std::exp(-Clrecomb.E / (R * T));
 
-	const scalar k_H2_diss = A_H2_diss * std::pow(T, n_H2_diss)
-			* std::exp(-E_H2_diss / (R * T));
+	const scalar k_H2_diss = H2diss.A * std::pow(T, H2diss.n)
+			* std::exp(-H2diss.E / (R * T));
 
-	const scalar k_H_recomb = A_H_recomb * std::pow(T, n_H_recomb)
-			* std::exp(-E_H_recomb / (R * T));
+	const scalar k_H_recomb = Hrecomb.A * std::pow(T, Hrecomb.n)
+			* std::exp(-Hrecomb.E / (R * T));
 
-	const scalar k_Cl_H2_prop = A_Cl_H2_prop * std::pow(T, n_Cl_H2_prop)
-			* std::exp(-E_Cl_H2_prop / (R * T));
+	const scalar k_Cl_H2_prop = ClH2prop.A * std::pow(T, ClH2prop.n)
+			* std::exp(-ClH2prop.E / (R * T));
 
-	const scalar k_H_Cl2_prop = A_H_Cl2_prop * std::pow(T, n_H_Cl2_prop)
-			* std::exp(-E_H_Cl2_prop / (R * T));
+	const scalar k_H_Cl2_prop = HCl2prop.A * std::pow(T, HCl2prop.n)
+			* std::exp(-HCl2prop.E / (R * T));
 
-	const scalar k_H_Cl_recomb = A_H_Cl_recomb * std::pow(T, n_H_Cl_recomb)
-			* std::exp(-E_H_Cl_recomb / (R * T));
+	const scalar k_H_Cl_recomb = HClrecomb.A * std::pow(T, HClrecomb.n)
+			* std::exp(-HClrecomb.E / (R * T));
 
-	const scalar k_HCl_diss = A_HCl_diss * std::pow(T, n_HCl_diss)
-			* std::exp(-E_HCl_diss / (R * T));
+	const scalar k_HCl_diss = HCldiss.A * std::pow(T, HCldiss.n)
+			* std::exp(-HCldiss.E / (R * T));
 
 	const scalar & Cl2 = std::get<1>(concentrations);
 	const scalar & Cl = std::get<2>(concentrations);
@@ -219,13 +248,13 @@ schemi::chemicalKinetics::H2Cl2Combustion::cellReactionMatrix schemi::chemicalKi
 	const scalar & HCl = std::get<5>(concentrations);
 	const scalar & M = std::get<0>(concentrations);
 
-	return cellReactionMatrix(timestep, k_Cl2_diss, k_Cl_recomb, k_H2_diss,
-			k_H_recomb, k_Cl_H2_prop, k_H_Cl2_prop, k_H_Cl_recomb, k_HCl_diss,
-			Cl2, Cl, H2, H, HCl, M, rho, molarMasses, itSolv);
+	setMatrix(timestep, k_Cl2_diss, k_Cl_recomb, k_H2_diss, k_H_recomb,
+			k_Cl_H2_prop, k_H_Cl2_prop, k_H_Cl_recomb, k_HCl_diss, Cl2, Cl, H2,
+			H, HCl, M, rho, molarMasses);
 }
 
 void schemi::chemicalKinetics::H2Cl2Combustion::timeStepIntegration(
-		homogeneousPhase<cubicCell> & phaseN) const
+		homogeneousPhase<cubicCell> & phaseN)
 {
 	auto & mesh_ = phaseN.pressure.meshRef();
 
@@ -275,8 +304,8 @@ void schemi::chemicalKinetics::H2Cl2Combustion::timeStepIntegration(
 					if (sumFracOld == 0.0)
 						continue;
 
-					const auto cellReactionVel = velocityCalculation(
-							subTimeStep, phaseN.temperature.cval()[i],
+					cellReactionVel.velocityCalculation(subTimeStep,
+							phaseN.temperature.cval()[i],
 							{ newValues.concentration[0],
 									newValues.concentration[1],
 									newValues.concentration[2],
@@ -289,10 +318,18 @@ void schemi::chemicalKinetics::H2Cl2Combustion::timeStepIntegration(
 									phaseN.phaseThermodynamics->Mv()[3],
 									phaseN.phaseThermodynamics->Mv()[4] },
 							phaseN.density[0].cval()[i],
-							phaseN.phaseThermodynamics->Rv());
+							phaseN.phaseThermodynamics->Rv(), { A_Cl2_diss,
+									n_Cl2_diss, E_Cl2_diss }, { A_Cl_recomb,
+									n_Cl_recomb, E_Cl_recomb }, { A_H2_diss,
+									n_H2_diss, E_H2_diss }, { A_H_recomb,
+									n_H_recomb, E_H_recomb }, { A_Cl_H2_prop,
+									n_Cl_H2_prop, E_Cl_H2_prop }, {
+									A_H_Cl2_prop, n_H_Cl2_prop, E_H_Cl2_prop },
+							{ A_H_Cl_recomb, n_H_Cl_recomb, E_H_Cl_recomb }, {
+									A_HCl_diss, n_HCl_diss, E_HCl_diss });
 
 					auto reactionResult = cellReactionVel.solve(oldMassFraction,
-							maxIterationNumber);
+							maxIterationNumber_);
 
 					std::transform(reactionResult.cbegin(),
 							reactionResult.cend(), reactionResult.begin(),
@@ -391,7 +428,7 @@ void schemi::chemicalKinetics::H2Cl2Combustion::timeStepIntegration(
 
 schemi::chemicalKinetics::H2Cl2Combustion::H2Cl2Combustion(
 		const homogeneousPhase<cubicCell> & phaseIn, const scalar mt) :
-		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver)
+		abstractChemicalKinetics(true, mt), itSolv(iterativeSolver::noSolver), cellReactionVel()
 {
 	if (phaseIn.concentration.v.size() < N + 1)
 		throw exception("Wrong number of substances.",
@@ -456,7 +493,9 @@ schemi::chemicalKinetics::H2Cl2Combustion::H2Cl2Combustion(
 				errors::initialisationError);
 	}
 
-	chem >> skipBuffer >> maxIterationNumber;
+	cellReactionVel = cellReactionMatrix(itSolv);
+
+	chem >> skipBuffer >> maxIterationNumber_;
 
 	//ΔU_298 = ΔН_298 - Δn * phaseIn.phaseThermodynamics->Rv() * 298.15;
 	deltaU_298 = deltaH_298;
@@ -465,7 +504,7 @@ schemi::chemicalKinetics::H2Cl2Combustion::H2Cl2Combustion(
 }
 
 void schemi::chemicalKinetics::H2Cl2Combustion::solveChemicalKinetics(
-		homogeneousPhase<cubicCell> & phaseIn) const
+		homogeneousPhase<cubicCell> & phaseIn)
 {
 	auto phaseN1 = phaseIn;
 

@@ -261,15 +261,15 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		effectiveCoeffs.calculateEffectiveCoefficients(surfaceRho,
 				*(gasPhase.turbulence), surfaceConcentration.v[0], surfaceCv);
 
-		if (!isNotFirstIter)
-			gasPhase.turbulence->checkTransitionToTurbulenceModel(
-					gasPhase.physMu / gasPhase.density[0],
-					effectiveCoeffs.physMu / surfaceRho, diffFieldsOld.k,
-					diffFieldsOld.eps, diffFieldsOld.a, diffFieldsOld.b,
-					gasPhase.concentration, bncCalc, timestep);
-
 		if (gasPhase.turbulence->turbulence())
 		{
+			if (!isNotFirstIter)
+				gasPhase.turbulence->checkTransitionToTurbulenceModel(
+						gasPhase.physMu / gasPhase.density[0],
+						effectiveCoeffs.physMu / surfaceRho, diffFieldsOld.k,
+						diffFieldsOld.eps, diffFieldsOld.a, diffFieldsOld.b,
+						gasPhase.concentration, bncCalc, timestep);
+
 			if (msolver.solverType != matrixSolver::explicitSolver)
 				kMatrix.generateDTimeLaplacian(diffFieldsCur.k,
 						diffFieldsOld.k * gasPhase.density[0],
@@ -738,7 +738,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 					nonConstMesh.timestepSourceRef(), timestepCoeffs.first,
 					gasPhase, diffFieldsCur, gradV, divergence(devPhysViscSurf),
 					gradP, gradRho, grada, diva, gradb, spherTurbR, devTurbR,
-					gradMav_Mav, *(gasPhase.phaseThermodynamics), gasPhase.tNu);
+					gradMav_Mav, *(gasPhase.phaseThermodynamics), gasPhase.tNu,
+					bncCalc);
 
 			if (msolver.solverType == matrixSolver::explicitSolver)
 			{

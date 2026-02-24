@@ -56,8 +56,8 @@ class instabilityParticlesHandler
 			const std::array<std::size_t, 3> & indexes,
 			const std::array<schemi::scalar, 2> & cellSurfWeightParticle) const noexcept
 	{
-		const auto nearCellIndex = std::get<1>(indexes);
-		const auto nearSurfIndex = std::get<2>(indexes);
+		const auto nearCellIndex = std::get<positionType::cell>(indexes);
+		const auto nearSurfIndex = std::get<positionType::surface>(indexes);
 
 		return vCell.cval()[nearCellIndex] * std::get<0>(cellSurfWeightParticle)
 				+ vSurf.cval()[nearSurfIndex]
@@ -104,7 +104,7 @@ public:
 	void timeIntegration(const volumeField<vector> & gradRho,
 			const surfaceField<vector> & gradRhoSurf,
 			const volumeField<vector> & uCell,
-			const surfaceField<vector> & uSurf,
+			const surfaceField<vector> & uSurf, const vector & g,
 			const concentrationsPack<cubicCell> & concentrations,
 			const std::vector<volumeField<scalar>> & densities,
 			const boundaryConditionValue & boundVal,

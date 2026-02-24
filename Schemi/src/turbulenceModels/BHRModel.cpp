@@ -12,6 +12,7 @@
 #include <fstream>
 
 #include "doubleDotProduct.hpp"
+#include "divergence.hpp"
 #include "intExpPow.hpp"
 
 schemi::BHRModel::BHRModel(const mesh & meshIn, const MPIHandler & parIn,
@@ -153,10 +154,11 @@ std::tuple<
 		const volumeField<vector> & divDevPhysVisc,
 		const volumeField<vector> & gradP, const volumeField<vector> & gradRho,
 		const volumeField<tensor> & grada, const volumeField<scalar> & diva,
-		const volumeField<vector>&, const volumeField<tensor> & spherR,
+		const volumeField<vector> & gradb, const volumeField<tensor> & spherR,
 		const volumeField<tensor> & devR, const volumeField<vector>&,
 		const abstractMixtureThermodynamics & mixture,
-		const volumeField<scalar>&) const noexcept
+		const volumeField<scalar>&,
+		const boundaryConditionValue & bnc) const noexcept
 {
 	auto & mesh_ { cellFields.pressure.meshRef() };
 
@@ -186,6 +188,9 @@ std::tuple<
 
 	const auto buoyancyGenerationFlag(
 			initialisation.generationArea(cellFields.concentration));
+
+	const surfaceField<vector> a_surf = linearInterpolate(diffFieldsOld.a, bnc);
+	const volumeField<vector> div_aa(divergence(a_surf * a_surf));
 
 	for (std::size_t i = 0; i < mesh_.cellsSize(); ++i)
 	{
@@ -238,19 +243,19 @@ std::tuple<
 						* diffFieldsOld.b.cval()[i]);
 
 		const vector tauGradRho(
-				(devR.cval()[i] * thetaS_i + spherR.cval()[i])
+				buoyancyGenerationFlag.cval()[i]
+						* (devR.cval()[i] * thetaS_i + spherR.cval()[i])
 						/ cellFields.density[0].cval()[i] & gradRho.cval()[i]);
 
 		const vector rhoAgradV(
 				cellFields.rhoaTurb.cval()[i]
 						& (grada.cval()[i] - gradV.cval()[i]));
 
-		//const vector redistribution_a(
-		//		cellFields.density[0]()[i]
-		//				* ((diffFieldsOld.a()[i] & grada()[i])
-		//						+ diffFieldsOld.a()[i] * diva()[i]));
+		const vector redistribution_a(
+				cellFields.density[0].cval()[i] * div_aa.cval()[i]);
 
-		Sourcea.first.val()[i] = bGradP + tauGradRho + rhoAgradV;
+		Sourcea.first.val()[i] = bGradP + tauGradRho + rhoAgradV
+				+ redistribution_a;
 		Sourcea.second.val()[i] = -cellFields.density[0].cval()[i] * ek * Ca();
 
 		const scalar rhobDiva(-cellFields.rhobTurb.cval()[i] * diva.cval()[i]);
@@ -259,9 +264,10 @@ std::tuple<
 				-(diffFieldsOld.b.cval()[i] + 2.)
 						* (diffFieldsOld.a.cval()[i] & gradRho.cval()[i]));
 
-		//const scalar redistribution_b(cellFields.rhoaTurb()[i] & gradb()[i]);
+		const scalar redistribution_b(
+				cellFields.rhoaTurb.cval()[i] & gradb.cval()[i]);
 
-		Sourceb.first.val()[i] = rhobDiva + baGradRho;
+		Sourceb.first.val()[i] = redistribution_b + rhobDiva + baGradRho;
 		Sourceb.second.val()[i] = -cellFields.density[0].cval()[i] * ek
 				* (Cb1() + diffFieldsOld.b.cval()[i] * Cb2());
 
@@ -291,14 +297,14 @@ void schemi::BHRModel::particlesTimeIntegration(
 		const volumeField<vector> & gradRhoCell,
 		const surfaceField<vector> & gradRhoSurf,
 		const volumeField<vector> & uCell, const surfaceField<vector> & uSurf,
-		const concentrationsPack<cubicCell> & concentrations,
+		const vector & g, const concentrationsPack<cubicCell> & concentrations,
 		const std::vector<volumeField<scalar>> & densities,
 		const boundaryConditionValue & boundVal,
 		const std::valarray<scalar> & M, const scalar timestep,
 		const volumeField<vector> & gradP, const volumeField<scalar> & divU,
 		const volumeField<tensor> & gradU)
 {
-	initialisation.timeIntegration(gradRhoCell, gradRhoSurf, uCell, uSurf,
+	initialisation.timeIntegration(gradRhoCell, gradRhoSurf, uCell, uSurf, g,
 			concentrations, densities, boundVal, M, timestep, gradP, divU,
 			gradU);
 }

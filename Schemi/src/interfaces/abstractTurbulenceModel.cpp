@@ -330,7 +330,7 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 
 void schemi::abstractTurbulenceModel::particlesTimeIntegration(
 		const volumeField<vector>&, const surfaceField<vector>&,
-		const volumeField<vector>&, const surfaceField<vector>&,
+		const volumeField<vector>&, const surfaceField<vector>&, const vector&,
 		const concentrationsPack<cubicCell>&,
 		const std::vector<volumeField<scalar>>&, const boundaryConditionValue&,
 		const std::valarray<scalar>&, const scalar, const volumeField<vector>&,

@@ -12,26 +12,17 @@
 #include "exception.hpp"
 #include "globalConstants.hpp"
 
-schemi::tracerParticle::tracerParticle() :
-		position(0), position_1(position), velocity { }
-{
-}
-
 schemi::tracerParticle::tracerParticle(const vector & inPos,
-		const vector & inVelocity) :
+		const vector & inVelocity) noexcept :
 		position(inPos), position_1(position), velocity { inVelocity }, step(0)
 {
 }
 
 schemi::tracerParticle::tracerParticle(const vector & inPos,
 		const vector & inPos1, const std::array<vector, 4> & inVelocity,
-		const std::size_t inStep) :
+		const std::size_t inStep) noexcept :
 		position(inPos), position_1(inPos1), velocity { inVelocity }, step(
 				inStep)
-{
-}
-
-schemi::tracerParticle::~tracerParticle() noexcept
 {
 }
 
@@ -52,7 +43,9 @@ void schemi::tracerParticle::writeOutput(std::ofstream & output) const
 void schemi::tracerParticle::timeIntegration(const vector & inVelocity,
 		const scalar timestep) noexcept
 {
-	if (step == 0)
+	switch (step)
+	{
+	case 0:
 	{
 		std::get<1>(velocity) = std::get<0>(velocity);
 		std::get<0>(velocity) = inVelocity;
@@ -61,7 +54,8 @@ void schemi::tracerParticle::timeIntegration(const vector & inVelocity,
 		step++;
 		position = position_1 + timestep * std::get<0>(velocity);
 	}
-	else if (step == 1)
+		break;
+	case 1:
 	{
 		std::get<2>(velocity) = std::get<1>(velocity);
 		std::get<1>(velocity) = std::get<0>(velocity);
@@ -74,7 +68,8 @@ void schemi::tracerParticle::timeIntegration(const vector & inVelocity,
 						* (3. / 2. * std::get<0>(velocity)
 								- 1. / 2. * std::get<1>(velocity));
 	}
-	else if (step == 2)
+		break;
+	case 2:
 	{
 		std::get<3>(velocity) = std::get<2>(velocity);
 		std::get<2>(velocity) = std::get<1>(velocity);
@@ -89,7 +84,8 @@ void schemi::tracerParticle::timeIntegration(const vector & inVelocity,
 								- 16. / 12. * std::get<1>(velocity)
 								+ 5. / 12. * std::get<2>(velocity));
 	}
-	else
+		break;
+	default:
 	{
 		std::get<3>(velocity) = std::get<2>(velocity);
 		std::get<2>(velocity) = std::get<1>(velocity);
@@ -103,5 +99,7 @@ void schemi::tracerParticle::timeIntegration(const vector & inVelocity,
 								- 59. / 24. * std::get<1>(velocity)
 								+ 37. / 24. * std::get<2>(velocity)
 								- 9. / 24. * std::get<3>(velocity));
+	}
+		break;
 	}
 }

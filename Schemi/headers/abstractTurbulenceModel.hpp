@@ -144,7 +144,8 @@ public:
 			const volumeField<tensor> & devR,
 			const volumeField<vector> & gradMav_n,
 			const abstractMixtureThermodynamics & mixture,
-			const volumeField<scalar> & nu_t) const noexcept =0;
+			const volumeField<scalar> & nu_t,
+			const boundaryConditionValue & bnc) const noexcept =0;
 
 	void calculateNearWallDistance(const volumeField<scalar> & eps,
 			const boundaryConditionValue & boundCond);
@@ -160,7 +161,7 @@ public:
 			const volumeField<vector> & gradRhoCell,
 			const surfaceField<vector> & gradRhoSurf,
 			const volumeField<vector> & uCell,
-			const surfaceField<vector> & uSurf,
+			const surfaceField<vector> & uSurf, const vector & g,
 			const concentrationsPack<cubicCell> & concentrations,
 			const std::vector<volumeField<scalar>> & densities,
 			const boundaryConditionValue & boundVal,

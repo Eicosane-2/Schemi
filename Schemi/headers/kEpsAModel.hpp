@@ -52,7 +52,8 @@ public:
 			const volumeField<tensor> & devR,
 			const volumeField<vector> & gradMav_n,
 			const abstractMixtureThermodynamics & mixture,
-			const volumeField<scalar> & nu_t) const noexcept override;
+			const volumeField<scalar> & nu_t,
+			const boundaryConditionValue & bnc) const noexcept override;
 
 	volumeField<scalar> calculate_b(const mesh & m,
 			const std::vector<field<scalar, cubicCell>> & c,

@@ -19,8 +19,8 @@ namespace schemi
 {
 class tracerParticle
 {
-	vector position, position_1;
-	std::array<vector, 4> velocity;
+	vector position { 0 }, position_1 { 0 };
+	std::array<vector, 4> velocity { };
 	std::size_t step { 0 };
 
 protected:
@@ -28,11 +28,12 @@ protected:
 	void timeIntegration(const vector & inVelocity,
 			const scalar timestep) noexcept;
 public:
-	tracerParticle();
-	tracerParticle(const vector & inPos, const vector & inVelocity);
+	tracerParticle() noexcept = default;
+	tracerParticle(const vector & inPos, const vector & inVelocity) noexcept;
 	tracerParticle(const vector & inPos, const vector & inPos1,
-			const std::array<vector, 4> & inVelocity, const std::size_t inStep);
-	virtual ~tracerParticle() noexcept;
+			const std::array<vector, 4> & inVelocity,
+			const std::size_t inStep) noexcept;
+	virtual ~tracerParticle() noexcept = default;
 
 	const vector& getPosition() const noexcept
 	{
