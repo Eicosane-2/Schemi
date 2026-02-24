@@ -59,7 +59,8 @@ public:
 			const volumeField<tensor> & devR,
 			const volumeField<vector> & gradMav_n,
 			const abstractMixtureThermodynamics & mixture,
-			const volumeField<scalar> & nu_t) const noexcept override;
+			const volumeField<scalar> & nu_t,
+			const boundaryConditionValue & bnc) const noexcept override;
 
 	std::valarray<scalar> rhoepsilon(const bunchOfFields<cubicCell> & cf,
 			const abstractMixtureThermodynamics & th,

@@ -96,7 +96,7 @@ class Rober: public abstractChemicalKinetics
 	public:
 		cellReactionMatrix() noexcept;
 
-		cellReactionMatrix(const iterativeSolver solverType);
+		explicit cellReactionMatrix(const iterativeSolver solverType);
 
 		cellReactionMatrix(const scalar timeStep, const scalar k_1,
 				const scalar k_2, const scalar k_3, const scalar C_1_0,

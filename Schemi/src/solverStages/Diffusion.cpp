@@ -738,7 +738,8 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 					nonConstMesh.timestepSourceRef(), timestepCoeffs.first,
 					gasPhase, diffFieldsCur, gradV, divergence(devPhysViscSurf),
 					gradP, gradRho, grada, diva, gradb, spherTurbR, devTurbR,
-					gradMav_Mav, *(gasPhase.phaseThermodynamics), gasPhase.tNu);
+					gradMav_Mav, *(gasPhase.phaseThermodynamics), gasPhase.tNu,
+					bncCalc);
 
 			if (msolver.solverType == matrixSolver::explicitSolver)
 			{

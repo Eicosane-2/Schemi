@@ -40,6 +40,7 @@ class GoncharovTracerModel: public tracerParticle
 	scalar k0 { 0 }, eps0 { 0 }, b0 { 0 };
 	vector a0 { 0, 0, 0 };
 	scalar Re { 0 }, relDeltaEta { 0 };
+	scalar timestep_1 { 0 };
 
 	interfaceStatus status { interfaceStatus::notDeveloped };
 
@@ -77,7 +78,7 @@ protected:
 	}
 public:
 	constexpr static scalar C01 { 4 }, C02 { 0.5 };
-	GoncharovTracerModel() noexcept;
+	GoncharovTracerModel() noexcept = default;
 	GoncharovTracerModel(const std::string & initCheckMethod,
 			const vector & inPos, const vector & inVelocity,
 			const std::size_t sub1, const std::size_t sub2, const int pertType,
@@ -91,9 +92,9 @@ public:
 			const scalar radiusOfIfluenceIn, const scalar etaCur,
 			const scalar eta1Cur, const scalar eta2Cur, const scalar rho1Cur,
 			const scalar rho2Cur, const scalar k0Cur, const scalar eps0Cur,
-			const scalar b0Cur, const vector & a0Cur,
-			const interfaceStatus curStatus);
-	virtual ~GoncharovTracerModel() noexcept override;
+			const scalar b0Cur, const vector & a0Cur, const scalar timeStepOld,
+			const interfaceStatus curStatus) noexcept;
+	virtual ~GoncharovTracerModel() noexcept override = default;
 
 	const std::array<std::size_t, 2>& substances() const noexcept
 	{

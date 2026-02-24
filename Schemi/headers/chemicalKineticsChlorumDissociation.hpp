@@ -88,7 +88,7 @@ class ChlorumDissociation: public abstractChemicalKinetics
 	public:
 		cellReactionMatrix() noexcept;
 
-		cellReactionMatrix(const iterativeSolver solverType);
+		explicit cellReactionMatrix(const iterativeSolver solverType);
 
 		cellReactionMatrix(const scalar timeStep, const scalar k_diss,
 				const scalar k_recomb, const scalar C_Cl2_0,

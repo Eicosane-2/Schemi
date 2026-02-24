@@ -304,7 +304,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					readData >> inStep;
 
 					scalar etaCur, eta1Cur, eta2Cur, rho1Cur, rho2Cur, k0Cur,
-							eps0Cur, b0Cur;
+							eps0Cur, b0Cur, timestepOld;
 					vector a0Cur;
 					int curStatus;
 
@@ -313,6 +313,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					readData >> vectorData1 >> vectorData2 >> vectorData3;
 					a0Cur = vector(std::stod(vectorData1),
 							std::stod(vectorData2), std::stod(vectorData3));
+					readData >> timestepOld;
 					readData >> curStatus;
 
 					/*Read turbulent parameters.*/
@@ -352,8 +353,9 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 							inPosition1, inVelocity, inStep, --substance1,
 							--substance2, pertType, eta_0, lambda, rad, etaCur,
 							eta1Cur, eta2Cur, rho1Cur, rho2Cur, k0Cur, eps0Cur,
-							b0Cur, a0Cur, interfaceStatus(curStatus), CmuIn,
-							C0In, C2In, C3In, Ca1In, Cb1In);
+							b0Cur, a0Cur, timestepOld,
+							interfaceStatus(curStatus), CmuIn, C0In, C2In, C3In,
+							Ca1In, Cb1In);
 
 					clearLines(prt, readDataPoint);
 				}
@@ -530,7 +532,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 				readData >> inStep;
 
 				scalar etaCur, eta1Cur, eta2Cur, rho1Cur, rho2Cur, k0Cur,
-						eps0Cur, b0Cur;
+						eps0Cur, b0Cur, timestepOld;
 				vector a0Cur;
 				int curStatus;
 
@@ -539,6 +541,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 				readData >> vectorData1 >> vectorData2 >> vectorData3;
 				a0Cur = vector(std::stod(vectorData1), std::stod(vectorData2),
 						std::stod(vectorData3));
+				readData >> timestepOld;
 				readData >> curStatus;
 
 				/*Read turbulent parameters.*/
@@ -577,8 +580,8 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 						inPosition1, inVelocity, inStep, --substance1,
 						--substance2, pertType, eta_0, lambda, rad, etaCur,
 						eta1Cur, eta2Cur, rho1Cur, rho2Cur, k0Cur, eps0Cur,
-						b0Cur, a0Cur, interfaceStatus(curStatus), CmuIn, C0In,
-						C2In, C3In, Ca1In, Cb1In);
+						b0Cur, a0Cur, timestepOld, interfaceStatus(curStatus),
+						CmuIn, C0In, C2In, C3In, Ca1In, Cb1In);
 
 				clearLines(prt, readDataPoint);
 			}
@@ -652,8 +655,8 @@ std::size_t schemi::instabilityParticlesHandler::findNearSurface(
 std::array<schemi::scalar, 2> schemi::instabilityParticlesHandler::calculateWeights(
 		const vector & position, const std::array<std::size_t, 3> & indexes)
 {
-	const auto nearCellIndex = std::get<1>(indexes);
-	const auto nearSurfIndex = std::get<2>(indexes);
+	const auto nearCellIndex = std::get<positionType::cell>(indexes);
+	const auto nearSurfIndex = std::get<positionType::surface>(indexes);
 
 	const auto pCell = position - meshRef.cells()[nearCellIndex].rC();
 	const auto pSurf = position - meshRef.surfaces()[nearSurfIndex].rC();
@@ -1409,20 +1412,19 @@ schemi::volumeField<schemi::scalar> schemi::instabilityParticlesHandler::formPro
 			continue;
 		}
 
-		scalar xMax;
-		std::size_t xMaxInd;
+		std::pair<scalar, std::size_t> xMax;
 		if (x1_i >= x2_i)
 		{
-			xMax = x1_i;
-			xMaxInd = std::get<0>(substancesIndex);
+			xMax.first = x1_i;
+			xMax.second = std::get<0>(substancesIndex);
 		}
 		else
 		{
-			xMax = x2_i;
-			xMaxInd = std::get<1>(substancesIndex);
+			xMax.first = x2_i;
+			xMax.second = std::get<1>(substancesIndex);
 		}
 
-		const auto cellValue = GoncharovTracerModel::C01 * (1 - xMax);
+		const auto cellValue = GoncharovTracerModel::C01 * (1 - xMax.first);
 
 		const auto nearCellSize = meshRef.neighboursOfCells()[i].size();
 		const auto cellSurfacesSize = meshRef.surfacesOfCells()[i].size();
@@ -1438,8 +1440,8 @@ schemi::volumeField<schemi::scalar> schemi::instabilityParticlesHandler::formPro
 
 				nearCellValues[j] =
 						std::abs(
-								xMax
-										- concentrations.v[xMaxInd + 1].cval()[cellIndex]
+								xMax.first
+										- concentrations.v[xMax.second + 1].cval()[cellIndex]
 												/ concentrations.v[0].cval()[cellIndex]);
 			}
 
@@ -1447,13 +1449,13 @@ schemi::volumeField<schemi::scalar> schemi::instabilityParticlesHandler::formPro
 			{
 				const auto surfaceIndex = meshRef.surfacesOfCells()[i][l];
 
-				if (concentrations.v[xMaxInd + 1].boundCond()[surfaceIndex].first
+				if (concentrations.v[xMax.second + 1].boundCond()[surfaceIndex].first
 						!= boundaryConditionType::innerSurface)
 				{
 					const auto concMax =
 							bnc.boundaryConditionValueCell(
-									concentrations.v[xMaxInd + 1].cval()[i],
-									concentrations.v[xMaxInd + 1].boundCond()[surfaceIndex],
+									concentrations.v[xMax.second + 1].cval()[i],
+									concentrations.v[xMax.second + 1].boundCond()[surfaceIndex],
 									i, surfaceIndex);
 
 					scalar sumConc(0);
@@ -1465,7 +1467,8 @@ schemi::volumeField<schemi::scalar> schemi::instabilityParticlesHandler::formPro
 								i, surfaceIndex);
 					}
 
-					nearSurfValues[l] = std::abs(xMax - concMax / sumConc);
+					nearSurfValues[l] = std::abs(
+							xMax.first - concMax / sumConc);
 				}
 			}
 
@@ -1485,8 +1488,8 @@ schemi::volumeField<schemi::scalar> schemi::instabilityParticlesHandler::formPro
 
 				nearCellValues[j] =
 						std::abs(
-								xMax
-										- concentrations.v[xMaxInd + 1].cval()[cellIndex]
+								xMax.first
+										- concentrations.v[xMax.second + 1].cval()[cellIndex]
 												/ concentrations.v[0].cval()[cellIndex]);
 			}
 
@@ -1709,8 +1712,8 @@ void schemi::instabilityParticlesHandler::timeIntegration(
 					gradU_arr[7], gradU_arr[8]);
 
 			particlesList[prt].timeIntegration(rho1, rho2, particleDensityGrad,
-					particleVelocity, g, timestep, gradP_cell, rho_cell, divU_cell,
-					gradU_cell);
+					particleVelocity, g, timestep, gradP_cell, rho_cell,
+					divU_cell, gradU_cell);
 
 			newPositionVector_prt = particlesList[prt].getPosition();
 		}

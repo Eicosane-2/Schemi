@@ -144,7 +144,8 @@ public:
 			const volumeField<tensor> & devR,
 			const volumeField<vector> & gradMav_n,
 			const abstractMixtureThermodynamics & mixture,
-			const volumeField<scalar> & nu_t) const noexcept =0;
+			const volumeField<scalar> & nu_t,
+			const boundaryConditionValue & bnc) const noexcept =0;
 
 	void calculateNearWallDistance(const volumeField<scalar> & eps,
 			const boundaryConditionValue & boundCond);

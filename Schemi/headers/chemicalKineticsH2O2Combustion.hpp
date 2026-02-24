@@ -164,7 +164,7 @@ class H2O2Combustion: public abstractChemicalKinetics
 	public:
 		cellReactionMatrix() noexcept;
 
-		cellReactionMatrix(const iterativeSolver solverType);
+		explicit cellReactionMatrix(const iterativeSolver solverType);
 
 		cellReactionMatrix(const scalar timeStep, const scalar k_R1,
 				const scalar k_R2, const scalar k_R3, const scalar k_R4,

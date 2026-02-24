@@ -7,6 +7,8 @@
 
 #include "GoncharovTracerModel.hpp"
 
+#include <iostream>
+
 #include "globalConstants.hpp"
 #include "vector.hpp"
 #include "intExpPow.hpp"
@@ -37,11 +39,6 @@ void schemi::GoncharovTracerModel::initialiseTransitionCheck(
 				errors::initialisationError);
 }
 
-schemi::GoncharovTracerModel::GoncharovTracerModel() noexcept :
-		tracerParticle()
-{
-}
-
 schemi::GoncharovTracerModel::GoncharovTracerModel(
 		const std::string & initCheckMethod, const vector & inPos,
 		const vector & inVelocity, const std::size_t sub1,
@@ -51,6 +48,22 @@ schemi::GoncharovTracerModel::GoncharovTracerModel(
 				eta0In), lambda(lambdaIn), k(2 * Pi_number / lambda), radiusOfIfluence(
 				radiusOfIfluenceIn), eta(eta_0), eta_1(eta_0), eta_2(eta_0)
 {
+	std::ifstream mainParametersFile { "./set/main.txt" };
+	if (mainParametersFile.is_open())
+		std::cout << "./set/main.txt is opened." << std::endl;
+	else
+		[[unlikely]]
+		throw std::ifstream::failure("./set/main.txt not found.");
+
+	std::string skipBuffer;
+
+	for (std::size_t i = 0; i < 15; i++)
+		mainParametersFile >> skipBuffer;
+
+	mainParametersFile >> timestep_1;
+
+	mainParametersFile.close();
+
 	initialiseTransitionCheck(initCheckMethod);
 }
 
@@ -63,19 +76,15 @@ schemi::GoncharovTracerModel::GoncharovTracerModel(
 		const scalar etaCur, const scalar eta1Cur, const scalar eta2Cur,
 		const scalar rho1Cur, const scalar rho2Cur, const scalar k0Cur,
 		const scalar eps0Cur, const scalar b0Cur, const vector & a0Cur,
-		const interfaceStatus curStatus) :
+		const scalar timeStepOld, const interfaceStatus curStatus) noexcept :
 		tracerParticle(inPos, inPos1, inVelocity, inStep), s12 { sub1, sub2 }, c(
 				pertType), eta_0(eta0In), lambda(lambdaIn), k(
 				2 * Pi_number / lambda), radiusOfIfluence(radiusOfIfluenceIn), eta(
 				etaCur), eta_1(eta1Cur), eta_2(eta2Cur), rho1(rho1Cur), rho2(
-				rho2Cur), k0(k0Cur), eps0(eps0Cur), b0(b0Cur), a0(a0Cur), status(
-				curStatus)
+				rho2Cur), k0(k0Cur), eps0(eps0Cur), b0(b0Cur), a0(a0Cur), timestep_1(
+				timeStepOld), status(curStatus)
 {
 	initialiseTransitionCheck(initCheckMethod);
-}
-
-schemi::GoncharovTracerModel::~GoncharovTracerModel() noexcept
-{
 }
 
 void schemi::GoncharovTracerModel::writeOutput(std::ofstream & output) const
@@ -87,6 +96,7 @@ void schemi::GoncharovTracerModel::writeOutput(std::ofstream & output) const
 	output << k0 << '\t' << eps0 << '\t' << b0 << '\n';
 	output << std::get<0>(a0()) << '\t' << std::get<1>(a0()) << '\t'
 			<< std::get<2>(a0()) << '\n';
+	output << timestep_1;
 	output << static_cast<int>(status) << '\n';
 }
 
@@ -109,37 +119,42 @@ void schemi::GoncharovTracerModel::timeIntegration(const scalar density1,
 
 		const scalar At = std::abs(rho2 - rho1) / (rho1 + rho2);
 
-		const auto gVec = (std::get<0>(getVelocities())
+		const auto aVec = (std::get<0>(getVelocities())
 				- std::get<1>(getVelocities())) / timestep;
 
-		const auto eta2 = -c * k / (4 * (1 + c))
-				* (1
-						+ ((1 + c) * eta_0 * k - 1)
-								* std::exp(-k * (1 + c) * (eta_1 - eta_0)));
+		const auto eta2 = -c * k / (4. * (1. + c))
+				* (1.
+						+ ((1. + c) * eta_0 * k - 1.)
+								* std::exp(-k * (1. + c) * (eta_1 - eta_0)));
 
-		const auto F1 = 2 * At * pow<scalar, 2>(eta2)
-				+ pow<scalar, 2>(c) * At * k * eta2 / (2 * (1 + c))
-				- pow<scalar, 2>(c * k) / (8 * (1 + c));
+		const auto F1 = 2. * At * pow<scalar, 2>(eta2)
+				+ pow<scalar, 2>(c) * At * k * eta2 / (2. * (1. + c))
+				- pow<scalar, 2>(c * k) / (8. * (1. + c));
 
-		const auto F2 = 2 * At * pow<scalar, 2>(eta2)
-				+ (At + c * At - 2 * c - 1) * k * eta2 / (1 + c)
-				+ c * pow<scalar, 2>(k) * (3 * c * At / 2 + At - c - 1)
-						/ (4 * pow<scalar, 2>(1 + c));
+		const auto F2 = 2. * At * pow<scalar, 2>(eta2)
+				+ (At + c * At - 2. * c - 1.) * k * eta2 / (1. + c)
+				+ c * pow<scalar, 2>(k) * (3. * c * At / 2. + At - c - 1.)
+						/ (4. * pow<scalar, 2>(1. + c));
 
-		const auto D = eta2 - c * k / (4 * (1 + c));
+		const auto D = eta2 - c * k / (4. * (1. + c));
 
-		const auto g_sum = std::abs((gVec + g) & normale);
+		const auto g_sum = std::abs((aVec + g) & normale);
 
 		const auto A = F1 / D;
-		const auto B = F2 * pow<scalar, 2>(c * k / D) / 8 / A;
-		const auto C = 2 * g_sum * At * eta2 / A;
+		const auto B = F2 * pow<scalar, 2>(c * k / D) / 8. / A;
+		const auto C = 2. * g_sum * At * eta2 / A;
 
-		eta = 2 * eta_1 - eta_2 - pow<scalar, 2>(eta_1 - eta_2) * B
-				- C * pow<scalar, 2>(timestep);
+		const auto detadt = (eta_1 - eta_2) / timestep_1;
+		const auto timestepAv = 0.5 * (timestep + timestep_1);
+
+		eta = eta_1 + (eta_1 - eta_2) / timestep_1 * timestep
+				- (pow<scalar, 2>(detadt) * B + C) * timestep * timestepAv;
 
 		if (eta < eta_0)
 			throw exception("Perturbation amplitude less than initial.",
 					errors::systemError);
+
+		timestep_1 = timestep;
 	}
 }
 
@@ -159,7 +174,7 @@ schemi::interfaceStatus schemi::GoncharovTracerModel::checkTransition(
 	{
 		const auto charactDist = (cellRadius - surfaceRadius).mag();
 
-		if ((cellCoefficient * charactDist) > eta)
+		if ((cellCoefficient * charactDist) >= eta)
 			status = interfaceStatus::developedNotResolvable;
 		else
 			status = interfaceStatus::developedResolvable;

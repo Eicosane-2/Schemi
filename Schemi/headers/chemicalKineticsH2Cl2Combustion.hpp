@@ -136,7 +136,7 @@ class H2Cl2Combustion: public abstractChemicalKinetics
 	public:
 		cellReactionMatrix() noexcept;
 
-		cellReactionMatrix(const iterativeSolver solverType);
+		explicit cellReactionMatrix(const iterativeSolver solverType);
 
 		cellReactionMatrix(const scalar timeStep, const scalar k_diss_Cl2,
 				const scalar k_recomb_Cl, const scalar k_diss_H2,

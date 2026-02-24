@@ -9,11 +9,6 @@
 
 #include "intExpPow.hpp"
 
-schemi::BHRGoncharovTracerModel::BHRGoncharovTracerModel() noexcept :
-		GoncharovTracerModel()
-{
-}
-
 schemi::BHRGoncharovTracerModel::BHRGoncharovTracerModel(
 		const std::string & initCheckMethod, const vector & inPos,
 		const vector & inVelocity, const std::size_t sub1,
@@ -36,18 +31,14 @@ schemi::BHRGoncharovTracerModel::BHRGoncharovTracerModel(
 		const scalar etaCur, const scalar eta1Cur, const scalar eta2Cur,
 		const scalar rho1Cur, const scalar rho2Cur, const scalar k0Cur,
 		const scalar eps0Cur, const scalar b0Cur, const vector & a0Cur,
-		const interfaceStatus curStatus, const scalar CmuIn, const scalar C0In,
-		const scalar C2In, const scalar C3In, const scalar Ca1In,
-		const scalar Cb1In) :
+		const scalar timestepOld, const interfaceStatus curStatus,
+		const scalar CmuIn, const scalar C0In, const scalar C2In,
+		const scalar C3In, const scalar Ca1In, const scalar Cb1In) noexcept :
 		GoncharovTracerModel(initCheckMethod, inPos, inPos1, inVelocity, inStep,
 				sub1, sub2, pertType, eta0In, lambdaIn, radiusOfIfluenceIn,
 				etaCur, eta1Cur, eta2Cur, rho1Cur, rho2Cur, k0Cur, eps0Cur,
-				b0Cur, a0Cur, curStatus), Cmu(CmuIn), C0(C0In), C2(C2In), C3(
-				C3In), Ca1(Ca1In), Cb1(Cb1In)
-{
-}
-
-schemi::BHRGoncharovTracerModel::~BHRGoncharovTracerModel() noexcept
+				b0Cur, a0Cur, timestepOld, curStatus), Cmu(CmuIn), C0(C0In), C2(
+				C2In), C3(C3In), Ca1(Ca1In), Cb1(Cb1In)
 {
 }
 
@@ -95,11 +86,13 @@ void schemi::BHRGoncharovTracerModel::timeIntegration(const scalar density1,
 
 		const scalar etaSource = etaOld * diffusion + etaOld * divU;
 
-		const auto kNew = kOld + kSource * timestep;
-		const auto epsNew = epsOld + epsSource * timestep;
+		const auto kNew = std::max(stabilizator, kOld + kSource * timestep);
+		const auto epsNew = std::max(stabilizator,
+				epsOld + epsSource * timestep);
 		const auto aNew = aOld + aSource * timestep;
-		const auto bNew = bOld + bSource * timestep;
-		const auto etaNew = etaOld + etaSource * timestep;
+		const auto bNew = std::max(stabilizator, bOld + bSource * timestep);
+		const auto etaNew = std::max(stabilizator,
+				etaOld + etaSource * timestep);
 
 		setEta(etaNew);
 		setk0(kNew);
@@ -119,24 +112,22 @@ schemi::interfaceStatus schemi::BHRGoncharovTracerModel::checkTransition(
 
 	switch (currentstatus)
 	{
-	case interfaceStatus::developedResolvable:
-		break;
 	case interfaceStatus::notDeveloped:
 		currentstatus = GoncharovTracerModel::checkTransition(nu, timestep,
 				cellRadius, surfaceRadius);
 		break;
 	case interfaceStatus::developedNotResolvable:
-	default:
 	{
 		const auto charactDist = (cellRadius - surfaceRadius).mag();
 
-		if ((cellCoefficient * charactDist) > getEta())
-			currentstatus = interfaceStatus::developedNotResolvable;
-		else
+		if ((cellCoefficient * charactDist) < getEta())
 			currentstatus = interfaceStatus::developedResolvable;
 
 		setStatus(currentstatus);
 	}
+		break;
+	case interfaceStatus::developedResolvable:
+	default:
 		break;
 	}
 

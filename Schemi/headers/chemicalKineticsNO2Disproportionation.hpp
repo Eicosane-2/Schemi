@@ -105,7 +105,7 @@ class NO2Disproportionation: public abstractChemicalKinetics
 	public:
 		cellReactionMatrix() noexcept;
 
-		cellReactionMatrix(const iterativeSolver solverType);
+		explicit cellReactionMatrix(const iterativeSolver solverType);
 
 		cellReactionMatrix(const scalar timeStep, const scalar k_forw,
 				const scalar k_backw, const scalar C_NO2_0,
