@@ -24,12 +24,7 @@
 #include "output.hpp"
 #include "phaseInitialization.hpp"
 #include "scalar.hpp"
-#include "secondOrderStepSolver.hpp"
-#include "secondOrderStepSolverRK.hpp"
 #include "structForOutput.hpp"
-#include "thirdOrderStepSolver.hpp"
-#include "thirdOrderStepSolverCada.hpp"
-#include "ThomasSolver.hpp"
 #include "typeOfSolverEnum.hpp"
 #include "zone.hpp"
 
@@ -78,7 +73,6 @@ int main()
 				mixedZoneWidthCalcString, nonLinearityIteratonsString;
 		bool diffusionFlag, gravitationFlag, linearFlag, mixedZoneWidthCalcFlag,
 				nonLinearityIteratonsFlag;
-		typeOfSolverEnum order;
 		vector g { 0 }, gDelta { 0 };
 		dimensions dimensionsFlag;
 		timestep sourceTimeFlag;
@@ -293,21 +287,6 @@ int main()
 		} catch (const std::out_of_range&)
 		{
 			throw exception("Unknown dimensions flag.",
-					errors::initialisationError);
-		}
-
-		std::map<std::string, typeOfSolverEnum> orderType;
-		orderType.insert( { "ThirdOrder", typeOfSolverEnum::ThirdOrder });
-		orderType.insert(
-				{ "ThirdOrderCada", typeOfSolverEnum::ThirdOrderCada });
-		orderType.insert( { "SecondOrder", typeOfSolverEnum::SecondOrder });
-		orderType.insert( { "SecondOrderRK", typeOfSolverEnum::SecondOrderRK });
-		try
-		{
-			order = orderType.at(thirdOrderString);
-		} catch (const std::out_of_range&)
-		{
-			throw exception("Unknown gas dynamics approximation order.",
 					errors::initialisationError);
 		}
 
@@ -770,59 +749,16 @@ int main()
 
 		parallelism.correctBoundaryValues(*gasPhase);
 
-		std::unique_ptr<abstractStepSolver> stepSolver;
-
-		switch (order)
-		{
-		case typeOfSolverEnum::SecondOrder:
-			stepSolver = std::make_unique<secondOrderStepSolver>(*gasPhase,
-					*limiter, *fsolver, gravitationFlag, g,
-					boundaryConditionValueCalc, timeForTVD, timeForHancock,
-					timeForFlowCalculation, timeForTimeIntegration, parallelism,
-					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
-					timeForDiffusion, commonConditions, enthalpyFlowFlag,
-					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk,
-					nonLinearityIteratonsFlag);
-			break;
-		case typeOfSolverEnum::SecondOrderRK:
-			stepSolver = std::make_unique<secondOrderStepSolverRK>(*gasPhase,
-					*limiter, *fsolver, gravitationFlag, g,
-					boundaryConditionValueCalc, timeForTVD, timeForHancock,
-					timeForFlowCalculation, timeForTimeIntegration, parallelism,
-					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
-					timeForDiffusion, commonConditions, enthalpyFlowFlag,
-					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk,
-					nonLinearityIteratonsFlag);
-			break;
-		case typeOfSolverEnum::ThirdOrder:
-			stepSolver = std::make_unique<thirdOrderStepSolver>(*gasPhase,
-					*limiter, *fsolver, gravitationFlag, g,
-					boundaryConditionValueCalc, timeForTVD, timeForHancock,
-					timeForFlowCalculation, timeForTimeIntegration, parallelism,
-					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
-					timeForDiffusion, commonConditions, enthalpyFlowFlag,
-					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk,
-					nonLinearityIteratonsFlag);
-			break;
-		case typeOfSolverEnum::ThirdOrderCada:
-			stepSolver = std::make_unique<thirdOrderStepSolverCada>(*gasPhase,
-					*limiter, *fsolver, gravitationFlag, g,
-					boundaryConditionValueCalc, timeForTVD, timeForHancock,
-					timeForFlowCalculation, timeForTimeIntegration, parallelism,
-					diffusionFlag, *msolver, *msolverEnthFl, timestepCoeffs,
-					timeForDiffusion, commonConditions, enthalpyFlowFlag,
-					linearFlag, boundaryConditionValueCalc, minimalLengthScale,
-					sourceTimeFlag, molMassDiffusionFlag, *chmk,
-					nonLinearityIteratonsFlag);
-			break;
-		[[unlikely]] default:
-			throw exception("Unknown type of approximation order.",
-					errors::initialisationError);
-			break;
-		}
+		std::unique_ptr<abstractStepSolver> stepSolver =
+				abstractStepSolver::createStepSolver(thirdOrderString,
+						*gasPhase, *limiter, *fsolver, gravitationFlag, g,
+						boundaryConditionValueCalc, timeForTVD, timeForHancock,
+						timeForFlowCalculation, timeForTimeIntegration,
+						parallelism, diffusionFlag, *msolver, *msolverEnthFl,
+						timestepCoeffs, timeForDiffusion, commonConditions,
+						enthalpyFlowFlag, linearFlag, minimalLengthScale,
+						sourceTimeFlag, molMassDiffusionFlag, *chmk,
+						nonLinearityIteratonsFlag);
 
 #ifdef MPI_VERSION
 		(MPI_Barrier(MPI_COMM_WORLD));

@@ -724,7 +724,7 @@ std::size_t schemi::instabilityParticlesHandler::searchOfNearestCell(
 		}
 	}
 
-	return -1;
+	return static_cast<std::size_t>(-1);
 }
 
 std::array<std::size_t, 2> schemi::instabilityParticlesHandler::findNewNearPosition(
@@ -1160,12 +1160,10 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 						nextCell, rhoSub, r, recursionLevel, boundVal, M);
 			}
 		}
-		else if (concentrationBoundary[ind1].first
-				== boundaryConditionType::innerSurface
-				&& ((concentrationBoundary[ind2].first
-						== boundaryConditionType::calculatedParallelBoundary)
-						|| (concentrationBoundary[ind2].first
-								== boundaryConditionType::fixedValueCell)))
+		else if ((concentrationBoundary[ind1].first
+				== boundaryConditionType::innerSurface)
+				&& (concentrationBoundary[ind2].first
+						!= boundaryConditionType::innerSurface))
 		{
 			const auto cellOwner1 = meshRef.surfaceOwner()[ind1];
 			const auto cellNeighb1 = meshRef.surfaceNeighbour()[ind1];
@@ -1213,9 +1211,8 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 			else if (xSub2 >= purityParameter)
 			{
 				rhoSub = boundaryConc * M[sub];
-				r = meshRef.cells()[cellIndex].rC()
-						+ (meshRef.surfaces()[ind2].rC()
-								- meshRef.cells()[cellIndex].rC()) * 2;
+				r = meshRef.surfaces()[ind2].rC() * 2
+						- meshRef.cells()[cellIndex].rC();
 				return;
 			}
 			else
@@ -1230,11 +1227,13 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 
 				if (xSub2 > xSub1)
 				{
-					const scalar deltaX = xSub2 - x2;
-					const scalar deltaR = (meshRef.surfaces()[ind2].rC()
-							- meshRef.cells()[cellIndex].rC()).mag() * 2;
+					const scalar deltaX = xSub2 - xSub1;
+					const vector deltaR = meshRef.surfaces()[ind2].rC() * 2
+							- meshRef.cells()[cellIndex].rC()
+							- meshRef.cells()[outerCell1].rC();
+					const scalar deltaRMag = deltaR.mag();
 
-					const auto dXdR = deltaX / deltaR;
+					const auto dXdR = deltaX / deltaRMag;
 
 					if (dXdR <= 0)
 						[[unlikely]]
@@ -1242,16 +1241,22 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 								"Don't know how to extrapolate density.",
 								errors::systemError);
 
-					const auto deltaRExtrap = (1 - xSub2) / dXdR;
+					const auto deltaRExtrap = (1 - xSub) / dXdR;
 
 					const auto deltaRho = boundaryConc * M[sub]
-							- densities[sub + 1].cval()[cellIndex];
+							- densities[sub + 1].cval()[outerCell1];
 
-					const auto extrapRho = deltaRho / deltaR * deltaRExtrap;
+					const auto extrapRho = deltaRho / deltaRMag * deltaRExtrap
+							+ densities[sub + 1].cval()[cellIndex];
 
-					const vector extrapR = (meshRef.surfaces()[ind2].rC()
-							- meshRef.cells()[cellIndex].rC()) / (0.5 * deltaR)
-							* deltaRExtrap + meshRef.cells()[cellIndex].rC();
+					const vector extrapR = deltaR / deltaRMag * deltaRExtrap
+							+ meshRef.cells()[cellIndex].rC();
+
+					if (extrapRho <= 0)
+						[[unlikely]]
+						throw exception(
+								"Negative or zero extrapolated density.",
+								errors::systemError);
 
 					rhoSub = extrapRho;
 					r = extrapR;
@@ -1267,12 +1272,10 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 						nextCell, rhoSub, r, recursionLevel, boundVal, M);
 			}
 		}
-		else if (((concentrationBoundary[ind1].first
-				== boundaryConditionType::calculatedParallelBoundary)
-				|| (concentrationBoundary[ind1].first
-						== boundaryConditionType::fixedValueCell))
-				&& concentrationBoundary[ind2].first
-						== boundaryConditionType::innerSurface)
+		else if ((concentrationBoundary[ind1].first
+				!= boundaryConditionType::innerSurface)
+				&& (concentrationBoundary[ind2].first
+						== boundaryConditionType::innerSurface))
 		{
 			const scalar boundaryConc = boundVal.boundaryConditionValueCell(
 					concentrations.v[sub + 1].cval()[cellIndex],
@@ -1314,9 +1317,8 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 			if (xSub1 >= purityParameter)
 			{
 				rhoSub = boundaryConc * M[sub];
-				r = meshRef.cells()[cellIndex].rC()
-						+ (meshRef.surfaces()[ind1].rC()
-								- meshRef.cells()[cellIndex].rC()) * 2;
+				r = meshRef.surfaces()[ind1].rC() * 2
+						- meshRef.cells()[cellIndex].rC();
 				return;
 			}
 			else if (xSub2 >= purityParameter)
@@ -1337,11 +1339,13 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 
 				if (xSub1 > xSub2)
 				{
-					const scalar deltaX = xSub1 - x1;
-					const scalar deltaR = (meshRef.surfaces()[ind1].rC()
-							- meshRef.cells()[cellIndex].rC()).mag() * 2;
+					const scalar deltaX = xSub1 - xSub2;
+					const vector deltaR = meshRef.surfaces()[ind1].rC() * 2
+							- meshRef.cells()[cellIndex].rC()
+							- meshRef.cells()[outerCell2].rC();
+					const scalar deltaRMag = deltaR.mag();
 
-					const auto dXdR = deltaX / deltaR;
+					const auto dXdR = deltaX / deltaRMag;
 
 					if (dXdR <= 0)
 						[[unlikely]]
@@ -1349,16 +1353,22 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 								"Don't know how to extrapolate density.",
 								errors::systemError);
 
-					const auto deltaRExtrap = (1 - xSub1) / dXdR;
+					const auto deltaRExtrap = (1 - xSub) / dXdR;
 
 					const auto deltaRho = boundaryConc * M[sub]
-							- densities[sub + 1].cval()[cellIndex];
+							- densities[sub + 1].cval()[outerCell2];
 
-					const auto extrapRho = deltaRho / deltaR * deltaRExtrap;
+					const auto extrapRho = deltaRho / deltaRMag * deltaRExtrap
+							+ densities[sub + 1].cval()[cellIndex];
 
-					const vector extrapR = (meshRef.surfaces()[ind1].rC()
-							- meshRef.cells()[cellIndex].rC()) / (0.5 * deltaR)
-							* deltaRExtrap + meshRef.cells()[cellIndex].rC();
+					const vector extrapR = deltaR / deltaRMag * deltaRExtrap
+							+ meshRef.cells()[cellIndex].rC();
+
+					if (extrapRho <= 0)
+						[[unlikely]]
+						throw exception(
+								"Negative or zero extrapolated density.",
+								errors::systemError);
 
 					rhoSub = extrapRho;
 					r = extrapR;
@@ -1961,10 +1971,10 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 				const auto nu = calculateWeightedValue(nuCell, nuSurface,
 						particlePosition_prt, cellSurfWeight_prt);
 
-				const auto cellRadius(
+				const auto& cellRadius(
 						meshRef.cells()[std::get<positionType::cell>(
 								particlePosition_prt)].rC());
-				const auto surfaceRadius(
+				const auto& surfaceRadius(
 						meshRef.surfaces()[std::get<positionType::surface>(
 								particlePosition_prt)].rC());
 

@@ -31,7 +31,6 @@ public:
 			const std::vector<boundaryConditionType> & commonConditions_in,
 			const enthalpyFlow & enthalpyFlowFlag_in,
 			const bool & linearFlag_in,
-			const boundaryConditionValue & bncCalc_in,
 			const volumeField<scalar> & minimalLengthScale_in,
 			const timestep & sourceTimeFlag_in,
 			const bool & molMassDiffusionFlag_in,

@@ -47,8 +47,7 @@ schemi::abstractMatrixSolver::~abstractMatrixSolver() noexcept
 {
 }
 
-std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
-		std::unique_ptr<schemi::abstractMatrixSolver>> schemi::abstractMatrixSolver::createMatrixSolver(
+std::array<std::unique_ptr<schemi::abstractMatrixSolver>, 2> schemi::abstractMatrixSolver::createMatrixSolver(
 		const std::string_view name, const std::string_view dim,
 		const std::size_t iter)
 {
@@ -77,48 +76,49 @@ std::pair<std::unique_ptr<schemi::abstractMatrixSolver>,
 	switch (matrixSolverFlag)
 	{
 	case matrixSolver::conjugateGradient:
-		return std::make_pair(
-				std::make_unique<conjugateGradientSovler>(iter,
-						matrixSolverFlag),
-				std::make_unique<conjugateGradientSovler>(iter,
-						matrixSolverFlag));
+		return
+		{	std::make_unique<conjugateGradientSovler>(iter,
+					matrixSolverFlag),
+			std::make_unique<conjugateGradientSovler>(iter,
+					matrixSolverFlag)};
 		break;
 	case matrixSolver::JacobiConjugateGradient:
-		return std::make_pair(
-				std::make_unique<JacobiConjugateGradientSolver>(iter,
-						matrixSolverFlag),
-				std::make_unique<JacobiConjugateGradientSolver>(iter,
-						matrixSolverFlag));
+		return
+		{	std::make_unique<JacobiConjugateGradientSolver>(iter,
+					matrixSolverFlag),
+			std::make_unique<JacobiConjugateGradientSolver>(iter,
+					matrixSolverFlag)};
 		break;
 	case matrixSolver::Thomas:
-		return std::make_pair(std::make_unique<ThomasSolver>(matrixSolverFlag),
-				std::make_unique<GaussSeidelSolver>(iter,
-						matrixSolver::GaussSeidel));
+		return
+		{	std::make_unique<ThomasSolver>(matrixSolverFlag),
+			std::make_unique<GaussSeidelSolver>(iter,
+					matrixSolver::GaussSeidel)};
 		break;
 	case matrixSolver::explicitSolver:
 	case matrixSolver::noSovler:
-		return std::make_pair(
-				std::make_unique<noMatrixSolver>(matrixSolverFlag),
-				std::make_unique<noMatrixSolver>(matrixSolverFlag));
+		return
+		{	std::make_unique<noMatrixSolver>(matrixSolverFlag),
+			std::make_unique<noMatrixSolver>(matrixSolverFlag)};
 		break;
 	case matrixSolver::Jacobi:
-		return std::make_pair(
-				std::make_unique<JacobiSolver>(iter, matrixSolver::Jacobi),
-				std::make_unique<JacobiSolver>(iter, matrixSolver::Jacobi));
+		return
+		{	std::make_unique<JacobiSolver>(iter, matrixSolver::Jacobi),
+			std::make_unique<JacobiSolver>(iter, matrixSolver::Jacobi)};
 		break;
 	case matrixSolver::biConjugateGradient:
-		return std::make_pair(
-				std::make_unique<biConjugateGradientSovler>(iter,
-						matrixSolver::biConjugateGradient),
-				std::make_unique<biConjugateGradientSovler>(iter,
-						matrixSolver::biConjugateGradient));
+		return
+		{	std::make_unique<biConjugateGradientSovler>(iter,
+					matrixSolver::biConjugateGradient),
+			std::make_unique<biConjugateGradientSovler>(iter,
+					matrixSolver::biConjugateGradient)};
 		break;
 	default:
-		return std::make_pair(
-				std::make_unique<GaussSeidelSolver>(iter,
-						matrixSolver::GaussSeidel),
-				std::make_unique<GaussSeidelSolver>(iter,
-						matrixSolver::GaussSeidel));
+		return
+		{	std::make_unique<GaussSeidelSolver>(iter,
+					matrixSolver::GaussSeidel),
+			std::make_unique<GaussSeidelSolver>(iter,
+					matrixSolver::GaussSeidel)};
 		break;
 	}
 }
