@@ -11,14 +11,8 @@
 #include <fstream>
 #include <filesystem>
 
-#include "gasModelEnum.hpp"
 #include "boundaryConditionFromString.hpp"
 #include "intExpPow.hpp"
-#include "mixtureIdeal.hpp"
-#include "mixtureKataokaVanDerWaals.hpp"
-#include "mixtureRedlichKwong.hpp"
-#include "mixtureStiffened.hpp"
-#include "mixtureVanDerWaals.hpp"
 
 std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		schemi::enthalpyFlow, bool> schemi::phaseInitialization(
@@ -183,7 +177,6 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	transportCoefficients<cubicCell> tCoeffsPhase { meshReference };
 
 	bunchOfFields<cubicCell> cellFields { meshReference, numberOfComponents };
-	std::unique_ptr<abstractMixtureThermodynamics> mixture;
 
 	/*Set boundary condition for transport coefficients.*/
 	auto bndConCom = commonConditions;
@@ -448,129 +441,9 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		throw exception("Unknown type of universal gas constant.",
 				errors::initialisationError);
 
-	{
-		std::map<std::string, gasModel> gasModels;
-		gasModels.insert( { "vanDerWaals", gasModel::vanDerWaals });
-		gasModels.insert( { "ideal", gasModel::ideal });
-		gasModels.insert( { "RedlichKwong", gasModel::RedlichKwong });
-		gasModels.insert( { "stiffened", gasModel::stiffened });
-		gasModels.insert( { "Kataoka", gasModel::KataokaVanDerWaals });
-		gasModel gasModelFlag;
-		try
-		{
-			gasModelFlag = gasModels.at(equationOfState);
-		} catch (const std::out_of_range&)
-		{
-			throw exception("Unknown type of equation of state.",
-					errors::initialisationError);
-		}
-
-		switch (gasModelFlag)
-		{
-		case gasModel::vanDerWaals:
-			mixture = std::make_unique<mixtureVanDerWaals>(R, hPlanck,
-					std::get<0>(thermodynamicalProperties),
-					std::get<1>(thermodynamicalProperties),
-					std::get<2>(thermodynamicalProperties),
-					std::get<3>(thermodynamicalProperties));
-			break;
-		case gasModel::RedlichKwong:
-			mixture = std::make_unique<mixtureRedlichKwong>(R, hPlanck,
-					std::get<0>(thermodynamicalProperties),
-					std::get<1>(thermodynamicalProperties),
-					std::get<2>(thermodynamicalProperties),
-					std::get<3>(thermodynamicalProperties));
-			break;
-		case gasModel::stiffened:
-		{
-			const std::string stiffenedCoeffsName {
-					"./set/stiffenedFluidData.txt" };
-
-			std::ifstream fluidConditionsFile { stiffenedCoeffsName };
-
-			if (fluidConditionsFile.is_open())
-				std::cout << stiffenedCoeffsName << " is opened." << std::endl;
-			else
-				[[unlikely]]
-				throw std::ifstream::failure(
-						stiffenedCoeffsName + " not found.");
-
-			std::valarray<scalar> p0Data(numberOfComponents), gammaData(
-					numberOfComponents);
-
-			for (std::size_t k = 0; k < numberOfComponents; ++k)
-			{
-				if (fluidConditionsFile.eof())
-					throw std::ifstream::failure(
-							stiffenedCoeffsName + ". Unexpected end of file.");
-
-				fluidConditionsFile >> skipBuffer >> p0Data[k] >> gammaData[k];
-			}
-
-			mixture = std::make_unique<mixtureStiffened>(R, hPlanck,
-					std::get<0>(thermodynamicalProperties),
-					std::get<1>(thermodynamicalProperties), p0Data, gammaData);
-		}
-			break;
-		case gasModel::KataokaVanDerWaals:
-		{
-			const std::string KataokaCoeffsName {
-					"./set/KataokaVanDerWaalsFluidData.txt" };
-
-			std::ifstream fluidConditionsFile { KataokaCoeffsName };
-
-			if (fluidConditionsFile.is_open())
-				std::cout << KataokaCoeffsName << " is opened." << std::endl;
-			else
-				[[unlikely]]
-				throw std::ifstream::failure(KataokaCoeffsName + " not found.");
-
-			std::valarray<scalar> epsilonLJData(numberOfComponents),
-					sigmaLJData(numberOfComponents);
-
-			for (std::size_t k = 0; k < numberOfComponents; ++k)
-			{
-				if (fluidConditionsFile.eof())
-					throw std::ifstream::failure(
-							KataokaCoeffsName + ". Unexpected end of file.");
-
-				fluidConditionsFile >> skipBuffer >> epsilonLJData[k]
-						>> sigmaLJData[k];
-			}
-
-			std::string bCalcTypeStr;
-			scalar bCoeff;
-
-			fluidConditionsFile >> skipBuffer >> bCalcTypeStr >> bCoeff;
-
-			std::pair<bool, scalar> bCalc;
-
-			if (bCalcTypeStr == "critical")
-				bCalc = { true, bCoeff };
-			else if (bCalcTypeStr == "Kataoka")
-				bCalc = { false, bCoeff };
-			else
-				[[unlikely]]
-				throw exception(
-						"Wrong type of Kataoka-van der Waals b coefficient calculation",
-						errors::initialisationError);
-
-			mixture = std::make_unique<mixtureKataokaVanDerWaals>(R, hPlanck,
-					std::get<0>(thermodynamicalProperties),
-					std::get<1>(thermodynamicalProperties),
-					std::get<2>(thermodynamicalProperties),
-					std::get<3>(thermodynamicalProperties), epsilonLJData,
-					sigmaLJData, bCalc);
-		}
-			break;
-		case gasModel::ideal:
-		default:
-			mixture = std::make_unique<mixtureIdeal>(R, hPlanck,
-					std::get<0>(thermodynamicalProperties),
-					std::get<1>(thermodynamicalProperties));
-			break;
-		}
-	}
+	std::unique_ptr<abstractMixtureThermodynamics> mixture =
+			abstractMixtureThermodynamics::createThermodynamics(equationOfState,
+					R, hPlanck, thermodynamicalProperties, numberOfComponents);
 
 	std::unique_ptr<abstractTransportModel> transportModel(
 			abstractTransportModel::createTransportModel(

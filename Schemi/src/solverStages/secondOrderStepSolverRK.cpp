@@ -28,7 +28,6 @@ schemi::secondOrderStepSolverRK::secondOrderStepSolverRK(
 		scalar & timeForDiffusion_in,
 		const std::vector<boundaryConditionType> & commonConditions_in,
 		const enthalpyFlow & enthalpyFlowFlag_in, const bool & linearFlag_in,
-		const boundaryConditionValue & bncCalc_in,
 		const volumeField<scalar> & minimalLengthScale_in,
 		const timestep & sourceTimeFlag_in,
 		const bool & molMassDiffusionFlag_in,
@@ -40,8 +39,8 @@ schemi::secondOrderStepSolverRK::secondOrderStepSolverRK(
 				timeForTimeIntegration_in, parallelism_in, diffusionFlag_in,
 				msolver_in, msolverEnthFl_in, timestepCoeffs_in,
 				timeForDiffusion_in, commonConditions_in, enthalpyFlowFlag_in,
-				linearFlag_in, bncCalc_in, minimalLengthScale_in,
-				sourceTimeFlag_in, molMassDiffusionFlag_in, chemKin_in,
+				linearFlag_in, minimalLengthScale_in, sourceTimeFlag_in,
+				molMassDiffusionFlag_in, chemKin_in,
 				nonLinearityIteratonsFlag_in)
 {
 }
@@ -89,15 +88,15 @@ void schemi::secondOrderStepSolverRK::calculateStep()
 	{
 		const volumeField<vector> gradRho_c(grad(star.rho));
 		const surfaceField<vector> gradRho_s(
-				surfGrad(gasPhase.density[0], bncCalc));
+				surfGrad(gasPhase.density[0], boundaryConditionValueCalc));
 		const volumeField<vector> gradP(grad(star.p));
 		const volumeField<scalar> divU(divergence(star.v));
 		const volumeField<tensor> gradU(grad(star.v));
 
 		gasPhase.turbulence->particlesTimeIntegration(gradRho_c, gradRho_s,
 				gasPhase.velocity, star.v, g * gravitationFlag,
-				gasPhase.concentration, gasPhase.density, bncCalc,
-				gasPhase.phaseThermodynamics->Mv(),
+				gasPhase.concentration, gasPhase.density,
+				boundaryConditionValueCalc, gasPhase.phaseThermodynamics->Mv(),
 				gasPhase.pressure.meshRef().timestep(), gradP, divU, gradU);
 	}
 

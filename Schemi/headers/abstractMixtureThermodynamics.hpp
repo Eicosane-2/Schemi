@@ -10,8 +10,11 @@
 #ifndef ABSTRACTMIXTURETHERMODYNAMICS_HPP_
 #define ABSTRACTMIXTURETHERMODYNAMICS_HPP_
 
+#include <array>
 #include <valarray>
 #include <vector>
+#include <memory>
+#include <string>
 
 #include "fractionCalculation.hpp"
 #include "scalar.hpp"
@@ -26,6 +29,12 @@ public:
 	abstractMixtureThermodynamics(const scalar Rin, const scalar hPin) noexcept;
 
 	virtual ~abstractMixtureThermodynamics() noexcept override =0;
+
+	static std::unique_ptr<abstractMixtureThermodynamics> createThermodynamics(
+			const std::string & equationOfState, const scalar R,
+			const scalar hPlanck,
+			std::array<std::valarray<scalar>, 4> & thermodynamicalProperties,
+			const std::size_t numberOfComponents);
 
 	/* energy/mole/temperature */
 	virtual scalar Rv() const noexcept =0;

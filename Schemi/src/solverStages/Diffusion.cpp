@@ -961,7 +961,9 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 #endif
 
 		if (deltaEpsMax < convergenceToleranceGlobal * 1E4
-				|| nonLinearIteration > 100 * nonLinearityIteratonsFlag)
+				|| nonLinearIteration
+						> 100
+								* static_cast<std::size_t>(nonLinearityIteratonsFlag))
 			break;
 		else
 		{

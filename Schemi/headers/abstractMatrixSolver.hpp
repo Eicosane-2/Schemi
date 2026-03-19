@@ -35,8 +35,7 @@ protected:
 public:
 	virtual ~abstractMatrixSolver() noexcept =0;
 
-	static std::pair<std::unique_ptr<abstractMatrixSolver>,
-			std::unique_ptr<abstractMatrixSolver>> createMatrixSolver(
+	static std::array<std::unique_ptr<abstractMatrixSolver>, 2> createMatrixSolver(
 			const std::string_view name, const std::string_view dim,
 			const std::size_t iter);
 
