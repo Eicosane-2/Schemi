@@ -145,10 +145,9 @@ void schemi::GoncharovTracerModel::timeIntegration(const scalar density1,
 		const auto C = 2. * g_sum * At * eta2 / A;
 
 		const auto detadt = (eta_1 - eta_2) / timestep_1;
-		const auto timestepAv = 0.5 * (timestep + timestep_1);
 
 		eta = eta_1 + (eta_1 - eta_2) / timestep_1 * timestep
-				- (pow<scalar, 2>(detadt) * B + C) * timestep * timestepAv;
+				- (B * pow<scalar, 2>(detadt) + C) * pow<scalar, 2>(timestep);
 
 		if (eta < eta_0)
 			throw exception("Perturbation amplitude less than initial.",

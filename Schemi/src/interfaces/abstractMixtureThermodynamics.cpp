@@ -20,8 +20,9 @@
 #include "mixtureIdeal.hpp"
 
 schemi::abstractMixtureThermodynamics::abstractMixtureThermodynamics(
-		const scalar Rin, const scalar hPin) noexcept :
-		R(Rin), kB(R / NAvogardro), hPlanck(hPin)
+		const scalar Rin, const scalar hPin,
+		const std::vector<std::string> & substNamesIn) noexcept :
+		R(Rin), kB(R / NAvogardro), hPlanck(hPin), substNames(substNamesIn)
 {
 }
 
@@ -31,8 +32,8 @@ schemi::abstractMixtureThermodynamics::~abstractMixtureThermodynamics() noexcept
 
 std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureThermodynamics::createThermodynamics(
 		const std::string & equationOfState, const scalar R,
-		const scalar hPlanck,
-		std::array<std::valarray<scalar>, 4> & thermodynamicalProperties,
+		const scalar hPlanck, const std::vector<std::string> & substNamesIn,
+		const std::array<std::valarray<scalar>, 4> & thermodynamicalProperties,
 		const std::size_t numberOfComponents)
 {
 	std::map<std::string, gasModel> gasModels;
@@ -56,14 +57,14 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 	switch (gasModelFlag)
 	{
 	case gasModel::vanDerWaals:
-		return std::make_unique<mixtureVanDerWaals>(R, hPlanck,
+		return std::make_unique<mixtureVanDerWaals>(R, hPlanck, substNamesIn,
 				std::get<0>(thermodynamicalProperties),
 				std::get<1>(thermodynamicalProperties),
 				std::get<2>(thermodynamicalProperties),
 				std::get<3>(thermodynamicalProperties));
 		break;
 	case gasModel::RedlichKwong:
-		return std::make_unique<mixtureRedlichKwong>(R, hPlanck,
+		return std::make_unique<mixtureRedlichKwong>(R, hPlanck, substNamesIn,
 				std::get<0>(thermodynamicalProperties),
 				std::get<1>(thermodynamicalProperties),
 				std::get<2>(thermodynamicalProperties),
@@ -93,7 +94,7 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 			fluidConditionsFile >> skipBuffer >> p0Data[k] >> gammaData[k];
 		}
 
-		return std::make_unique<mixtureStiffened>(R, hPlanck,
+		return std::make_unique<mixtureStiffened>(R, hPlanck, substNamesIn,
 				std::get<0>(thermodynamicalProperties),
 				std::get<1>(thermodynamicalProperties), p0Data, gammaData);
 	}
@@ -142,7 +143,7 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 					errors::initialisationError);
 
 		return std::make_unique<mixtureKataokaVanDerWaals>(R, hPlanck,
-				std::get<0>(thermodynamicalProperties),
+				substNamesIn, std::get<0>(thermodynamicalProperties),
 				std::get<1>(thermodynamicalProperties),
 				std::get<2>(thermodynamicalProperties),
 				std::get<3>(thermodynamicalProperties), epsilonLJData,
@@ -151,7 +152,7 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 		break;
 	case gasModel::ideal:
 	default:
-		return std::make_unique<mixtureIdeal>(R, hPlanck,
+		return std::make_unique<mixtureIdeal>(R, hPlanck, substNamesIn,
 				std::get<0>(thermodynamicalProperties),
 				std::get<1>(thermodynamicalProperties));
 		break;

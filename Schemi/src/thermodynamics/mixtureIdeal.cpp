@@ -10,15 +10,17 @@
 #include "globalConstants.hpp"
 
 schemi::mixtureIdeal::mixtureIdeal() noexcept :
-		abstractMixtureThermodynamics(0, 0), M(0), CvArr(0), molecMass(0)
+		abstractMixtureThermodynamics(0, 0, std::vector<std::string>()), M(0), CvArr(
+				0), molecMass(0)
 {
 }
 
 schemi::mixtureIdeal::mixtureIdeal(const scalar Rin, const scalar hPin,
+		const std::vector<std::string> & substNamesIn,
 		const std::valarray<scalar> & Min,
 		const std::valarray<scalar> & Cvin) noexcept :
-		abstractMixtureThermodynamics(Rin, hPin), M(Min), CvArr(Cvin), molecMass(
-				M / NAvogardro)
+		abstractMixtureThermodynamics(Rin, hPin, substNamesIn), M(Min), CvArr(
+				Cvin), molecMass(M / NAvogardro)
 {
 }
 
