@@ -11,29 +11,30 @@
 #include "globalConstants.hpp"
 
 schemi::mixtureKataokaVanDerWaals::mixtureKataokaVanDerWaals() noexcept :
-		abstractMixtureThermodynamics(0, 0), M(0), CvArr(0), molecMass(0), Tcrit(
-				0), Pcrit(0), Vcrit(0), V0Matrix(0), epsMatrix(0), bMatrix(0), V0MatrixMolec(
-				0), epsMatrixMolec(0), bMatrixMolec(0)
+		abstractMixtureThermodynamics(0, 0, std::vector<std::string>()), M(0), CvArr(
+				0), molecMass(0), Tcrit(0), Pcrit(0), Vcrit(0), V0Matrix(0), epsMatrix(
+				0), bMatrix(0), V0MatrixMolec(0), epsMatrixMolec(0), bMatrixMolec(
+				0)
 {
 }
 
 schemi::mixtureKataokaVanDerWaals::mixtureKataokaVanDerWaals(const scalar Rin,
-		const scalar hPin, const std::valarray<scalar> & Min,
-		const std::valarray<scalar> & Cvin,
+		const scalar hPin, const std::vector<std::string> & substNamesIn,
+		const std::valarray<scalar> & Min, const std::valarray<scalar> & Cvin,
 		const std::valarray<scalar> & Tcritin,
 		const std::valarray<scalar> & Pcritin,
 		const std::valarray<scalar> & epsilonLJ, /*J/mole*/
 		const std::valarray<scalar> & sigmaLJ, /*m*/
 		const std::pair<bool, scalar> & bCalcType) noexcept :
-		abstractMixtureThermodynamics(Rin, hPin), M(Min), CvArr(Cvin), molecMass(
-				M / NAvogardro), Tcrit(Tcritin), Pcrit(Pcritin), Vcrit(
-				Min.size()), V0Matrix(std::valarray<scalar>(Min.size()),
-				Min.size()), epsMatrix(std::valarray<scalar>(Min.size()),
-				Min.size()), bMatrix(std::valarray<scalar>(Min.size()),
-				Min.size()), V0MatrixMolec(std::valarray<scalar>(Min.size()),
-				Min.size()), epsMatrixMolec(std::valarray<scalar>(Min.size()),
-				Min.size()), bMatrixMolec(std::valarray<scalar>(Min.size()),
-				Min.size())
+		abstractMixtureThermodynamics(Rin, hPin, substNamesIn), M(Min), CvArr(
+				Cvin), molecMass(M / NAvogardro), Tcrit(Tcritin), Pcrit(
+				Pcritin), Vcrit(Min.size()), V0Matrix(
+				std::valarray<scalar>(Min.size()), Min.size()), epsMatrix(
+				std::valarray<scalar>(Min.size()), Min.size()), bMatrix(
+				std::valarray<scalar>(Min.size()), Min.size()), V0MatrixMolec(
+				std::valarray<scalar>(Min.size()), Min.size()), epsMatrixMolec(
+				std::valarray<scalar>(Min.size()), Min.size()), bMatrixMolec(
+				std::valarray<scalar>(Min.size()), Min.size())
 {
 	const std::size_t numberOfComponents { Min.size() };
 

@@ -10,24 +10,24 @@
 #include "globalConstants.hpp"
 
 schemi::mixtureVanDerWaals::mixtureVanDerWaals() noexcept :
-		abstractMixtureThermodynamics(0, 0), M(0), CvArr(0), molecMass(0), Tcrit(
-				0), Pcrit(0), Vcrit(0), aMatrix(0), bMatrix(0), aMatrixMolec(0), bMatrixMolec(
-				0)
+		abstractMixtureThermodynamics(0, 0, std::vector<std::string>()), M(0), CvArr(
+				0), molecMass(0), Tcrit(0), Pcrit(0), Vcrit(0), aMatrix(0), bMatrix(
+				0), aMatrixMolec(0), bMatrixMolec(0)
 {
 }
 
 schemi::mixtureVanDerWaals::mixtureVanDerWaals(const scalar Rin,
-		const scalar hPin, const std::valarray<scalar> & Min,
-		const std::valarray<scalar> & Cvin,
+		const scalar hPin, const std::vector<std::string> & substNamesIn,
+		const std::valarray<scalar> & Min, const std::valarray<scalar> & Cvin,
 		const std::valarray<scalar> & Tcritin,
 		const std::valarray<scalar> & Pcritin) noexcept :
-		abstractMixtureThermodynamics(Rin, hPin), M(Min), CvArr(Cvin), molecMass(
-				M / NAvogardro), Tcrit(Tcritin), Pcrit(Pcritin), Vcrit(
-				Min.size()), aMatrix(std::valarray<scalar>(Min.size()),
-				Min.size()), bMatrix(std::valarray<scalar>(Min.size()),
-				Min.size()), aMatrixMolec(std::valarray<scalar>(Min.size()),
-				Min.size()), bMatrixMolec(std::valarray<scalar>(Min.size()),
-				Min.size())
+		abstractMixtureThermodynamics(Rin, hPin, substNamesIn), M(Min), CvArr(
+				Cvin), molecMass(M / NAvogardro), Tcrit(Tcritin), Pcrit(
+				Pcritin), Vcrit(Min.size()), aMatrix(
+				std::valarray<scalar>(Min.size()), Min.size()), bMatrix(
+				std::valarray<scalar>(Min.size()), Min.size()), aMatrixMolec(
+				std::valarray<scalar>(Min.size()), Min.size()), bMatrixMolec(
+				std::valarray<scalar>(Min.size()), Min.size())
 {
 	const std::size_t numberOfComponents { Min.size() };
 

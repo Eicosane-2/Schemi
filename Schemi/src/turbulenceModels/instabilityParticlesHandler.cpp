@@ -14,7 +14,8 @@
 schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 		const mesh & meshIn, const MPIHandler & par,
 		const volumeField<vector> & uCell, const surfaceField<vector> & uSurf,
-		const std::pair<std::size_t, std::string> & readDataPoint) :
+		const std::pair<std::size_t, std::string> & readDataPoint,
+		const std::vector<std::string> & subNameList) :
 		meshRef(meshIn), parallelism(par), boundarySurfaces(0), particlePosition(
 				0), cellSurfWeight(0), particlesList(0), particleStatus(0), modelUsed(
 				false)
@@ -152,12 +153,12 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 
 					cellSurfWeight[prt] = { weights_arr[0], weights_arr[1] };
 
-					std::size_t substance1, substance2;
+					std::string substance1Name, substance2Name;
 					int pertType;
 					scalar eta_0, lambda, rad;
 
-					inputFile >> substance1 >> substance2 >> pertType >> eta_0
-							>> lambda >> rad;
+					inputFile >> substance1Name >> substance2Name >> pertType
+							>> eta_0 >> lambda >> rad;
 
 					/*Read turbulent parameters.*/
 					scalar CmuIn, C0In, C2In, C3In, Ca1In, Cb1In;
@@ -191,12 +192,15 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 						turbulentParametersFile.close();
 					}
 
+					const auto [substance1, substance2] = subNameToIndex(
+							subNameList, substance1Name, substance2Name);
+
 					particlesList[prt] = BHRGoncharovTracerModel(
 							typeOfInitialisationCriterion, positionVector_prt,
 							vector(velocity_arr[0], velocity_arr[1],
-									velocity_arr[2]), --substance1,
-							--substance2, pertType, eta_0, lambda, rad, CmuIn,
-							C0In, C2In, C3In, Ca1In, Cb1In);
+									velocity_arr[2]), substance1, substance2,
+							pertType, eta_0, lambda, rad, CmuIn, C0In, C2In,
+							C3In, Ca1In, Cb1In);
 
 					insertCaption(prt);
 				}
@@ -273,14 +277,14 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 
 					cellSurfWeight[prt] = { weights_arr[0], weights_arr[1] };
 
-					std::size_t substance1, substance2;
+					std::string substance1Name, substance2Name;
 					int pertType;
 					scalar eta_0, lambda, rad;
 
 					inputFile >> skipBuffer >> skipBuffer >> skipBuffer;
 
-					inputFile >> substance1 >> substance2 >> pertType >> eta_0
-							>> lambda >> rad;
+					inputFile >> substance1Name >> substance2Name >> pertType
+							>> eta_0 >> lambda >> rad;
 
 					auto readData = dataStream(prt, readDataPoint);
 
@@ -348,10 +352,13 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 						turbulentParametersFile.close();
 					}
 
+					const auto [substance1, substance2] = subNameToIndex(
+							subNameList, substance1Name, substance2Name);
+
 					particlesList[prt] = BHRGoncharovTracerModel(
 							typeOfInitialisationCriterion, positionVector_prt,
-							inPosition1, inVelocity, inStep, --substance1,
-							--substance2, pertType, eta_0, lambda, rad, etaCur,
+							inPosition1, inVelocity, inStep, substance1,
+							substance2, pertType, eta_0, lambda, rad, etaCur,
 							eta1Cur, eta2Cur, rho1Cur, rho2Cur, k0Cur, eps0Cur,
 							b0Cur, a0Cur, timestepOld,
 							interfaceStatus(curStatus), CmuIn, C0In, C2In, C3In,
@@ -434,12 +441,12 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 				const auto velocity_prt = calculateWeightedValue(uCell, uSurf,
 						particlePos_prt, cellSurfWeight[prt]);
 
-				std::size_t substance1, substance2;
+				std::string substance1Name, substance2Name;
 				int pertType;
 				scalar eta_0, lambda, rad;
 
-				inputFile >> substance1 >> substance2 >> pertType >> eta_0
-						>> lambda >> rad;
+				inputFile >> substance1Name >> substance2Name >> pertType
+						>> eta_0 >> lambda >> rad;
 
 				/*Read turbulent parameters.*/
 				scalar CmuIn, C0In, C2In, C3In, Ca1In, Cb1In;
@@ -472,24 +479,26 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					turbulentParametersFile.close();
 				}
 
+				const auto [substance1, substance2] = subNameToIndex(
+						subNameList, substance1Name, substance2Name);
+
 				particlesList[prt] = BHRGoncharovTracerModel(
 						typeOfInitialisationCriterion, positionVector_prt,
-						velocity_prt, --substance1, --substance2, pertType,
-						eta_0, lambda, rad, CmuIn, C0In, C2In, C3In, Ca1In,
-						Cb1In);
+						velocity_prt, substance1, substance2, pertType, eta_0,
+						lambda, rad, CmuIn, C0In, C2In, C3In, Ca1In, Cb1In);
 
 				insertCaption(prt);
 			}
 			else
 			{
-				std::size_t substance1, substance2;
+				std::string substance1Name, substance2Name;
 				int pertType;
 				scalar eta_0, lambda, rad;
 
 				inputFile >> skipBuffer >> skipBuffer >> skipBuffer;
 
-				inputFile >> substance1 >> substance2 >> pertType >> eta_0
-						>> lambda >> rad;
+				inputFile >> substance1Name >> substance2Name >> pertType
+						>> eta_0 >> lambda >> rad;
 
 				auto readData = dataStream(prt, readDataPoint);
 
@@ -575,13 +584,16 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					turbulentParametersFile.close();
 				}
 
+				const auto [substance1, substance2] = subNameToIndex(
+						subNameList, substance1Name, substance2Name);
+
 				particlesList[prt] = BHRGoncharovTracerModel(
 						typeOfInitialisationCriterion, positionVector_prt,
-						inPosition1, inVelocity, inStep, --substance1,
-						--substance2, pertType, eta_0, lambda, rad, etaCur,
-						eta1Cur, eta2Cur, rho1Cur, rho2Cur, k0Cur, eps0Cur,
-						b0Cur, a0Cur, timestepOld, interfaceStatus(curStatus),
-						CmuIn, C0In, C2In, C3In, Ca1In, Cb1In);
+						inPosition1, inVelocity, inStep, substance1, substance2,
+						pertType, eta_0, lambda, rad, etaCur, eta1Cur, eta2Cur,
+						rho1Cur, rho2Cur, k0Cur, eps0Cur, b0Cur, a0Cur,
+						timestepOld, interfaceStatus(curStatus), CmuIn, C0In,
+						C2In, C3In, Ca1In, Cb1In);
 
 				clearLines(prt, readDataPoint);
 			}
@@ -1513,6 +1525,28 @@ schemi::volumeField<schemi::scalar> schemi::instabilityParticlesHandler::formPro
 	return turbProfileFunction;
 }
 
+std::array<std::size_t, 2> schemi::instabilityParticlesHandler::subNameToIndex(
+		const std::vector<std::string> & subNameList,
+		const std::string_view name1, const std::string_view name2) const
+{
+	std::size_t substance1(-1), substance2(-1);
+
+	for (std::size_t k = 0; k < subNameList.size(); ++k)
+	{
+		if (name1 == subNameList[k])
+			substance1 = k;
+		else if (name2 == subNameList[k])
+			substance2 = k;
+	}
+
+	if ((substance1 == std::size_t(-1)) || (substance2 == std::size_t(-1)))
+		throw exception("Could not convert name to index",
+				errors::initialisationError);
+
+	return
+	{	substance1, substance2};
+}
+
 void schemi::instabilityParticlesHandler::timeIntegration(
 		const volumeField<vector> & gradRhoCell,
 		const surfaceField<vector> & gradRhoSurf,
@@ -1971,10 +2005,10 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 				const auto nu = calculateWeightedValue(nuCell, nuSurface,
 						particlePosition_prt, cellSurfWeight_prt);
 
-				const auto& cellRadius(
+				const auto & cellRadius(
 						meshRef.cells()[std::get<positionType::cell>(
 								particlePosition_prt)].rC());
-				const auto& surfaceRadius(
+				const auto & surfaceRadius(
 						meshRef.surfaces()[std::get<positionType::surface>(
 								particlePosition_prt)].rC());
 
@@ -2157,7 +2191,8 @@ schemi::volumeField<schemi::scalar> schemi::instabilityParticlesHandler::generat
 		return generationFlag;
 	}
 
-	constexpr scalar purityParameterExpanded = 1 - (1 - purityParameter) * 0.1;
+	constexpr static scalar purityParameterExpanded = 1
+			- (1 - purityParameter) * 0.1;
 
 #ifdef MPI_VERSION
 	for (std::size_t prt = 0; prt < listSize; ++prt)

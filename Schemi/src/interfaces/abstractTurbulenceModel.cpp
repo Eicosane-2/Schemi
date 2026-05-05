@@ -259,7 +259,8 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 		const std::string & sourceTypeString, const MPIHandler & parIn,
 		const volumeField<vector> & uCellIn,
 		const surfaceField<vector> & uSurfIn,
-		const std::pair<std::size_t, std::string> & readDataPoint)
+		const std::pair<std::size_t, std::string> & readDataPoint,
+		const std::vector<std::string> & names)
 {
 	bool turbulenceFlag;
 	try
@@ -315,7 +316,7 @@ std::unique_ptr<schemi::abstractTurbulenceModel> schemi::abstractTurbulenceModel
 		break;
 	case turbulenceModel::BHRModel:
 		trbl = std::make_unique<BHRModel>(meshIn, parIn, uCellIn, uSurfIn,
-				readDataPoint, turbulenceFlag);
+				readDataPoint, names, turbulenceFlag);
 		break;
 	case turbulenceModel::BHRKLModel:
 		trbl = std::make_unique<BHRKLModel>(meshIn, turbulenceFlag);

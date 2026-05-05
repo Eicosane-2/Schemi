@@ -22,6 +22,7 @@ public:
 	mixtureIdeal() noexcept;
 
 	mixtureIdeal(const scalar Rin, const scalar hPin,
+			const std::vector<std::string> & substNamesIn,
 			const std::valarray<scalar> & Min,
 			const std::valarray<scalar> & Cvin) noexcept;
 

@@ -168,11 +168,6 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 							* meshReference.surfOwnW()[i];
 		}
 	}
-	std::unique_ptr<abstractTurbulenceModel> turbul(
-			abstractTurbulenceModel::createTurbulenceModel(meshReference,
-					turbulenceONString, sourceTypeString, parallelism,
-					temporaryVelocityField, temporaryVelocityFieldSurf,
-					readDataPoint));
 
 	transportCoefficients<cubicCell> tCoeffsPhase { meshReference };
 
@@ -250,6 +245,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		arr.fill(std::vector<subPatchData<scalar>>(0));
 
 	constexpr std::size_t numberOfThermodParameters(7);
+	std::vector<std::string> substancesNames(numberOfComponents);
 	std::vector<std::vector<std::string>> matrixOfSubstancesConditions(
 			numberOfComponents,
 			std::vector<std::string>(
@@ -269,8 +265,8 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			[[unlikely]]
 			throw std::ifstream::failure(substanceName + " not found.");
 
-		substanceConditionsFile >> skipBuffer
-				>> matrixOfSubstancesConditions[k][0] /*M*/
+		substanceConditionsFile >> skipBuffer >> substancesNames[k]
+				>> skipBuffer >> matrixOfSubstancesConditions[k][0] /*M*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][1] /*Cv*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][2] /*Tcrit*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][3] /*Pcrit*/
@@ -443,12 +439,19 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 
 	std::unique_ptr<abstractMixtureThermodynamics> mixture =
 			abstractMixtureThermodynamics::createThermodynamics(equationOfState,
-					R, hPlanck, thermodynamicalProperties, numberOfComponents);
+					R, hPlanck, substancesNames, thermodynamicalProperties,
+					numberOfComponents);
 
 	std::unique_ptr<abstractTransportModel> transportModel(
 			abstractTransportModel::createTransportModel(
 					matrixOfSubstancesConditions, cNu, cD, cKappa,
 					transpModel));
+
+	std::unique_ptr<abstractTurbulenceModel> turbul(
+			abstractTurbulenceModel::createTurbulenceModel(meshReference,
+					turbulenceONString, sourceTypeString, parallelism,
+					temporaryVelocityField, temporaryVelocityFieldSurf,
+					readDataPoint, mixture->getSubstancesNames()));
 
 	phase = std::make_unique<homogeneousPhase<cubicCell>>(cellFields,
 			tCoeffsPhase, mixture, turbul, transportModel);

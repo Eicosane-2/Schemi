@@ -95,11 +95,16 @@ class instabilityParticlesHandler
 			const concentrationsPack<cubicCell> & concentrations,
 			const boundaryConditionValue & bnc) const;
 
+	std::array<std::size_t, 2> subNameToIndex(
+			const std::vector<std::string> & subNameList,
+			const std::string_view name1, const std::string_view name2) const;
+
 public:
 	instabilityParticlesHandler(const mesh & meshIn, const MPIHandler & par,
 			const volumeField<vector> & uCell,
 			const surfaceField<vector> & uSurf,
-			const std::pair<std::size_t, std::string> & readDataPoint);
+			const std::pair<std::size_t, std::string> & readDataPoint,
+			const std::vector<std::string> & subNameList);
 
 	void timeIntegration(const volumeField<vector> & gradRho,
 			const surfaceField<vector> & gradRhoSurf,

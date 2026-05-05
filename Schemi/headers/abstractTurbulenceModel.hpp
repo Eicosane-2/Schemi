@@ -155,7 +155,8 @@ public:
 			const std::string & sourceTypeString, const MPIHandler & parIn,
 			const volumeField<vector> & uCellIn,
 			const surfaceField<vector> & uSurfIn,
-			const std::pair<std::size_t, std::string> & readDataPoint);
+			const std::pair<std::size_t, std::string> & readDataPoint,
+			const std::vector<std::string> & names);
 
 	virtual void particlesTimeIntegration(
 			const volumeField<vector> & gradRhoCell,

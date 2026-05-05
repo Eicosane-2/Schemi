@@ -25,16 +25,23 @@ class abstractMixtureThermodynamics: public fractionCalculation
 {
 protected:
 	const scalar R, kB, hPlanck;
+	const std::vector<std::string> substNames;
 public:
-	abstractMixtureThermodynamics(const scalar Rin, const scalar hPin) noexcept;
+	abstractMixtureThermodynamics(const scalar Rin, const scalar hPin,
+			const std::vector<std::string> & substNamesIn) noexcept;
 
 	virtual ~abstractMixtureThermodynamics() noexcept override =0;
 
 	static std::unique_ptr<abstractMixtureThermodynamics> createThermodynamics(
 			const std::string & equationOfState, const scalar R,
-			const scalar hPlanck,
-			std::array<std::valarray<scalar>, 4> & thermodynamicalProperties,
+			const scalar hPlanck, const std::vector<std::string> & substNames,
+			const std::array<std::valarray<scalar>, 4> & thermodynamicalProperties,
 			const std::size_t numberOfComponents);
+
+	const std::vector<std::string>& getSubstancesNames() const noexcept
+	{
+		return substNames;
+	}
 
 	/* energy/mole/temperature */
 	virtual scalar Rv() const noexcept =0;
