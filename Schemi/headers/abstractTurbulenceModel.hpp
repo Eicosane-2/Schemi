@@ -174,9 +174,11 @@ public:
 			const std::string & fieldDataDirectoryName,
 			const scalar Time) const;
 
-	virtual void checkTransitionToTurbulenceModel(
+	virtual void checkTransitionToTurbulenceModel(const vector & g,
 			const volumeField<scalar> & nuCell,
-			const surfaceField<scalar> & nuSurface, volumeField<scalar> & k,
+			const surfaceField<scalar> & nuSurface,
+			const volumeField<vector> & gradRhoCell,
+			const surfaceField<vector> & gradRhoSurf, volumeField<scalar> & k,
 			volumeField<scalar> & epsilon, volumeField<vector> & a,
 			volumeField<scalar> & b,
 			const concentrationsPack<cubicCell> & concentrations,

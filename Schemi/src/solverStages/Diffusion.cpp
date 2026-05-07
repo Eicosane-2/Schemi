@@ -28,7 +28,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		const volumeField<scalar> & minimalLengthScale,
 		[[maybe_unused]] const MPIHandler & parallelism,
 		const timestep sourceTimeFlag, const bool molMassDiffusionFlag,
-		const bool nonLinearityIteratonsFlag)
+		const bool nonLinearityIteratonsFlag, const vector & g)
 {
 	constexpr bool distributionOn { true };
 
@@ -264,9 +264,10 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		if (gasPhase.turbulence->turbulence())
 		{
 			if (!isNotFirstIter)
-				gasPhase.turbulence->checkTransitionToTurbulenceModel(
+				gasPhase.turbulence->checkTransitionToTurbulenceModel(g,
 						gasPhase.physMu / gasPhase.density[0],
-						effectiveCoeffs.physMu / surfaceRho, diffFieldsOld.k,
+						effectiveCoeffs.physMu / surfaceRho, gradRho,
+						surfGrad(gasPhase.density[0], bncCalc), diffFieldsOld.k,
 						diffFieldsOld.eps, diffFieldsOld.a, diffFieldsOld.b,
 						gasPhase.concentration, bncCalc, timestep);
 

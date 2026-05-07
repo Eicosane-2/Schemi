@@ -106,7 +106,8 @@ void schemi::BHRGoncharovTracerModel::timeIntegration(const scalar density1,
 
 schemi::interfaceStatus schemi::BHRGoncharovTracerModel::checkTransition(
 		const scalar nu, const scalar timestep, const vector & cellRadius,
-		const vector & surfaceRadius) noexcept
+		const vector & surfaceRadius, const vector & g,
+		const vector & gradRho) noexcept
 {
 	auto currentstatus = getStatus();
 
@@ -114,7 +115,7 @@ schemi::interfaceStatus schemi::BHRGoncharovTracerModel::checkTransition(
 	{
 	case interfaceStatus::notDeveloped:
 		currentstatus = GoncharovTracerModel::checkTransition(nu, timestep,
-				cellRadius, surfaceRadius);
+				cellRadius, surfaceRadius, g, gradRho);
 		break;
 	case interfaceStatus::developedNotResolvable:
 	{
