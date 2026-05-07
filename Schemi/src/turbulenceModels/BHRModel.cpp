@@ -315,14 +315,17 @@ void schemi::BHRModel::particlesWriteOutput(
 	initialisation.writeOutput(fieldDataDirectoryName, Time);
 }
 
-void schemi::BHRModel::checkTransitionToTurbulenceModel(
+void schemi::BHRModel::checkTransitionToTurbulenceModel(const vector & g,
 		const volumeField<scalar> & nuCell,
-		const surfaceField<scalar> & nuSurface, volumeField<scalar> & k,
+		const surfaceField<scalar> & nuSurface,
+		const volumeField<vector> & gradRhoCell,
+		const surfaceField<vector> & gradRhoSurf, volumeField<scalar> & k,
 		volumeField<scalar> & epsilon, volumeField<vector> & a,
 		volumeField<scalar> & b,
 		const concentrationsPack<cubicCell> & concentrations,
 		const boundaryConditionValue & boundVal, const scalar timestep) noexcept
 {
-	initialisation.checkTransitionToTurbulenceModel(nuCell, nuSurface, k,
-			epsilon, a, b, concentrations, boundVal, timestep);
+	initialisation.checkTransitionToTurbulenceModel(g, nuCell, nuSurface,
+			gradRhoCell, gradRhoSurf, k, epsilon, a, b, concentrations,
+			boundVal, timestep);
 }

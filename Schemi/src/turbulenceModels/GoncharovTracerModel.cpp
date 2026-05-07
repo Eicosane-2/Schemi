@@ -159,7 +159,8 @@ void schemi::GoncharovTracerModel::timeIntegration(const scalar density1,
 
 schemi::interfaceStatus schemi::GoncharovTracerModel::checkTransition(
 		const scalar nu, const scalar timestep, const vector & cellRadius,
-		const vector & surfaceRadius) noexcept
+		const vector & surfaceRadius, const vector & g,
+		const vector & gradRho) noexcept
 {
 	if (status != interfaceStatus::notDeveloped)
 		return status;
@@ -187,9 +188,25 @@ schemi::interfaceStatus schemi::GoncharovTracerModel::checkTransition(
 	{
 		const auto denWeighted = rho1 * rho2 / pow<scalar, 2>(rho1 + rho2);
 		const auto deltaDen = pow<scalar, 2>(rho2 - rho1) / (rho1 * rho2);
+		const auto Atwood = std::abs(rho2 - rho1) / (rho1 + rho2);
+		const auto & v_cur = std::get<0>(getVelocities());
+		const auto & v_prev = std::get<1>(getVelocities());
+		const auto normale = gradRho / -gradRho.mag();
+		const auto a_v = (v_cur - v_prev) / timestep;
+		const auto a_sum = std::abs((g + a_v) & normale);
+		const scalar bubbleVelocity_RT = [this, &a_sum, &Atwood]
+		{
+			if (c == 1)
+				return std::sqrt(2 * a_sum * Atwood / ((1 + Atwood) * k)); // 3D
+			else if (c == 2)
+				return std::sqrt(2 * a_sum * Atwood / ((1 + Atwood) * 3 * k)); // 2D
+			else
+				return 0.;
+		}();
 
 		k0 = Ck * 1.5 * denWeighted
-				* pow<scalar, 2>(std::get<0>(getVelocities()).mag());
+				* pow<scalar, 2>(
+						std::get<0>(getVelocities()).mag() + bubbleVelocity_RT);
 
 		const auto s0 = 2 * Ceps * eta;
 		eps0 = pow<scalar, 3>(std::sqrt(k0)) / s0;

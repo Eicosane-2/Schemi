@@ -147,7 +147,8 @@ public:
 
 	virtual interfaceStatus checkTransition(const scalar nu,
 			const scalar timestep, const vector & cellRadius,
-			const vector & surfaceRadius) noexcept;
+			const vector & surfaceRadius, const vector & g,
+			const vector & gradRho) noexcept;
 };
 }  // namespace schemi
 

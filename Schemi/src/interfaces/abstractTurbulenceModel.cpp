@@ -345,12 +345,12 @@ void schemi::abstractTurbulenceModel::particlesWriteOutput(const std::string&,
 }
 
 void schemi::abstractTurbulenceModel::checkTransitionToTurbulenceModel(
-		const volumeField<scalar>&, const surfaceField<scalar>&,
+		const vector&, const volumeField<scalar>&, const surfaceField<scalar>&,
+		const volumeField<vector>&, const surfaceField<vector>&,
 		volumeField<scalar>&, volumeField<scalar>&, volumeField<vector>&,
 		volumeField<scalar>&, const concentrationsPack<cubicCell>&,
 		const boundaryConditionValue&, const scalar) noexcept
 {
-
 }
 
 schemi::abstractTurbulenceModel::~abstractTurbulenceModel() noexcept

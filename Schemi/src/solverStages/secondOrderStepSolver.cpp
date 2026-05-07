@@ -79,7 +79,7 @@ void schemi::secondOrderStepSolver::calculateStep()
 				timeForDiffusion, commonConditions, star, enthalpyFlowFlag,
 				linearFlag, boundaryConditionValueCalc, minimalLengthScale,
 				parallelism, sourceTimeFlag, molMassDiffusionFlag,
-				nonLinearityIteratonsFlag);
+				nonLinearityIteratonsFlag, g);
 
 		parallelism.correctBoundaryValues(gasPhase);
 	}

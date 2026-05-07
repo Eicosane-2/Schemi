@@ -1936,8 +1936,10 @@ void schemi::instabilityParticlesHandler::writeOutput(
 }
 
 void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
-		const volumeField<scalar> & nuCell,
-		const surfaceField<scalar> & nuSurface, volumeField<scalar> & k,
+		const vector & g, const volumeField<scalar> & nuCell,
+		const surfaceField<scalar> & nuSurface,
+		const volumeField<vector> & gradRhoCell,
+		const surfaceField<vector> & gradRhoSurf, volumeField<scalar> & k,
 		volumeField<scalar> & epsilon, volumeField<vector> & a,
 		volumeField<scalar> & b,
 		const concentrationsPack<cubicCell> & concentrations,
@@ -1966,7 +1968,7 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 			{
 				partLoc_arr.resize(2);
 				weights_arr.resize(2);
-				nodeData.resize(7);
+				nodeData.resize(10);
 			}
 
 			if (parallelism.isRoot())
@@ -2005,6 +2007,9 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 				const auto nu = calculateWeightedValue(nuCell, nuSurface,
 						particlePosition_prt, cellSurfWeight_prt);
 
+				const auto gradRho = calculateWeightedValue(gradRhoCell,
+						gradRhoSurf, particlePosition_prt, cellSurfWeight_prt);
+
 				const auto & cellRadius(
 						meshRef.cells()[std::get<positionType::cell>(
 								particlePosition_prt)].rC());
@@ -2017,9 +2022,10 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 				{
 					nodeData[i + 1] = cellRadius()[i];
 					nodeData[i + 4] = surfaceRadius()[i];
+					nodeData[i + 7] = gradRho()[i];
 				}
 
-				MPI_Send(nodeData.data(), 7, schemi_MPI_SCALAR,
+				MPI_Send(nodeData.data(), 10, schemi_MPI_SCALAR,
 						parallelism.root,
 						static_cast<int>(MPIHandler::MPITags::GoncharovViscosityAndRadiuses),
 						MPI_COMM_WORLD);
@@ -2027,7 +2033,7 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 
 			if (parallelism.isRoot())
 			{
-				MPI_Recv(nodeData.data(), 7, schemi_MPI_SCALAR,
+				MPI_Recv(nodeData.data(), 10, schemi_MPI_SCALAR,
 						static_cast<int>(std::get<0>(nodeParticleLocated)),
 						static_cast<int>(MPIHandler::MPITags::GoncharovViscosityAndRadiuses),
 						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
@@ -2037,12 +2043,13 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 						nodeData[3] };
 				const vector surfaceRadius = { nodeData[4], nodeData[5],
 						nodeData[6] };
+				const vector gradRho = { nodeData[7], nodeData[8], nodeData[9] };
 
 				if (particleStatus[prt] == initialisationStatus::notInitialised)
 				{
 					const auto particleTransitionStatus =
 							particlesList[prt].checkTransition(nu, timestep,
-									cellRadius, surfaceRadius);
+									cellRadius, surfaceRadius, g, gradRho);
 
 					if (particleTransitionStatus
 							== interfaceStatus::developedResolvable)
@@ -2132,6 +2139,9 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 			const auto nu = calculateWeightedValue(nuCell, nuSurface,
 					particlePosition[prt], cellSurfWeight[prt]);
 
+			const auto gradRho = calculateWeightedValue(gradRhoCell,
+					gradRhoSurf, particlePosition[prt], cellSurfWeight[prt]);
+
 			const auto & cellRadius(
 					meshRef.cells()[std::get<positionType::cell>(
 							particlePosition[prt])].rC());
@@ -2143,7 +2153,7 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 			{
 				const auto particleTransitionStatus =
 						particlesList[prt].checkTransition(nu, timestep,
-								cellRadius, surfaceRadius);
+								cellRadius, surfaceRadius, g, gradRho);
 
 				if (particleTransitionStatus
 						== interfaceStatus::developedResolvable)
