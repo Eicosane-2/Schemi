@@ -9,20 +9,23 @@
 
 #include "intExpPow.hpp"
 
-schemi::BHRGoncharovTracerModel::BHRGoncharovTracerModel(
+schemi::BHRGoncharovTracerModel::BHRGoncharovTracerModel(const scalar CkIn,
+		const scalar CepsIn, const scalar CbIn,
 		const std::string & initCheckMethod, const vector & inPos,
 		const vector & inVelocity, const std::size_t sub1,
 		const std::size_t sub2, const int pertType, const scalar eta0In,
 		const scalar lambdaIn, const scalar radiusOfIfluenceIn,
 		const scalar CmuIn, const scalar C0In, const scalar C2In,
 		const scalar C3In, const scalar Ca1In, const scalar Cb1In) :
-		GoncharovTracerModel(initCheckMethod, inPos, inVelocity, sub1, sub2,
-				pertType, eta0In, lambdaIn, radiusOfIfluenceIn), Cmu(CmuIn), C0(
-				C0In), C2(C2In), C3(C3In), Ca1(Ca1In), Cb1(Cb1In)
+		GoncharovTracerModel(CkIn, CepsIn, CbIn, initCheckMethod, inPos,
+				inVelocity, sub1, sub2, pertType, eta0In, lambdaIn,
+				radiusOfIfluenceIn), Cmu(CmuIn), C0(C0In), C2(C2In), C3(C3In), Ca1(
+				Ca1In), Cb1(Cb1In)
 {
 }
 
-schemi::BHRGoncharovTracerModel::BHRGoncharovTracerModel(
+schemi::BHRGoncharovTracerModel::BHRGoncharovTracerModel(const scalar CkIn,
+		const scalar CepsIn, const scalar CbIn,
 		const std::string & initCheckMethod, const vector & inPos,
 		const vector & inPos1, const std::array<vector, 4> & inVelocity,
 		const std::size_t inStep, const std::size_t sub1,
@@ -34,11 +37,11 @@ schemi::BHRGoncharovTracerModel::BHRGoncharovTracerModel(
 		const scalar timestepOld, const interfaceStatus curStatus,
 		const scalar CmuIn, const scalar C0In, const scalar C2In,
 		const scalar C3In, const scalar Ca1In, const scalar Cb1In) noexcept :
-		GoncharovTracerModel(initCheckMethod, inPos, inPos1, inVelocity, inStep,
-				sub1, sub2, pertType, eta0In, lambdaIn, radiusOfIfluenceIn,
-				etaCur, eta1Cur, eta2Cur, rho1Cur, rho2Cur, k0Cur, eps0Cur,
-				b0Cur, a0Cur, timestepOld, curStatus), Cmu(CmuIn), C0(C0In), C2(
-				C2In), C3(C3In), Ca1(Ca1In), Cb1(Cb1In)
+		GoncharovTracerModel(CkIn, CepsIn, CbIn, initCheckMethod, inPos, inPos1,
+				inVelocity, inStep, sub1, sub2, pertType, eta0In, lambdaIn,
+				radiusOfIfluenceIn, etaCur, eta1Cur, eta2Cur, rho1Cur, rho2Cur,
+				k0Cur, eps0Cur, b0Cur, a0Cur, timestepOld, curStatus), Cmu(
+				CmuIn), C0(C0In), C2(C2In), C3(C3In), Ca1(Ca1In), Cb1(Cb1In)
 {
 }
 
@@ -60,7 +63,7 @@ void schemi::BHRGoncharovTracerModel::timeIntegration(const scalar density1,
 
 		const auto kOld = getk0();
 		const auto epsOld = geteps0();
-		const auto aOld = geta0();
+		const auto & aOld = geta0();
 		const auto bOld = getb0();
 		const auto etaOld = getEta();
 

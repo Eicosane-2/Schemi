@@ -25,7 +25,7 @@ class GoncharovTracerModel: public tracerParticle
 	constexpr static scalar ReCriterion { 300 };
 	constexpr static scalar relativeCriterion { 5.0 / 3.0 };
 
-	constexpr static scalar Ck { 0.35 }, Ceps { 1.05 }, Cb { 1 };
+	scalar Ck { 0.35 }, Ceps { 1.05 * 4 }, Cb { 1 }; // TODO Test coefficients.
 
 	/*Initial conditions*/
 	std::array<std::size_t, 2> s12 { componentPlaceholder, componentPlaceholder };
@@ -79,12 +79,14 @@ protected:
 public:
 	constexpr static scalar C01 { 4 }, C02 { 0.5 };
 	GoncharovTracerModel() noexcept = default;
-	GoncharovTracerModel(const std::string & initCheckMethod,
+	GoncharovTracerModel(const scalar CkIn, const scalar CepsIn,
+			const scalar CbIn, const std::string & initCheckMethod,
 			const vector & inPos, const vector & inVelocity,
 			const std::size_t sub1, const std::size_t sub2, const int pertType,
 			const scalar eta0In, const scalar lambdaIn,
 			const scalar radiusOfIfluenceIn);
-	GoncharovTracerModel(const std::string & initCheckMethod,
+	GoncharovTracerModel(const scalar CkIn, const scalar CepsIn,
+			const scalar CbIn, const std::string & initCheckMethod,
 			const vector & inPos, const vector & inPos1,
 			const std::array<vector, 4> & inVelocity, const std::size_t inStep,
 			const std::size_t sub1, const std::size_t sub2, const int pertType,

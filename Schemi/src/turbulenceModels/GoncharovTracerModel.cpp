@@ -39,14 +39,16 @@ void schemi::GoncharovTracerModel::initialiseTransitionCheck(
 				errors::initialisationError);
 }
 
-schemi::GoncharovTracerModel::GoncharovTracerModel(
+schemi::GoncharovTracerModel::GoncharovTracerModel(const scalar CkIn,
+		const scalar CepsIn, const scalar CbIn,
 		const std::string & initCheckMethod, const vector & inPos,
 		const vector & inVelocity, const std::size_t sub1,
 		const std::size_t sub2, const int pertType, const scalar eta0In,
 		const scalar lambdaIn, const scalar radiusOfIfluenceIn) :
-		tracerParticle(inPos, inVelocity), s12 { sub1, sub2 }, c(pertType), eta_0(
-				eta0In), lambda(lambdaIn), k(2 * Pi_number / lambda), radiusOfIfluence(
-				radiusOfIfluenceIn), eta(eta_0), eta_1(eta_0), eta_2(eta_0)
+		tracerParticle(inPos, inVelocity), Ck(CkIn), Ceps(CepsIn), Cb(CbIn), s12 {
+				sub1, sub2 }, c(pertType), eta_0(eta0In), lambda(lambdaIn), k(
+				2 * Pi_number / lambda), radiusOfIfluence(radiusOfIfluenceIn), eta(
+				eta_0), eta_1(eta_0), eta_2(eta_0)
 {
 	std::ifstream mainParametersFile { "./set/main.txt" };
 	if (mainParametersFile.is_open())
@@ -67,7 +69,8 @@ schemi::GoncharovTracerModel::GoncharovTracerModel(
 	initialiseTransitionCheck(initCheckMethod);
 }
 
-schemi::GoncharovTracerModel::GoncharovTracerModel(
+schemi::GoncharovTracerModel::GoncharovTracerModel(const scalar CkIn,
+		const scalar CepsIn, const scalar CbIn,
 		const std::string & initCheckMethod, const vector & inPos,
 		const vector & inPos1, const std::array<vector, 4> & inVelocity,
 		const std::size_t inStep, const std::size_t sub1,
@@ -77,12 +80,13 @@ schemi::GoncharovTracerModel::GoncharovTracerModel(
 		const scalar rho1Cur, const scalar rho2Cur, const scalar k0Cur,
 		const scalar eps0Cur, const scalar b0Cur, const vector & a0Cur,
 		const scalar timeStepOld, const interfaceStatus curStatus) noexcept :
-		tracerParticle(inPos, inPos1, inVelocity, inStep), s12 { sub1, sub2 }, c(
-				pertType), eta_0(eta0In), lambda(lambdaIn), k(
-				2 * Pi_number / lambda), radiusOfIfluence(radiusOfIfluenceIn), eta(
-				etaCur), eta_1(eta1Cur), eta_2(eta2Cur), rho1(rho1Cur), rho2(
-				rho2Cur), k0(k0Cur), eps0(eps0Cur), b0(b0Cur), a0(a0Cur), timestep_1(
-				timeStepOld), status(curStatus)
+		tracerParticle(inPos, inPos1, inVelocity, inStep), Ck(CkIn), Ceps(
+				CepsIn), Cb(CbIn), s12 { sub1, sub2 }, c(pertType), eta_0(
+				eta0In), lambda(lambdaIn), k(2 * Pi_number / lambda), radiusOfIfluence(
+				radiusOfIfluenceIn), eta(etaCur), eta_1(eta1Cur), eta_2(
+				eta2Cur), rho1(rho1Cur), rho2(rho2Cur), k0(k0Cur), eps0(
+				eps0Cur), b0(b0Cur), a0(a0Cur), timestep_1(timeStepOld), status(
+				curStatus)
 {
 	initialiseTransitionCheck(initCheckMethod);
 }
@@ -96,8 +100,8 @@ void schemi::GoncharovTracerModel::writeOutput(std::ofstream & output) const
 	output << k0 << '\t' << eps0 << '\t' << b0 << '\n';
 	output << std::get<0>(a0()) << '\t' << std::get<1>(a0()) << '\t'
 			<< std::get<2>(a0()) << '\n';
-	output << timestep_1;
-	output << static_cast<int>(status) << '\n';
+	output << timestep_1 << '\n';
+	output << static_cast<int>(status);
 }
 
 void schemi::GoncharovTracerModel::timeIntegration(const scalar density1,

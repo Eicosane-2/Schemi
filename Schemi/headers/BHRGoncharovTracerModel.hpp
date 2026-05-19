@@ -18,14 +18,16 @@ class BHRGoncharovTracerModel: public GoncharovTracerModel
 	constexpr static scalar Ceta { 1.75 };
 public:
 	BHRGoncharovTracerModel() noexcept = default;
-	BHRGoncharovTracerModel(const std::string & initCheckMethod,
+	BHRGoncharovTracerModel(const scalar CkIn, const scalar CepsIn,
+			const scalar CbIn, const std::string & initCheckMethod,
 			const vector & inPos, const vector & inVelocity,
 			const std::size_t sub1, const std::size_t sub2, const int pertType,
 			const scalar eta0In, const scalar lambdaIn,
 			const scalar radiusOfIfluenceIn, const scalar CmuIn,
 			const scalar C0In, const scalar C2In, const scalar C3In,
 			const scalar Ca1In, const scalar Cb1In);
-	BHRGoncharovTracerModel(const std::string & initCheckMethod,
+	BHRGoncharovTracerModel(const scalar CkIn, const scalar CepsIn,
+			const scalar CbIn, const std::string & initCheckMethod,
 			const vector & inPos, const vector & inPos1,
 			const std::array<vector, 4> & inVelocity, const std::size_t inStep,
 			const std::size_t sub1, const std::size_t sub2, const int pertType,
