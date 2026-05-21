@@ -154,8 +154,9 @@ std::tuple<
 		const volumeField<vector> & divDevPhysVisc,
 		const volumeField<vector> & gradP, const volumeField<vector> & gradRho,
 		const volumeField<tensor> & grada, const volumeField<scalar> & diva,
-		const volumeField<vector> & gradb, const volumeField<tensor> & spherR,
-		const volumeField<tensor> & devR, const volumeField<vector>&,
+		[[maybe_unused]]const volumeField<vector> & gradb,
+		const volumeField<tensor> & spherR, const volumeField<tensor> & devR,
+		const volumeField<vector>&,
 		const abstractMixtureThermodynamics & mixture,
 		const volumeField<scalar>&,
 		const boundaryConditionValue & bnc) const noexcept
@@ -251,11 +252,11 @@ std::tuple<
 				cellFields.rhoaTurb.cval()[i]
 						& (grada.cval()[i] - gradV.cval()[i]));
 
-		const vector redistribution_a(
-				cellFields.density[0].cval()[i] * div_aa.cval()[i]);
+		//const vector redistribution_a(
+		//		cellFields.density[0].cval()[i] * div_aa.cval()[i]);
 
-		Sourcea.first.val()[i] = bGradP + tauGradRho + rhoAgradV
-				+ redistribution_a;
+		Sourcea.first.val()[i] = bGradP + tauGradRho + rhoAgradV;
+		//+ redistribution_a;
 		Sourcea.second.val()[i] = -cellFields.density[0].cval()[i] * ek * Ca();
 
 		const scalar rhobDiva(-cellFields.rhobTurb.cval()[i] * diva.cval()[i]);
@@ -264,10 +265,10 @@ std::tuple<
 				-(diffFieldsOld.b.cval()[i] + 2.)
 						* (diffFieldsOld.a.cval()[i] & gradRho.cval()[i]));
 
-		const scalar redistribution_b(
-				cellFields.rhoaTurb.cval()[i] & gradb.cval()[i]);
+		//const scalar redistribution_b(
+		//		cellFields.rhoaTurb.cval()[i] & gradb.cval()[i]);
 
-		Sourceb.first.val()[i] = redistribution_b + rhobDiva + baGradRho;
+		Sourceb.first.val()[i] = rhobDiva + baGradRho; //+ redistribution_b;
 		Sourceb.second.val()[i] = -cellFields.density[0].cval()[i] * ek
 				* (Cb1() + diffFieldsOld.b.cval()[i] * Cb2());
 

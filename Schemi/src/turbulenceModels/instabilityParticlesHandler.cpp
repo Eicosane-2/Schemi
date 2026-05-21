@@ -70,11 +70,13 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 			if ((readDataPoint.second == "no")
 					|| (readDataPoint.second == "initialisation"))
 			{
+				scalar Ck, Ceps, Cb;
 				vector positionVector_prt;
 				std::array<std::size_t, 1> nodeParticleLocated { 0 };
 
 				if (parallelism.isRoot())
 				{
+					inputFile >> Ck >> Ceps >> Cb;
 					inputFile >> std::get<0>(positionVector_prt.wr())
 							>> std::get<1>(positionVector_prt.wr())
 							>> std::get<2>(positionVector_prt.wr());
@@ -195,7 +197,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					const auto [substance1, substance2] = subNameToIndex(
 							subNameList, substance1Name, substance2Name);
 
-					particlesList[prt] = BHRGoncharovTracerModel(
+					particlesList[prt] = BHRGoncharovTracerModel(Ck, Ceps, Cb,
 							typeOfInitialisationCriterion, positionVector_prt,
 							vector(velocity_arr[0], velocity_arr[1],
 									velocity_arr[2]), substance1, substance2,
@@ -207,11 +209,14 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 			}
 			else
 			{
+				scalar Ck, Ceps, Cb;
 				vector positionVector_prt;
 				std::array<std::size_t, 1> nodeParticleLocated { 0 };
 
 				if (parallelism.isRoot())
 				{
+					inputFile >> Ck >> Ceps >> Cb;
+
 					auto readData = dataStream(prt, readDataPoint);
 
 					std::string vectorData1, vectorData2, vectorData3;
@@ -355,7 +360,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					const auto [substance1, substance2] = subNameToIndex(
 							subNameList, substance1Name, substance2Name);
 
-					particlesList[prt] = BHRGoncharovTracerModel(
+					particlesList[prt] = BHRGoncharovTracerModel(Ck, Ceps, Cb,
 							typeOfInitialisationCriterion, positionVector_prt,
 							inPosition1, inVelocity, inStep, substance1,
 							substance2, pertType, eta_0, lambda, rad, etaCur,
@@ -415,7 +420,10 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 			if ((readDataPoint.second == "no")
 					|| (readDataPoint.second == "initialisation"))
 			{
+				scalar Ck, Ceps, Cb;
 				vector positionVector_prt;
+
+				inputFile >> Ck >> Ceps >> Cb;
 
 				inputFile >> std::get<0>(positionVector_prt.wr())
 						>> std::get<1>(positionVector_prt.wr())
@@ -482,7 +490,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 				const auto [substance1, substance2] = subNameToIndex(
 						subNameList, substance1Name, substance2Name);
 
-				particlesList[prt] = BHRGoncharovTracerModel(
+				particlesList[prt] = BHRGoncharovTracerModel(Ck, Ceps, Cb,
 						typeOfInitialisationCriterion, positionVector_prt,
 						velocity_prt, substance1, substance2, pertType, eta_0,
 						lambda, rad, CmuIn, C0In, C2In, C3In, Ca1In, Cb1In);
@@ -494,6 +502,10 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 				std::string substance1Name, substance2Name;
 				int pertType;
 				scalar eta_0, lambda, rad;
+
+				scalar Ck, Ceps, Cb;
+
+				inputFile >> Ck >> Ceps >> Cb;
 
 				inputFile >> skipBuffer >> skipBuffer >> skipBuffer;
 
@@ -587,7 +599,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 				const auto [substance1, substance2] = subNameToIndex(
 						subNameList, substance1Name, substance2Name);
 
-				particlesList[prt] = BHRGoncharovTracerModel(
+				particlesList[prt] = BHRGoncharovTracerModel(Ck, Ceps, Cb,
 						typeOfInitialisationCriterion, positionVector_prt,
 						inPosition1, inVelocity, inStep, substance1, substance2,
 						pertType, eta_0, lambda, rad, etaCur, eta1Cur, eta2Cur,
