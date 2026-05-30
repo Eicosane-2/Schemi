@@ -72,9 +72,9 @@ class instabilityParticlesHandler
 
 	void insertCaption(const std::size_t particleIndex) const;
 	void clearLines(const std::size_t particleIndex,
-			const std::pair<std::size_t, std::string> & readDataPoint) const;
+			const std::pair<int, std::string> & readDataPoint) const;
 	std::ifstream dataStream(const std::size_t particleIndex,
-			const std::pair<std::size_t, std::string> & readDataPoint) const;
+			const std::pair<int, std::string> & readDataPoint) const;
 
 	void locateParticleNode(const std::size_t particleIndex,
 			vector & positionVector,
@@ -103,7 +103,7 @@ public:
 	instabilityParticlesHandler(const mesh & meshIn, const MPIHandler & par,
 			const volumeField<vector> & uCell,
 			const surfaceField<vector> & uSurf,
-			const std::pair<std::size_t, std::string> & readDataPoint,
+			const std::pair<int, std::string> & readDataPoint,
 			const std::vector<std::string> & subNameList);
 
 	void timeIntegration(const volumeField<vector> & gradRho,

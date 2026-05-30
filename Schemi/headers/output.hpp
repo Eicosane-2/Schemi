@@ -21,7 +21,8 @@ namespace schemi
 namespace output
 {
 void dataOutput(const structForOutput & outputData, const std::size_t nOutput,
-		const scalar Time, const abstractTurbulenceModel & turb);
+		const scalar Time, const std::size_t nSteps,
+		const abstractTurbulenceModel & turb);
 
 void mixedZoneWidth1D(const structForOutput & outputData, const scalar Time);
 }  // namespace output

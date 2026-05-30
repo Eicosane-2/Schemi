@@ -309,10 +309,10 @@ int main()
 					errors::initialisationError);
 		}
 
-		std::pair<std::size_t, std::string> readDataPoint;
+		std::pair<int, std::string> readDataPoint;
 		if ((readFromOutput == "no") || (readFromOutput == "initialisation"))
 		{
-			readDataPoint = { 0, readFromOutput };
+			readDataPoint = { -1, readFromOutput };
 
 			if (parallelism.isRoot())
 			{
@@ -341,7 +341,11 @@ int main()
 		}
 		else
 		{
-			readDataPoint = { std::stoul(readFromOutput), std::string(
+			if (std::stoi(readFromOutput) < 0)
+				throw exception("Negative time point index.",
+						errors::initialisationError);
+
+			readDataPoint = { std::stoi(readFromOutput), std::string(
 					"fromTimePoint") };
 
 			if (parallelism.isRoot())
@@ -359,53 +363,60 @@ int main()
 							std::string("Couldn't open Time.tsv"));
 				timeFile.precision(ioPrecision);
 
-				std::string timeString;
-				std::size_t lineNumber { 0 };
-				std::size_t lineNumberEnd { 0 };
-				bool isLastOutput { false };
+				std::vector<std::string> savedLines(0);
+				std::size_t lineCount(0);
+				bool timePointFound { false };
 				while (std::getline(timeFile, skipBuffer))
 				{
-					lineNumberEnd++;
+					lineCount++;
 
-					if ((lineNumberEnd - 1) == readDataPoint.first)
+					if (static_cast<int>(lineCount - 1) < readDataPoint.first)
 					{
-						lineNumber = lineNumberEnd;
-
-						timeString = skipBuffer;
+						savedLines.push_back(skipBuffer);
+					}
+					else if (static_cast<int>(lineCount - 1)
+							== readDataPoint.first)
+					{
+						savedLines.push_back(skipBuffer);
+						timePointFound = true;
+						break;
 					}
 				}
+				if (!timePointFound)
+					throw exception("Could not find time point in Time.tsv.",
+							errors::initialisationError);
 
-				if (lineNumber == 0)
-					throw exception(
-							std::string(
-									"Appropriate line wasn't found in Time.tsv"),
-							errors::systemError);
+				std::string & timeStr = savedLines[savedLines.size() - 1];
 
-				if (lineNumber == 1)
-					throw exception(
-							std::string("Time.tsv contains only one line."),
-							errors::systemError);
+				auto tab = std::find(timeStr.begin(), timeStr.end(), '\t');
 
-				if (lineNumberEnd == lineNumber)
-					isLastOutput = true;
-
-				const auto tab1 = std::find(timeString.begin(),
-						timeString.end(), '\t');
-
-				if (tab1 == timeString.end())
+				if (tab == timeStr.end())
 					throw exception("Could not find tab delimiter.",
 							errors::initialisationError);
 
-				std::string noutsString = std::string(timeString.begin(), tab1);
+				const std::string noutsString = std::string(timeStr.begin(),
+						tab);
 
-				auto TimeIter = tab1;
+				auto TimeIter = tab;
 				TimeIter++;
 
-				std::string TimeString = std::string(TimeIter,
-						timeString.end());
+				tab = std::find(TimeIter, timeStr.end(), '\t');
+
+				if (tab == timeStr.end())
+					throw exception("Could not find tab delimiter.",
+							errors::initialisationError);
+
+				const std::string TimeString = std::string(TimeIter, tab);
+
+				auto nstepsIter = tab;
+				nstepsIter++;
+
+				const std::string nstepsString = std::string(nstepsIter,
+						timeStr.end());
 
 				nouts = std::stoul(noutsString);
 				Time = std::stod(TimeString);
+				nsteps = std::stoul(nstepsString);
 
 				const auto remainingTime { timeOfCalculation - Time };
 
@@ -414,17 +425,11 @@ int main()
 							"Time of calculation lesser or equal than time of executed calculation.",
 							errors::initialisationError);
 
-				if (nouts != readDataPoint.first)
+				if (nouts != static_cast<std::size_t>(readDataPoint.first))
 					throw exception(
 							std::string(
 									"Number of output does not concur with <<readDataPoint>>."),
 							errors::systemError);
-
-				std::vector<std::string> savedStrings(lineNumber);
-				timeFile.clear();
-				timeFile.seekg(0, timeFile.beg);
-				for (std::size_t str_i = 0; str_i < lineNumber; ++str_i)
-					std::getline(timeFile, savedStrings[str_i]);
 
 				timeFile.close();
 
@@ -435,44 +440,15 @@ int main()
 							std::string("Couldn't open Time.tsv"));
 				timeFileNew.precision(ioPrecision);
 
-				for (std::size_t str_i = 0; str_i < lineNumber; ++str_i)
-					timeFileNew << savedStrings[str_i] << '\n';
+				for (std::size_t str_i = 0; str_i < savedLines.size(); ++str_i)
+					timeFileNew << savedLines[str_i] << '\n';
 
 				timeFileNew.close();
 
-				if (isLastOutput)
-				{
-					try
-					{
-						std::ifstream numberOfStepsFile(
-								"./timeOfCalculation.tsv");
-						if (!numberOfStepsFile.is_open())
-							throw std::ifstream::failure(
-									std::string(
-											"Couldn't open timeOfCalculation.tsv"));
+				std::filesystem::path pathToTimeOfCalculation {
+						"./timeOfCalculation.tsv" };
 
-						while (!numberOfStepsFile.eof())
-						{
-							std::string word;
-							numberOfStepsFile >> word;
-
-							if (word == "steps")
-							{
-								numberOfStepsFile >> word;
-
-								nsteps = std::stoul(word);
-
-								break;
-							}
-						}
-						numberOfStepsFile.close();
-					} catch (...)
-					{
-						nsteps = nouts * frequencyOfOutput;
-					}
-				}
-				else
-					nsteps = nouts * frequencyOfOutput;
+				std::filesystem::remove(pathToTimeOfCalculation);
 
 				if ((dimensionsFlag == dimensions::task1D)
 						&& mixedZoneWidthCalcFlag)
@@ -483,47 +459,22 @@ int main()
 						throw std::ifstream::failure(
 								std::string("Couldn't open timeWidth.tsv"));
 
-					lineNumber = 0;
-					std::string widthData;
-					while (std::getline(timeWidthFile, widthData))
+					savedLines.clear();
+					std::string caption;
+					std::getline(timeWidthFile, caption);
+					while (std::getline(timeWidthFile, skipBuffer))
 					{
-						lineNumber++;
+						tab = std::find(skipBuffer.begin(), skipBuffer.end(),
+								'\t');
 
-						if (lineNumber == 1)
-							continue;
+						const auto timeW = std::stod(
+								std::string(skipBuffer.begin(), tab));
+
+						if (timeW <= Time)
+							savedLines.push_back(skipBuffer);
 						else
-						{
-							scalar timeLastWidth;
-
-							const auto tab2 = std::find(widthData.begin(),
-									widthData.end(), '\t');
-
-							if (tab2 == widthData.end())
-								throw exception("Could not find tab delimiter.",
-										errors::initialisationError);
-
-							timeLastWidth = std::stod(
-									std::string(widthData.begin(), tab2));
-
-							if (timeLastWidth == Time)
-								break;
-							else if (timeLastWidth > Time)
-							{
-								lineNumber--;
-								break;
-							}
-							else
-								continue;
-						}
+							break;
 					}
-
-					noutsW = lineNumber - 1;
-
-					savedStrings.resize(lineNumber);
-					timeWidthFile.clear();
-					timeWidthFile.seekg(0, timeFile.beg);
-					for (std::size_t str_i = 0; str_i < lineNumber; ++str_i)
-						std::getline(timeWidthFile, savedStrings[str_i]);
 
 					timeWidthFile.close();
 
@@ -534,10 +485,18 @@ int main()
 								std::string("Couldn't open timeWidth.tsv"));
 					timeWidthFileNew.precision(ioPrecision);
 
-					for (std::size_t str_i = 0; str_i < lineNumber; ++str_i)
-						timeWidthFileNew << savedStrings[str_i] << '\n';
+					timeWidthFileNew << caption << '\n';
+					for (std::size_t str_i = 0; str_i < savedLines.size();
+							++str_i)
+						timeWidthFileNew << savedLines[str_i] << '\n';
 
 					timeWidthFileNew.close();
+
+					if (savedLines.size() == 0)
+						throw exception("No time-width output data.",
+								errors::initialisationError);
+
+					noutsW = savedLines.size() - 1;
 				}
 			}
 
@@ -717,8 +676,7 @@ int main()
 
 		/*Write initial conditions.*/
 		{
-			if ((!readDataPoint.first)
-					&& (readDataPoint.second != "fromTimePoint"))
+			if (readDataPoint.second != "fromTimePoint")
 			{
 				structForOutput outputData(parallelism, mesh_,
 						numberOfComponents);
@@ -729,7 +687,7 @@ int main()
 						sonicSpeed);
 				if (parallelism.isRoot())
 				{
-					output::dataOutput(outputData, nouts, Time,
+					output::dataOutput(outputData, nouts, Time, nsteps,
 							*gasPhase->turbulence);
 
 					if ((dimensionsFlag == dimensions::task1D)
@@ -789,7 +747,7 @@ int main()
 					outputData.collectParallelData(*gasPhase, gasPhase->tNu,
 							sonicSpeed);
 					if (parallelism.isRoot())
-						output::dataOutput(outputData, nouts, Time,
+						output::dataOutput(outputData, nouts, Time, nsteps,
 								*gasPhase->turbulence);
 
 					nouts++;
@@ -890,7 +848,7 @@ int main()
 				try
 				{
 					if (parallelism.isRoot())
-						output::dataOutput(outputData, nouts, Time,
+						output::dataOutput(outputData, nouts, Time, nsteps,
 								*gasPhase->turbulence);
 				} catch (const std::exception & exception)
 				{

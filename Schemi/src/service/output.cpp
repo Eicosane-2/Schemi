@@ -12,7 +12,7 @@
 #include <filesystem>
 
 void schemi::output::dataOutput(const structForOutput & outputData,
-		const std::size_t nOutput, const scalar Time,
+		const std::size_t nOutput, const scalar Time, const std::size_t nSteps,
 		const abstractTurbulenceModel & turb)
 {
 	const auto nOutputStr = std::to_string(nOutput);
@@ -176,7 +176,7 @@ void schemi::output::dataOutput(const structForOutput & outputData,
 		outputFile << outputData.sonicSpeed[i] << '\n';
 	}
 
-	timeFile << nOutput << '\t' << Time << '\n';
+	timeFile << nOutput << '\t' << Time << '\t' << nSteps << '\n';
 
 	outputFile.close();
 
