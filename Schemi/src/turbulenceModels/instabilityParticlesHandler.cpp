@@ -14,7 +14,7 @@
 schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 		const mesh & meshIn, const MPIHandler & par,
 		const volumeField<vector> & uCell, const surfaceField<vector> & uSurf,
-		const std::pair<std::size_t, std::string> & readDataPoint,
+		const std::pair<int, std::string> & readDataPoint,
 		const std::vector<std::string> & subNameList) :
 		meshRef(meshIn), parallelism(par), boundarySurfaces(0), particlePosition(
 				0), cellSurfWeight(0), particlesList(0), particleStatus(0), modelUsed(
@@ -822,7 +822,7 @@ void schemi::instabilityParticlesHandler::insertCaption(
 
 void schemi::instabilityParticlesHandler::clearLines(
 		const std::size_t particleIndex,
-		const std::pair<std::size_t, std::string> & readDataPoint) const
+		const std::pair<int, std::string> & readDataPoint) const
 {
 	std::string particleResultName { "./result/GoncharovModelParticle_" };
 	particleResultName.append(std::to_string(particleIndex));
@@ -838,7 +838,8 @@ void schemi::instabilityParticlesHandler::clearLines(
 
 	std::vector<std::string> linesFromFile;
 	std::string buffer;
-	for (std::size_t l = 0; l < readDataPoint.first + 2; ++l)
+	for (std::size_t l = 0;
+			l < static_cast<std::size_t>(readDataPoint.first + 2); ++l)
 	{
 		std::getline(readResult, buffer);
 		linesFromFile.push_back(buffer);
@@ -862,7 +863,7 @@ void schemi::instabilityParticlesHandler::clearLines(
 
 std::ifstream schemi::instabilityParticlesHandler::dataStream(
 		const std::size_t particleIndex,
-		const std::pair<std::size_t, std::string> & readDataPoint) const
+		const std::pair<int, std::string> & readDataPoint) const
 {
 	const auto nOutputStr = std::to_string(readDataPoint.first);
 	const std::size_t length_of_noutput = nOutputStr.size();
@@ -1541,7 +1542,8 @@ std::array<std::size_t, 2> schemi::instabilityParticlesHandler::subNameToIndex(
 		const std::vector<std::string> & subNameList,
 		const std::string_view name1, const std::string_view name2) const
 {
-	std::size_t substance1(-1), substance2(-1);
+	std::size_t substance1(componentPlaceholder), substance2(
+			componentPlaceholder);
 
 	for (std::size_t k = 0; k < subNameList.size(); ++k)
 	{
@@ -1551,7 +1553,8 @@ std::array<std::size_t, 2> schemi::instabilityParticlesHandler::subNameToIndex(
 			substance2 = k;
 	}
 
-	if ((substance1 == std::size_t(-1)) || (substance2 == std::size_t(-1)))
+	if ((substance1 == componentPlaceholder)
+			|| (substance2 == componentPlaceholder))
 		throw exception("Could not convert name to index",
 				errors::initialisationError);
 

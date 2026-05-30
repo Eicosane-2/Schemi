@@ -29,7 +29,7 @@ std::tuple<std::unique_ptr<homogeneousPhase<cubicCell>>, enthalpyFlow, bool> pha
 		const std::string & sourceTypeString,
 		const std::string & universalGasConstant,
 		const std::string & equationOfState,
-		const std::pair<std::size_t, std::string> & readDataPoint);
+		const std::pair<int, std::string> & readDataPoint);
 }  // namespace schemi
 
 #endif /* PHASEINITIALIZATION_HPP_ */

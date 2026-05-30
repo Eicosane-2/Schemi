@@ -24,7 +24,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		const std::string & sourceTypeString,
 		const std::string & universalGasConstant,
 		const std::string & equationOfState,
-		const std::pair<std::size_t, std::string> & readDataPoint)
+		const std::pair<int, std::string> & readDataPoint)
 {
 	std::unique_ptr<homogeneousPhase<cubicCell>> phase { nullptr };
 	enthalpyFlow enthalpyFlowFlag;

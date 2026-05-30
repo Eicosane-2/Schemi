@@ -18,7 +18,7 @@
 schemi::BHRModel::BHRModel(const mesh & meshIn, const MPIHandler & parIn,
 		const volumeField<vector> & uCellIn,
 		const surfaceField<vector> & uSurfIn,
-		const std::pair<std::size_t, std::string> & readDataPoint,
+		const std::pair<int, std::string> & readDataPoint,
 		const std::vector<std::string> & names, const bool turb_in) :
 		kEpsModels(meshIn, turb_in, true, true, turbulenceModel::BHRModel), initialisation(
 				meshIn, parIn, uCellIn, uSurfIn, readDataPoint, names)
