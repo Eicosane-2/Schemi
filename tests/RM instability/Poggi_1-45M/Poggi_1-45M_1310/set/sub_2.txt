@@ -4,6 +4,8 @@ SF6
 0.146
 #Molar_isohoric_heat_capacity_(J/T/mol)
 88.836
+#Molar_enthalpy_of_formation_(J/mol)
+0
 #Critical_temperature_(K)
 318.7
 #Critical_pressure_(Pa)

@@ -4,6 +4,8 @@ HNO3
 0.063016
 #Molar_isohoric_heat_capacity_(J/T/mol)
 45.196
+#Molar_enthalpy_of_formation_(J/mol)
+−133900
 #Critical_temperature_(K)
 0
 #Critical_pressure_(Pa)

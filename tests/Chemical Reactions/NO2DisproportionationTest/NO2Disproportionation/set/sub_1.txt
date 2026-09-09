@@ -4,6 +4,8 @@ NO2
 0.0460055
 #Molar_isohoric_heat_capacity_(J/T/mol)
 28.866
+#Molar_enthalpy_of_formation_(J/mol)
+34070
 #Critical_temperature_(K)
 431.35
 #Critical_pressure_(Pa)

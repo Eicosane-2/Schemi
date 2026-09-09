@@ -35,7 +35,7 @@ public:
 	static std::unique_ptr<abstractMixtureThermodynamics> createThermodynamics(
 			const std::string & equationOfState, const scalar R,
 			const scalar hPlanck, const std::vector<std::string> & substNames,
-			const std::array<std::valarray<scalar>, 4> & thermodynamicalProperties,
+			const std::array<std::valarray<scalar>, 5> & thermodynamicalProperties,
 			const std::size_t numberOfComponents);
 
 	const std::vector<std::string>& getSubstancesNames() const noexcept
@@ -51,6 +51,9 @@ public:
 
 	/* energy/(mole*temperature) */
 	virtual const std::valarray<scalar>& Cvv() const noexcept =0;
+
+	/* energy/mole */
+	virtual const std::valarray<scalar>& dHfv() const noexcept =0;
 
 	/**** For field ****/
 	/* energy/(mole*temperature) */

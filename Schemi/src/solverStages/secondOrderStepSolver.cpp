@@ -31,7 +31,7 @@ schemi::secondOrderStepSolver::secondOrderStepSolver(
 		const volumeField<scalar> & minimalLengthScale_in,
 		const timestep & sourceTimeFlag_in,
 		const bool & molMassDiffusionFlag_in,
-		chemicalKinetics::abstractChemicalKinetics & chemKin_in,
+		const chemicalKinetics::chemicalReactionsSystem & chemKin_in,
 		const bool & nonLinearityIteratonsFlag_in) noexcept :
 		abstractStepSolver(gasPhase_in, limiter_in, fsolver_in,
 				gravitationFlag_in, g_in, boundaryConditionValueCalc_in,
@@ -84,10 +84,5 @@ void schemi::secondOrderStepSolver::calculateStep()
 		parallelism.correctBoundaryValues(gasPhase);
 	}
 
-	if (chemKin.chemicalReaction)
-	{
-		chemKin.solveChemicalKinetics(gasPhase);
-
-		parallelism.correctBoundaryValues(gasPhase);
-	}
+	chemKin.solve(gasPhase, parallelism);
 }

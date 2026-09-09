@@ -1,5 +1,5 @@
 #Radius-vector_of_system's_parallelepiped
-0.28 0.15 0.15
+28 15 15
 #Number_of_cells_in_direction
 280 1 1
 #Time_of_calculation
@@ -13,7 +13,7 @@
 #Number_of_components
 2
 #Defines_universal_gas_constant
-SI
+CGS
 #Equation_of_state
 ideal
 #TVD_limiter_type

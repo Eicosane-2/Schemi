@@ -4,6 +4,8 @@ H2O
 0.018016
 #Molar_isohoric_heat_capacity_(J/T/mol)
 30.33
+#Molar_enthalpy_of_formation_(J/mol)
+-285830
 #Critical_temperature_(K)
 647.3
 #Critical_pressure_(Pa)

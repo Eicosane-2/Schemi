@@ -1028,23 +1028,23 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 		}
 		ind2 = maxProj.second;
 
-		const auto xSub1 = concentrations.v[sub + 1].cval()[ind1]
+		const auto xSubI1 = concentrations.v[sub + 1].cval()[ind1]
 				/ concentrations.v[0].cval()[ind1];
-		const auto xSub2 = concentrations.v[sub + 1].cval()[ind2]
+		const auto xSubI2 = concentrations.v[sub + 1].cval()[ind2]
 				/ concentrations.v[0].cval()[ind2];
 
-		if (xSub1 == xSub2)
+		if (xSubI1 == xSubI2)
 			throw exception(
 					"Can not choose search direction, molar fractions are equal.",
 					errors::systemError);
 
-		if (xSub1 >= purityParameter)
+		if (xSubI1 >= purityParameter)
 		{
 			rhoSub = densities[sub + 1].cval()[ind1];
 			r = meshRef.cells()[ind1].rC();
 			return;
 		}
-		else if (xSub2 >= purityParameter)
+		else if (xSubI2 >= purityParameter)
 		{
 			rhoSub = densities[sub + 1].cval()[ind2];
 			r = meshRef.cells()[ind2].rC();
@@ -1059,7 +1059,7 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 
 			std::size_t nextCell;
 
-			if (xSub2 > xSub1)
+			if (xSubI2 > xSubI1)
 				nextCell = ind2;
 			else
 				nextCell = ind1;
@@ -1128,7 +1128,7 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 				throw exception("Cell is not a owner or neighbour.",
 						errors::systemError);
 
-			const auto xSub1 = concentrations.v[sub + 1].cval()[outerCell1]
+			const auto xSubI1 = concentrations.v[sub + 1].cval()[outerCell1]
 					/ concentrations.v[0].cval()[outerCell1];
 
 			const auto cellOwner2 = meshRef.surfaceOwner()[ind2];
@@ -1144,21 +1144,21 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 				throw exception("Cell is not a owner or neighbour.",
 						errors::systemError);
 
-			const auto xSub2 = concentrations.v[sub + 1].cval()[outerCell2]
+			const auto xSubI2 = concentrations.v[sub + 1].cval()[outerCell2]
 					/ concentrations.v[0].cval()[outerCell2];
 
-			if (xSub1 == xSub2)
+			if (xSubI1 == xSubI2)
 				throw exception(
 						"Can not choose search direction, molar fractions are equal.",
 						errors::systemError);
 
-			if (xSub1 >= purityParameter)
+			if (xSubI1 >= purityParameter)
 			{
 				rhoSub = densities[sub + 1].cval()[outerCell1];
 				r = meshRef.cells()[outerCell1].rC();
 				return;
 			}
-			else if (xSub2 >= purityParameter)
+			else if (xSubI2 >= purityParameter)
 			{
 				rhoSub = densities[sub + 1].cval()[outerCell2];
 				r = meshRef.cells()[outerCell2].rC();
@@ -1174,7 +1174,7 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 
 				std::size_t nextCell;
 
-				if (xSub2 > xSub1)
+				if (xSubI2 > xSubI1)
 					nextCell = outerCell2;
 				else
 					nextCell = outerCell1;
@@ -1203,7 +1203,7 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 				throw exception("Cell is not a owner or neighbour.",
 						errors::systemError);
 
-			const auto xSub1 = concentrations.v[sub + 1].cval()[outerCell1]
+			const auto xSubI1 = concentrations.v[sub + 1].cval()[outerCell1]
 					/ concentrations.v[0].cval()[outerCell1];
 
 			const scalar boundaryConc = boundVal.boundaryConditionValueCell(
@@ -1220,20 +1220,20 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 						ind2);
 			}
 
-			const auto xSub2 = boundaryConc / sumBoundConc;
+			const auto xSubI2 = boundaryConc / sumBoundConc;
 
-			if (xSub1 == xSub2)
+			if (xSubI1 == xSubI2)
 				throw exception(
 						"Can not choose search direction, molar fractions are equal.",
 						errors::systemError);
 
-			if (xSub1 >= purityParameter)
+			if (xSubI1 >= purityParameter)
 			{
 				rhoSub = densities[sub + 1].cval()[outerCell1];
 				r = meshRef.cells()[outerCell1].rC();
 				return;
 			}
-			else if (xSub2 >= purityParameter)
+			else if (xSubI2 >= purityParameter)
 			{
 				rhoSub = boundaryConc * M[sub];
 				r = meshRef.surfaces()[ind2].rC() * 2
@@ -1250,9 +1250,9 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 
 				std::size_t nextCell;
 
-				if (xSub2 > xSub1)
+				if (xSubI2 > xSubI1)
 				{
-					const scalar deltaX = xSub2 - xSub1;
+					const scalar deltaX = xSubI2 - xSubI1;
 					const vector deltaR = meshRef.surfaces()[ind2].rC() * 2
 							- meshRef.cells()[cellIndex].rC()
 							- meshRef.cells()[outerCell1].rC();
@@ -1316,7 +1316,7 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 						ind1);
 			}
 
-			const auto xSub1 = boundaryConc / sumBoundConc;
+			const auto xSubI1 = boundaryConc / sumBoundConc;
 
 			const auto cellOwner2 = meshRef.surfaceOwner()[ind2];
 			const auto cellNeighb2 = meshRef.surfaceNeighbour()[ind2];
@@ -1331,22 +1331,22 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 				throw exception("Cell is not a owner or neighbour.",
 						errors::systemError);
 
-			const auto xSub2 = concentrations.v[sub + 1].cval()[outerCell2]
+			const auto xSubI2 = concentrations.v[sub + 1].cval()[outerCell2]
 					/ concentrations.v[0].cval()[outerCell2];
 
-			if (xSub1 == xSub2)
+			if (xSubI1 == xSubI2)
 				throw exception(
 						"Can not choose search direction, molar fractions are equal.",
 						errors::systemError);
 
-			if (xSub1 >= purityParameter)
+			if (xSubI1 >= purityParameter)
 			{
 				rhoSub = boundaryConc * M[sub];
 				r = meshRef.surfaces()[ind1].rC() * 2
 						- meshRef.cells()[cellIndex].rC();
 				return;
 			}
-			else if (xSub2 >= purityParameter)
+			else if (xSubI2 >= purityParameter)
 			{
 				rhoSub = densities[sub + 1].cval()[outerCell2];
 				r = meshRef.cells()[outerCell2].rC();
@@ -1362,9 +1362,9 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 
 				std::size_t nextCell;
 
-				if (xSub1 > xSub2)
+				if (xSubI1 > xSubI2)
 				{
-					const scalar deltaX = xSub1 - xSub2;
+					const scalar deltaX = xSubI1 - xSubI2;
 					const vector deltaR = meshRef.surfaces()[ind1].rC() * 2
 							- meshRef.cells()[cellIndex].rC()
 							- meshRef.cells()[outerCell2].rC();
@@ -1407,6 +1407,145 @@ void schemi::instabilityParticlesHandler::searchDensity(const std::size_t sub,
 
 				searchDensity(sub, mixSubs, concentrations, densities, normale,
 						nextCell, rhoSub, r, recursionLevel, boundVal, M);
+			}
+		}
+		else if ((concentrationBoundary[ind1].first
+				!= boundaryConditionType::innerSurface)
+				&& (concentrationBoundary[ind2].first
+						!= boundaryConditionType::innerSurface))
+		{
+			const scalar boundaryConc1 = boundVal.boundaryConditionValueCell(
+					concentrations.v[sub + 1].cval()[cellIndex],
+					concentrations.v[sub + 1].boundCond()[ind1], cellIndex,
+					ind1);
+
+			scalar sumBoundConc1(0);
+			for (std::size_t comp = 1; comp < concentrations.v.size(); ++comp)
+			{
+				sumBoundConc1 += boundVal.boundaryConditionValueCell(
+						concentrations.v[comp].cval()[cellIndex],
+						concentrations.v[comp].boundCond()[ind1], cellIndex,
+						ind1);
+			}
+
+			const auto xSubI1 = boundaryConc1 / sumBoundConc1;
+
+			const scalar boundaryConc2 = boundVal.boundaryConditionValueCell(
+					concentrations.v[sub + 1].cval()[cellIndex],
+					concentrations.v[sub + 1].boundCond()[ind2], cellIndex,
+					ind2);
+
+			scalar sumBoundConc2(0);
+			for (std::size_t comp = 1; comp < concentrations.v.size(); ++comp)
+			{
+				sumBoundConc2 += boundVal.boundaryConditionValueCell(
+						concentrations.v[comp].cval()[cellIndex],
+						concentrations.v[comp].boundCond()[ind2], cellIndex,
+						ind2);
+			}
+
+			const auto xSubI2 = boundaryConc2 / sumBoundConc2;
+
+			if (xSubI1 == xSubI2)
+				throw exception(
+						"Can not choose search direction, molar fractions are equal.",
+						errors::systemError);
+
+			if (xSubI1 >= purityParameter)
+			{
+				rhoSub = boundaryConc1 * M[sub];
+				r = meshRef.surfaces()[ind1].rC() * 2
+						- meshRef.cells()[cellIndex].rC();
+				return;
+			}
+			else if (xSubI2 >= purityParameter)
+			{
+				rhoSub = boundaryConc2 * M[sub];
+				r = meshRef.surfaces()[ind2].rC() * 2
+						- meshRef.cells()[cellIndex].rC();
+				return;
+			}
+			else
+			{
+				if (xSubI1 > xSubI2)
+				{
+					const scalar deltaX = xSubI1 - xSubI2;
+					const vector deltaR = (meshRef.surfaces()[ind1].rC()
+							- meshRef.surfaces()[ind2].rC()) * 2;
+					const scalar deltaRMag = deltaR.mag();
+
+					const auto dXdR = deltaX / deltaRMag;
+
+					if (dXdR <= 0)
+						[[unlikely]]
+						throw exception(
+								"Don't know how to extrapolate density.",
+								errors::systemError);
+
+					const auto deltaRExtrap = (1 - xSub) / dXdR;
+
+					const auto deltaRho = boundaryConc1 * M[sub]
+							- boundaryConc2 * M[sub];
+
+					const auto extrapRho = deltaRho / deltaRMag * deltaRExtrap
+							+ densities[sub + 1].cval()[cellIndex];
+
+					const vector extrapR = deltaR / deltaRMag * deltaRExtrap
+							+ meshRef.cells()[cellIndex].rC();
+
+					if (extrapRho <= 0)
+						[[unlikely]]
+						throw exception(
+								"Negative or zero extrapolated density.",
+								errors::systemError);
+
+					rhoSub = extrapRho;
+					r = extrapR;
+
+					return;
+				}
+				else if (xSubI1 < xSubI2)
+				{
+					const scalar deltaX = xSubI2 - xSubI1;
+					const vector deltaR = (meshRef.surfaces()[ind2].rC()
+							- meshRef.surfaces()[ind1].rC()) * 2;
+					const scalar deltaRMag = deltaR.mag();
+
+					const auto dXdR = deltaX / deltaRMag;
+
+					if (dXdR <= 0)
+						[[unlikely]]
+						throw exception(
+								"Don't know how to extrapolate density.",
+								errors::systemError);
+
+					const auto deltaRExtrap = (1 - xSub) / dXdR;
+
+					const auto deltaRho = (boundaryConc2 - boundaryConc1)
+							* M[sub];
+
+					const auto extrapRho = deltaRho / deltaRMag * deltaRExtrap
+							+ densities[sub + 1].cval()[cellIndex];
+
+					const vector extrapR = deltaR / deltaRMag * deltaRExtrap
+							+ meshRef.cells()[cellIndex].rC();
+
+					if (extrapRho <= 0)
+						[[unlikely]]
+						throw exception(
+								"Negative or zero extrapolated density.",
+								errors::systemError);
+
+					rhoSub = extrapRho;
+					r = extrapR;
+
+					return;
+				}
+				else
+					[[unlikely]]
+					throw exception(
+							"Can not choose search direction, molar fractions are equal.",
+							errors::systemError);
 			}
 		}
 		else

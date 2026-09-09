@@ -147,7 +147,7 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::RichtmyerSolve
 								& mesh_.surfaces()[i].N());
 
 		velocityState = momentumState / densityState[0];
-		pressureState = pressureStar(*(surfaceOwnerSide.phaseThermodynamics),
+		pressureState = pressureStar(*surfaceOwnerSide.phaseThermodynamics,
 				densityState, momentumState, totalEnergyState, rhokState);
 		aState = rhoaState / densityState[0];
 		bState = rhobState / densityState[0];

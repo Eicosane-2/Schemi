@@ -4,6 +4,8 @@ H2
 0.002
 #Molar_isohoric_heat_capacity_(J/T/mol)
 20.18
+#Molar_enthalpy_of_formation_(J/mol)
+0
 #Critical_temperature_(K)
 32.244
 #Critical_pressure_(Pa)
@@ -15,21 +17,13 @@ H2
 #Lennard_Jones_sigma_(A)
 2.915
 #Tail_boundary_condition
-subPatches 15
+subPatches 7
 slip ( 0 0 0 )( 0 0.003 1 )
-fixedValueCell ( 0 0.003 0 )( 0 0.0031 1 ) 721.8
-fixedValueCell ( 0 0.0031 0 )( 0 0.0032 1 ) 761.9
-fixedValueCell ( 0 0.0032 0 )( 0 0.0033 1 ) 802
-fixedValueCell ( 0 0.0033 0 )( 0 0.0034 1 ) 761.9
-fixedValueCell ( 0 0.0034 0 )( 0 0.0035 1 ) 721.8
+fixedValueCell ( 0 0.003 0 )( 0 0.0035 1 ) 802
 slip ( 0 0.0035 0 )( 0 0.004 1 )
 fixedValueCell ( 0 0.004 0 )( 0 0.008 1 ) 1E-9
 slip ( 0 0.008 0 )( 0 0.0085 1 )
-fixedValueCell ( 0 0.0085 0 )( 0 0.0086 1 ) 721.8
-fixedValueCell ( 0 0.0086 0 )( 0 0.0087 1 ) 761.9
-fixedValueCell ( 0 0.0087 0 )( 0 0.0088 1 ) 802
-fixedValueCell ( 0 0.0088 0 )( 0 0.0089 1 ) 761.9
-fixedValueCell ( 0 0.0089 0 )( 0 0.0090 1 ) 721.8
+fixedValueCell ( 0 0.0085 0 )( 0 0.009 1 ) 802
 slip ( 0 0.009 0 )( 0 0.012 1 )
 #Point_boundary_condition
 freeBoundary

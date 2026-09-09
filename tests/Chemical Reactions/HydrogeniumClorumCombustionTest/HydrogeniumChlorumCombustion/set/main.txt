@@ -11,7 +11,7 @@
 #Minimal_timestep
 1E-15
 #Number_of_components
-5
+6
 #Defines_universal_gas_constant
 SI
 #Equation_of_state
@@ -33,7 +33,7 @@ HLLC
 #Dimensions_of_the_task
 2D
 #Constant_timestep
-1E-9
+1E-8
 #Source_timestep_correction
 Courant-Source=0.25,0.5
 #Reconstruction

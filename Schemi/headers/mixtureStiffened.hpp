@@ -16,7 +16,7 @@ namespace schemi
 class mixtureStiffened: private stiffenedFluid,
 		public abstractMixtureThermodynamics
 {
-	const std::valarray<scalar> M, CvArr, molecMass;
+	const std::valarray<scalar> M, CvArr, molecMass, dHf;
 	std::valarray<std::valarray<scalar>> p0Matrix, gammaMatrix;
 public:
 	mixtureStiffened() noexcept;
@@ -25,6 +25,7 @@ public:
 			const std::vector<std::string> & substNamesIn,
 			const std::valarray<scalar> & Min,
 			const std::valarray<scalar> & Cvin,
+			const std::valarray<scalar> & dHfin,
 			const std::valarray<scalar> & p0in,
 			const std::valarray<scalar> & gammain) noexcept;
 
@@ -33,6 +34,8 @@ public:
 	const std::valarray<scalar>& Mv() const noexcept override;
 
 	const std::valarray<scalar>& Cvv() const noexcept override;
+
+	const std::valarray<scalar>& dHfv() const noexcept override;
 
 	/**** For field ****/
 	std::valarray<scalar> Cv(

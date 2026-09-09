@@ -102,9 +102,11 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 							/ mesh_.cells()[i].V() * -1;
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				const vector deltaR(
 						mesh_.cells()[oIndex].rC() - mesh_.cells()[i].rC());
@@ -240,9 +242,11 @@ void schemi::SLEMatrix::generateDTimeNabla(const volumeField<scalar> & vField,
 							/ mesh_.cells()[i].V() * -1;
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				if ((outerNormale & additionalField.cval()[surfaceIndex]) > 0)
 				{
@@ -325,9 +329,11 @@ void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
 							/ mesh_.cells()[i].V() * -1;
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				if ((outerNormale & additionalField.cval()[surfaceIndex]) > 0)
 				{
@@ -455,9 +461,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 							/ mesh_.cells()[i].V() * -1;
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				const vector deltaR(
 						mesh_.cells()[oIndex].rC() - mesh_.cells()[i].rC());
@@ -593,9 +601,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 							/ mesh_.cells()[i].V() * -1;
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				const vector deltaR(
 						mesh_.cells()[oIndex].rC() - mesh_.cells()[i].rC());
@@ -754,9 +764,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 							/ mesh_.cells()[i].V() * -1;
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				const vector deltaR(
 						mesh_.cells()[oIndex].rC() - mesh_.cells()[i].rC());
@@ -959,9 +971,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				const vector deltaR(
 						mesh_.cells()[oIndex].rC() - mesh_.cells()[i].rC());
@@ -1213,9 +1227,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				const vector deltaR(
 						mesh_.cells()[oIndex].rC() - mesh_.cells()[i].rC());
@@ -1586,9 +1602,11 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose oIndex.",
 							errors::systemError);
+				}
 
 				const vector deltaR(
 						mesh_.cells()[oIndex].rC() - mesh_.cells()[i].rC());

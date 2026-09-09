@@ -13,9 +13,6 @@
 #include <string>
 
 #include "timestepEnum.hpp"
-#include "chemicalReactionsEnum.hpp"
-
-#include "abstractChemicalKinetics.hpp"
 #include "abstractFlowSolver.hpp"
 #include "abstractLimiter.hpp"
 #include "abstractStepSolver.hpp"
@@ -86,8 +83,10 @@ int main()
 			if (gFile.is_open())
 				std::cout << "./set/g.txt is opened." << std::endl;
 			else
+			{
 				[[unlikely]]
 				throw std::ifstream::failure("./set/g.txt not found.");
+			}
 
 			gFile >> skipBuffer >> gravitationONString >> skipBuffer
 					>> std::get<0>(g.wr()) >> std::get<1>(g.wr())
@@ -104,8 +103,10 @@ int main()
 			if (mainParametersFile.is_open())
 				std::cout << "./set/main.txt is opened." << std::endl;
 			else
+			{
 				[[unlikely]]
 				throw std::ifstream::failure("./set/main.txt not found.");
+			}
 
 			mainParametersFile >> skipBuffer
 
@@ -628,51 +629,8 @@ int main()
 
 		mesh_.setTimestep(std::min(mesh_.timestep(), timeOfCalculation));
 
-		chemicalReactions chemReactionFlag;
-		{
-			std::ifstream chem { "./set/chemicalKinetics.txt" };
-
-			if (chem.is_open())
-				std::cout << "./set/chemicalKinetics.txt is opened."
-						<< std::endl;
-			else
-				[[unlikely]]
-				throw std::ifstream::failure(
-						"./set/chemicalKinetics.txt not found.");
-
-			std::string reactionName;
-
-			chem >> skipBuffer >> reactionName;
-
-			std::map<std::string, chemicalReactions> chemicalReactionsMap;
-			chemicalReactionsMap.insert(
-					{ "no", chemicalReactions::noReaction });
-			chemicalReactionsMap.insert( { "Cl2",
-					chemicalReactions::Cl2Dissociation });
-			chemicalReactionsMap.insert( { "Cl2H2",
-					chemicalReactions::Cl2H2Dissociation });
-			chemicalReactionsMap.insert( { "H2Cl2Combustion",
-					chemicalReactions::H2Cl2Combustion });
-			chemicalReactionsMap.insert( { "NO2Disproportionation",
-					chemicalReactions::NO2Disproportionation });
-			chemicalReactionsMap.insert( { "H2O2Combustion",
-					chemicalReactions::H2O2Combustion });
-			chemicalReactionsMap.insert( { "Rober", chemicalReactions::Rober });
-			try
-			{
-				chemReactionFlag = chemicalReactionsMap.at(reactionName);
-			} catch (const std::out_of_range&)
-			{
-				throw exception("Unknown chemical reaction model.",
-						errors::initialisationError);
-			}
-
-			chem.close();
-		}
-
-		std::unique_ptr<chemicalKinetics::abstractChemicalKinetics> chmk(
-				chemicalKinetics::abstractChemicalKinetics::createChemicalKinetics(
-						*gasPhase, chemReactionFlag, minTime));
+		const chemicalKinetics::chemicalReactionsSystem chmk(
+				*gasPhase->phaseThermodynamics);
 
 		/*Write initial conditions.*/
 		{
@@ -701,7 +659,7 @@ int main()
 			std::exit(EXIT_SUCCESS);
 
 		boundaryConditionValue boundaryConditionValueCalc(*gasPhase->turbulence,
-				*gasPhase, *(gasPhase->phaseThermodynamics), parallelism);
+				*gasPhase, *gasPhase->phaseThermodynamics, parallelism);
 
 		skipBuffer.clear();
 
@@ -715,7 +673,7 @@ int main()
 						parallelism, diffusionFlag, *msolver, *msolverEnthFl,
 						timestepCoeffs, timeForDiffusion, commonConditions,
 						enthalpyFlowFlag, linearFlag, minimalLengthScale,
-						sourceTimeFlag, molMassDiffusionFlag, *chmk,
+						sourceTimeFlag, molMassDiffusionFlag, chmk,
 						nonLinearityIteratonsFlag);
 
 #ifdef MPI_VERSION

@@ -64,10 +64,12 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 														* surfaceNeighbourSide.rhokTurb.cval()[surfaceIndex])))
 								* mesh_.surfaces()[surfaceIndex].S();
 			else
+			{
 				[[unlikely]]
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
 						errors::systemError);
+			}
 		}
 		divRhoVVHancock.val()[i] /= mesh_.cells()[i].V();
 	}
@@ -105,10 +107,12 @@ void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 												* -1)))
 								* mesh_.surfaces()[surfaceIndex].S();
 			else
+			{
 				[[unlikely]]
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
 						errors::systemError);
+			}
 		}
 		divRhoEVHancock.val()[i] /= mesh_.cells()[i].V();
 	}

@@ -23,8 +23,7 @@ vector slipFunction(const vector & inVector, const vector & normal) noexcept;
 
 tensor slipFunction(const tensor & inTensor, const vector & normal) noexcept;
 
-tensor3 slipFunction([[maybe_unused]] const tensor3 & inTensor,
-		[[maybe_unused]] const vector & normal);
+tensor3 slipFunction(const tensor3&, const vector&);
 }  // namespace schemi
 
 #endif /* SLIPFUNCTION_HPP_ */

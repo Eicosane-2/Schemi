@@ -1,5 +1,5 @@
 #Tail_boundary_condition
-freeBoundary
+slip
 #Point_boundary_condition
 slip
 #Bottom_boundary_condition
@@ -11,5 +11,5 @@ blank
 #Top_boundary_condition
 blank
 #Values_in_zones
-1.5E-5
-1.5E-5
+0.05
+0.05

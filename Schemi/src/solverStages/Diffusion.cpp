@@ -132,7 +132,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 				gasPhase.pressure, gasPhase.concentration);
 		if (gasPhase.turbulence->turbulence())
 			gasPhase.calculateCoefficients(diffFieldsCur.k, diffFieldsCur.eps,
-					*(gasPhase.turbulence));
+					*gasPhase.turbulence);
 
 		/*Calculation of fields for SLE matrix calculation*/
 		nonIdealCorrectionOld.val() = gasPhase.phaseThermodynamics->nonIdeality(
@@ -259,7 +259,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		}
 
 		effectiveCoeffs.calculateEffectiveCoefficients(surfaceRho,
-				*(gasPhase.turbulence), surfaceConcentration.v[0], surfaceCv);
+				*gasPhase.turbulence, surfaceConcentration.v[0], surfaceCv);
 
 		if (gasPhase.turbulence->turbulence())
 		{
@@ -739,7 +739,7 @@ void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 					nonConstMesh.timestepSourceRef(), timestepCoeffs.first,
 					gasPhase, diffFieldsCur, gradV, divergence(devPhysViscSurf),
 					gradP, gradRho, grada, diva, gradb, spherTurbR, devTurbR,
-					gradMav_Mav, *(gasPhase.phaseThermodynamics), gasPhase.tNu,
+					gradMav_Mav, *gasPhase.phaseThermodynamics, gasPhase.tNu,
 					bncCalc);
 
 			if (msolver.solverType == matrixSolver::explicitSolver)

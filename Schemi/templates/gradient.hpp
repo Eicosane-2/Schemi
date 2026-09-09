@@ -105,7 +105,10 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			Type> { 0 } };
 
 	for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
-		switch (inField.boundCond()[i].first)
+	{
+		const auto& boundaryCondition = inField.boundCond()[i];
+
+		switch (boundaryCondition.first)
 		{
 		case boundaryConditionType::innerSurface:
 		{
@@ -125,7 +128,7 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
 			const Type outerCellValue { bncCalc.boundaryConditionValueCell(
-					inField.cval()[ownIndex], inField.boundCond()[i], ownIndex,
+					inField.cval()[ownIndex], boundaryCondition, ownIndex,
 					i, compt) };
 
 			const vector deltaR(
@@ -146,7 +149,7 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
 			const Type outerCellValue { bncCalc.boundaryConditionValueCell(
-					inField.cval()[ownIndex], inField.boundCond()[i], ownIndex,
+					inField.cval()[ownIndex], boundaryCondition, ownIndex,
 					i, compt) };
 
 			const vector deltaR(
@@ -163,6 +166,7 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 		}
 			break;
 		}
+	}
 
 	return gradient;
 }

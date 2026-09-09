@@ -11,18 +11,19 @@
 
 schemi::mixtureVanDerWaals::mixtureVanDerWaals() noexcept :
 		abstractMixtureThermodynamics(0, 0, std::vector<std::string>()), M(0), CvArr(
-				0), molecMass(0), Tcrit(0), Pcrit(0), Vcrit(0), aMatrix(0), bMatrix(
-				0), aMatrixMolec(0), bMatrixMolec(0)
+				0), molecMass(0), dHf(0), Tcrit(0), Pcrit(0), Vcrit(0), aMatrix(
+				0), bMatrix(0), aMatrixMolec(0), bMatrixMolec(0)
 {
 }
 
 schemi::mixtureVanDerWaals::mixtureVanDerWaals(const scalar Rin,
 		const scalar hPin, const std::vector<std::string> & substNamesIn,
 		const std::valarray<scalar> & Min, const std::valarray<scalar> & Cvin,
+		const std::valarray<scalar> & dHfin,
 		const std::valarray<scalar> & Tcritin,
 		const std::valarray<scalar> & Pcritin) noexcept :
 		abstractMixtureThermodynamics(Rin, hPin, substNamesIn), M(Min), CvArr(
-				Cvin), molecMass(M / NAvogardro), Tcrit(Tcritin), Pcrit(
+				Cvin), molecMass(M / NAvogardro), dHf(dHfin), Tcrit(Tcritin), Pcrit(
 				Pcritin), Vcrit(Min.size()), aMatrix(
 				std::valarray<scalar>(Min.size()), Min.size()), bMatrix(
 				std::valarray<scalar>(Min.size()), Min.size()), aMatrixMolec(
@@ -70,6 +71,11 @@ const std::valarray<schemi::scalar>& schemi::mixtureVanDerWaals::Mv() const noex
 const std::valarray<schemi::scalar>& schemi::mixtureVanDerWaals::Cvv() const noexcept
 {
 	return CvArr;
+}
+
+const std::valarray<schemi::scalar>& schemi::mixtureVanDerWaals::dHfv() const noexcept
+{
+	return dHf;
 }
 
 std::valarray<schemi::scalar> schemi::mixtureVanDerWaals::Cv(

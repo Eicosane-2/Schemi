@@ -11,17 +11,17 @@
 
 schemi::mixtureStiffened::mixtureStiffened() noexcept :
 		abstractMixtureThermodynamics(0, 0, std::vector<std::string>()), M(0), CvArr(
-				0), molecMass(0), p0Matrix(0), gammaMatrix(0)
+				0), molecMass(0), dHf(0), p0Matrix(0), gammaMatrix(0)
 {
 }
 
 schemi::mixtureStiffened::mixtureStiffened(const scalar Rin, const scalar hPin,
 		const std::vector<std::string> & substNamesIn,
 		const std::valarray<scalar> & Min, const std::valarray<scalar> & Cvin,
-		const std::valarray<scalar> & p0in,
+		const std::valarray<scalar> & dHfin, const std::valarray<scalar> & p0in,
 		const std::valarray<scalar> & gammain) noexcept :
 		abstractMixtureThermodynamics(Rin, hPin, substNamesIn), M(Min), CvArr(
-				Cvin), molecMass(M / NAvogardro), p0Matrix(
+				Cvin), molecMass(M / NAvogardro), dHf(dHfin), p0Matrix(
 				std::valarray<scalar>(Min.size()), Min.size()), gammaMatrix(
 				std::valarray<scalar>(Min.size()), Min.size())
 {
@@ -56,6 +56,11 @@ const std::valarray<schemi::scalar>& schemi::mixtureStiffened::Mv() const noexce
 const std::valarray<schemi::scalar>& schemi::mixtureStiffened::Cvv() const noexcept
 {
 	return CvArr;
+}
+
+const std::valarray<schemi::scalar>& schemi::mixtureStiffened::dHfv() const noexcept
+{
+	return dHf;
 }
 
 std::valarray<schemi::scalar> schemi::mixtureStiffened::Cv(

@@ -16,7 +16,7 @@ namespace schemi
 class mixtureKataokaVanDerWaals: private KataokaVanDerWaalsFluid,
 		public abstractMixtureThermodynamics
 {
-	const std::valarray<scalar> M, CvArr, molecMass, Tcrit, Pcrit;
+	const std::valarray<scalar> M, CvArr, molecMass, dHf, Tcrit, Pcrit;
 	std::valarray<scalar> Vcrit /*per mole*/;
 	std::valarray<std::valarray<scalar>> V0Matrix, epsMatrix, bMatrix,
 			V0MatrixMolec, epsMatrixMolec, bMatrixMolec;
@@ -27,6 +27,7 @@ public:
 			const std::vector<std::string> & substNamesIn,
 			const std::valarray<scalar> & Min,
 			const std::valarray<scalar> & Cvin,
+			const std::valarray<scalar> & dHfin,
 			const std::valarray<scalar> & Tcritin,
 			const std::valarray<scalar> & Pcritin,
 			const std::valarray<scalar> & epsilonLJ, /*J/mole*/
@@ -38,6 +39,8 @@ public:
 	const std::valarray<scalar>& Mv() const noexcept override;
 
 	const std::valarray<scalar>& Cvv() const noexcept override;
+
+	const std::valarray<scalar>& dHfv() const noexcept override;
 
 	/**** For field ****/
 	std::valarray<scalar> Cv(

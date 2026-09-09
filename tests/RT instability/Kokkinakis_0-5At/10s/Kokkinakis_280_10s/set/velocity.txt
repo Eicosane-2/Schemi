@@ -1,5 +1,5 @@
 #Tail_boundary_condition
-freeBoundary
+slip
 #Point_boundary_condition
 slip
 #Bottom_boundary_condition

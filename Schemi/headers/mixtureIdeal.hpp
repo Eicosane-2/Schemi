@@ -17,20 +17,23 @@ namespace schemi
 {
 class mixtureIdeal: private idealFluid, public abstractMixtureThermodynamics
 {
-	const std::valarray<scalar> M, CvArr, molecMass;
+	const std::valarray<scalar> M, CvArr, molecMass, dHf;
 public:
 	mixtureIdeal() noexcept;
 
 	mixtureIdeal(const scalar Rin, const scalar hPin,
 			const std::vector<std::string> & substNamesIn,
 			const std::valarray<scalar> & Min,
-			const std::valarray<scalar> & Cvin) noexcept;
+			const std::valarray<scalar> & Cvin,
+			const std::valarray<scalar> & dHfin) noexcept;
 
 	scalar Rv() const noexcept override;
 
 	const std::valarray<scalar>& Mv() const noexcept override;
 
 	const std::valarray<scalar>& Cvv() const noexcept override;
+
+	const std::valarray<scalar>& dHfv() const noexcept override;
 
 	/**** For field ****/
 	std::valarray<scalar> Cv(

@@ -4,6 +4,8 @@ HNO2
 0.0470134
 #Molar_isohoric_heat_capacity_(J/T/mol)
 37.549
+#Molar_enthalpy_of_formation_(J/mol)
+-76730
 #Critical_temperature_(K)
 0
 #Critical_pressure_(Pa)

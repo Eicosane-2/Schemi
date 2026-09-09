@@ -1,0 +1,5 @@
+#Reactions
+on
+#Description
+1*Cl2+1*M0=2*Cl+1*M0|5.74E9 0 232614
+2*Cl+1*M0=1*Cl2+1*M0|2.3E7 -1.5 0

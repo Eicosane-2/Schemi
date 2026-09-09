@@ -3,6 +3,6 @@
 #Outer_zone: no
 #Zones_description
 plane
-1 0 0; 8 0 0
+1 0 0 ; 8 0 0
 plane
--1 0 0; 8 0 0
+-1 0 0 ; 8 0 0
