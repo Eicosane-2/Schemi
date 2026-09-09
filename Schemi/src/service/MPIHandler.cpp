@@ -144,17 +144,17 @@ schemi::MPIHandler::MPIHandler(std::size_t mpi_rank_in, std::size_t mpi_size_in)
 	rankDir[0] = currentSliceRank % rankDirMax[0];
 
 	if (rankDir[0] > 0)
-		envNodes.tail = mpi_rank - 1;
+		envNodes.tail = static_cast<int>(mpi_rank - 1);
 	if (rankDir[0] < rankDirMax[0] - 1)
-		envNodes.point = mpi_rank + 1;
+		envNodes.point = static_cast<int>(mpi_rank + 1);
 	if (rankDir[2] > 0)
-		envNodes.bottom = mpi_rank - XYSlice;
+		envNodes.bottom = static_cast<int>(mpi_rank - XYSlice);
 	if (rankDir[1] > 0)
-		envNodes.right = mpi_rank - rankDirMax[0];
+		envNodes.right = static_cast<int>(mpi_rank - rankDirMax[0]);
 	if (rankDir[1] < rankDirMax[1] - 1)
-		envNodes.left = mpi_rank + rankDirMax[0];
+		envNodes.left = static_cast<int>(mpi_rank + rankDirMax[0]);
 	if (rankDir[2] < rankDirMax[2] - 1)
-		envNodes.top = mpi_rank + XYSlice;
+		envNodes.top = static_cast<int>(mpi_rank + XYSlice);
 #endif
 }
 
