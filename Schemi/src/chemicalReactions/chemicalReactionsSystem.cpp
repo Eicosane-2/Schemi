@@ -38,7 +38,7 @@ std::valarray<schemi::scalar> schemi::chemicalKinetics::chemicalReactionsSystem:
 			b[i] -= Ratio * b[k];
 		}
 	}
-	w[N - 1] = b[N - 1] / (A[pow<scalar, 2>(N) - 1] + stabilizator);
+	w[N - 1] = b[N - 1] / (A[pow<std::size_t, 2>(N) - 1] + stabilizator);
 	for (std::size_t i = N - 2;; --i)
 	{
 		scalar Term = 0.;

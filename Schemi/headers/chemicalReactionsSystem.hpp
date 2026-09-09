@@ -47,7 +47,7 @@ class chemicalReactionsSystem
 				c.v[0].meshRef(),
 				{ std::valarray<scalar>(0., matrixPrototype.size()),
 						std::valarray<scalar>(0.,
-								std::sqrt(matrixPrototype.size())) });
+								std::size_t(std::sqrt(matrixPrototype.size()))) });
 		field<scalar, typeOfEntity> reactMassFracSum(c.v[0].meshRef(), 0);
 
 		const auto rDeltat = 1.0 / timestep;
