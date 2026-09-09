@@ -45,8 +45,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (velocityTemporaryFieldConditionsFile.is_open())
 			std::cout << "./set/velocity.txt is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure("./set/velocity.txt not found.");
+		}
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -189,9 +191,11 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	if (transportCoefficientsFile.is_open())
 		std::cout << "./set/transportCoefficients.txt is opened." << std::endl;
 	else
+	{
 		[[unlikely]]
 		throw std::ifstream::failure(
 				"./set/transportCoefficients.txt not found.");
+	}
 
 	std::string transportModelTypeString;
 	scalar cNu, cD, cKappa;
@@ -244,7 +248,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	for (auto & arr : boundaryConditionsMatrix)
 		arr.fill(std::vector<subPatchData<scalar>>(0));
 
-	constexpr std::size_t numberOfThermodParameters(7);
+	constexpr std::size_t numberOfThermodParameters(8);
 	std::vector<std::string> substancesNames(numberOfComponents);
 	std::vector<std::vector<std::string>> matrixOfSubstancesConditions(
 			numberOfComponents,
@@ -262,17 +266,20 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (substanceConditionsFile.is_open())
 			std::cout << substanceName << " is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure(substanceName + " not found.");
+		}
 
 		substanceConditionsFile >> skipBuffer >> substancesNames[k]
 				>> skipBuffer >> matrixOfSubstancesConditions[k][0] /*M*/
 				>> skipBuffer >> matrixOfSubstancesConditions[k][1] /*Cv*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][2] /*Tcrit*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][3] /*Pcrit*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][4] /*Molecular diameter [A]*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][5] /*LJ eps/k [K]*/
-				>> skipBuffer >> matrixOfSubstancesConditions[k][6]; /*LJ sigma [A]*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][2] /*dHf*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][3] /*Tcrit*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][4] /*Pcrit*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][5] /*Molecular diameter [A]*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][6] /*LJ eps/k [K]*/
+				>> skipBuffer >> matrixOfSubstancesConditions[k][7]; /*LJ sigma [A]*/
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -358,7 +365,7 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 	}
 
 	/*Convert strings to values.*/
-	std::array<std::valarray<scalar>, 4> thermodynamicalProperties;
+	std::array<std::valarray<scalar>, 5> thermodynamicalProperties;
 	thermodynamicalProperties.fill(std::valarray<scalar>(numberOfComponents));
 
 	for (std::size_t k = 0; k < numberOfComponents; ++k)
@@ -368,9 +375,11 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		std::get<1>(thermodynamicalProperties)[k] = std::stod(
 				matrixOfSubstancesConditions[k][1]); /*Cv*/
 		std::get<2>(thermodynamicalProperties)[k] = std::stod(
-				matrixOfSubstancesConditions[k][2]); /*Tcrit*/
+				matrixOfSubstancesConditions[k][2]); /*dHf*/
 		std::get<3>(thermodynamicalProperties)[k] = std::stod(
-				matrixOfSubstancesConditions[k][3]); /*Pcrit*/
+				matrixOfSubstancesConditions[k][3]); /*Tcrit*/
+		std::get<4>(thermodynamicalProperties)[k] = std::stod(
+				matrixOfSubstancesConditions[k][4]); /*Pcrit*/
 	}
 
 	for (std::size_t k = 1; k < cellFields.concentration.v.size(); ++k)
@@ -433,9 +442,11 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		hPlanck = PlanckConstant_SI * 1E4;
 	}
 	else
+	{
 		[[unlikely]]
 		throw exception("Unknown type of universal gas constant.",
 				errors::initialisationError);
+	}
 
 	std::unique_ptr<abstractMixtureThermodynamics> mixture =
 			abstractMixtureThermodynamics::createThermodynamics(equationOfState,
@@ -465,8 +476,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (velocityConditionsFile.is_open())
 			std::cout << "./set/velocity.txt is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure("./set/velocity.txt not found.");
+		}
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -570,8 +583,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (pressureConditionsFile.is_open())
 			std::cout << "./set/pressure.txt is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure("./set/pressure.txt not found.");
+		}
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -673,8 +688,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (kTurbConditionsFile.is_open())
 			std::cout << "./set/k.txt is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure("./set/k.txt is opened.");
+		}
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -776,8 +793,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (epsTurbConditionsFile.is_open())
 			std::cout << "./set/epsilon.txt is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure("./set/epsilon.txt not found.");
+		}
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -879,8 +898,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (aTurbConditionsFile.is_open())
 			std::cout << "./set/a.txt is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure("./set/a.txt not found.");
+		}
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -984,8 +1005,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (bTurbConditionsFile.is_open())
 			std::cout << "./set/b.txt is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure("./set/b.txt not found.");
+		}
 
 		/*Read boundary*/
 		for (std::size_t boundaryI = 0;
@@ -1757,8 +1780,10 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 		if (turbPeakConditionsFile.is_open())
 			std::cout << "./set/turbPeak.txt is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure("./set/turbPeak.txt not found.");
+		}
 
 		turbPeakConditionsFile >> skipBuffer >> profileType >> skipBuffer
 				>> kMax >> skipBuffer >> epsMax >> skipBuffer >> xCenter
@@ -1807,10 +1832,12 @@ std::tuple<std::unique_ptr<schemi::homogeneousPhase<schemi::cubicCell>>,
 			std::cout << "Added linear peak for k and epsilon." << std::endl;
 		}
 		else if (profileType != "no")
+		{
 			[[unlikely]]
 			throw exception(
 					"Wrong parameter of peak, must be <<linear>> or <<no>>.",
 					errors::initialisationError);
+		}
 	}
 	/**/
 

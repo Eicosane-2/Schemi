@@ -153,9 +153,8 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCFSolver::c
 					* denominator;
 
 			velocityState = momentumState / densityState[0];
-			pressureState = pressureStar(
-					*(surfaceOwnerSide.phaseThermodynamics), densityState,
-					momentumState, totalEnergyState, rhokState);
+			pressureState = pressureStar(*surfaceOwnerSide.phaseThermodynamics,
+					densityState, momentumState, totalEnergyState, rhokState);
 			aState = rhoaState / densityState[0];
 			bState = rhobState / densityState[0];
 		}
@@ -189,9 +188,8 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCFSolver::c
 					* denominator;
 
 			velocityState = momentumState / densityState[0];
-			pressureState = pressureStar(
-					*(surfaceOwnerSide.phaseThermodynamics), densityState,
-					momentumState, totalEnergyState, rhokState);
+			pressureState = pressureStar(*surfaceOwnerSide.phaseThermodynamics,
+					densityState, momentumState, totalEnergyState, rhokState);
 			aState = rhoaState / densityState[0];
 			bState = rhobState / densityState[0];
 		}
@@ -213,9 +211,11 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCFSolver::c
 			bState = rhobState / densityState[0];
 		}
 		else
+		{
 			[[unlikely]]
 			throw exception("Fatal error in Riemann solver.", errValue =
 					errors::RiemannSolverError);
+		}
 
 		for (std::size_t k = 0; k < numFluxes.density.size(); ++k)
 			numFluxes.density[k].val()[i] = velocityState * densityState[k];

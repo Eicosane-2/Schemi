@@ -23,36 +23,36 @@ concept powNumber = std::floating_point<T>
 
 template<powNumber T, int expon>
 #else
-		template<typename T, int expon>
+template<typename T, int expon>
 #endif
-		constexpr T pow(const T val) noexcept
+	constexpr T pow(const T val) noexcept
+	{
+		if constexpr (expon > 0)
 		{
-			if constexpr (expon > 0)
-			{
-				T retVal
-				{	val};
+			T retVal
+			{	val};
 
-				for (std::size_t p = 1; p < expon; ++p)
-				retVal *= val;
+			for (std::size_t p = 1; p < expon; ++p)
+			retVal *= val;
 
-				return retVal;
-			}
-			else if constexpr (expon < 0)
-			{
-				constexpr int posExpon = -expon;
-
-				T retVal
-				{	val};
-
-				for (std::size_t p = 1; p < posExpon; ++p)
-				retVal *= val;
-
-				return T(1) / retVal;
-			}
-			else
-			return T(1);
+			return retVal;
 		}
+		else if constexpr (expon < 0)
+		{
+			constexpr int posExpon = -expon;
+
+			T retVal
+			{	val};
+
+			for (std::size_t p = 1; p < posExpon; ++p)
+			retVal *= val;
+
+			return T(1) / retVal;
+		}
+		else
+		return T(1);
 	}
-	// namespace schemi
+}
+// namespace schemi
 
 #endif /* INTEXPPOW_HPP_ */

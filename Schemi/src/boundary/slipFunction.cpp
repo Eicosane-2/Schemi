@@ -34,12 +34,9 @@ schemi::tensor schemi::slipFunction(const tensor & inTensor,
 					- 2 * (inTensor && normalTensor) * normalTensor);
 }
 
-schemi::tensor3 schemi::slipFunction([[maybe_unused]] const tensor3 & inTensor,
-		[[maybe_unused]] const vector & normal)
+schemi::tensor3 schemi::slipFunction(const tensor3&, const vector&)
 {
 	throw exception(
 			"<<slipFunction>> is not implemented for a third rank tensor (tensor3).",
 			errors::boundaryConditionError);
-
-	//return tensor3(0);
 }

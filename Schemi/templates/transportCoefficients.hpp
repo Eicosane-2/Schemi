@@ -301,7 +301,8 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 									const auto & N2 = N.v[k2].cval()[i];
 									const auto & N0 = N.v[0].cval()[i];
 
-									const scalar Aij = N1 * N2
+									const scalar Aij = (N1 + stabilizator)
+											* (N2 + stabilizator)
 											/ (N0 * N0
 													* this->physDm.cval()[i][k1
 															- 1][k2 - 1]);
@@ -315,7 +316,8 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 
 								for (std::size_t k2 = 1; k2 < Ncomp1; ++k2)
 									cellDFluxesMatrix[k1 - 1][k2 - 1] =
-											N.v[k2].cval()[i] * M[k2 - 1];
+											(N.v[k2].cval()[i] + stabilizator)
+													* M[k2 - 1];
 							}
 
 						const std::valarray<scalar> resFlows =
@@ -363,7 +365,8 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 									const auto & N0 = N.v[0].cval()[i];
 
 									const scalar Aij =
-											N1 * N2
+											(N1 + stabilizator)
+													* (N2 + stabilizator)
 													/ (N0 * N0
 															* (this->physDm.cval()[i][k1
 																	- 1][k2 - 1]
@@ -378,7 +381,8 @@ struct effectiveTransportCoefficients: transportCoefficients<typeOfEntity>
 
 								for (std::size_t k2 = 1; k2 < Ncomp1; ++k2)
 									cellDFluxesMatrix[k1 - 1][k2 - 1] =
-											N.v[k2].cval()[i] * M[k2 - 1];
+											(N.v[k2].cval()[i] + stabilizator)
+													* M[k2 - 1];
 							}
 
 						const std::valarray<scalar> resFlows =
@@ -400,32 +404,10 @@ private:
 	{
 		const std::size_t N = b.size();
 
-		/*Pivoting*/
-		for (std::size_t k = 0; k < (N - 1); ++k)
-		{
-			/*Find maximum value in column's next values.*/
-			std::pair<scalar, std::size_t> maxVal(std::make_pair(A[k][k], k));
-			for (std::size_t c = k + 1; c < N; ++c)
-				if (A[c][k] > maxVal.first)
-					maxVal = std::make_pair(A[c][k], c);
-
-			const auto c = maxVal.second;
-
-			if (c != k)
-			{
-				auto & origArr = A[c];
-				auto & destArr = A[k];
-
-				std::swap(origArr, destArr);
-				std::swap(b[c], b[k]);
-			}
-		}
-		/**/
-
 		for (std::size_t k = 0; k < N - 1; ++k)
 			for (std::size_t i = k + 1; i < N; ++i)
 			{
-				const auto ratio = A[i][k] / (A[k][k] + stabilizator);
+				const auto ratio = A[i][k] / A[k][k];
 
 				for (std::size_t j = k + 1; j < N; ++j)
 					A[i][j] = A[i][j] - ratio * A[k][j];
@@ -435,7 +417,7 @@ private:
 
 		std::valarray<scalar> phi(b.size());
 
-		phi[N - 1] = b[N - 1] / (A[N - 1][N - 1] + stabilizator);
+		phi[N - 1] = b[N - 1] / A[N - 1][N - 1];
 
 		for (std::size_t i = N - 2;; --i)
 		{
@@ -444,7 +426,7 @@ private:
 			for (std::size_t j = i + 1; j < N; ++j)
 				term += A[i][j] * phi[j];
 
-			phi[i] = (b[i] - term) / (A[i][i] + stabilizator);
+			phi[i] = (b[i] - term) / A[i][i];
 
 			if (i == 0)
 				break;
@@ -471,7 +453,7 @@ private:
 
 			for (std::size_t i = 0; i < oldIteration.size(); ++i)
 			{
-				const scalar aii { 1. / (A[i][i] + stabilizator) };
+				const scalar aii { 1. / A[i][i] };
 
 				const scalar bi { b[i] };
 
@@ -486,7 +468,7 @@ private:
 
 			for (std::size_t i = oldIteration.size() - 1;; --i)
 			{
-				const scalar aii { 1. / (A[i][i] + stabilizator) };
+				const scalar aii { 1. / A[i][i] };
 
 				const scalar bi { b[i] };
 
@@ -527,8 +509,8 @@ private:
 				return newIteration;
 			}
 			else if (nIterations >= 100)
-			//[[unlikely]]
 			{
+				[[unlikely]]
 				std::clog
 						<< "Gauss-Seidel algorithm for diffusive flows did not converged. Difference is: "
 						<< diff << std::endl;
@@ -543,7 +525,7 @@ private:
 
 	void normalize(std::valarray<scalar> & res) const noexcept
 	{
-		std::replace_if(std::begin(res), std::end(res), [](const auto & i) 
+		std::replace_if(std::begin(res), std::end(res), [](const auto & i)
 		{
 			return std::abs(i) < std::numeric_limits<scalar>::epsilon();
 		}, 0);

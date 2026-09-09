@@ -33,7 +33,7 @@ HLLC
 #Dimensions_of_the_task
 2D
 #Constant_timestep
--1E-9
+1E-8
 #Source_timestep_correction
 Courant-Source=0.25,0.5
 #Reconstruction

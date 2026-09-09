@@ -11,9 +11,9 @@
 #include <vector>
 
 #include "boundaryConditionTypesEnum.hpp"
+#include "chemicalReactionsSystem.hpp"
 #include "enthalpyFlowEnum.hpp"
 #include "timestepEnum.hpp"
-#include "abstractChemicalKinetics.hpp"
 #include "abstractFlowSolver.hpp"
 #include "abstractLimiter.hpp"
 #include "abstractMatrixSolver.hpp"
@@ -51,7 +51,7 @@ protected:
 	const volumeField<scalar> & minimalLengthScale;
 	const timestep & sourceTimeFlag;
 	const bool & molMassDiffusionFlag;
-	chemicalKinetics::abstractChemicalKinetics & chemKin;
+	const chemicalKinetics::chemicalReactionsSystem & chemKin;
 	const bool & nonLinearityIteratonsFlag;
 public:
 	abstractStepSolver(homogeneousPhase<cubicCell> & gasPhase_in,
@@ -73,7 +73,7 @@ public:
 			const volumeField<scalar> & minimalLengthScale_in,
 			const timestep & sourceTimeFlag_in,
 			const bool & molMassDiffusionFlag_in,
-			chemicalKinetics::abstractChemicalKinetics & chemKin_in,
+			const chemicalKinetics::chemicalReactionsSystem & chemKin_in,
 			const bool & nonLinearityIteratonsFlag_in) noexcept;
 
 	abstractStepSolver(const abstractStepSolver&) = delete;
@@ -100,7 +100,7 @@ public:
 			const volumeField<scalar> & minimalLengthScale_in,
 			const timestep & sourceTimeFlag_in,
 			const bool & molMassDiffusionFlag_in,
-			chemicalKinetics::abstractChemicalKinetics & chemKin_in,
+			const chemicalKinetics::chemicalReactionsSystem & chemKin_in,
 			const bool & nonLinearityIteratonsFlag_in);
 
 	virtual ~abstractStepSolver() noexcept =0;

@@ -3,7 +3,9 @@ s1
 #Molar_mass_(kg/mol)
 3
 #Molar_isohoric_heat_capacity_(J/T/mol)
-12.47169
+12.47169E7
+#Molar_enthalpy_of_formation_(J/mol)
+0
 #Critical_temperature_(K)
 1
 #Critical_pressure_(Pa)
@@ -15,7 +17,7 @@ s1
 #Lennard_Jones_sigma_(A)
 1
 #Tail_boundary_condition
-freeBoundary
+slip
 #Point_boundary_condition
 slip
 #Bottom_boundary_condition
@@ -27,5 +29,5 @@ blank
 #Top_boundary_condition
 blank
 #Values_in_zones
-1000
+1
 0

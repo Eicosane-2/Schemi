@@ -52,10 +52,12 @@ volumeField<T> HancockDivergence(
 								& (mesh_.surfaces()[surfaceIndex].N() * -1))
 								* mesh_.surfaces()[surfaceIndex].S();
 			else
+			{
 				[[unlikely]]
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
 						errors::systemError);
+			}
 		}
 		divTVHancock.val()[i] /= mesh_.cells()[i].V();
 	}
@@ -86,10 +88,12 @@ void HancockTimeIntegration(const volumeField<T> & flowDivergence,
 				surfaceNeighbourSideT.val()[surfaceIndex] -=
 						flowDivergence.cval()[i] * halfTimestep;
 			else
+			{
 				[[unlikely]]
 				throw exception(
 						"Cell is neither owner, nor neighbour to surface.",
 						errors::systemError);
+			}
 		}
 	}
 }

@@ -17,6 +17,7 @@ enum class boundaryConditionType
 	blank,
 	freeBoundary,
 	slip,
+	noslip,
 	fixedValueCell,
 	fixedValueSurface,
 	innerSurface,

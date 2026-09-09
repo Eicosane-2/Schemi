@@ -192,7 +192,8 @@ void schemi::abstractTurbulenceModel::calculateNearWallDistance(
 
 	phiOld.val() = phiInit;
 	for (auto & b_i : phiOld.boundCond_wr())
-		if (b_i.first == boundaryConditionType::slip)
+		if (b_i.first == boundaryConditionType::slip
+				|| b_i.first == boundaryConditionType::noslip)
 		{
 			b_i.first = boundaryConditionType::fixedValueSurface;
 			b_i.second = 0.;

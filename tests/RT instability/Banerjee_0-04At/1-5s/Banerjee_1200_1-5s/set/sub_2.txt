@@ -4,6 +4,8 @@ HeAir
 0.0266
 #Molar_isohoric_heat_capacity_(J/T/mol)
 20.1088
+#Molar_enthalpy_of_formation_(J/mol)
+0
 #Critical_temperature_(K)
 115.842
 #Critical_pressure_(Pa)

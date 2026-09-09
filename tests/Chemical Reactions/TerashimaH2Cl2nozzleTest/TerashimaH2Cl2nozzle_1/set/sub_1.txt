@@ -4,6 +4,8 @@ Cl2
 0.0709
 #Molar_isohoric_heat_capacity_(J/T/mol)
 25.635
+#Molar_enthalpy_of_formation_(J/mol)
+0
 #Critical_temperature_(K)
 416.9
 #Critical_pressure_(Pa)
@@ -15,15 +17,11 @@ Cl2
 #Lennard_Jones_sigma_(A)
 4.217
 #Tail_boundary_condition
-subPatches 11
+subPatches 7
 slip ( 0 0 0 )( 0 0.003 1 )
 fixedValueCell ( 0 0.003 0 )( 0 0.0035 1 ) 1E-9
 slip ( 0 0.0035 0 )( 0 0.004 1 )
-fixedValueCell ( 0 0.0040 0 )( 0 0.0048 1 ) 721.8
-fixedValueCell ( 0 0.0048 0 )( 0 0.0056 1 ) 761.9
-fixedValueCell ( 0 0.0056 0 )( 0 0.0064 1 ) 802
-fixedValueCell ( 0 0.0064 0 )( 0 0.0072 1 ) 761.9
-fixedValueCell ( 0 0.0072 0 )( 0 0.0080 1 ) 721.8
+fixedValueCell ( 0 0.004 0 )( 0 0.008 1 ) 802
 slip ( 0 0.008 0 )( 0 0.0085 1 )
 fixedValueCell ( 0 0.0085 0 )( 0 0.009 1 ) 1E-9
 slip ( 0 0.009 0 )( 0 0.012 1 )

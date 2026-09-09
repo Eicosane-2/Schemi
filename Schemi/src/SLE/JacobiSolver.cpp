@@ -86,8 +86,8 @@ std::valarray<schemi::scalar> schemi::JacobiSolver::algorithm(
 			return newIteration;
 		}
 		else if (nIterations >= maxIterationNumber)
-		//[[unlikely]]
 		{
+			[[unlikely]]
 			std::clog << name << std::endl;
 			std::clog << "Jacobi algorithm did not converged. Difference is: "
 					<< diff << std::endl;

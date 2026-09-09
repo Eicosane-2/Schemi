@@ -213,9 +213,8 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 			const vector rhoaState = rhoaStateO;
 			const scalar rhobState = rhobStateO;
 			velocityState = momentumState / densityState[0];
-			pressureState = pressureStar(
-					*(surfaceOwnerSide.phaseThermodynamics), densityState,
-					momentumState, totalEnergyState, rhokState);
+			pressureState = pressureStar(*surfaceOwnerSide.phaseThermodynamics,
+					densityState, momentumState, totalEnergyState, rhokState);
 			aState = rhoaState / densityState[0];
 			bState = rhobState / densityState[0];
 		}
@@ -261,9 +260,8 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 			const scalar rhobState = rhobStateN;
 
 			velocityState = momentumState / densityState[0];
-			pressureState = pressureStar(
-					*(surfaceOwnerSide.phaseThermodynamics), densityState,
-					momentumState, totalEnergyState, rhokState);
+			pressureState = pressureStar(*surfaceOwnerSide.phaseThermodynamics,
+					densityState, momentumState, totalEnergyState, rhokState);
 			aState = rhoaState / densityState[0];
 			bState = rhobState / densityState[0];
 		}
@@ -311,9 +309,11 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 					* mesh_.surfaces()[i].N() * rhobState;
 		}
 		else
+		{
 			[[unlikely]]
 			throw exception("Fatal error in Riemann solver.", errValue =
 					errors::RiemannSolverError);
+		}
 
 		if (!(SOwner > 0) && !(SNeighbour < 0))
 		{

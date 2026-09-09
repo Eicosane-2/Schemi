@@ -14,6 +14,7 @@
 #include "abstractTurbulenceModel.hpp"
 #include "MPIHandler.hpp"
 #include "slipFunction.hpp"
+#include "noslipFunction.hpp"
 
 namespace schemi
 {
@@ -45,6 +46,10 @@ public:
 			break;
 		case boundaryConditionType::slip:
 			retValue = slipFunction(inValue,
+					meshReference.surfaces()[surfaceIndex].N());
+			break;
+		case boundaryConditionType::noslip:
+			retValue = noslipFunction(inValue,
 					meshReference.surfaces()[surfaceIndex].N());
 			break;
 		case boundaryConditionType::calculatedParallelBoundary:
@@ -290,6 +295,10 @@ public:
 			break;
 		case boundaryConditionType::slip:
 			retValue = slipFunction(inValue,
+					meshReference.surfaces()[surfaceIndex].N()) * 2 - inValue;
+			break;
+		case boundaryConditionType::noslip:
+			retValue = noslipFunction(inValue,
 					meshReference.surfaces()[surfaceIndex].N()) * 2 - inValue;
 			break;
 		case boundaryConditionType::calculatedParallelBoundary:

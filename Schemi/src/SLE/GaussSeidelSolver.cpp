@@ -84,8 +84,8 @@ std::valarray<schemi::scalar> schemi::GaussSeidelSolver::algorithm(
 			return newIteration;
 		}
 		else if (nIterations >= maxIterationNumber)
-		//[[unlikely]]
 		{
+			[[unlikely]]
 			std::clog << name << std::endl;
 			std::clog
 					<< "Gauss-Seidel algorithm did not converged. Difference is: "

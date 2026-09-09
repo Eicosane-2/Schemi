@@ -33,7 +33,7 @@ schemi::abstractMixtureThermodynamics::~abstractMixtureThermodynamics() noexcept
 std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureThermodynamics::createThermodynamics(
 		const std::string & equationOfState, const scalar R,
 		const scalar hPlanck, const std::vector<std::string> & substNamesIn,
-		const std::array<std::valarray<scalar>, 4> & thermodynamicalProperties,
+		const std::array<std::valarray<scalar>, 5> & thermodynamicalProperties,
 		const std::size_t numberOfComponents)
 {
 	std::map<std::string, gasModel> gasModels;
@@ -61,14 +61,16 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 				std::get<0>(thermodynamicalProperties),
 				std::get<1>(thermodynamicalProperties),
 				std::get<2>(thermodynamicalProperties),
-				std::get<3>(thermodynamicalProperties));
+				std::get<3>(thermodynamicalProperties),
+				std::get<4>(thermodynamicalProperties));
 		break;
 	case gasModel::RedlichKwong:
 		return std::make_unique<mixtureRedlichKwong>(R, hPlanck, substNamesIn,
 				std::get<0>(thermodynamicalProperties),
 				std::get<1>(thermodynamicalProperties),
 				std::get<2>(thermodynamicalProperties),
-				std::get<3>(thermodynamicalProperties));
+				std::get<3>(thermodynamicalProperties),
+				std::get<4>(thermodynamicalProperties));
 		break;
 	case gasModel::stiffened:
 	{
@@ -79,8 +81,10 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 		if (fluidConditionsFile.is_open())
 			std::cout << stiffenedCoeffsName << " is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure(stiffenedCoeffsName + " not found.");
+		}
 
 		std::valarray<scalar> p0Data(numberOfComponents), gammaData(
 				numberOfComponents);
@@ -96,7 +100,8 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 
 		return std::make_unique<mixtureStiffened>(R, hPlanck, substNamesIn,
 				std::get<0>(thermodynamicalProperties),
-				std::get<1>(thermodynamicalProperties), p0Data, gammaData);
+				std::get<1>(thermodynamicalProperties),
+				std::get<2>(thermodynamicalProperties), p0Data, gammaData);
 	}
 		break;
 	case gasModel::KataokaVanDerWaals:
@@ -109,8 +114,10 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 		if (fluidConditionsFile.is_open())
 			std::cout << KataokaCoeffsName << " is opened." << std::endl;
 		else
+		{
 			[[unlikely]]
 			throw std::ifstream::failure(KataokaCoeffsName + " not found.");
+		}
 
 		std::valarray<scalar> epsilonLJData(numberOfComponents), sigmaLJData(
 				numberOfComponents);
@@ -137,16 +144,19 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 		else if (bCalcTypeStr == "Kataoka")
 			bCalc = { false, bCoeff };
 		else
+		{
 			[[unlikely]]
 			throw exception(
 					"Wrong type of Kataoka-van der Waals b coefficient calculation",
 					errors::initialisationError);
+		}
 
 		return std::make_unique<mixtureKataokaVanDerWaals>(R, hPlanck,
 				substNamesIn, std::get<0>(thermodynamicalProperties),
 				std::get<1>(thermodynamicalProperties),
 				std::get<2>(thermodynamicalProperties),
-				std::get<3>(thermodynamicalProperties), epsilonLJData,
+				std::get<3>(thermodynamicalProperties),
+				std::get<4>(thermodynamicalProperties), epsilonLJData,
 				sigmaLJData, bCalc);
 	}
 		break;
@@ -154,7 +164,8 @@ std::unique_ptr<schemi::abstractMixtureThermodynamics> schemi::abstractMixtureTh
 	default:
 		return std::make_unique<mixtureIdeal>(R, hPlanck, substNamesIn,
 				std::get<0>(thermodynamicalProperties),
-				std::get<1>(thermodynamicalProperties));
+				std::get<1>(thermodynamicalProperties),
+				std::get<2>(thermodynamicalProperties));
 		break;
 	}
 }

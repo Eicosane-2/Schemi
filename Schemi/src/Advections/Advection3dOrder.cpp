@@ -227,9 +227,11 @@ schemi::starFields schemi::Advection3dOrder(
 					}
 				}
 				else
+				{
 					[[unlikely]]
 					throw exception("Couldn't choose side to add",
 							errors::systemError);
+				}
 			}
 		}
 

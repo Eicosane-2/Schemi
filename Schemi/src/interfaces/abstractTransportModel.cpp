@@ -51,7 +51,7 @@ std::unique_ptr<schemi::abstractTransportModel> schemi::abstractTransportModel::
 		std::transform(matrixOfSubstancesConditions.cbegin(),
 				matrixOfSubstancesConditions.cend(), std::begin(molDiams),
 				[](const auto & strVec) -> scalar 
-				{	return std::stod(strVec[4]);});
+				{	return std::stod(strVec[5]);});
 
 		return std::make_unique<hardSpheresTransportModel>(constNu, constD,
 				constKappa, molDiams);
@@ -65,12 +65,12 @@ std::unique_ptr<schemi::abstractTransportModel> schemi::abstractTransportModel::
 		std::transform(matrixOfSubstancesConditions.cbegin(),
 				matrixOfSubstancesConditions.cend(), std::begin(epskLJ),
 				[](const auto & strVec) -> scalar 
-				{	return std::stod(strVec[5]);});
+				{	return std::stod(strVec[6]);});
 
 		std::transform(matrixOfSubstancesConditions.cbegin(),
 				matrixOfSubstancesConditions.cend(), std::begin(sigmaLJ),
 				[](const auto & strVec) -> scalar 
-				{	return std::stod(strVec[6]);});
+				{	return std::stod(strVec[7]);});
 
 		return std::make_unique<LennardJonesTransportModel>(constNu, constD,
 				constKappa, epskLJ, sigmaLJ);

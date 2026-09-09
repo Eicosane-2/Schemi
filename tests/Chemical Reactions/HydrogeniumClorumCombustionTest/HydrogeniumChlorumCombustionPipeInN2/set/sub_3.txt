@@ -4,6 +4,8 @@ H2
 0.002
 #Molar_isohoric_heat_capacity_(J/T/mol)
 20.18
+#Molar_enthalpy_of_formation_(J/mol)
+0
 #Critical_temperature_(K)
 32.244
 #Critical_pressure_(Pa)

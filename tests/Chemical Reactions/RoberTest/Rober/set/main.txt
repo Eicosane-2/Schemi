@@ -3,11 +3,11 @@
 #Number_of_cells_in_direction
 2 2 1
 #Time_of_calculation
-1E8
+40
 #Courant_number
 0.47
 #Frequency_of_output
-1000000000000000000
+1000
 #Minimal_timestep
 1E-15
 #Number_of_components
@@ -33,7 +33,7 @@ HLLC
 #Dimensions_of_the_task
 2D
 #Constant_timestep
--1E-8
+1E-3
 #Source_timestep_correction
 Courant-Source=0.25,0.5
 #Reconstruction

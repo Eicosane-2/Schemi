@@ -41,8 +41,8 @@ std::valarray<schemi::scalar> schemi::biConjugateGradientSovler::algorithm(
 			return newFieldValues;
 		}
 		else if (nIterations >= maxIterationNumber)
-		//[[unlikely]]
 		{
+			[[unlikely]]
 			std::clog << name << std::endl;
 			std::clog
 					<< "Bi-conjugate gradient algorithm did not converged. Difference is: "

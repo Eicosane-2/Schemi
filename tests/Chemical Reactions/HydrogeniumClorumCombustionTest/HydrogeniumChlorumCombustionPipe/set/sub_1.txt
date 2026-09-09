@@ -4,6 +4,8 @@ Cl2
 0.0709
 #Molar_isohoric_heat_capacity_(J/T/mol)
 25.635
+#Molar_enthalpy_of_formation_(J/mol)
+0
 #Critical_temperature_(K)
 416.9
 #Critical_pressure_(Pa)

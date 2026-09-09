@@ -4,6 +4,8 @@ s1
 1
 #Molar_isohoric_heat_capacity_(J/T/mol)
 1.5
+#Molar_enthalpy_of_formation_(J/mol)
+0
 #Critical_temperature_(K)
 1
 #Critical_pressure_(Pa)
