@@ -80,7 +80,7 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCKTSolver::
 							/ surfaceOwnerSide.concentration.v[0].cval()[i]);
 		}
 		if (maxMolarFracO > (1 - stabilizator)
-				|| maxMolarFracN > (1 - stabilizator))
+				&& maxMolarFracN > (1 - stabilizator))
 		{ 	//KT-solver
 			scalar SOwner { std::min(
 					velocityProjectionOwner - sonicSpeedOwner[i],
