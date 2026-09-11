@@ -16,6 +16,7 @@
 #include "divergence.hpp"
 #include "gradient.hpp"
 #include "transportCoefficients.hpp"
+#include "fieldOperations.hpp"
 
 schemi::starFields schemi::Advection(homogeneousPhase<cubicCell> & gasPhase,
 		const abstractLimiter & limiter, const abstractFlowSolver & fsolver,

@@ -7,6 +7,8 @@
 
 #include "HancockStage.hpp"
 
+#include "fieldOperations.hpp"
+
 void schemi::HancockStage(homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 		homogeneousPhase<quadraticSurface> & surfaceNeighbourSide,
 		const boundaryConditionValue & boundaryConditionValueCalc,

@@ -13,6 +13,7 @@
 #include "linearInterpolate.hpp"
 #include "returnTypeDivergence.hpp"
 #include "intExpPow.hpp"
+#include "boundaryConditionValue.hpp"
 
 namespace schemi
 {

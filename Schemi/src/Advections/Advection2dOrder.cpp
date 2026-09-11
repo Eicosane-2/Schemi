@@ -12,6 +12,7 @@
 #include "divergence.hpp"
 #include "gradient.hpp"
 #include "TVDLimiter.hpp"
+#include "fieldOperations.hpp"
 
 schemi::starFields schemi::Advection2dOrder(
 		homogeneousPhase<cubicCell> & gasPhase, const abstractLimiter & limiter,

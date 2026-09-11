@@ -13,12 +13,12 @@
 #include <cstddef>
 #include <memory>
 
+#include "bunchOfFields.hpp"
 #include "scalar.hpp"
+#include "surfaceField.hpp"
 #include "tensor.hpp"
 #include "tensor3.hpp"
 #include "vector.hpp"
-#include "bunchOfFields.hpp"
-#include "surfaceField.hpp"
 #include "volumeField.hpp"
 
 #if defined(MPI_ENABLE) && defined(MPI_DEBUG)
@@ -103,10 +103,12 @@ private:
 
 	struct
 	{
-		int & tail { a[0] }, & point { a[1] }, & bottom { a[2] },
-				& right { a[3] }, & left { a[4] }, & top { a[5] };
 	private:
 		std::array<int, 6> a { -1, -1, -1, -1, -1, -1 };
+
+	public:
+		int & tail { a[0] }, & point { a[1] }, & bottom { a[2] },
+				& right { a[3] }, & left { a[4] }, & top { a[5] };
 	} envNodes;
 
 public:
@@ -147,8 +149,8 @@ public:
 	MPIHandler(const MPIHandler&) = delete;
 	auto& operator=(const MPIHandler&) = delete;
 
-	std::pair<vector, vector> correctParallelepipedVector(
-			const vector & parallelepiped) const noexcept;
+	std::pair<vector, vector>
+	correctParallelepipedVector(const vector & parallelepiped) const noexcept;
 
 	void initialiseBuffersSize([[maybe_unused]] const mesh & mesh_);
 
@@ -314,6 +316,6 @@ public:
 
 	const bool parallel;
 };
-}  // namespace schemi
+} // namespace schemi
 
 #endif /* MPIHANDLER_HPP_ */

@@ -23,7 +23,7 @@ struct reactionMatrixCell
 	std::array<std::size_t, 2> indexes { 0, 0 };
 	bool nullCell { true };
 	bool diagonalCell { false };
-	std::pair<scalar, std::vector<scalar>> molMass {0.0, 0};
+	std::pair<scalar, std::vector<scalar>> molMass { 0.0, 0 };
 	std::vector<std::array<scalar, 3>> reactParams { };
 	std::vector<scalar> reactWeight { };
 	std::vector<std::vector<std::pair<std::size_t, int>>> comp { };

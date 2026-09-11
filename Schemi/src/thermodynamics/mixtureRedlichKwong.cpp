@@ -30,12 +30,13 @@ schemi::mixtureRedlichKwong::mixtureRedlichKwong(const scalar Rin,
 				std::valarray<scalar>(Min.size()), Min.size()), bMatrixMolec(
 				std::valarray<scalar>(Min.size()), Min.size())
 {
-#if ( defined(__GNUG__) ) && ( !defined(__ICC) )
+#if (defined(__GNUG__)) && (!defined(__ICC)) &&                                \
+	!defined(__clang__)
 	constexpr scalar chi { std::cbrt(2) - 1. };
 	constexpr scalar Sigma_a { 1. / (9. * chi) }, Sigma_b { chi / 3. };
 #else
-		const scalar chi { std::cbrt(2) - 1. };
-		const scalar Sigma_a { 1. / (9. * chi) }, Sigma_b { chi / 3. };
+	const scalar chi{std::cbrt(2) - 1.};
+	const scalar Sigma_a{1. / (9. * chi)}, Sigma_b{chi / 3.};
 #endif
 
 	const std::size_t numberOfComponents { Min.size() };
@@ -72,17 +73,20 @@ schemi::scalar schemi::mixtureRedlichKwong::Rv() const noexcept
 	return R;
 }
 
-const std::valarray<schemi::scalar>& schemi::mixtureRedlichKwong::Mv() const noexcept
+const std::valarray<schemi::scalar>&
+schemi::mixtureRedlichKwong::Mv() const noexcept
 {
 	return M;
 }
 
-const std::valarray<schemi::scalar>& schemi::mixtureRedlichKwong::Cvv() const noexcept
+const std::valarray<schemi::scalar>&
+schemi::mixtureRedlichKwong::Cvv() const noexcept
 {
 	return CvArr;
 }
 
-const std::valarray<schemi::scalar>& schemi::mixtureRedlichKwong::dHfv() const noexcept
+const std::valarray<schemi::scalar>&
+schemi::mixtureRedlichKwong::dHfv() const noexcept
 {
 	return dHf;
 }

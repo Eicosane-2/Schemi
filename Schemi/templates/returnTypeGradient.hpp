@@ -8,6 +8,8 @@
 #ifndef RETURNTYPEGRADIENT_HPP_
 #define RETURNTYPEGRADIENT_HPP_
 
+#include "vector.hpp"
+
 namespace schemi
 {
 template<typename T>

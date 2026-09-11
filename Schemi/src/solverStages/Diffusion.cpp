@@ -10,12 +10,12 @@
 #include <chrono>
 
 #include "arithmeticAModel.hpp"
-#include "harmonicInterpolateScalar.hpp"
 #include "divergence.hpp"
 #include "diffusiveFields.hpp"
 #include "gradient.hpp"
 #include "kEpsAModel.hpp"
 #include "linearInterpolate.hpp"
+#include "fieldOperations.hpp"
 
 void schemi::Diffusion(homogeneousPhase<cubicCell> & gasPhase,
 		const abstractMatrixSolver & msolver,

@@ -13,7 +13,7 @@
 
 #include "doubleDotProduct.hpp"
 #include "divergence.hpp"
-#include "intExpPow.hpp"
+#include "fieldOperations.hpp"
 
 schemi::BHRModel::BHRModel(const mesh & meshIn, const MPIHandler & parIn,
 		const volumeField<vector> & uCellIn,

@@ -7,7 +7,6 @@
 
 #include "NewtonMethod.hpp"
 
-#include "exception.hpp"
 #include "globalConstants.hpp"
 
 schemi::scalar schemi::NewtonMethod(const scalar startingValue,

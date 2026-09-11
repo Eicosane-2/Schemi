@@ -25,8 +25,6 @@ volumeField<typeOfValue> harmonicInterpolate(
 
 	for (std::size_t i = 0; i < retVolField.size(); ++i)
 	{
-		const vector & cellR { mesh_.cells()[i].rC() };
-
 		for (std::size_t j = 0; j < mesh_.surfacesOfCells()[i].size(); ++j)
 		{
 			const std::size_t surfIndex { mesh_.surfacesOfCells()[i][j] };
