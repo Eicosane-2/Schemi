@@ -15,6 +15,7 @@ namespace schemi
 {
 class HLLCKTSolver: public abstractFlowSolver, private pressureStarClass
 {
+	bool nearlyPureSubstance(const scalar x) const noexcept;
 public:
 	std::tuple<conservativeFlows, starFields> calculateFlows(
 			const homogeneousPhase<quadraticSurface> & surfaceOwnerSide,

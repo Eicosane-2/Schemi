@@ -10,6 +10,13 @@
 #include "vector.hpp"
 #include "tensor.hpp"
 
+bool schemi::HLLCKTSolver::nearlyPureSubstance(const scalar x) const noexcept
+{
+	constexpr static scalar upperBound = 1 - 1E-6;
+
+	return x > upperBound;
+}
+
 std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCKTSolver::calculateFlows(
 		const homogeneousPhase<quadraticSurface> & surfaceOwnerSide,
 		const homogeneousPhase<quadraticSurface> & surfaceNeighbourSide) const
@@ -79,8 +86,8 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCKTSolver::
 					surfaceNeighbourSide.concentration.v[k].cval()[i]
 							/ surfaceOwnerSide.concentration.v[0].cval()[i]);
 		}
-		if (maxMolarFracO > (1 - stabilizator)
-				&& maxMolarFracN > (1 - stabilizator))
+		if (nearlyPureSubstance(maxMolarFracO)
+				&& nearlyPureSubstance(maxMolarFracN))
 		{ 	//KT-solver
 			scalar SOwner { std::min(
 					velocityProjectionOwner - sonicSpeedOwner[i],
