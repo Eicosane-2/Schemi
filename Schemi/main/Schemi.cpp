@@ -630,7 +630,7 @@ int main()
 		mesh_.setTimestep(std::min(mesh_.timestep(), timeOfCalculation));
 
 		const chemicalKinetics::chemicalReactionsSystem chmk(
-				*gasPhase->phaseThermodynamics);
+				*gasPhase->phaseThermodynamics, minTime);
 
 		/*Write initial conditions.*/
 		{
@@ -720,16 +720,16 @@ int main()
 
 			Time += mesh_.timestep();
 
+			sonicSpeed.val() = std::sqrt(
+					gasPhase->phaseThermodynamics->sqSonicSpeed(
+							gasPhase->concentration.p,
+							gasPhase->density[0].cval(),
+							gasPhase->internalEnergy.cval(),
+							gasPhase->pressure.cval()));
+
 			/*Calculation of new time-step through speed of sound.*/
 			if (!constTimeStep.first)
 			{
-				sonicSpeed.val() = std::sqrt(
-						gasPhase->phaseThermodynamics->sqSonicSpeed(
-								gasPhase->concentration.p,
-								gasPhase->density[0].cval(),
-								gasPhase->internalEnergy.cval(),
-								gasPhase->pressure.cval()));
-
 				std::valarray<scalar> signalSpeed(
 						gasPhase->velocity.cval().size());
 

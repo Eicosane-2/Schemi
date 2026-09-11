@@ -78,8 +78,8 @@ void schemi::chemicalKinetics::chemicalReactionsSystem::renormalization(
 }
 
 schemi::chemicalKinetics::chemicalReactionsSystem::chemicalReactionsSystem(
-		const abstractMixtureThermodynamics & thermIn) :
-		therm(thermIn)
+		const abstractMixtureThermodynamics & thermIn, const scalar minTime) :
+		therm(thermIn), minTimeStep(minTime)
 {
 	std::string buffer, swt;
 
