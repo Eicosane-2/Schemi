@@ -35,6 +35,8 @@ class chemicalReactionsSystem
 
 	std::vector<reactionMatrixCell> matrixPrototype { };
 
+	scalar minTimeStep { 0 };
+
 	template<typename typeOfEntity>
 	std::pair<field<std::array<std::valarray<scalar>, 2>, typeOfEntity>,
 			field<scalar, typeOfEntity>> generateMatrix(
@@ -139,37 +141,81 @@ class chemicalReactionsSystem
 
 	template<typename typeOfEntity>
 	void timeIntegration(concentrationsPack<typeOfEntity> & concentrations,
-			field<scalar, typeOfEntity> & U,
-			const field<scalar, typeOfEntity> & T,
+			field<scalar, typeOfEntity> & U, field<scalar, typeOfEntity> & T,
 			const field<scalar, typeOfEntity> & rho,
 			const scalar timestep) const
 	{
-		auto [AbField, reactMassFracSumOld] = generateMatrix<typeOfEntity>(
-				concentrations, T, rho, timestep);
-
-		for (std::size_t i = 0; i < rho.size(); ++i)
+		std::size_t subSteps = 1;
+		scalar subTimestep = timestep;
+		while (true)
 		{
-			auto& [A, b] = AbField.val()[i];
-
-			auto massFracs = GaussElemination(A, b);
-
-			renormalization(reactMassFracSumOld.cval()[i], massFracs);
-
-			scalar deltaH { 0 };
-			for (std::size_t j = 0; j < massFracs.size(); ++j)
+			try
 			{
-				const std::size_t k = reactingComponentsIndexes[j];
+				for (std::size_t st = 0; st < subSteps; ++st)
+				{
+					auto [AbField, reactMassFracSumOld] = generateMatrix<
+							typeOfEntity>(concentrations, T, rho, subTimestep);
 
-				const auto concNew = massFracs[j] * rho.cval()[i]
-						/ therm.Mv()[k];
+					for (std::size_t i = 0; i < rho.size(); ++i)
+					{
+						auto& [A, b] = AbField.val()[i];
 
-				deltaH += (concNew - concentrations.v[k + 1].cval()[i])
-						* therm.dHfv()[k];
+						auto massFracs = GaussElemination(A, b);
 
-				concentrations.v[k + 1].val()[i] = concNew;
+						renormalization(reactMassFracSumOld.cval()[i],
+								massFracs);
+
+						scalar deltaCp { 0 };
+						scalar deltaH { 0 };
+						const auto TOld = T.cval()[i];
+						for (std::size_t j = 0; j < massFracs.size(); ++j)
+						{
+							const std::size_t k = reactingComponentsIndexes[j];
+
+							const auto concOld =
+									concentrations.v[k + 1].cval()[i];
+							const auto concNew = massFracs[j] * rho.cval()[i]
+									/ therm.Mv()[k];
+							const auto deltaC = concNew - concOld;
+
+							deltaH += deltaC * therm.dHfv()[k];
+
+							deltaCp += deltaC * therm.Cpk(concOld, TOld, k);
+
+							concentrations.v[k + 1].val()[i] = concNew;
+						}
+
+						U.val()[i] -= (deltaH + deltaCp * (TOld - 298.15));
+					}
+
+					T.val() = therm.TFromUv(concentrations.p, U.cval());
+
+					if (T.cval().min() < 0.)
+						throw exception(
+								"Negative temperature after chemical reaction.",
+								errors::negativeTemperatureError);
+				}
+				break;
+			} catch (const exception & e)
+			{
+				if (e.errType == errors::negativeTemperatureError
+						|| e.errType == errors::positivnessError)
+				{
+					subSteps *= 10;
+					subTimestep /= 10;
+
+					if (subTimestep <= minTimeStep)
+						throw exception(
+								"Time step for chemical reactions became too small.",
+								errors::systemError);
+
+					std::cout
+							<< "Chemical reaction time-step diminished. Time-step is "
+							<< subTimestep << '.' << std::endl;
+				}
+				else
+					throw e;
 			}
-
-			U.val()[i] -= deltaH;
 		}
 	}
 
@@ -179,7 +225,8 @@ class chemicalReactionsSystem
 	void renormalization(const scalar sumMassFracOld,
 			std::valarray<scalar> & massFractions) const;
 public:
-	chemicalReactionsSystem(const abstractMixtureThermodynamics & thermIn);
+	chemicalReactionsSystem(const abstractMixtureThermodynamics & thermIn,
+			const scalar minTime);
 	template<typename typeOfEnity>
 	void solve(homogeneousPhase<typeOfEnity> & phase,
 			const MPIHandler & parall) const
@@ -192,9 +239,6 @@ public:
 			timeIntegration(phase.concentration, phase.internalEnergy,
 					phase.temperature, phase.density[0],
 					phase.temperature.meshRef().timestep());
-
-			phase.temperature.val() = phase.phaseThermodynamics->TFromUv(
-					phase.concentration.p, phase.internalEnergy.cval());
 
 			timeIntegration(phase.concentration, phase.internalEnergy,
 					phase.temperature, phase.density[0],
@@ -224,15 +268,11 @@ public:
 			phase.temperature.val() = phase.phaseThermodynamics->TFromUv(
 					phase.concentration.p, phase.internalEnergy.cval());
 
-			if (phase.temperature.cval().min() < 0.)
-				throw exception("Negative temperature after chemical reaction.",
-						errors::negativeTemperatureError);
-
 			{
 				const auto v2 = phase.velocity & phase.velocity;
 
 				phase.totalEnergy.val() = (phase.internalEnergy
-						+ phase.density[0] * v2 * 0.5 + phase.rhokTurb).cval();
+						+ 0.5 * phase.density[0] * v2 + phase.rhokTurb).cval();
 			}
 
 			phase.HelmholtzEnergy.val() = phase.phaseThermodynamics->Fv(
