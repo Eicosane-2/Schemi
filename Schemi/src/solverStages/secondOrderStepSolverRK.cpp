@@ -9,9 +9,9 @@
 
 #include "Advection2dOrder.hpp"
 #include "Diffusion.hpp"
-#include "linearInterpolate.hpp"
 #include "gradient.hpp"
 #include "divergence.hpp"
+#include "fieldOperations.hpp"
 
 schemi::secondOrderStepSolverRK::secondOrderStepSolverRK(
 		homogeneousPhase<cubicCell> & gasPhase_in,

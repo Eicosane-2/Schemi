@@ -9,6 +9,8 @@
 
 #include <algorithm>
 
+#include "fieldOperations.hpp"
+
 schemi::diffusiveFields::diffusiveFields(const mesh & meshRef,
 		const bunchOfFields<cubicCell> & cellFields,
 		const std::vector<boundaryConditionType> & commBoundCond,

@@ -13,8 +13,9 @@
 #include <algorithm>
 #include <iostream>
 
-#include "turbulenceModelEnum.hpp"
 #include "abstractTurbulenceModel.hpp"
+#include "abstractTransportModel.hpp"
+#include "fieldOperations.hpp"
 
 namespace schemi
 {
@@ -525,7 +526,7 @@ private:
 
 	void normalize(std::valarray<scalar> & res) const noexcept
 	{
-		std::replace_if(std::begin(res), std::end(res), [](const auto & i)
+		std::replace_if(std::begin(res), std::end(res), [](const auto & i) 
 		{
 			return std::abs(i) < std::numeric_limits<scalar>::epsilon();
 		}, 0);

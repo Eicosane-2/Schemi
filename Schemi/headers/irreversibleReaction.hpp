@@ -22,8 +22,8 @@ namespace chemicalKinetics
 
 class irreversibleReaction
 {
-	std::vector<int> reagentCoeffs {}, productCoeffs {};
-	std::vector<std::string> reagentSubstNames {}, productSubstNames {};
+	std::vector<int> reagentCoeffs { }, productCoeffs { };
+	std::vector<std::string> reagentSubstNames { }, productSubstNames { };
 	std::array<scalar, 3> reactionParameters { 0, 0, 0 };
 
 public:

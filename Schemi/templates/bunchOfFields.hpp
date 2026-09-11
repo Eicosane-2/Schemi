@@ -18,7 +18,6 @@
 #include "vector.hpp"
 #include "concentrationsPack.hpp"
 #include "field.hpp"
-#include "fieldOperations.hpp"
 
 namespace schemi
 {

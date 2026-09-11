@@ -10,9 +10,9 @@
 #ifndef LINEARINTERPOLATE_HPP_
 #define LINEARINTERPOLATE_HPP_
 
-#include "returnTypeDivergence.hpp"
-#include "returnTypeGradient.hpp"
+#include "boundaryConditionValue.hpp"
 #include "volumeField.hpp"
+#include "surfaceField.hpp"
 
 namespace schemi
 {

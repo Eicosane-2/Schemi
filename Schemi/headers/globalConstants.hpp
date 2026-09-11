@@ -10,8 +10,8 @@
 #ifndef GLOBALCONSTANTS_HPP_
 #define GLOBALCONSTANTS_HPP_
 
-#include <limits>
 #include <cmath>
+#include <limits>
 #include <map>
 #include <string>
 
@@ -34,11 +34,12 @@ stabilizator { 5 * std::numeric_limits<scalar>::epsilon() },
 
 veryBig { 1E-3 * std::numeric_limits<scalar>::max() },
 
-#if ( defined(__GNUG__) ) && ( !defined(__ICC) )
+#if (defined(__GNUG__)) && (!defined(__ICC)) &&                                \
+	!defined(__clang__)
 		Pi_number { std::acos(-1.0) }, e_number { std::exp(1.0) },
 #else
-		Pi_number { 3.1415926535897932384626433832795 },
-		e_number { 2.71828182845904523536 },
+	Pi_number{3.1415926535897932384626433832795},
+	e_number{2.71828182845904523536},
 #endif
 
 		zeroLevel { stabilizator },
@@ -55,6 +56,6 @@ constexpr int ioPrecision { 20 };
 
 const std::map<std::string, bool> onOffMap { { "on", true }, { "off", false }, {
 		"yes", true }, { "no", false } };
-}  // namespace schemi
+} // namespace schemi
 
 #endif /* GLOBALCONSTANTS_HPP_ */

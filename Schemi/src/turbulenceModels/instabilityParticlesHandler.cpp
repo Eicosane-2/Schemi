@@ -11,6 +11,8 @@
 #include <fstream>
 #include <filesystem>
 
+#include "GoncharovTracerModel.hpp"
+
 schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 		const mesh & meshIn, const MPIHandler & par,
 		const volumeField<vector> & uCell, const surfaceField<vector> & uSurf,

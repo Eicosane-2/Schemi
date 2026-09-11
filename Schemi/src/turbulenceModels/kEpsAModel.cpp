@@ -12,6 +12,7 @@
 #include <fstream>
 
 #include "doubleDotProduct.hpp"
+#include "fieldOperations.hpp"
 
 schemi::scalar schemi::kEpsAModel::thetaA(const vector & a, const scalar k,
 		const scalar b) const noexcept

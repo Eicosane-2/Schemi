@@ -7,9 +7,9 @@
 
 #include "SLEMatrix.hpp"
 
-#include "vector.hpp"
 #include "divergence.hpp"
 #include "gradient.hpp"
+#include "vector.hpp"
 
 schemi::SLEMatrix::SLEMatrix(const std::string & stringIn) noexcept :
 		name(stringIn)
@@ -103,8 +103,7 @@ void schemi::SLEMatrix::generateLaplacianSurfaceBoundary(
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 
@@ -243,8 +242,7 @@ void schemi::SLEMatrix::generateDTimeNabla(const volumeField<scalar> & vField,
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 
@@ -330,8 +328,7 @@ void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 
@@ -350,9 +347,12 @@ void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
 										[oIndex](
 												const std::pair<scalar,
 														std::size_t> & p) 
-												{	if(oIndex == p.second)
+												{
+													if (oIndex == p.second)
 													return true;
-													else return false;});
+													else
+													return false;
+												});
 
 						if (Iterator != SLE[0].lowerTriangle[i].end())
 							Iterator->first +=
@@ -371,9 +371,12 @@ void schemi::SLEMatrix::addNabla(const volumeField<scalar> & vField,
 										[oIndex](
 												const std::pair<scalar,
 														std::size_t> & p) 
-												{	if(oIndex == p.second)
+												{
+													if (oIndex == p.second)
 													return true;
-													else return false;});
+													else
+													return false;
+												});
 
 						if (Iterator != SLE[0].upperTriangle[i].end())
 							Iterator->first +=
@@ -462,8 +465,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 
@@ -602,8 +604,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 
@@ -765,8 +766,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 
@@ -972,8 +972,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 
@@ -1228,8 +1227,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian(
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 
@@ -1603,8 +1601,7 @@ void schemi::SLEMatrix::generateDTimeLaplacian2TO(
 				}
 				else
 				{
-					[[unlikely]]
-					throw exception("Couldn't choose oIndex.",
+					[[unlikely]] throw exception("Couldn't choose oIndex.",
 							errors::systemError);
 				}
 

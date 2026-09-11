@@ -10,13 +10,11 @@
 
 #include <functional>
 
-#include "boundaryConditionValue.hpp"
-#include "concentrationsPack.hpp"
 #include "interfaceStatusEnum.hpp"
 #include "scalar.hpp"
 #include "vector.hpp"
+#include "tensor.hpp"
 #include "tracerParticle.hpp"
-#include "volumeField.hpp"
 
 namespace schemi
 {
@@ -25,7 +23,7 @@ class GoncharovTracerModel: public tracerParticle
 	constexpr static scalar ReCriterion { 300 };
 	constexpr static scalar relativeCriterion { 5.0 / 3.0 };
 
-	scalar Ck { 0.35 }, Ceps { 1.05 * 4 }, Cb { 1 }; // TODO Test coefficients.
+	scalar Ck { 0.35 }, Ceps { 1.05 * 4 }, Cb { 1 }; //TODO Test coefficients.
 
 	/*Initial conditions*/
 	std::array<std::size_t, 2> s12 { componentPlaceholder, componentPlaceholder };

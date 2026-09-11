@@ -12,14 +12,12 @@
 #include <valarray>
 
 #include "exception.hpp"
-#include "globalConstants.hpp"
 #include "mesh.hpp"
 #include "subPatchData.hpp"
 
 namespace schemi
 {
-template<typename typeOfValue, typename typeOfEntity>
-struct field
+template<typename typeOfValue, typename typeOfEntity> struct field
 {
 	field(const field<typeOfValue, typeOfEntity>&) = default;
 
@@ -50,12 +48,12 @@ struct field
 			valueField = std::valarray<typeOfValue>(value,
 					meshReference.cellsSize());
 
-			//boundaryConditionInfo.resize(meshReference.surfacesSize());
-			//for (std::size_t i = 0; i < boundaryConditionInfo.size(); ++i)
+			// boundaryConditionInfo.resize(meshReference.surfacesSize());
+			// for (std::size_t i = 0; i < boundaryConditionInfo.size(); ++i)
 			//{
 			//	boundaryConditionInfo[i].first = meshReference.bndType()[i];
 			//	boundaryConditionInfo[i].second = value;
-			//}
+			// }
 
 			fieldSize = meshReference.cellsSize();
 		}
@@ -67,7 +65,6 @@ struct field
 			fieldSize = meshReference.surfacesSize();
 		}
 		else
-			[[unlikely]]
 			throw exception("Unknown type of field.",
 					errors::fieldInitialisationError);
 	}
@@ -404,7 +401,6 @@ struct field
 			valueField = std::valarray<typeOfValue>(value, fieldSize);
 		}
 		else
-			[[unlikely]]
 			throw exception("Unknown type of field.",
 					errors::fieldInitialisationError);
 
@@ -435,7 +431,6 @@ struct field
 			valueField = value;
 		}
 		else
-			[[unlikely]]
 			throw exception("Unknown type of field.",
 					errors::fieldInitialisationError);
 
@@ -452,12 +447,14 @@ struct field
 		return valueField;
 	}
 
-	const std::vector<std::pair<boundaryConditionType, typeOfValue>>& boundCond() const noexcept
+	const std::vector<std::pair<boundaryConditionType, typeOfValue>>&
+	boundCond() const noexcept
 	{
 		return boundaryConditionInfo;
 	}
 
-	std::vector<std::pair<boundaryConditionType, typeOfValue>>& boundCond_wr() noexcept
+	std::vector<std::pair<boundaryConditionType, typeOfValue>>&
+	boundCond_wr() noexcept
 	{
 		return boundaryConditionInfo;
 	}
@@ -471,6 +468,7 @@ struct field
 	{
 		return fieldSize;
 	}
+
 private:
 	std::valarray<typeOfValue> valueField;
 	std::vector<std::pair<boundaryConditionType, typeOfValue>> boundaryConditionInfo;
@@ -484,12 +482,11 @@ private:
 					errors::fieldInitialisationError);
 	}
 
-	template<bool flag = false>
-	constexpr void staticNotVolumeField()
+	template<bool flag = false> constexpr void staticNotVolumeField()
 	{
 		static_assert(flag, "Field is not volumeField.");
 	}
 };
-}  // namespace schemi
+} // namespace schemi
 
 #endif /* FIELD_HPP_ */

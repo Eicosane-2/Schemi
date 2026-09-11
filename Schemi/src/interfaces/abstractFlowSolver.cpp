@@ -17,6 +17,7 @@
 #include "HLLC2pSolver.hpp"
 #include "RichtmyerSolver.hpp"
 #include "KTSolver.hpp"
+#include "HLLCKTSolver.hpp"
 
 schemi::abstractFlowSolver::~abstractFlowSolver() noexcept
 {
@@ -33,6 +34,7 @@ std::unique_ptr<schemi::abstractFlowSolver> schemi::abstractFlowSolver::createFl
 	flowSolverType.insert( { "KT", flowSolver::KT });
 	flowSolverType.insert( { "HLLC2p", flowSolver::HLLC2p });
 	flowSolverType.insert( { "Richtmyer", flowSolver::Richtmyer });
+	flowSolverType.insert( { "HLLCKT", flowSolver::HLLCKT });
 
 	flowSolver flowSolwerFlag;
 	try
@@ -63,6 +65,9 @@ std::unique_ptr<schemi::abstractFlowSolver> schemi::abstractFlowSolver::createFl
 		break;
 	case flowSolver::Richtmyer:
 		return std::make_unique<RichtmyerSolver>(par);
+		break;
+	case flowSolver::HLLCKT:
+		return std::make_unique<HLLCKTSolver>();
 		break;
 	[[unlikely]] default:
 		return std::make_unique<KTSolver>();

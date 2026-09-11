@@ -13,6 +13,7 @@
 #include "linearInterpolate.hpp"
 #include "returnTypeGradient.hpp"
 #include "intExpPow.hpp"
+#include "boundaryConditionValue.hpp"
 
 namespace schemi
 {
@@ -106,7 +107,7 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 
 	for (std::size_t i = 0; i < mesh_.surfacesSize(); ++i)
 	{
-		const auto& boundaryCondition = inField.boundCond()[i];
+		const auto & boundaryCondition = inField.boundCond()[i];
 
 		switch (boundaryCondition.first)
 		{
@@ -128,8 +129,8 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
 			const Type outerCellValue { bncCalc.boundaryConditionValueCell(
-					inField.cval()[ownIndex], boundaryCondition, ownIndex,
-					i, compt) };
+					inField.cval()[ownIndex], boundaryCondition, ownIndex, i,
+					compt) };
 
 			const vector deltaR(
 					(mesh_.surfaces()[i].rC() - mesh_.cells()[ownIndex].rC())
@@ -149,8 +150,8 @@ surfaceField<returnTypeGradient<Type>> surfGrad(
 			const std::size_t ownIndex { mesh_.surfaceOwner()[i] };
 
 			const Type outerCellValue { bncCalc.boundaryConditionValueCell(
-					inField.cval()[ownIndex], boundaryCondition, ownIndex,
-					i, compt) };
+					inField.cval()[ownIndex], boundaryCondition, ownIndex, i,
+					compt) };
 
 			const vector deltaR(
 					(mesh_.surfaces()[i].rC() - mesh_.cells()[ownIndex].rC())
