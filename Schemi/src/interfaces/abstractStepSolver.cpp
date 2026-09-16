@@ -13,6 +13,24 @@
 #include "thirdOrderStepSolver.hpp"
 #include "thirdOrderStepSolverCada.hpp"
 
+void schemi::abstractStepSolver::normalize(std::valarray<scalar> & res) noexcept
+{
+	std::replace_if(std::begin(res), std::end(res), [](const auto & i)
+	{
+		return std::abs(i) < std::numeric_limits<scalar>::epsilon();
+	}, 0);
+}
+
+void schemi::abstractStepSolver::normalize(std::valarray<vector> & res) noexcept
+{
+	for (auto & r_i : res)
+	{
+		for (std::size_t j = 0; j < vector::vsize; ++j)
+			if (std::abs(r_i()[j]) < std::numeric_limits<scalar>::epsilon())
+				r_i.wr()[j] = 0;
+	}
+}
+
 schemi::abstractStepSolver::abstractStepSolver(
 		homogeneousPhase<cubicCell> & gasPhase_in,
 		const abstractLimiter & limiter_in,
