@@ -29,7 +29,7 @@ schemi::scalar schemi::abstractMatrixSolver::relativeIterationDifference(
 }
 
 void schemi::abstractMatrixSolver::normalize(
-		std::valarray<scalar> & res) const noexcept
+		std::valarray<scalar> & res) noexcept
 {
 	std::replace_if(std::begin(res), std::end(res), [](const auto & i) 
 	{

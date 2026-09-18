@@ -28,6 +28,26 @@ namespace schemi
 {
 class abstractStepSolver
 {
+	friend starFields Advection(homogeneousPhase<cubicCell>&,
+			const abstractLimiter&, const abstractFlowSolver&,
+			std::pair<bool, vector>, const boundaryConditionValue&, scalar&,
+			scalar&, scalar&, scalar&, const MPIHandler&);
+	friend starFields Advection2dOrder(homogeneousPhase<cubicCell>&,
+			const abstractLimiter&, const abstractFlowSolver&,
+			std::pair<bool, vector>, const boundaryConditionValue&, scalar&,
+			scalar&, scalar&, scalar&, const MPIHandler&);
+	friend starFields Advection3dOrder(homogeneousPhase<cubicCell>&,
+			const abstractLimiter&, const abstractFlowSolver&,
+			std::pair<bool, vector>, const boundaryConditionValue&, scalar&,
+			scalar&, scalar&, scalar&, const MPIHandler&);
+	friend starFields Advection3dOrderCada(homogeneousPhase<cubicCell>&,
+			const abstractLimiter&, const abstractFlowSolver&,
+			std::pair<bool, vector>, const boundaryConditionValue&, scalar&,
+			scalar&, scalar&, scalar&, const MPIHandler&,
+			const volumeField<scalar>&);
+
+	static void normalize(std::valarray<scalar> & res) noexcept;
+	static void normalize(std::valarray<vector> & res) noexcept;
 protected:
 	homogeneousPhase<cubicCell> & gasPhase;
 	const abstractLimiter & limiter;

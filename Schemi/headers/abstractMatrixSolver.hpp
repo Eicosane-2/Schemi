@@ -31,7 +31,7 @@ protected:
 	scalar relativeIterationDifference(const std::valarray<scalar> & oldField,
 			const std::valarray<scalar> & newField) const noexcept;
 
-	void normalize(std::valarray<scalar> & res) const noexcept;
+	static void normalize(std::valarray<scalar> & res) noexcept;
 public:
 	virtual ~abstractMatrixSolver() noexcept =0;
 

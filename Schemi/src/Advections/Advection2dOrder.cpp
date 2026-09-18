@@ -9,10 +9,10 @@
 
 #include <chrono>
 
+#include "abstractStepSolver.hpp"
 #include "divergence.hpp"
 #include "gradient.hpp"
 #include "TVDLimiter.hpp"
-#include "fieldOperations.hpp"
 
 schemi::starFields schemi::Advection2dOrder(
 		homogeneousPhase<cubicCell> & gasPhase, const abstractLimiter & limiter,
@@ -556,9 +556,16 @@ schemi::starFields schemi::Advection2dOrder(
 					* timestep;
 		}
 
+		abstractStepSolver::normalize(gasPhase.totalEnergy.val());
+		abstractStepSolver::normalize(gasPhase.momentum.val());
+
 		for (std::size_t k = 0; k < gasPhase.density.size(); ++k)
+		{
 			gasPhase.density[k] -= divergence(NumFluxFlows.density[k])
 					* timestep;
+
+			abstractStepSolver::normalize(gasPhase.density[k].val());
+		}
 
 		if (gasPhase.turbulence->turbulence())
 		{
@@ -567,16 +574,27 @@ schemi::starFields schemi::Advection2dOrder(
 			gasPhase.rhoepsTurb -= divergence(NumFluxFlows.rhoepsTurb)
 					* timestep;
 
+			abstractStepSolver::normalize(gasPhase.rhokTurb.val());
+			abstractStepSolver::normalize(gasPhase.rhoepsTurb.val());
+
 			if (gasPhase.turbulence->aField())
 			{
 				gasPhase.rhoaTurb -= divergence(NumFluxFlows.rhoaTurb)
 						* timestep;
 
+				abstractStepSolver::normalize(gasPhase.rhoaTurb.val());
+
 				if (gasPhase.turbulence->bField())
+				{
 					gasPhase.rhobTurb -= divergence(NumFluxFlows.rhobTurb)
 							* timestep;
+
+					abstractStepSolver::normalize(gasPhase.rhobTurb.val());
+				}
 			}
 		}
+
+		/*Time integration end. Start of recalculation.*/
 
 		gasPhase.concentration.v[0].val() = 0;
 		for (std::size_t k = 1; k < gasPhase.concentration.v.size(); ++k)
