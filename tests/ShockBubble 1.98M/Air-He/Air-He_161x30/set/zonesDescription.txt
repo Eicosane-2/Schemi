@@ -1,0 +1,8 @@
+#Number_of_zones
+2
+#Outer_zone: yes
+#Zones_description
+plane
+1 0 0 ; 0.1175 0.15 0.5
+sphere
+0.41 0.15 0.5 0.075

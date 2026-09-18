@@ -24,11 +24,9 @@ void schemi::abstractStepSolver::normalize(std::valarray<scalar> & res) noexcept
 void schemi::abstractStepSolver::normalize(std::valarray<vector> & res) noexcept
 {
 	for (auto & r_i : res)
-	{
-		for (std::size_t j = 0; j < vector::vsize; ++j)
-			if (std::abs(r_i()[j]) < std::numeric_limits<scalar>::epsilon())
-				r_i.wr()[j] = 0;
-	}
+		for (auto & v_j : r_i.wr())
+			if (std::abs(v_j) < std::numeric_limits<scalar>::epsilon())
+				v_j = 0;
 }
 
 schemi::abstractStepSolver::abstractStepSolver(
