@@ -37,11 +37,11 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 
 	inputFile.precision(ioPrecision);
 
-	std::string modelUsedStringRead;
+	std::string modelUsedRead;
 
-	inputFile >> modelUsedStringRead;
+	inputFile >> modelUsedRead;
 
-	modelUsed = onOffMap.at(modelUsedStringRead);
+	modelUsed = onOffMap.at(modelUsedRead);
 
 	if (modelUsed)
 	{
@@ -388,11 +388,11 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 
 	inputFile.precision(ioPrecision);
 
-	std::string modelUsedStringRead;
+	std::string modelUsedRead;
 
-	inputFile >> modelUsedStringRead;
+	inputFile >> modelUsedRead;
 
-	modelUsed = onOffMap.at(modelUsedStringRead);
+	modelUsed = onOffMap.at(modelUsedRead);
 
 	if (modelUsed)
 	{
