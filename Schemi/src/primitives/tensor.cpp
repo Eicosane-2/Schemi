@@ -28,12 +28,12 @@ schemi::tensor::tensor(const scalar VXXin, const scalar VXYin,
 {
 }
 
-const std::array<schemi::scalar, 9>& schemi::tensor::operator()() const noexcept
+const std::array<schemi::scalar, schemi::tensor::vsize>& schemi::tensor::operator()() const noexcept
 {
 	return value;
 }
 
-std::array<schemi::scalar, 9>& schemi::tensor::wr() noexcept
+std::array<schemi::scalar, schemi::tensor::vsize>& schemi::tensor::wr() noexcept
 {
 	return value;
 }

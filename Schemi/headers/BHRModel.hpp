@@ -22,7 +22,8 @@ class BHRModel: public kEpsModels
 	scalar C3() const noexcept;
 	scalar C4() const noexcept;
 
-	scalar Ca() const noexcept;
+	scalar Ca1() const noexcept;
+	scalar Ca2() const noexcept;
 	scalar Cb1() const noexcept;
 	scalar Cb2() const noexcept;
 

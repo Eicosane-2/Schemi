@@ -197,6 +197,21 @@ schemi::interfaceStatus schemi::GoncharovTracerModel::checkTransition(
 		const auto & v_prev = std::get<1>(getVelocities());
 		const auto normale = gradRho / -gradRho.mag();
 		const auto a_v = (v_cur - v_prev) / timestep;
+		const auto [epsRTFactor, bRTFactor] = [&normale](
+				const vector & gc) -> std::array<scalar, 2>
+		{
+			const auto g_n = std::abs(gc & normale);
+
+			constexpr static scalar p1 { 0.01075 };
+			constexpr static scalar p2 { 0.1 };
+
+			if (g_n > 0)
+				return
+				{	p1, p2};
+			else
+				return
+				{	1.0, 1.0};
+		}(g);
 		const auto a_sum = std::abs((g + a_v) & normale);
 		const scalar bubbleVelocity_RT = [this, &a_sum, &Atwood]
 		{
@@ -212,10 +227,10 @@ schemi::interfaceStatus schemi::GoncharovTracerModel::checkTransition(
 				* pow<scalar, 2>(
 						std::get<0>(getVelocities()).mag() + bubbleVelocity_RT);
 
-		const auto s0 = 2 * Ceps * eta;
+		const auto s0 = 2 * Ceps * eta * epsRTFactor;
 		eps0 = pow<scalar, 3>(std::sqrt(k0)) / s0;
 
-		b0 = Cb / 4 * deltaDen;
+		b0 = Cb / 4 * deltaDen * bRTFactor;
 
 		return status;
 	}
