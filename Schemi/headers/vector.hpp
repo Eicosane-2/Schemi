@@ -22,15 +22,17 @@ class tensor;
 class vector
 {
 public:
+	constexpr static std::size_t vsize = 3;
+
 	vector() noexcept = default;
 
 	explicit vector(const scalar inValue) noexcept;
 
 	vector(const scalar VXin, const scalar VYin, const scalar VZin) noexcept;
 
-	const std::array<scalar, 3>& operator()() const noexcept;
+	const std::array<scalar, vsize>& operator()() const noexcept;
 
-	std::array<scalar, 3>& wr() noexcept;
+	std::array<scalar, vsize>& wr() noexcept;
 
 	scalar mag() const noexcept;
 
@@ -60,10 +62,8 @@ public:
 
 	vector& operator=(const scalar inScalar) noexcept;
 
-	constexpr static std::size_t vsize = 3;
-
 private:
-	std::array<scalar, 3> value = { 0.0, 0.0, 0.0 };
+	std::array<scalar, vsize> value = { 0.0, 0.0, 0.0 };
 };
 
 vector operator*(const scalar inScalar, const vector & inVector) noexcept;

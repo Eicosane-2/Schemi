@@ -72,7 +72,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 			if ((readDataPoint.second == "no")
 					|| (readDataPoint.second == "initialisation"))
 			{
-				scalar Ck, Ceps, Cb;
+				scalar Ck(-1.2), Ceps(-2.3), Cb(-3.4);
 				vector positionVector_prt;
 				std::array<std::size_t, 1> nodeParticleLocated { 0 };
 
@@ -191,6 +191,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 						turbulentParametersFile >> skipBuffer >> C3In;
 						turbulentParametersFile >> skipBuffer >> value;
 						turbulentParametersFile >> skipBuffer >> Ca1In;
+						turbulentParametersFile >> skipBuffer >> value;
 						turbulentParametersFile >> skipBuffer >> Cb1In;
 
 						turbulentParametersFile.close();
@@ -211,7 +212,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 			}
 			else
 			{
-				scalar Ck, Ceps, Cb;
+				scalar Ck(-1.2), Ceps(-2.3), Cb(-3.4);
 				vector positionVector_prt;
 				std::array<std::size_t, 1> nodeParticleLocated { 0 };
 
@@ -354,6 +355,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 						turbulentParametersFile >> skipBuffer >> C3In;
 						turbulentParametersFile >> skipBuffer >> value;
 						turbulentParametersFile >> skipBuffer >> Ca1In;
+						turbulentParametersFile >> skipBuffer >> value;
 						turbulentParametersFile >> skipBuffer >> Cb1In;
 
 						turbulentParametersFile.close();
@@ -422,7 +424,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 			if ((readDataPoint.second == "no")
 					|| (readDataPoint.second == "initialisation"))
 			{
-				scalar Ck, Ceps, Cb;
+				scalar Ck(-1.2), Ceps(-2.3), Cb(-3.4);
 				vector positionVector_prt;
 
 				inputFile >> Ck >> Ceps >> Cb;
@@ -484,6 +486,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					turbulentParametersFile >> skipBuffer >> C3In;
 					turbulentParametersFile >> skipBuffer >> value;
 					turbulentParametersFile >> skipBuffer >> Ca1In;
+					turbulentParametersFile >> skipBuffer >> value;
 					turbulentParametersFile >> skipBuffer >> Cb1In;
 
 					turbulentParametersFile.close();
@@ -505,7 +508,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 				int pertType;
 				scalar eta_0, lambda, rad;
 
-				scalar Ck, Ceps, Cb;
+				scalar Ck(-1.2), Ceps(-2.3), Cb(-3.4);
 
 				inputFile >> Ck >> Ceps >> Cb;
 
@@ -593,6 +596,7 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					turbulentParametersFile >> skipBuffer >> C3In;
 					turbulentParametersFile >> skipBuffer >> value;
 					turbulentParametersFile >> skipBuffer >> Ca1In;
+					turbulentParametersFile >> skipBuffer >> value;
 					turbulentParametersFile >> skipBuffer >> Cb1In;
 
 					turbulentParametersFile.close();

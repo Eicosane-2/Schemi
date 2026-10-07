@@ -24,12 +24,12 @@ schemi::vector::vector(const scalar VXin, const scalar VYin,
 {
 }
 
-const std::array<schemi::scalar, 3>& schemi::vector::operator()() const noexcept
+const std::array<schemi::scalar, schemi::vector::vsize>& schemi::vector::operator()() const noexcept
 {
 	return value;
 }
 
-std::array<schemi::scalar, 3>& schemi::vector::wr() noexcept
+std::array<schemi::scalar, schemi::vector::vsize>& schemi::vector::wr() noexcept
 {
 	return value;
 }

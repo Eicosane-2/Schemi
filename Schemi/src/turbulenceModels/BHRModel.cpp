@@ -23,7 +23,7 @@ schemi::BHRModel::BHRModel(const mesh & meshIn, const MPIHandler & parIn,
 		kEpsModels(meshIn, turb_in, true, true, turbulenceModel::BHRModel), initialisation(
 				meshIn, parIn, uCellIn, uSurfIn, readDataPoint, names)
 {
-	modelParametersSet().resize(12);
+	modelParametersSet().resize(13);
 
 	/*Read turbulent parameters.*/
 	{
@@ -80,6 +80,7 @@ schemi::BHRModel::BHRModel(const mesh & meshIn, const MPIHandler & parIn,
 		turbulentParametersFile >> skipBuffer >> modelParametersSet()[9];
 		turbulentParametersFile >> skipBuffer >> modelParametersSet()[10];
 		turbulentParametersFile >> skipBuffer >> modelParametersSet()[11];
+		turbulentParametersFile >> skipBuffer >> modelParametersSet()[12];
 
 		turbulentParametersFile.close();
 	}
@@ -106,35 +107,39 @@ schemi::scalar schemi::BHRModel::C4() const noexcept
 	return modelParameters()[4];
 }
 
-schemi::scalar schemi::BHRModel::Ca() const noexcept
+schemi::scalar schemi::BHRModel::Ca1() const noexcept
 {
 	return modelParameters()[5];
 }
-schemi::scalar schemi::BHRModel::Cb1() const noexcept
+schemi::scalar schemi::BHRModel::Ca2() const noexcept
 {
 	return modelParameters()[6];
 }
-schemi::scalar schemi::BHRModel::Cb2() const noexcept
+schemi::scalar schemi::BHRModel::Cb1() const noexcept
 {
 	return modelParameters()[7];
+}
+schemi::scalar schemi::BHRModel::Cb2() const noexcept
+{
+	return modelParameters()[8];
 }
 
 schemi::scalar schemi::BHRModel::alpha2() const noexcept
 {
-	return modelParameters()[8];
+	return modelParameters()[9];
 }
 schemi::scalar schemi::BHRModel::alpha3() const noexcept
 {
-	return modelParameters()[9];
+	return modelParameters()[10];
 }
 schemi::scalar schemi::BHRModel::alpha4() const noexcept
 {
-	return modelParameters()[10];
+	return modelParameters()[11];
 }
 
 schemi::scalar schemi::BHRModel::CMSM() const noexcept
 {
-	return modelParameters()[11];
+	return modelParameters()[12];
 }
 
 std::tuple<
@@ -257,7 +262,12 @@ std::tuple<
 
 		Sourcea.first.val()[i] = bGradP + tauGradRho + rhoAgradV;
 		//+ redistribution_a;
-		Sourcea.second.val()[i] = -cellFields.density[0].cval()[i] * ek * Ca();
+		Sourcea.second.val()[i] = -cellFields.density[0].cval()[i] * ek
+				* (Ca1()
+						+ Ca2()
+								* (diffFieldsOld.a.cval()[i]
+										& diffFieldsOld.a.cval()[i])
+								/ diffFieldsOld.k.cval()[i]);
 
 		const scalar rhobDiva(-cellFields.rhobTurb.cval()[i] * diva.cval()[i]);
 

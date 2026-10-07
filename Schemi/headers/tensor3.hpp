@@ -23,6 +23,8 @@ class tensor;
 class tensor3
 {
 public:
+	constexpr static std::size_t vsize = 27;
+
 	tensor3() noexcept = default;
 
 	explicit tensor3(const scalar inValue) noexcept;
@@ -40,9 +42,9 @@ public:
 			const scalar VZZXin, const scalar VZZYin,
 			const scalar VZZZin) noexcept;
 
-	const std::array<scalar, 27>& operator()() const noexcept;
+	const std::array<scalar, vsize>& operator()() const noexcept;
 
-	std::array<scalar, 27>& wr() noexcept;
+	std::array<scalar, vsize>& wr() noexcept;
 
 	scalar trace() const noexcept;
 
@@ -70,10 +72,8 @@ public:
 
 	tensor3& operator=(const scalar inScalar) noexcept;
 
-	constexpr static std::size_t vsize = 27;
-
 private:
-	std::array<scalar, 27> value = {
+	std::array<scalar, vsize> value = {
 
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 

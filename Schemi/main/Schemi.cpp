@@ -258,6 +258,12 @@ int main()
 					errors::initialisationError);
 		}
 
+		if (!gravitationFlag)
+		{
+			g = vector();
+			gDelta = vector();
+		}
+
 		try
 		{
 			diffusionFlag = onOffMap.at(diffusionONString);
@@ -503,9 +509,9 @@ int main()
 
 #ifdef MPI_VERSION
 			{
-				std::size_t noutsBroadcast[1], nstepsBroadcast[1],
-						noutsWBroadcast[1];
-				MPIHandler::mpi_scalar TimeBroadcast[1];
+				std::size_t noutsBroadcast[1] {}, nstepsBroadcast[1] {},
+						noutsWBroadcast[1] {};
+				MPIHandler::mpi_scalar TimeBroadcast[1] {};
 
 				if (parallelism.isRoot())
 				{
