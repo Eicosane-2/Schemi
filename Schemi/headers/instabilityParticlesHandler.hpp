@@ -43,6 +43,8 @@ class instabilityParticlesHandler
 
 	bool modelUsed;
 
+	bool notRoot(const std::size_t MPIrank) const noexcept;
+
 	bool checkPosition(const vector & position) const noexcept;
 
 	std::size_t findNearCell(const vector & position) noexcept;

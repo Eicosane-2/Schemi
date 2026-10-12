@@ -121,34 +121,44 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					for (std::size_t j = 0; j < velocity_prt().size(); ++j)
 						velocity_arr[j] = velocity_prt()[j];
 
-					MPI_Send(positionData.data(), 2, schemi_MPI_SIZE,
-							parallelism.root,
-							static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-							MPI_COMM_WORLD);
-					MPI_Send(weights_arr.data(), 2, schemi_MPI_SCALAR,
-							parallelism.root,
-							static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-							MPI_COMM_WORLD);
-					MPI_Send(velocity_arr.data(), vector::vsize,
-					schemi_MPI_SCALAR, parallelism.root,
-							static_cast<int>(MPIHandler::MPITags::GoncharovVelocity),
-							MPI_COMM_WORLD);
+					if (notRoot(std::get<0>(nodeParticleLocated)))
+					{
+						MPI_Send(positionData.data(), 2, schemi_MPI_SIZE,
+								parallelism.root,
+								static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+								MPI_COMM_WORLD);
+						MPI_Send(weights_arr.data(), 2, schemi_MPI_SCALAR,
+								parallelism.root,
+								static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+								MPI_COMM_WORLD);
+						MPI_Send(velocity_arr.data(), vector::vsize,
+						schemi_MPI_SCALAR, parallelism.root,
+								static_cast<int>(MPIHandler::MPITags::GoncharovVelocity),
+								MPI_COMM_WORLD);
+					}
 				}
-				else if (parallelism.isRoot())
+
+				if (parallelism.isRoot())
 				{
-					MPI_Recv(positionData.data(), 2, schemi_MPI_SIZE,
-							static_cast<int>(std::get<0>(nodeParticleLocated)),
-							static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-							MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-					MPI_Recv(weights_arr.data(), 2, schemi_MPI_SCALAR,
-							static_cast<int>(std::get<0>(nodeParticleLocated)),
-							static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-							MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-					MPI_Recv(velocity_arr.data(), vector::vsize,
-					schemi_MPI_SCALAR,
-							static_cast<int>(std::get<0>(nodeParticleLocated)),
-							static_cast<int>(MPIHandler::MPITags::GoncharovVelocity),
-							MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+					if (notRoot(std::get<0>(nodeParticleLocated)))
+					{
+						MPI_Recv(positionData.data(), 2, schemi_MPI_SIZE,
+								static_cast<int>(std::get<0>(
+										nodeParticleLocated)),
+								static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+								MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+						MPI_Recv(weights_arr.data(), 2, schemi_MPI_SCALAR,
+								static_cast<int>(std::get<0>(
+										nodeParticleLocated)),
+								static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+								MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+						MPI_Recv(velocity_arr.data(), vector::vsize,
+						schemi_MPI_SCALAR,
+								static_cast<int>(std::get<0>(
+										nodeParticleLocated)),
+								static_cast<int>(MPIHandler::MPITags::GoncharovVelocity),
+								MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+					}
 
 					std::get<positionType::cell>(particlePosition[prt]) =
 							positionData[0];
@@ -258,25 +268,34 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 					for (std::size_t j = 0; j < cellSurfWeight_prt.size(); ++j)
 						weights_arr[j] = cellSurfWeight_prt[j];
 
-					MPI_Send(positionData.data(), 2, schemi_MPI_SIZE,
-							parallelism.root,
-							static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-							MPI_COMM_WORLD);
-					MPI_Send(weights_arr.data(), 2, schemi_MPI_SCALAR,
-							parallelism.root,
-							static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-							MPI_COMM_WORLD);
+					if (notRoot(std::get<0>(nodeParticleLocated)))
+					{
+						MPI_Send(positionData.data(), 2, schemi_MPI_SIZE,
+								parallelism.root,
+								static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+								MPI_COMM_WORLD);
+						MPI_Send(weights_arr.data(), 2, schemi_MPI_SCALAR,
+								parallelism.root,
+								static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+								MPI_COMM_WORLD);
+					}
 				}
-				else if (parallelism.isRoot())
+
+				if (parallelism.isRoot())
 				{
-					MPI_Recv(positionData.data(), 2, schemi_MPI_SIZE,
-							static_cast<int>(std::get<0>(nodeParticleLocated)),
-							static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-							MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-					MPI_Recv(weights_arr.data(), 2, schemi_MPI_SCALAR,
-							static_cast<int>(std::get<0>(nodeParticleLocated)),
-							static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-							MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+					if (notRoot(std::get<0>(nodeParticleLocated)))
+					{
+						MPI_Recv(positionData.data(), 2, schemi_MPI_SIZE,
+								static_cast<int>(std::get<0>(
+										nodeParticleLocated)),
+								static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+								MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+						MPI_Recv(weights_arr.data(), 2, schemi_MPI_SCALAR,
+								static_cast<int>(std::get<0>(
+										nodeParticleLocated)),
+								static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+								MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+					}
 
 					std::get<positionType::cell>(particlePosition[prt]) =
 							positionData[0];
@@ -619,6 +638,12 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 
 	inputFile.close();
 #endif
+}
+
+bool schemi::instabilityParticlesHandler::notRoot(
+		const std::size_t MPIrank) const noexcept
+{
+	return parallelism.root != MPIrank;
 }
 
 bool schemi::instabilityParticlesHandler::checkPosition(
@@ -1762,40 +1787,47 @@ void schemi::instabilityParticlesHandler::timeIntegration(
 				weightsOld_arr[j] = cellSurfWeight[prt][j];
 			}
 
-			MPI_Send(interfStatus_arr.data(), 1, MPI_INT,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovInterfaceStatus),
-					MPI_COMM_WORLD);
-			MPI_Send(partLocOld_arr.data(), 2, schemi_MPI_SIZE,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-					MPI_COMM_WORLD);
-			MPI_Send(substances_arr.data(), 2, schemi_MPI_SIZE,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovSubstances),
-					MPI_COMM_WORLD);
-			MPI_Send(weightsOld_arr.data(), 2, schemi_MPI_SCALAR,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-					MPI_COMM_WORLD);
+			if (notRoot(std::get<0>(nodeParticleLocatedOld)))
+			{
+				MPI_Send(interfStatus_arr.data(), 1, MPI_INT,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovInterfaceStatus),
+						MPI_COMM_WORLD);
+				MPI_Send(partLocOld_arr.data(), 2, schemi_MPI_SIZE,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+						MPI_COMM_WORLD);
+				MPI_Send(substances_arr.data(), 2, schemi_MPI_SIZE,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovSubstances),
+						MPI_COMM_WORLD);
+				MPI_Send(weightsOld_arr.data(), 2, schemi_MPI_SCALAR,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+						MPI_COMM_WORLD);
+			}
 		}
-		else if (parallelism.mpi_rank == std::get<0>(nodeParticleLocatedOld))
+
+		if (parallelism.mpi_rank == std::get<0>(nodeParticleLocatedOld))
 		{
-			MPI_Recv(interfStatus_arr.data(), 1, MPI_INT, parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovInterfaceStatus),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(partLocOld_arr.data(), 2, schemi_MPI_SIZE,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(substances_arr.data(), 2, schemi_MPI_SIZE,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovSubstances),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(weightsOld_arr.data(), 2, schemi_MPI_SCALAR,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+			if (notRoot(std::get<0>(nodeParticleLocatedOld)))
+			{
+				MPI_Recv(interfStatus_arr.data(), 1, MPI_INT, parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovInterfaceStatus),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(partLocOld_arr.data(), 2, schemi_MPI_SIZE,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(substances_arr.data(), 2, schemi_MPI_SIZE,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovSubstances),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(weightsOld_arr.data(), 2, schemi_MPI_SCALAR,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+			}
 
 			const initialisationStatus status { interfStatus_arr[0] };
 			const std::array<std::size_t, 3> particlePosition_prt {
@@ -1848,58 +1880,65 @@ void schemi::instabilityParticlesHandler::timeIntegration(
 			for (std::size_t i = 0; i < tensor::vsize; ++i)
 				gradU_arr[i] = gradU.cval()[cellIndex]()[i];
 
-			MPI_Send(velocity_arr.data(), vector::vsize, schemi_MPI_SCALAR,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovVelocity),
-					MPI_COMM_WORLD);
-			MPI_Send(gradRho_arr.data(), vector::vsize, schemi_MPI_SCALAR,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovGradRho),
-					MPI_COMM_WORLD);
-			MPI_Send(rho_arr.data(), 3, schemi_MPI_SCALAR, parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovRho),
-					MPI_COMM_WORLD);
-			MPI_Send(gradP_arr.data(), vector::vsize, schemi_MPI_SCALAR,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovGradP),
-					MPI_COMM_WORLD);
-			MPI_Send(divU_arr.data(), 1, schemi_MPI_SCALAR, parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovDivU),
-					MPI_COMM_WORLD);
-			MPI_Send(gradU_arr.data(), tensor::vsize, schemi_MPI_SCALAR,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovGradU),
-					MPI_COMM_WORLD);
+			if (notRoot(std::get<0>(nodeParticleLocatedOld)))
+			{
+				MPI_Send(velocity_arr.data(), vector::vsize, schemi_MPI_SCALAR,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovVelocity),
+						MPI_COMM_WORLD);
+				MPI_Send(gradRho_arr.data(), vector::vsize, schemi_MPI_SCALAR,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovGradRho),
+						MPI_COMM_WORLD);
+				MPI_Send(rho_arr.data(), 3, schemi_MPI_SCALAR, parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovRho),
+						MPI_COMM_WORLD);
+				MPI_Send(gradP_arr.data(), vector::vsize, schemi_MPI_SCALAR,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovGradP),
+						MPI_COMM_WORLD);
+				MPI_Send(divU_arr.data(), 1, schemi_MPI_SCALAR,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovDivU),
+						MPI_COMM_WORLD);
+				MPI_Send(gradU_arr.data(), tensor::vsize, schemi_MPI_SCALAR,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovGradU),
+						MPI_COMM_WORLD);
+			}
 		}
 
 		vector newPositionVector_prt;
 		std::array<std::size_t, 1> nodeParticleLocatedNew { 0 };
 		if (parallelism.isRoot())
 		{
-			MPI_Recv(velocity_arr.data(), vector::vsize, schemi_MPI_SCALAR,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovVelocity),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(gradRho_arr.data(), vector::vsize, schemi_MPI_SCALAR,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovGradRho),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(rho_arr.data(), 3, schemi_MPI_SCALAR,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovRho),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(gradP_arr.data(), vector::vsize, schemi_MPI_SCALAR,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovGradP),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(divU_arr.data(), 1, schemi_MPI_SCALAR,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovDivU),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(gradU_arr.data(), tensor::vsize, schemi_MPI_SCALAR,
-					static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovGradU),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+			if (notRoot(std::get<0>(nodeParticleLocatedOld)))
+			{
+				MPI_Recv(velocity_arr.data(), vector::vsize, schemi_MPI_SCALAR,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovVelocity),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(gradRho_arr.data(), vector::vsize, schemi_MPI_SCALAR,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovGradRho),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(rho_arr.data(), 3, schemi_MPI_SCALAR,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovRho),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(gradP_arr.data(), vector::vsize, schemi_MPI_SCALAR,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovGradP),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(divU_arr.data(), 1, schemi_MPI_SCALAR,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovDivU),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(gradU_arr.data(), tensor::vsize, schemi_MPI_SCALAR,
+						static_cast<int>(std::get<0>(nodeParticleLocatedOld)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovGradU),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+			}
 
 			const auto particleVelocity = vector(velocity_arr[0],
 					velocity_arr[1], velocity_arr[2]);
@@ -1961,25 +2000,32 @@ void schemi::instabilityParticlesHandler::timeIntegration(
 			for (std::size_t j = 0; j < newCellSurfWeight_prt.size(); ++j)
 				newWeights_arr[j] = newCellSurfWeight_prt[j];
 
-			MPI_Send(newPositionData.data(), 2, schemi_MPI_SIZE,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-					MPI_COMM_WORLD);
-			MPI_Send(newWeights_arr.data(), 2, schemi_MPI_SCALAR,
-					parallelism.root,
-					static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-					MPI_COMM_WORLD);
+			if (notRoot(std::get<0>(nodeParticleLocatedNew)))
+			{
+				MPI_Send(newPositionData.data(), 2, schemi_MPI_SIZE,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+						MPI_COMM_WORLD);
+				MPI_Send(newWeights_arr.data(), 2, schemi_MPI_SCALAR,
+						parallelism.root,
+						static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+						MPI_COMM_WORLD);
+			}
 		}
-		else if (parallelism.isRoot())
+
+		if (parallelism.isRoot())
 		{
-			MPI_Recv(newPositionData.data(), 2, schemi_MPI_SIZE,
-					static_cast<int>(std::get<0>(nodeParticleLocatedNew)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-			MPI_Recv(newWeights_arr.data(), 2, schemi_MPI_SCALAR,
-					static_cast<int>(std::get<0>(nodeParticleLocatedNew)),
-					static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-					MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+			if (notRoot(std::get<0>(nodeParticleLocatedNew)))
+			{
+				MPI_Recv(newPositionData.data(), 2, schemi_MPI_SIZE,
+						static_cast<int>(std::get<0>(nodeParticleLocatedNew)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(newWeights_arr.data(), 2, schemi_MPI_SCALAR,
+						static_cast<int>(std::get<0>(nodeParticleLocatedNew)),
+						static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+			}
 
 			std::get<positionType::cell>(particlePosition[prt]) =
 					newPositionData[0];
@@ -2139,25 +2185,32 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 					weights_arr[j] = cellSurfWeight[prt][j];
 				}
 
-				MPI_Send(partLoc_arr.data(), 2, schemi_MPI_SIZE,
-						static_cast<int>(std::get<0>(nodeParticleLocated)),
-						static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-						MPI_COMM_WORLD);
-				MPI_Send(weights_arr.data(), 2, schemi_MPI_SCALAR,
-						static_cast<int>(std::get<0>(nodeParticleLocated)),
-						static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-						MPI_COMM_WORLD);
+				if (notRoot(std::get<0>(nodeParticleLocated)))
+				{
+					MPI_Send(partLoc_arr.data(), 2, schemi_MPI_SIZE,
+							static_cast<int>(std::get<0>(nodeParticleLocated)),
+							static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+							MPI_COMM_WORLD);
+					MPI_Send(weights_arr.data(), 2, schemi_MPI_SCALAR,
+							static_cast<int>(std::get<0>(nodeParticleLocated)),
+							static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+							MPI_COMM_WORLD);
+				}
 			}
-			else if (parallelism.mpi_rank == std::get<0>(nodeParticleLocated))
+
+			if (parallelism.mpi_rank == std::get<0>(nodeParticleLocated))
 			{
-				MPI_Recv(partLoc_arr.data(), 2, schemi_MPI_SIZE,
-						parallelism.root,
-						static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
-						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-				MPI_Recv(weights_arr.data(), 2, schemi_MPI_SCALAR,
-						parallelism.root,
-						static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
-						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				if (notRoot(std::get<0>(nodeParticleLocated)))
+				{
+					MPI_Recv(partLoc_arr.data(), 2, schemi_MPI_SIZE,
+							parallelism.root,
+							static_cast<int>(MPIHandler::MPITags::GoncharovPosition),
+							MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+					MPI_Recv(weights_arr.data(), 2, schemi_MPI_SCALAR,
+							parallelism.root,
+							static_cast<int>(MPIHandler::MPITags::GoncharovWeights),
+							MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				}
 
 				const std::array<std::size_t, 3> particlePosition_prt {
 						nodeParticleLocated[0], partLoc_arr[0], partLoc_arr[1] };
@@ -2185,18 +2238,20 @@ void schemi::instabilityParticlesHandler::checkTransitionToTurbulenceModel(
 					nodeData[i + 7] = gradRho()[i];
 				}
 
-				MPI_Send(nodeData.data(), 10, schemi_MPI_SCALAR,
-						parallelism.root,
-						static_cast<int>(MPIHandler::MPITags::GoncharovViscosityAndRadiuses),
-						MPI_COMM_WORLD);
+				if (notRoot(std::get<0>(nodeParticleLocated)))
+					MPI_Send(nodeData.data(), 10, schemi_MPI_SCALAR,
+							parallelism.root,
+							static_cast<int>(MPIHandler::MPITags::GoncharovViscosityAndRadiuses),
+							MPI_COMM_WORLD);
 			}
 
 			if (parallelism.isRoot())
 			{
-				MPI_Recv(nodeData.data(), 10, schemi_MPI_SCALAR,
-						static_cast<int>(std::get<0>(nodeParticleLocated)),
-						static_cast<int>(MPIHandler::MPITags::GoncharovViscosityAndRadiuses),
-						MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				if (notRoot(std::get<0>(nodeParticleLocated)))
+					MPI_Recv(nodeData.data(), 10, schemi_MPI_SCALAR,
+							static_cast<int>(std::get<0>(nodeParticleLocated)),
+							static_cast<int>(MPIHandler::MPITags::GoncharovViscosityAndRadiuses),
+							MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
 
 				const scalar nu = nodeData[0];
 				const vector cellRadius = { nodeData[1], nodeData[2],
