@@ -62,12 +62,10 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCSolver::ca
 		const scalar turbulentPressureNeighbour { twothirds
 				* surfaceNeighbourSide.rhokTurb.cval()[i] };
 
-		const scalar SOwner { std::min(
-				velocityProjectionOwner - sonicSpeedOwner[i],
-				velocityProjectionNeighbour - sonicSpeedNeighbour[i]) };
-		const scalar SNeighbour { std::max(
-				velocityProjectionOwner + sonicSpeedOwner[i],
-				velocityProjectionNeighbour + sonicSpeedNeighbour[i]) };
+		const auto [SOwner, SNeighbour] = EinfeldtSignalSpeeds(
+				surfaceOwnerSide.density[0].cval()[i], velocityProjectionOwner,
+				sonicSpeedOwner[i], surfaceNeighbourSide.density[0].cval()[i],
+				velocityProjectionNeighbour, sonicSpeedNeighbour[i]);
 
 		const scalar Sc { ((surfaceNeighbourSide.pressure.cval()[i]
 				+ turbulentPressureNeighbour)

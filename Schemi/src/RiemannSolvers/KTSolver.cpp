@@ -61,11 +61,9 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::KTSolver::calc
 		const scalar turbulentPressureNeighbour { twothirds
 				* surfaceNeighbourSide.rhokTurb.cval()[i] };
 
-		scalar SOwner { std::min(velocityProjectionOwner - sonicSpeedOwner[i],
-				velocityProjectionNeighbour - sonicSpeedNeighbour[i]) };
-		scalar SNeighbour { std::max(
-				velocityProjectionOwner + sonicSpeedOwner[i],
-				velocityProjectionNeighbour + sonicSpeedNeighbour[i]) };
+		auto [SOwner, SNeighbour] = DavisSignalSpeeds(velocityProjectionOwner,
+				sonicSpeedOwner[i], velocityProjectionNeighbour,
+				sonicSpeedNeighbour[i]);
 
 		const scalar SOwnerSNeighbourMag { std::max(std::abs(SOwner),
 				std::abs(SNeighbour)) };

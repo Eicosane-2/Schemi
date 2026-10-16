@@ -62,12 +62,9 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLSolver::cal
 		const scalar turbulentPressureNeighbour { twothirds
 				* surfaceNeighbourSide.rhokTurb.cval()[i] };
 
-		const scalar SOwner { std::min(
-				velocityProjectionOwner - sonicSpeedOwner[i],
-				velocityProjectionNeighbour - sonicSpeedNeighbour[i]) };
-		const scalar SNeighbour { std::max(
-				velocityProjectionOwner + sonicSpeedOwner[i],
-				velocityProjectionNeighbour + sonicSpeedNeighbour[i]) };
+		const auto [SOwner, SNeighbour] = DavisSignalSpeeds(
+				velocityProjectionOwner, sonicSpeedOwner[i],
+				velocityProjectionNeighbour, sonicSpeedNeighbour[i]);
 
 		std::valarray<scalar> densityState(numFluxes.density.size());
 		vector velocityState;

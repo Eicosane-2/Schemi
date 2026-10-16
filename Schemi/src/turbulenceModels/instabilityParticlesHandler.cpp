@@ -392,6 +392,12 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 							interfaceStatus(curStatus), CmuIn, C0In, C2In, C3In,
 							Ca1In, Cb1In);
 
+					int initStatus;
+					readData >> initStatus;
+					particleStatus[prt] = initialisationStatus(initStatus);
+
+					readData.close();
+
 					clearLines(prt, readDataPoint);
 				}
 			}
@@ -631,6 +637,12 @@ schemi::instabilityParticlesHandler::instabilityParticlesHandler(
 						rho1Cur, rho2Cur, k0Cur, eps0Cur, b0Cur, a0Cur,
 						timestepOld, interfaceStatus(curStatus), CmuIn, C0In,
 						C2In, C3In, Ca1In, Cb1In);
+
+				int initStatus;
+				readData >> initStatus;
+				particleStatus[prt] = initialisationStatus(initStatus);
+
+				readData.close();
 
 				clearLines(prt, readDataPoint);
 			}
@@ -2136,6 +2148,8 @@ void schemi::instabilityParticlesHandler::writeOutput(
 			output.precision(ioPrecision);
 
 			particlesList[prt].writeOutput(output);
+
+			output << '\n' << static_cast<int>(particleStatus[prt]);
 
 			output.close();
 		}
