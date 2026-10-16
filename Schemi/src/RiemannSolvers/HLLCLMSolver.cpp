@@ -391,10 +391,10 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 			}
 
 			const auto relMachNum = std::max(
-					surfaceOwnerSide.velocity.cval()[i].mag()
-							/ sonicSpeedOwner[i],
-					surfaceNeighbourSide.velocity.cval()[i].mag()
-							/ sonicSpeedNeighbour[i]) / minMachNumber;
+					std::abs(velocityProjectionOwner / sonicSpeedOwner[i]),
+					std::abs(
+							velocityProjectionNeighbour
+									/ sonicSpeedNeighbour[i])) / minMachNumber;
 
 			const auto phi = std::sin(
 					std::min(static_cast<scalar>(1.), relMachNum) * Pi_number

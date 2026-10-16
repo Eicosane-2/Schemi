@@ -22,6 +22,12 @@ namespace schemi
 {
 class abstractFlowSolver
 {
+protected:
+	std::array<scalar, 2> DavisSignalSpeeds(const scalar uL, const scalar aL,
+			const scalar uR, const scalar aR) const noexcept;
+	std::array<scalar, 2> EinfeldtSignalSpeeds(const scalar rhoL,
+			const scalar uL, const scalar aL, const scalar rhoR,
+			const scalar uR, const scalar aR) const noexcept;
 public:
 	virtual ~abstractFlowSolver() noexcept =0;
 

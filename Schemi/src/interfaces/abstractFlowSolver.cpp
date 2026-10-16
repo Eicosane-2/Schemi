@@ -18,6 +18,38 @@
 #include "RichtmyerSolver.hpp"
 #include "KTSolver.hpp"
 #include "HLLCKTSolver.hpp"
+#include "intExpPow.hpp"
+
+std::array<schemi::scalar, 2> schemi::abstractFlowSolver::DavisSignalSpeeds(
+		const scalar uL, const scalar aL, const scalar uR,
+		const scalar aR) const noexcept
+{
+	return
+	{	std::min(
+				uL - aL,
+				uR - aR),
+		std::max(
+				uL + aL,
+				uR + aR)};
+}
+
+std::array<schemi::scalar, 2> schemi::abstractFlowSolver::EinfeldtSignalSpeeds(
+		const scalar rhoL, const scalar uL, const scalar aL, const scalar rhoR,
+		const scalar uR, const scalar aR) const noexcept
+{
+	const auto sRhoL = std::sqrt(rhoL);
+	const auto sRhoR = std::sqrt(rhoR);
+	const auto sRhoSum = sRhoL + sRhoR;
+
+	const auto uRoe = (uL * sRhoL + uR * sRhoR) / sRhoSum;
+	const auto aEnd = std::sqrt(
+			(pow<scalar, 2>(aL) * sRhoL + pow<scalar, 2>(aR) * sRhoR) / sRhoSum
+					+ 0.5 * sRhoL * sRhoR / pow<scalar, 2>(sRhoSum)
+							* pow<scalar, 2>(uR - uL));
+
+	return
+	{	std::min(uL - aL, uRoe - aEnd), std::max(uR + aR, uRoe + aEnd)};
+}
 
 schemi::abstractFlowSolver::~abstractFlowSolver() noexcept
 {

@@ -89,12 +89,9 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCKTSolver::
 		if (nearlyPureSubstance(maxMolarFracO)
 				&& nearlyPureSubstance(maxMolarFracN))
 		{ 	//KT-solver
-			scalar SOwner { std::min(
-					velocityProjectionOwner - sonicSpeedOwner[i],
-					velocityProjectionNeighbour - sonicSpeedNeighbour[i]) };
-			scalar SNeighbour { std::max(
-					velocityProjectionOwner + sonicSpeedOwner[i],
-					velocityProjectionNeighbour + sonicSpeedNeighbour[i]) };
+			auto [SOwner, SNeighbour] = DavisSignalSpeeds(
+					velocityProjectionOwner, sonicSpeedOwner[i],
+					velocityProjectionNeighbour, sonicSpeedNeighbour[i]);
 			const scalar SOwnerSNeighbourMag { std::max(std::abs(SOwner),
 					std::abs(SNeighbour)) };
 			SOwner = -SOwnerSNeighbourMag;
@@ -251,12 +248,9 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCKTSolver::
 		}
 		else
 		{	//HLLC-solver
-			const scalar SOwner { std::min(
-					velocityProjectionOwner - sonicSpeedOwner[i],
-					velocityProjectionNeighbour - sonicSpeedNeighbour[i]) };
-			const scalar SNeighbour { std::max(
-					velocityProjectionOwner + sonicSpeedOwner[i],
-					velocityProjectionNeighbour + sonicSpeedNeighbour[i]) };
+			const auto [SOwner, SNeighbour] = DavisSignalSpeeds(
+					velocityProjectionOwner, sonicSpeedOwner[i],
+					velocityProjectionNeighbour, sonicSpeedNeighbour[i]);
 
 			const scalar Sc {
 					((surfaceNeighbourSide.pressure.cval()[i]
