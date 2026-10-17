@@ -62,37 +62,10 @@ std::tuple<schemi::conservativeFlows, schemi::starFields> schemi::HLLCLMSolver::
 		const scalar turbulentPressureNeighbour { twothirds
 				* surfaceNeighbourSide.rhokTurb.cval()[i] };
 
-		scalar velocityProjectionRoe;
-		scalar sqrSonicSpeedRoe;
-		{
-			const scalar sqrtRhoOwner { std::sqrt(
-					surfaceOwnerSide.density[0].cval()[i]) };
-			const scalar sqrtRhoNeighbour { std::sqrt(
-					surfaceNeighbourSide.density[0].cval()[i]) };
-			velocityProjectionRoe = (velocityProjectionOwner * sqrtRhoOwner
-					+ velocityProjectionNeighbour * sqrtRhoNeighbour)
-					/ (sqrtRhoOwner + sqrtRhoNeighbour);
-
-			sqrSonicSpeedRoe = (sonicSpeedOwner[i] * sonicSpeedOwner[i]
-					* sqrtRhoOwner
-					+ sonicSpeedNeighbour[i] * sonicSpeedNeighbour[i]
-							* sqrtRhoNeighbour)
-					/ (sqrtRhoOwner + sqrtRhoNeighbour)
-					+ 0.5 * (sqrtRhoOwner * sqrtRhoNeighbour)
-							/ ((sqrtRhoOwner + sqrtRhoNeighbour)
-									* (sqrtRhoOwner + sqrtRhoNeighbour))
-							* (velocityProjectionNeighbour
-									- velocityProjectionOwner)
-							* (velocityProjectionNeighbour
-									- velocityProjectionOwner);
-		}
-
-		const scalar SOwner { std::min(
-				velocityProjectionOwner - sonicSpeedOwner[i],
-				velocityProjectionRoe - std::sqrt(sqrSonicSpeedRoe)) };
-		const scalar SNeighbour { std::max(
-				velocityProjectionNeighbour + sonicSpeedNeighbour[i],
-				velocityProjectionRoe + std::sqrt(sqrSonicSpeedRoe)) };
+		const auto [SOwner, SNeighbour] = EinfeldtSignalSpeeds(
+				surfaceOwnerSide.density[0].cval()[i], velocityProjectionOwner,
+				sonicSpeedOwner[i], surfaceNeighbourSide.density[0].cval()[i],
+				velocityProjectionNeighbour, sonicSpeedNeighbour[i]);
 
 		const scalar Sc { ((surfaceNeighbourSide.pressure.cval()[i]
 				+ turbulentPressureNeighbour)
