@@ -331,7 +331,7 @@ int main()
 				std::cout << "Time = " << Time << std::endl;
 				{
 					/*Recreation of Time.tsv, if it exist.*/
-					std::string timeFileName("./result/Time.tsv");
+					const std::string timeFileName("./result/Time.tsv");
 					std::ofstream timeFile(timeFileName);
 					timeFile.close();
 				}
@@ -339,7 +339,8 @@ int main()
 						&& mixedZoneWidthCalcFlag)
 				{
 					/*Recreation of timeWidth.tsv, if it exist.*/
-					std::string timeWidthFileName("./result/timeWidth.tsv");
+					const std::string timeWidthFileName(
+							"./result/timeWidth.tsv");
 					std::ofstream timeWidthFile(timeWidthFileName);
 					timeWidthFile << "Time" << '\t' << "Width" << std::endl;
 					timeWidthFile.close();
@@ -363,7 +364,7 @@ int main()
 							std::string("<<result>> directory doesn't exist."),
 							errors::systemError);
 
-				std::string timeFileName("./result/Time.tsv");
+				const std::string timeFileName("./result/Time.tsv");
 				std::ifstream timeFile(timeFileName);
 				if (!timeFile.is_open())
 					throw std::ifstream::failure(
@@ -401,8 +402,7 @@ int main()
 					throw exception("Could not find tab delimiter.",
 							errors::initialisationError);
 
-				const std::string noutsString = std::string(timeStr.begin(),
-						tab);
+				const auto noutsString = std::string(timeStr.begin(), tab);
 
 				auto TimeIter = tab;
 				TimeIter++;
@@ -413,12 +413,12 @@ int main()
 					throw exception("Could not find tab delimiter.",
 							errors::initialisationError);
 
-				const std::string TimeString = std::string(TimeIter, tab);
+				const auto TimeString = std::string(TimeIter, tab);
 
 				auto nstepsIter = tab;
 				nstepsIter++;
 
-				const std::string nstepsString = std::string(nstepsIter,
+				const auto nstepsString = std::string(nstepsIter,
 						timeStr.end());
 
 				nouts = std::stoul(noutsString);
@@ -460,7 +460,8 @@ int main()
 				if ((dimensionsFlag == dimensions::task1D)
 						&& mixedZoneWidthCalcFlag)
 				{
-					std::string timeWidthFileName("./result/timeWidth.tsv");
+					const std::string timeWidthFileName(
+							"./result/timeWidth.tsv");
 					std::ifstream timeWidthFile(timeWidthFileName);
 					if (!timeWidthFile.is_open())
 						throw std::ifstream::failure(
