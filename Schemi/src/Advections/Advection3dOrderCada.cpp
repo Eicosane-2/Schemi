@@ -145,7 +145,7 @@ schemi::starFields schemi::Advection3dOrderCada(
 								+ gasPhase.pressure.cval()[i] };
 
 				scalar reconstructedkValue { 0 };
-				scalar reconstructedEpsilon { 0 };
+				scalar reconstructedepsilonValue { 0 };
 				vector reconstructedaValue { 0 };
 				scalar reconstructedbValue { 0 };
 				if (gasPhase.turbulence->turbulence())
@@ -153,7 +153,7 @@ schemi::starFields schemi::Advection3dOrderCada(
 					reconstructedkValue = (kTVDGradient.cval()[i][j]
 							& deltaVector) + gasPhase.kTurb.cval()[i];
 
-					reconstructedEpsilon = (epsilonTVDGradient.cval()[i][j]
+					reconstructedepsilonValue = (epsilonTVDGradient.cval()[i][j]
 							& deltaVector) + gasPhase.epsTurb.cval()[i];
 
 					if (gasPhase.turbulence->aField())
@@ -186,7 +186,7 @@ schemi::starFields schemi::Advection3dOrderCada(
 								reconstructedkValue;
 
 						surfaceOwnerSide.epsTurb.val()[surfaceIndex] =
-								reconstructedEpsilon;
+								reconstructedepsilonValue;
 
 						if (gasPhase.turbulence->aField())
 						{
@@ -218,7 +218,7 @@ schemi::starFields schemi::Advection3dOrderCada(
 								reconstructedkValue;
 
 						surfaceNeighbourSide.epsTurb.val()[surfaceIndex] =
-								reconstructedEpsilon;
+								reconstructedepsilonValue;
 
 						if (gasPhase.turbulence->aField())
 						{

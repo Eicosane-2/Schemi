@@ -15,4 +15,3 @@ void schemi::inputString() noexcept
 	std::string bufPauseString;
 	std::cin >> bufPauseString;
 }
-
